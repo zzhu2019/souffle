@@ -752,4 +752,59 @@ bool RemoveRedundantRelationsTransformer::transform(AstTranslationUnit& translat
     return changed;
 }
 
+bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationUnit){
+  bool changed = false;
+
+  AstProgram* program = translationUnit.getProgram();
+  std::vector<AstRelation*> relations = program->getRelations();
+
+  for(AstRelation* rel : relations){
+    std::vector<AstClause*> clauses = rel->getClauses();
+    for(size_t clauseNum = 0; clauseNum < clauses.size(); clauseNum++){
+      AstClause* clause = clauses[clauseNum];
+      AstClause* newClause = clause->cloneHead();
+      int count = 0;
+      for(AstLiteral* lit : clause->getBodyLiterals()){
+        // TODO: check if needed:
+        // if(dynamic_cast<AstConstraint*>(lit)){
+        //   AstAtom* newLit = lit->getAtom()->clone();
+        //   newClause->addToBody(std::unique_ptr<AstLiteral> (newLit));
+        //   continue;
+        // }
+        AstAtom* newLit = lit->getAtom()->clone();
+        std::vector<AstArgument*> args = newLit->getArguments();
+        for(size_t argNum = 0; argNum < args.size(); argNum++){
+          AstArgument* currArg = args[argNum];
+
+          // check if the argument is constant
+          if(dynamic_cast<const AstVariable*>(currArg) == 0){ // check correctness
+            changed = true;
+
+            // create new variable name (with appropriate suffix)
+            std::ostringstream tmpVar;
+            tmpVar << "abdul" << count; //TODO: find a special character for vars
+            AstArgument* var = new AstVariable(tmpVar.str());
+
+            AstArgument* cons = args[argNum]->clone();
+
+            count++;
+
+            // update argument to be variable
+            newLit->setArgument(argNum, std::unique_ptr<AstArgument>(var));
+
+            // add in constraint (abdulX = constant)
+            newClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
+                  std::unique_ptr<AstArgument>(var->clone()), std::unique_ptr<AstArgument>(cons->clone())))); // why do we need a clone?
+          }
+        }
+        newClause->addToBody(std::unique_ptr<AstLiteral> (newLit));
+      }
+      rel->removeClause(clause);
+      rel->addClause(std::unique_ptr<AstClause> (newClause));
+    }
+  }
+  // note: resolve aliases seems to get rid of constraints - check
+  return changed;
+}
+
 }  // end of namespace souffle
