@@ -766,18 +766,18 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
       int count = 0;
       for(AstLiteral* lit : clause->getBodyLiterals()){
         // TODO: check if needed:
-        // if(dynamic_cast<AstConstraint*>(lit)){
-        //   AstAtom* newLit = lit->getAtom()->clone();
-        //   newClause->addToBody(std::unique_ptr<AstLiteral> (newLit));
-        //   continue;
-        // }
+        if(dynamic_cast<AstAtom*>(lit)==0){
+          //TODO: handle negated literals? these are just immediately copied
+          newClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
+          continue;
+        }
         AstAtom* newLit = lit->getAtom()->clone();
         std::vector<AstArgument*> args = newLit->getArguments();
         for(size_t argNum = 0; argNum < args.size(); argNum++){
           AstArgument* currArg = args[argNum];
 
           // check if the argument is constant
-          if(dynamic_cast<const AstVariable*>(currArg) == 0){ // check correctness
+          if(dynamic_cast<const AstConstant*>(currArg)){ // check correctness
             changed = true;
 
             // create new variable name (with appropriate suffix)
@@ -789,21 +789,23 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
             count++;
 
-            // update argument to be variable
+            // update argument to be a variable
             newLit->setArgument(argNum, std::unique_ptr<AstArgument>(var));
 
             // add in constraint (abdulX = constant)
             newClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
-                  std::unique_ptr<AstArgument>(var->clone()), std::unique_ptr<AstArgument>(cons->clone())))); // why do we need a clone?
+                  std::unique_ptr<AstArgument>(var->clone()), std::unique_ptr<AstArgument>(cons->clone()))));
           }
+
         }
         newClause->addToBody(std::unique_ptr<AstLiteral> (newLit));
       }
+      // need a clone in the above constraint creation, otherwise fails on removal
       rel->removeClause(clause);
       rel->addClause(std::unique_ptr<AstClause> (newClause));
     }
   }
-  // note: resolve aliases seems to get rid of constraints - check
+  // note: resolve aliases transform seems to get rid of constraints - check
   return changed;
 }
 
