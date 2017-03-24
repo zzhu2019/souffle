@@ -761,16 +761,20 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
   for(AstRelation* rel : relations){
     std::vector<AstClause*> clauses = rel->getClauses();
     for(size_t clauseNum = 0; clauseNum < clauses.size(); clauseNum++){
+      int count = 0;
+
       AstClause* clause = clauses[clauseNum];
       AstClause* newClause = clause->cloneHead();
-      int count = 0;
+
       for(AstLiteral* lit : clause->getBodyLiterals()){
         // TODO: check if needed:
+        //if (dynamic_cast<AstNegation*>(lit))...
         if(dynamic_cast<AstAtom*>(lit)==0){
           //TODO: handle negated literals? these are just immediately copied
           newClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
           continue;
         }
+
         AstAtom* newLit = lit->getAtom()->clone();
         std::vector<AstArgument*> args = newLit->getArguments();
         for(size_t argNum = 0; argNum < args.size(); argNum++){
@@ -798,13 +802,137 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
           }
 
         }
-        newClause->addToBody(std::unique_ptr<AstLiteral> (newLit));
+          // negation not working: ungrounded assertion failure
+          // newClause->addToBody(std::unique_ptr<AstLiteral> (new AstNegation(std::unique_ptr<AstAtom>(newLit))));
+          newClause->addToBody(std::unique_ptr<AstLiteral> (newLit));
       }
       // need a clone in the above constraint creation, otherwise fails on removal
       rel->removeClause(clause);
       rel->addClause(std::unique_ptr<AstClause> (newClause));
     }
   }
+
+  /* ADORNMENT ALGORITHM PROTOTYPE [move to MagicSet.cpp once done planning!]*/
+
+  std::set<std::string> edb;
+  std::set<std::string> idb;
+  for(AstRelation* x : program->getRelations()){
+    bool is_edb = true;
+    for(AstClause* c : x->getClauses()){
+      if(!c->isFact()){
+        is_edb = false;
+        break;
+      }
+    }
+    std::stringstream n;
+    n << x->getName();
+
+    if(is_edb){
+      edb.insert(n.str());
+    } else {
+      idb.insert(n.str());
+    }
+  }
+
+  //std::cout << "Extensional: " << edb << std::endl;
+  //std::cout << "Intensional: " << idb << std::endl;
+
+  //  std::vector<AdornedPredicate> currentPredicates;
+  //  std::vector<AdornedClause*> adornedClauses;
+  //  std::vector<AdornedPredicate> seenPredicates; // set!
+
+  // TODO: [IMPORATNT!!!!]
+  // GET THE QUERY? FOR NOW PRETEND ITS ALWAYS "Res",
+  // and that it has only /one/ defining clause.
+
+  AstRelation* newrel = program->getRelation("Res");
+  if(newrel == NULL){
+    return changed;
+  }
+  std::vector<AstClause*> clauses = newrel->getClauses();
+  if(clauses.size()!=1){
+    std::cout << "Failed." << std::endl;
+    return changed;
+  } else {
+    std::stringstream n;
+
+    AstClause* query = clauses[0];
+    std::set<std::string> bounded;
+    for(AstConstraint* constraint : query->getConstraints()){
+      n.str("");
+      n << *constraint->getLHS();
+      bounded.insert(n.str());
+    }
+    //std::cout << bounded << std::endl;
+    int done = 0;
+    int needed = query->getAtoms().size();
+    std::vector<AstAtom*> atoms = query->getAtoms();
+    while(done < needed){
+      size_t firstedb = -1;
+      bool something = false;
+      for(size_t i = 0; i < atoms.size(); i++){
+        AstAtom* x = atoms[i];
+        std::cout << "Checking atom " << i << " (" << *x << ")..." << std::endl;
+        bool anybound = false;
+        n.str(""); n<<*x;
+        if(firstedb < 0 && (edb.find(n.str())!=edb.end())){
+          firstedb = i;
+        }
+        for(AstArgument* arg : x->getArguments()){
+          n.str("");
+          n<<*arg;
+          if(bounded.find(n.str())!=bounded.end()){
+            anybound = true;
+            std::cout << n.str() << " bounded!" << std::endl;
+            break;
+          } else {
+            std::cout << n.str() << " not bounded." << std::endl;
+          }
+        }
+        if(anybound){
+          something = true;
+          std::stringstream cadornment;
+          for(AstArgument* arg : x->getArguments()){
+            n.str("");
+            n<<*arg;
+            if(bounded.find(n.str())!=bounded.end()){
+              cadornment << "b";
+            } else {
+              bounded.insert(n.str());
+              cadornment << "f";
+            }
+          }
+          std::cout << "Added: " << *x << " with adornment " << cadornment.str() << std::endl;
+          atoms.erase(atoms.begin() + i);
+          done++;
+          break;
+        }
+      }
+      if(!something){
+        size_t i = 0;
+        if(firstedb >= 0){
+          i = firstedb;
+        }
+        AstAtom* x = atoms[i];
+        std::stringstream cadornment;
+        for(AstArgument* arg : x->getArguments()){
+          n.str("");
+          n<<*arg;
+          if(bounded.find(n.str())!=bounded.end()){
+            cadornment << "b";
+          } else {
+            bounded.insert(n.str());
+            cadornment << "f";
+          }
+        }
+        std::cout << "Added: " << *x << " with adornment " << cadornment.str() << std::endl;
+        atoms.erase(atoms.begin() + i);
+        done++;
+        break;
+      }
+    }
+  }
+
   // note: resolve aliases transform seems to get rid of constraints - check
   return changed;
 }
