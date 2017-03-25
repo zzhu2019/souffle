@@ -42,25 +42,76 @@ namespace souffle {
     }
   };
 
-  /*class AdornedClause : public AstClause {
+  class AdornedClause {
   private:
-    std::string headAdornment;
-    std::vector<std::string> bodyAdornment;
-    AstClause* clearClause;
+    AstClause* m_clause;
+    std::string m_headAdornment;
+    std::vector<std::string> m_bodyAdornment;
 
   public:
-    const std::string getHeadAdornment(){
-      return headAdornment;
+    AdornedClause(AstClause* clause, std::string headAdornment, std::vector<std::string> bodyAdornment)
+    : m_clause(clause), m_headAdornment(headAdornment), m_bodyAdornment(bodyAdornment) {}
+
+    AstClause* getClause() const {
+      return m_clause;
     }
 
-    const std::vector<std::string> getBodyAdornment(){
-      return bodyAdornment;
+    std::string getHeadAdornment() const {
+      return m_headAdornment;
     }
-  };*/
+
+    std::vector<std::string> getBodyAdornment() const {
+      return m_bodyAdornment;
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const AdornedClause& arg){
+    //  std::stringstream str; str << arg.m_clause->getAtom()->getName();
+
+      size_t currpos = 0;
+      bool firstadded = true;
+      out << arg.m_clause->getHead()->getName() << "{" << arg.m_headAdornment << "} :- ";
+
+      std::vector<AstLiteral*> bodyLiterals = arg.m_clause->getBodyLiterals();
+      for(size_t i = 0; i < bodyLiterals.size(); i++){
+        AstLiteral* lit = bodyLiterals[i];
+        if(dynamic_cast<AstAtom*>(lit) == 0){
+          const AstAtom* corresAtom = lit->getAtom();
+          if(corresAtom != nullptr){
+            if(firstadded){
+              firstadded = false;
+              out << corresAtom->getName() << "{_}";
+            } else {
+              out << ", " << corresAtom->getName() << "{_}";
+            }
+          } else {
+            continue;
+          }
+        } else {
+          if(firstadded) {
+            firstadded = false;
+            out << lit->getAtom()->getName() << "{" << arg.m_bodyAdornment[currpos] << "}";
+          } else {
+            out << ", " << lit->getAtom()->getName() << "{" << arg.m_bodyAdornment[currpos] << "}";
+          }
+          currpos++;
+        }
+      }
+      out << ".";
+
+      return out;
+
+      // TODO FIX HOW THSI PRINTS (especially m_clause)
+      // std::stringstream fullClause; fullClause << *(arg.m_clause);
+      // std::string fullClauseString = fullClause.str();
+      // fullClauseString.erase(std::remove_if(fullClauseString.begin(), fullClauseString.end(), isspace), fullClauseString.end());
+      // out << "(" <<  fullClauseString << ", " << arg.m_headAdornment << ", " << arg.m_bodyAdornment << ")";
+      // return out;
+    }
+  };
 
   class Adornment : public AstAnalysis {
   private:
-    //std::vector<AdornedClause*> adornedClauses;
+    std::vector<AdornedClause> m_adornedClauses;
 
   public:
     static constexpr const char* name = "adorned-clauses";
@@ -69,9 +120,11 @@ namespace souffle {
 
     virtual void run(const AstTranslationUnit& translationUnit);
 
-    // why returning a reference instead of the vector
-    // const std::vector<AdornedClause*>& getAdornedClauses(){
-    //   return adornedClauses;
-    // }
+    void outputAdornment(std::ostream& os);
+
+    // NOTE: why returning a reference instead of the vector
+    const std::vector<AdornedClause> getAdornedClauses(){
+     return m_adornedClauses;
+    }
   };
 }

@@ -825,10 +825,6 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
     }
   }
 
-  // TODO: find out how to run this analysis
-  Adornment x;
-  x.run(translationUnit);
-
   // note: resolve aliases transform seems to get rid of constraints - check
   return changed;
 }

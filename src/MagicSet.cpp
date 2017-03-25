@@ -48,7 +48,7 @@ namespace souffle {
       if(rel->isOutput()){
         if(outputfound){
           // this is the second output relation we've found -- stop
-          std::cout << "Failed to adorn -- too many output relations." << std::endl;
+          // std::cout << "Failed to adorn -- too many output relations." << std::endl;
           return;
         } else {
           // store the output name
@@ -78,13 +78,14 @@ namespace souffle {
 
     // check if an output was found
     if(!outputfound){
-      std::cout << "Failed to adorn -- no output relation found." << std::endl;
+      //std::cout << "Failed to adorn -- no output relation found." << std::endl;
       return;
     }
 
     // adornment algorithm
     std::vector<AdornedPredicate> currentPredicates;
     std::set<AdornedPredicate> seenPredicates;
+    std::vector<AdornedClause> adornedClauses;
 
     AdornedPredicate outputPredicate (outputQuery, frepeat.str());
     currentPredicates.push_back(outputPredicate);
@@ -95,7 +96,7 @@ namespace souffle {
       AdornedPredicate currPredicate = currentPredicates[0];
       currentPredicates.erase(currentPredicates.begin());
 
-      std::cout << "Adorning with respect to " << currPredicate << "..." << std::endl;
+      // std::cout << "Adorning with respect to " << currPredicate << "..." << std::endl;
 
       // go through all clauses defining it
       AstRelation* rel = program->getRelation(currPredicate.getName());
@@ -132,7 +133,7 @@ namespace souffle {
         int atomsTotal = atoms.size();
 
         while(atomsAdorned < atomsTotal){
-          std::cout << "P: " << currentPredicates << ", Seen: " << seenPredicates << std::endl;
+          //std::cout << "P: " << currentPredicates << ", Seen: " << seenPredicates << std::endl;
           int firstedb = -1; // index of first edb atom
           bool atomAdded = false;
 
@@ -200,6 +201,7 @@ namespace souffle {
               i = firstedb;
             }
 
+            // TODO: get rid of repetitive code
             std::stringstream atomAdornment;
             AstAtom* currAtom = atoms[i];
             name.str(""); name << currAtom->getName();
@@ -222,6 +224,7 @@ namespace souffle {
               }
             }
 
+            // TODO: FIX THIS. NOT NEEDED FOR EDB.
             if(!seenBefore){
               currentPredicates.push_back(AdornedPredicate (name.str(), atomAdornment.str()));
               seenPredicates.insert(AdornedPredicate (name.str(), atomAdornment.str()));
@@ -233,9 +236,21 @@ namespace souffle {
             atomsAdorned++;
           }
         }
-        std::cout << *clause << std::endl;
-        std::cout << clauseAtomAdornments << std::endl << std::endl;
+        //std::cout << *clause << std::endl;
+        //std::cout << clauseAtomAdornments << std::endl << std::endl;
+        // AdornedClause finishedClause (clause, headAdornment, clauseAtomAdornments);
+        adornedClauses.push_back(AdornedClause (clause, headAdornment, clauseAtomAdornments));
+        //adornedClauses.push_back(AdornedClause (clause, headAdornment, clauseAtomAdornments));
       }
+    }
+    // std::cout << adornedClauses << std::endl;
+    m_adornedClauses = adornedClauses;
+  }
+
+  void Adornment::outputAdornment(std::ostream& os){
+    // TODO: FIX HOW THIS PRINTS
+    for(AdornedClause clause : m_adornedClauses){
+      os << clause << std::endl;
     }
   }
 }
