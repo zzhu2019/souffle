@@ -111,7 +111,10 @@ namespace souffle {
 
   class Adornment : public AstAnalysis {
   private:
-    std::vector<AdornedClause> m_adornedClauses;
+    // map instead
+    // std::vector<AdornedClause> m_adornedClauses;
+    std::vector<std::vector<AdornedClause>> m_adornedClauses;
+    std::vector<std::string> m_relations;
 
   public:
     static constexpr const char* name = "adorned-clauses";
@@ -123,7 +126,7 @@ namespace souffle {
     void outputAdornment(std::ostream& os);
 
     // NOTE: why returning a reference instead of the vector
-    const std::vector<AdornedClause> getAdornedClauses(){
+    const std::vector<std::vector<AdornedClause>> getAdornedClauses(){
      return m_adornedClauses;
     }
   };

@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
     transforms.push_back(std::unique_ptr<AstTransformer>(new MaterializeAggregationQueriesTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveEmptyRelationsTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRedundantRelationsTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new NormaliseConstraintsTransformer())); // check positioning/what this does
+    transforms.push_back(std::unique_ptr<AstTransformer>(new NormaliseConstraintsTransformer())); // check what this does
     transforms.push_back(std::unique_ptr<AstTransformer>(new AstExecutionPlanChecker()));
     if (Global::config().has("auto-schedule")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));
