@@ -115,6 +115,8 @@ namespace souffle {
     // std::vector<AdornedClause> m_adornedClauses;
     std::vector<std::vector<AdornedClause>> m_adornedClauses;
     std::vector<std::string> m_relations;
+    std::set<std::string> m_edb;
+    std::set<std::string> m_idb;
 
   public:
     static constexpr const char* name = "adorned-clauses";

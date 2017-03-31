@@ -32,14 +32,14 @@ namespace souffle {
 
     // Output: D' [the set of all adorned clauses]
 
+    // TODO: Check if Clause has to be reordered! (i.e. new one has to be made)
     const AstProgram* program = translationUnit.getProgram();
 
-    // set up IDB/EDB and the output query
-    std::set<std::string> edb;
-    std::set<std::string> idb;
-    // std::string outputQuery;
-    std::stringstream frepeat; // 'f'*(number of arguments in output query)
-
+    //std::cout << "____________________" << std::endl;
+ 
+    // set up IDB/EDB and the output queries
+    //std::set<std::string> edb;
+    //std::set<std::string> idb;
     std::vector<std::string> outputQueries;
 
     std::vector<std::vector<AdornedClause>> adornedProgram;
@@ -64,9 +64,9 @@ namespace souffle {
       }
 
       if(is_edb){
-        edb.insert(name.str());
+        m_edb.insert(name.str());
       } else {
-        idb.insert(name.str());
+        m_idb.insert(name.str());
       }
     }
 
@@ -79,7 +79,7 @@ namespace souffle {
       std::stringstream frepeat;
       size_t arity = program->getRelation(outputQuery)->getArity();
       for(size_t i = 0; i < arity; i++){
-        frepeat << "f";
+        frepeat << "f"; // 'f'*(number of arguments in output query)
       }
 
       AdornedPredicate outputPredicate (outputQuery, frepeat.str());
@@ -143,7 +143,7 @@ namespace souffle {
               name.str(""); name << *currAtom;
 
               // check if this is the first edb atom met
-              if(firstedb < 0 && (edb.find(name.str()) != edb.end())){
+              if(firstedb < 0 && (m_edb.find(name.str()) != m_edb.end())){
                 firstedb = i;
               }
 
@@ -162,14 +162,17 @@ namespace souffle {
                 std::stringstream atomAdornment;
 
                 // find the adornment pattern
+                // std::cout << "BOUNDED:" << boundedArgs << std::endl;
                 for(AstArgument* arg : currAtom->getArguments()){
                   std::stringstream argName; argName << *arg;
                   if(boundedArgs.find(argName.str()) != boundedArgs.end()){
                     atomAdornment << "b"; // bounded
+                    // std::cout << *currAtom << " with arg " << argName.str() << std::endl;
                   } else {
                     atomAdornment << "f"; // free
                     boundedArgs.insert(argName.str()); // now bounded
                   }
+                  // std::cout << "SO FAR: " << atomAdornment.str() << std::endl;
                 }
 
                 name.str(""); name << currAtom->getName();
@@ -231,7 +234,6 @@ namespace souffle {
                 }
               }
 
-              // TODO: FIX THIS. NOT NEEDED FOR EDB.
               if(!seenBefore){
                 currentPredicates.push_back(AdornedPredicate (name.str(), atomAdornment.str()));
                 seenPredicates.insert(AdornedPredicate (name.str(), atomAdornment.str()));
@@ -244,14 +246,14 @@ namespace souffle {
               atomsAdorned++;
             }
           }
-          //std::cout << *clause << std::endl;
-          //std::cout << clauseAtomAdornments << std::endl << std::endl;
+          // std::cout << *clause << std::endl;
+          // std::cout << clauseAtomAdornments << std::endl << std::endl;
           // AdornedClause finishedClause (clause, headAdornment, clauseAtomAdornments);
           adornedClauses.push_back(AdornedClause (clause, headAdornment, clauseAtomAdornments));
           //adornedClauses.push_back(AdornedClause (clause, headAdornment, clauseAtomAdornments));
         }
       }
-      // std::cout << adornedClauses << std::endl;
+      //std::cout << adornedClauses << std::endl;
       m_adornedClauses.push_back(adornedClauses);
     }
   }
