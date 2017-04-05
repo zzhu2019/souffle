@@ -274,6 +274,14 @@ namespace souffle {
     }
   }
 
+  std::vector<std::string> reorderAdornment(std::vector<std::string> adornment, std::vector<unsigned int> order){
+    std::vector<std::string> result (adornment.size());
+    for(size_t i = 0; i < adornment.size(); i++){
+      result[order[i]] = adornment[i];
+    }
+    return result;
+  }
+
   bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit){
     bool changed = true; //TODO: Fix afterwards
     Adornment* adornment = translationUnit.getAnalysis<Adornment>();
@@ -299,11 +307,12 @@ namespace souffle {
     // S is the new IDB
     // adornment->getIDB() is the old IDB
 
-    // MAJOOOOOOOOOOOOOOOOOOR TODO TODO TODO FACTS!!!! - think about this!
+    // MAJOR TODO TODO TODO FACTS!!!! - think about this!
 
     std::vector<std::vector<AdornedClause>> allAdornedClauses = adornment->getAdornedClauses();
     std::vector<std::string> outputQueries = adornment->getRelations();
     std::set<std::string> oldidb = adornment->getIDB();
+    std::set<std::string> newidb;
     std::vector<AstClause*> newClauses;
 
     for(size_t i = 0; i < outputQueries.size(); i++){
@@ -321,7 +330,7 @@ namespace souffle {
 
         if(relName.str().compare(outputQuery) == 0){
           bool allFree = true;
-          for(int i = 0; i < headAdornment.size(); i++){
+          for(size_t i = 0; i < headAdornment.size(); i++){
             if(headAdornment[i]!='f'){
               allFree = false;
               break;
@@ -364,11 +373,13 @@ namespace souffle {
         newClause->reorderAtoms(adornedClause.getOrdering());
         newClause->getHead()->setName(relName.str());
 
+
         // add adornments to names
         std::vector<AstLiteral*> body = newClause->getBodyLiterals();
         std::vector<std::string> bodyAdornment = adornedClause.getBodyAdornment();
-        int count = 0;
 
+        bodyAdornment = reorderAdornment(bodyAdornment, adornedClause.getOrdering());
+        int count = 0;
 
         // TODO: NEED TO IGNORE ADORNMENT AFTER IN DEBUG-REPORT
 
@@ -382,32 +393,109 @@ namespace souffle {
               litName << "_" << bodyAdornment[count];
               AstAtom* atomlit = (AstAtom*) lit; // TODO: fix
               atomlit->setName(litName.str());
-              count++;
+              newidb.insert(litName.str());
+            }
+            count++;
+          }
+        }
+
+        // [[[todo: function outside this to check if IDB]]]
+        // Add the set of magic rules
+        for(size_t i = 0; i < body.size(); i++){
+          // TODO: PROBLEM of ungroundedness! how to remove ungrounded stuff...
+          AstLiteral* currentLiteral = body[i];
+          count = 0;
+          if(dynamic_cast<AstAtom*>(currentLiteral)){
+            AstAtom* lit = (AstAtom*) currentLiteral;
+            std::stringstream litname;
+            litname << lit->getAtom()->getName();
+            // bool allFree = false;
+            // for(size_t currx = 0; currx < bodyAdornment[i].size(); currx )
+            // if(i == 0 && body.size() == 1 && allFree){
+            //   continue;
+            // }
+            if (newidb.find(litname.str()) != newidb.end()){
+              // AstClause* magicClause = newClause->clone();
+              std::stringstream newLit; newLit << "m_" << lit->getAtom()->getName();
+              if(program->getRelation(newLit.str()) == nullptr){
+                AstRelation* magicRelation = new AstRelation();
+                magicRelation->setName(newLit.str());
+                AstRelation* originalRelation = program->getRelation(litname.str().substr(0, litname.str().find("_"))); // check not defined
+                std::string currAdornment = bodyAdornment[i];
+                int argcount = 0;
+
+                for(AstAttribute* attr : originalRelation->getAttributes()){
+                  if(currAdornment[argcount] == 'b'){
+                    magicRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
+                  }
+                  argcount++;
+                }
+                program->appendRelation(std::unique_ptr<AstRelation> (magicRelation));
+              }
+              AstClause* magicClause = new AstClause ();
+              AstAtom* mclauseHead = new AstAtom (newLit.str());
+
+              std::string currAdornment = bodyAdornment[i];
+
+              int argCount = 0;
+
+              for(AstArgument* arg : lit->getArguments()){
+                if(currAdornment[argCount] == 'b'){
+                  mclauseHead->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
+                }
+                argCount++;
+              }
+
+              magicClause->setHead(std::unique_ptr<AstAtom> (mclauseHead));
+
+              // make the body
+              argCount = 0;
+              std::stringstream magPredName;
+              magPredName << "m_" << newClause->getHead()->getName();
+              AstAtom* addedMagPred = new AstAtom(magPredName.str());
+              for(AstArgument* arg : newClause->getHead()->getArguments()){
+                if(headAdornment[argCount] == 'b'){
+                  addedMagPred->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
+                }
+                argCount++;
+              }
+              magicClause->addToBody(std::unique_ptr<AstAtom> (addedMagPred));
+              for(size_t j = 0; j < i; j++){
+                magicClause->addToBody(std::unique_ptr<AstLiteral> (body[j]->clone()));
+              }
+
+              // std::cout << *magicClause << std::endl;
+              program->appendClause(std::unique_ptr<AstClause> (magicClause));
+
             }
           }
         }
 
-        // TODO: add the set of magic rules
+        // replace with H :- mag(H), T
+        size_t numAtoms = newClause->getAtoms().size();
+        std::stringstream newMag; newMag << "m_" << newClause->getHead()->getAtom()->getName();
+        AstAtom* newMagAtom = new AstAtom (newMag.str());
+        std::vector<AstArgument*> args = newClause->getHead()->getAtom()->getArguments();
+        for(size_t k = 0; k < args.size(); k++){
+          if(headAdornment[k] == 'b'){
+            newMagAtom->addArgument(std::unique_ptr<AstArgument> (args[k]->clone()));
+          }
+        }
+
+        newClause->addToBody(std::unique_ptr<AstAtom> (newMagAtom));
+        std::vector<unsigned int> newClauseOrder (numAtoms+1);
+        for(size_t k = 0; k < numAtoms; k++){
+          newClauseOrder[k] = k+1;
+        }
+
+        newClauseOrder[numAtoms] = 0;
+        newClause->reorderAtoms(newClauseOrder);
 
 
+        // add the clause
         newClauses.push_back(newClause);
         adornedRelation->addClause(std::unique_ptr<AstClause> (newClause));
       }
-
-      // int count = 0;
-      // for(AstAttribute* attr : originalRelation->getAttributes()){
-      //   if(headAdornment[count] == 'b'){
-      //     newRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
-      //   }
-      //   count++;
-      // }
-
-      //  std::string originalName = litName.str();
-      //  litName.str(""); litName << "m_" << (lit->getAtom()->getName());
-
-      // TODO: "for all clauses H:-T in S, replace with H :- mag(H), T"
-
-
     }
 
     // NOTE: what does std::unique_ptr do?
@@ -419,6 +507,8 @@ namespace souffle {
       program->removeRelation(relation);
     }
 
+    std::cout << *program << std::endl;
+
     return changed;
   }
-}
+} // end of namespace souffle
