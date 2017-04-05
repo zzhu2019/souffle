@@ -47,10 +47,11 @@ namespace souffle {
     AstClause* m_clause;
     std::string m_headAdornment;
     std::vector<std::string> m_bodyAdornment;
+    std::vector<unsigned int> m_ordering;
 
   public:
-    AdornedClause(AstClause* clause, std::string headAdornment, std::vector<std::string> bodyAdornment)
-    : m_clause(clause), m_headAdornment(headAdornment), m_bodyAdornment(bodyAdornment) {}
+    AdornedClause(AstClause* clause, std::string headAdornment, std::vector<std::string> bodyAdornment, std::vector<unsigned int> ordering)
+    : m_clause(clause), m_headAdornment(headAdornment), m_bodyAdornment(bodyAdornment), m_ordering(ordering) {}
 
     AstClause* getClause() const {
       return m_clause;
@@ -62,6 +63,10 @@ namespace souffle {
 
     std::vector<std::string> getBodyAdornment() const {
       return m_bodyAdornment;
+    }
+
+    std::vector<unsigned int> getOrdering() const {
+      return m_ordering;
     }
 
     friend std::ostream& operator<<(std::ostream& out, const AdornedClause& arg){
@@ -96,23 +101,15 @@ namespace souffle {
           currpos++;
         }
       }
-      out << ".";
+      out << ". [order: " << arg.m_ordering << "]";
 
       return out;
-
-      // TODO FIX HOW THSI PRINTS (especially m_clause)
-      // std::stringstream fullClause; fullClause << *(arg.m_clause);
-      // std::string fullClauseString = fullClause.str();
-      // fullClauseString.erase(std::remove_if(fullClauseString.begin(), fullClauseString.end(), isspace), fullClauseString.end());
-      // out << "(" <<  fullClauseString << ", " << arg.m_headAdornment << ", " << arg.m_bodyAdornment << ")";
-      // return out;
     }
   };
 
   class Adornment : public AstAnalysis {
   private:
-    // map instead
-    // std::vector<AdornedClause> m_adornedClauses;
+    // TODO: map instead
     std::vector<std::vector<AdornedClause>> m_adornedClauses;
     std::vector<std::string> m_relations;
     std::set<std::string> m_edb;
@@ -127,9 +124,21 @@ namespace souffle {
 
     void outputAdornment(std::ostream& os);
 
-    // NOTE: why returning a reference instead of the vector
+    // NOTE: why do these sometimes return a reference instead of the vector
     const std::vector<std::vector<AdornedClause>> getAdornedClauses(){
      return m_adornedClauses;
+    }
+
+    const std::vector<std::string> getRelations(){
+      return m_relations;
+    }
+
+    const std::set<std::string> getEDB(){
+      return m_edb;
+    }
+
+    const std::set<std::string> getIDB(){
+      return m_idb;
     }
   };
 }

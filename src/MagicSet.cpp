@@ -36,10 +36,8 @@ namespace souffle {
     const AstProgram* program = translationUnit.getProgram();
 
     //std::cout << "____________________" << std::endl;
- 
+
     // set up IDB/EDB and the output queries
-    //std::set<std::string> edb;
-    //std::set<std::string> idb;
     std::vector<std::string> outputQueries;
 
     std::vector<std::vector<AdornedClause>> adornedProgram;
@@ -103,8 +101,8 @@ namespace souffle {
 
           // TODO: check if ordering correct, and if this is correct C++ vectoring
           std::vector<std::string> clauseAtomAdornments (clause->getAtoms().size());
+          std::vector<unsigned int> ordering (clause->getAtoms().size());
           std::stringstream name;
-
           std::set<std::string> boundedArgs;
 
           // mark all bounded arguments from head adornment
@@ -137,6 +135,7 @@ namespace souffle {
             for(size_t i = 0; i < atoms.size(); i++){
               AstAtom* currAtom = atoms[i];
               if(currAtom == nullptr){
+                // already done
                 continue;
               }
               bool foundBound = false;
@@ -157,6 +156,7 @@ namespace souffle {
                 }
               }
 
+              // bound argument found, so based on this SIPS we adorn it
               if(foundBound){
                 atomAdded = true;
                 std::stringstream atomAdornment;
@@ -177,6 +177,8 @@ namespace souffle {
 
                 name.str(""); name << currAtom->getName();
                 bool seenBefore = false;
+
+                // check if we've already dealt with this adornment before
                 for(AdornedPredicate seenPred : seenPredicates){
                   if( (seenPred.getName().compare(name.str()) == 0)
                       && (seenPred.getAdornment().compare(atomAdornment.str()) == 0)){ // TODO: check if correct/better way to do
@@ -190,7 +192,8 @@ namespace souffle {
                   seenPredicates.insert(AdornedPredicate (name.str(), atomAdornment.str()));
                 }
 
-                clauseAtomAdornments[i]=atomAdornment.str();
+                clauseAtomAdornments[i] = atomAdornment.str();
+                ordering[i] = atomsAdorned;
 
                 atoms[i] = nullptr;
                 //atoms.erase(atoms.begin() + i);
@@ -240,6 +243,7 @@ namespace souffle {
               }
 
               clauseAtomAdornments[i] = atomAdornment.str();
+              ordering[i] = atomsAdorned;
 
               atoms[i] = nullptr;
               //atoms.erase(atoms.begin() + i);
@@ -249,7 +253,7 @@ namespace souffle {
           // std::cout << *clause << std::endl;
           // std::cout << clauseAtomAdornments << std::endl << std::endl;
           // AdornedClause finishedClause (clause, headAdornment, clauseAtomAdornments);
-          adornedClauses.push_back(AdornedClause (clause, headAdornment, clauseAtomAdornments));
+          adornedClauses.push_back(AdornedClause (clause, headAdornment, clauseAtomAdornments, ordering));
           //adornedClauses.push_back(AdornedClause (clause, headAdornment, clauseAtomAdornments));
         }
       }
@@ -268,5 +272,153 @@ namespace souffle {
       }
       os << std::endl;
     }
+  }
+
+  bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit){
+    bool changed = true; //TODO: Fix afterwards
+    Adornment* adornment = translationUnit.getAnalysis<Adornment>();
+    AstProgram* program = translationUnit.getProgram();
+    //if(adornment->getRelations().size() != 1){
+      // TODO: More than one output
+      // NOTE: maybe prepend o[outputnumber]_m_[name]_[adornment]: instead
+      //return false;
+    //}
+
+    // need to create new IDB - so first work with the current IDB
+    // then remove old IDB, add all clauses from new IDB (S)
+
+    // STEPS:
+    // For all output relations G:
+    // -- Get the adornment S for this clause
+    // -- Add to S the set of magic rules for all clauses in S
+    // -- For all clauses H :- T in S:
+    // -- -- Replace the clause with H :- mag(H), T.
+    // -- Add the fact m_G_f...f to S
+    // Remove all old idb rules
+
+    // S is the new IDB
+    // adornment->getIDB() is the old IDB
+
+    // MAJOOOOOOOOOOOOOOOOOOR TODO TODO TODO FACTS!!!! - think about this!
+
+    std::vector<std::vector<AdornedClause>> allAdornedClauses = adornment->getAdornedClauses();
+    std::vector<std::string> outputQueries = adornment->getRelations();
+    std::set<std::string> oldidb = adornment->getIDB();
+    std::vector<AstClause*> newClauses;
+
+    for(size_t i = 0; i < outputQueries.size(); i++){
+      std::string outputQuery = outputQueries[i];
+      std::vector<AdornedClause> adornedClauses = allAdornedClauses[i];
+
+      for(AdornedClause adornedClause : adornedClauses){
+        AstClause* clause = adornedClause.getClause();
+        bool output = false;
+
+        std::string headAdornment = adornedClause.getHeadAdornment();
+
+        std::stringstream relName;
+        relName << clause->getHead()->getName();
+
+        if(relName.str().compare(outputQuery) == 0){
+          bool allFree = true;
+          for(int i = 0; i < headAdornment.size(); i++){
+            if(headAdornment[i]!='f'){
+              allFree = false;
+              break;
+            }
+          }
+          if(allFree){
+            // add as output
+            output = true;
+          }
+        }
+
+        relName << "_" << headAdornment;
+
+        AstRelation* adornedRelation;
+
+        if((adornedRelation = program->getRelation(relName.str()))==nullptr){
+          std::stringstream tmp; tmp << clause->getHead()->getName();
+          AstRelation* originalRelation = program->getRelation(tmp.str());
+
+          AstRelation* newRelation = new AstRelation();
+          newRelation->setName(relName.str());
+
+          if(output){
+            AstIODirective* newdir = new AstIODirective();
+            newdir->setAsOutput();
+
+            // TODO: change this eventually so that it produces the same name as the original
+            newRelation->addIODirectives(std::unique_ptr<AstIODirective>(newdir)); // TODO: check this unique ptr stuff
+          }
+
+          for(AstAttribute* attr : originalRelation->getAttributes()){
+            newRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
+          }
+
+          program->appendRelation(std::unique_ptr<AstRelation> (newRelation));
+          adornedRelation = newRelation;
+        }
+
+        AstClause* newClause = clause->clone();
+        newClause->reorderAtoms(adornedClause.getOrdering());
+        newClause->getHead()->setName(relName.str());
+
+        // add adornments to names
+        std::vector<AstLiteral*> body = newClause->getBodyLiterals();
+        std::vector<std::string> bodyAdornment = adornedClause.getBodyAdornment();
+        int count = 0;
+
+
+        // TODO: NEED TO IGNORE ADORNMENT AFTER IN DEBUG-REPORT
+
+        for(size_t i = 0; i < body.size(); i++){
+          AstLiteral* lit = body[i];
+          // only IDB should be added
+
+          if(dynamic_cast<AstAtom*>(lit)){
+            std::stringstream litName; litName << lit->getAtom()->getName();
+            if (oldidb.find(litName.str()) != oldidb.end()){
+              litName << "_" << bodyAdornment[count];
+              AstAtom* atomlit = (AstAtom*) lit; // TODO: fix
+              atomlit->setName(litName.str());
+              count++;
+            }
+          }
+        }
+
+        // TODO: add the set of magic rules
+
+
+        newClauses.push_back(newClause);
+        adornedRelation->addClause(std::unique_ptr<AstClause> (newClause));
+      }
+
+      // int count = 0;
+      // for(AstAttribute* attr : originalRelation->getAttributes()){
+      //   if(headAdornment[count] == 'b'){
+      //     newRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
+      //   }
+      //   count++;
+      // }
+
+      //  std::string originalName = litName.str();
+      //  litName.str(""); litName << "m_" << (lit->getAtom()->getName());
+
+      // TODO: "for all clauses H:-T in S, replace with H :- mag(H), T"
+
+
+    }
+
+    // NOTE: what does std::unique_ptr do?
+
+    // TODO: check
+
+    // remove all old IDB relations
+    for(std::string relation : oldidb){
+      program->removeRelation(relation);
+    }
+
+    return changed;
   }
 }

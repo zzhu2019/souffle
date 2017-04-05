@@ -753,18 +753,6 @@ bool RemoveRedundantRelationsTransformer::transform(AstTranslationUnit& translat
     return changed;
 }
 
-// class AdornedPredicate {
-// public:
-//   std::string m_name;
-//   std::string m_adornment;
-//   AdornedPredicate(std::string name, std::string adornment) : m_name(name), m_adornment(adornment) {}
-// };
-//
-// std::ostream& operator<< (std::ostream& out, AdornedPredicate a){
-//   out << "(" << a.m_name << ", " << a.m_adornment << ")";
-//   return out;
-// }
-
 bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationUnit){
   bool changed = false;
 
@@ -780,10 +768,9 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
       AstClause* newClause = clause->cloneHead();
 
       for(AstLiteral* lit : clause->getBodyLiterals()){
+
         // TODO: check if needed:
-        //if (dynamic_cast<AstNegation*>(lit))...
         if(dynamic_cast<AstAtom*>(lit)==0){
-          //TODO: handle negated literals? these are just immediately copied
           newClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
           continue;
         }
@@ -816,7 +803,6 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
         }
           // negation not working: ungrounded assertion failure
-          // newClause->addToBody(std::unique_ptr<AstLiteral> (new AstNegation(std::unique_ptr<AstAtom>(newLit))));
           newClause->addToBody(std::unique_ptr<AstLiteral> (newLit));
       }
       // need a clone in the above constraint creation, otherwise fails on removal
@@ -825,7 +811,6 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
     }
   }
 
-  // note: resolve aliases transform seems to get rid of constraints - check
   return changed;
 }
 
