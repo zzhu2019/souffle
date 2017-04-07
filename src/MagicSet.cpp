@@ -319,6 +319,16 @@ namespace souffle {
       std::string outputQuery = outputQueries[i];
       std::vector<AdornedClause> adornedClauses = allAdornedClauses[i];
 
+      // add a relation for the output query
+      AstRelation* outputRelationFree = new AstRelation();
+      std::stringstream relnamey; relnamey << "m_" << outputQuery << "_f";
+      outputRelationFree->setName(relnamey.str());
+      program->appendRelation(std::unique_ptr<AstRelation> (outputRelationFree));
+      AstAtom* newAtomClauseThing = new AstAtom(relnamey.str());
+      AstClause* newAtomClauseThing2 = new AstClause();
+      newAtomClauseThing2->setHead(std::unique_ptr<AstAtom> (newAtomClauseThing));
+      program->appendClause(std::unique_ptr<AstClause> (newAtomClauseThing2));
+
       for(AdornedClause adornedClause : adornedClauses){
         AstClause* clause = adornedClause.getClause();
         bool output = false;
@@ -398,7 +408,6 @@ namespace souffle {
             count++;
           }
         }
-
         // [[[todo: function outside this to check if IDB]]]
         // Add the set of magic rules
         for(size_t i = 0; i < body.size(); i++){
@@ -452,6 +461,11 @@ namespace souffle {
               argCount = 0;
               std::stringstream magPredName;
               magPredName << "m_" << newClause->getHead()->getName();
+              if(program->getRelation(magPredName.str()) == nullptr){
+                AstRelation* freeRelation = new AstRelation();
+                freeRelation->setName(magPredName.str());
+                program->appendRelation(std::unique_ptr<AstRelation>(freeRelation));
+              }
               AstAtom* addedMagPred = new AstAtom(magPredName.str());
               for(AstArgument* arg : newClause->getHead()->getArguments()){
                 if(headAdornment[argCount] == 'b'){
@@ -459,14 +473,62 @@ namespace souffle {
                 }
                 argCount++;
               }
+
               magicClause->addToBody(std::unique_ptr<AstAtom> (addedMagPred));
               for(size_t j = 0; j < i; j++){
                 magicClause->addToBody(std::unique_ptr<AstLiteral> (body[j]->clone()));
               }
 
               // std::cout << *magicClause << std::endl;
-              program->appendClause(std::unique_ptr<AstClause> (magicClause));
+              // std::stringstream tmpvarx; tmpvarx << magicClause->getBodyLiteral(0)->getAtom()->getName();
 
+              if(magicClause->getHead()->getArity()==0){
+                program->appendClause(std::unique_ptr<AstClause> (magicClause));
+                continue;
+              }
+              std::stringstream tmpvarx; tmpvarx << *magicClause->getHead()->getArgument(0);
+              if(tmpvarx.str().substr(0, 5).compare("abdul") == 0){
+                // std::cout << "CHECK WITH " << *magicClause << std::endl;
+                // get the second part
+                size_t pos;
+                for(pos = 0; pos < tmpvarx.str().size(); pos++){
+                  if(tmpvarx.str()[pos] == '_'){
+                    break;
+                  }
+                }
+
+                size_t nextpos;
+                for(nextpos = pos+1; nextpos < tmpvarx.str().size(); nextpos++){
+                  if(tmpvarx.str()[nextpos] == '_' ){
+                    break;
+                  }
+                }
+                std::string startstr = tmpvarx.str().substr(pos+1, nextpos-pos-1);
+
+                std::string res = tmpvarx.str().substr(pos+1, tmpvarx.str().size());
+                // 1 2 ... pos pos+1 ... size()-3 size()-2 size()-1
+                AstClause* newFact = new AstClause();
+                AstAtom* head = new AstAtom(magicClause->getHead()->getName());
+                // const char * str = res.substr(1,res.size()-2).c_str();
+                //check if string or num constant
+
+                // TODO: FIX THESE - ALL WRONG!
+                if(res[res.size()-1] == 's'){
+                  // std::cout << "STRING " << res << std::endl;
+                  const char * str = res.substr(0,res.size()-2).c_str();
+                  head->addArgument(std::unique_ptr<AstArgument> (new AstStringConstant(translationUnit.getSymbolTable(), str)));
+                } else {
+                  //std::cout << "INT " <<  startstr << " - " << pos << " - " << tmpvarx.str() << " - " << *magicClause << std::endl;
+                  head->addArgument(std::unique_ptr<AstArgument> (new AstNumberConstant(stoi(startstr))));
+                }
+                newFact->setHead(std::unique_ptr<AstAtom> (head));
+                program->appendClause(std::unique_ptr<AstClause> (newFact));
+                // continue;
+
+                program->removeClause(magicClause);
+                continue;
+              }
+              program->appendClause(std::unique_ptr<AstClause> (magicClause));
             }
           }
         }
@@ -476,6 +538,7 @@ namespace souffle {
         std::stringstream newMag; newMag << "m_" << newClause->getHead()->getAtom()->getName();
         AstAtom* newMagAtom = new AstAtom (newMag.str());
         std::vector<AstArgument*> args = newClause->getHead()->getAtom()->getArguments();
+
         for(size_t k = 0; k < args.size(); k++){
           if(headAdornment[k] == 'b'){
             newMagAtom->addArgument(std::unique_ptr<AstArgument> (args[k]->clone()));
@@ -506,8 +569,6 @@ namespace souffle {
     for(std::string relation : oldidb){
       program->removeRelation(relation);
     }
-
-    std::cout << *program << std::endl;
 
     return changed;
   }

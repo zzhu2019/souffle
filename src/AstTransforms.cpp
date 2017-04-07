@@ -759,11 +759,11 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
   AstProgram* program = translationUnit.getProgram();
   std::vector<AstRelation*> relations = program->getRelations();
 
+  int count = 0;
+
   for(AstRelation* rel : relations){
     std::vector<AstClause*> clauses = rel->getClauses();
     for(size_t clauseNum = 0; clauseNum < clauses.size(); clauseNum++){
-      int count = 0;
-
       AstClause* clause = clauses[clauseNum];
       AstClause* newClause = clause->cloneHead();
 
@@ -785,8 +785,18 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
             changed = true;
 
             // create new variable name (with appropriate suffix)
-            std::ostringstream tmpVar;
-            tmpVar << "abdul" << count; //TODO: find a special character for vars
+            std::stringstream tmpVar;
+            std::stringstream argNamex; argNamex << *currArg;
+            std::string argtype;
+            if(dynamic_cast<AstNumberConstant*>(currArg)){
+              //std::cout << "HELLO " << argNamex.str() << std::endl;
+              argtype = "n";
+              tmpVar << "abdul" << count << "_" << argNamex.str() << "_" << argtype; //TODO: find a special character for vars and separators
+            } else {
+              argtype = "s";
+              tmpVar << "abdul" << count << "_" << argNamex.str().substr(1, argNamex.str().size()-2) << "_" << argtype; //TODO: find a special character for vars and separators
+            }
+            //std::cout << "GOODBYE " << tmpVar.str() << std::endl;
             AstArgument* var = new AstVariable(tmpVar.str());
 
             AstArgument* cons = args[argNum]->clone();
