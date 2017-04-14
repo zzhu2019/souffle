@@ -311,6 +311,7 @@ namespace souffle {
 
     std::vector<std::vector<AdornedClause>> allAdornedClauses = adornment->getAdornedClauses();
     std::vector<std::string> outputQueries = adornment->getRelations();
+    std::vector<std::string> newQueryNames;
     std::set<std::string> oldidb = adornment->getIDB();
     std::set<std::string> newidb;
     std::vector<AstClause*> newClauses;
@@ -321,8 +322,14 @@ namespace souffle {
 
       // add a relation for the output query
       AstRelation* outputRelationFree = new AstRelation();
-      std::stringstream relnamey; relnamey << "m_" << outputQuery << "_f";
+      size_t num_free = program->getRelation(outputQuery)->getArity();
+      std::stringstream thefs; thefs << "_";
+      for(size_t i = 0; i < num_free; i++){
+        thefs << "f";
+      }
+      std::stringstream relnamey; relnamey << "m_" << outputQuery << thefs.str();
       outputRelationFree->setName(relnamey.str());
+      newQueryNames.push_back(relnamey.str());
       program->appendRelation(std::unique_ptr<AstRelation> (outputRelationFree));
       AstAtom* newAtomClauseThing = new AstAtom(relnamey.str());
       AstClause* newAtomClauseThing2 = new AstClause();
@@ -363,13 +370,13 @@ namespace souffle {
           AstRelation* newRelation = new AstRelation();
           newRelation->setName(relName.str());
 
-          if(output){
-            AstIODirective* newdir = new AstIODirective();
-            newdir->setAsOutput();
-
-            // TODO: change this eventually so that it produces the same name as the original
-            newRelation->addIODirectives(std::unique_ptr<AstIODirective>(newdir)); // TODO: check this unique ptr stuff
-          }
+          // if(output){
+          //   AstIODirective* newdir = new AstIODirective();
+          //   newdir->setAsOutput();
+          //
+          //   // TODO: change this eventually so that it produces the same name as the original
+          //   newRelation->addIODirectives(std::unique_ptr<AstIODirective>(newdir)); // TODO: check this unique ptr stuff
+          // }
 
           for(AstAttribute* attr : originalRelation->getAttributes()){
             newRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
@@ -482,51 +489,42 @@ namespace souffle {
               // std::cout << *magicClause << std::endl;
               // std::stringstream tmpvarx; tmpvarx << magicClause->getBodyLiteral(0)->getAtom()->getName();
 
-              if(magicClause->getHead()->getArity()==0){
-                program->appendClause(std::unique_ptr<AstClause> (magicClause));
-                continue;
-              }
-              std::stringstream tmpvarx; tmpvarx << *magicClause->getHead()->getArgument(0);
-              if(tmpvarx.str().substr(0, 5).compare("abdul") == 0){
-                // std::cout << "CHECK WITH " << *magicClause << std::endl;
-                // get the second part
-                size_t pos;
-                for(pos = 0; pos < tmpvarx.str().size(); pos++){
-                  if(tmpvarx.str()[pos] == '_'){
-                    break;
+              std::vector<AstArgument*> currArguments = magicClause->getHead()->getArguments();
+              for(size_t i = 0; i < currArguments.size(); i++){
+                AstArgument* arg = currArguments[i];
+                std::stringstream tmpvarx; tmpvarx << *arg;
+                if(tmpvarx.str().substr(0, 5).compare("abdul")==0){
+                  size_t pos;
+                  for(pos = 0; pos < tmpvarx.str().size(); pos++){
+                    if(tmpvarx.str()[pos] == '_'){
+                      break;
+                    }
+                  }
+
+                  size_t nextpos;
+                  for(nextpos = pos+1; nextpos < tmpvarx.str().size(); nextpos++){
+                    if(tmpvarx.str()[nextpos] == '_' ){
+                      break;
+                    }
+                  }
+                  std::string startstr = tmpvarx.str().substr(pos+1, nextpos-pos-1);
+
+                  std::string res = tmpvarx.str().substr(pos+1, tmpvarx.str().size());
+                  // 1 2 ... pos pos+1 ... size()-3 size()-2 size()-1
+                  // const char * str = res.substr(1,res.size()-2).c_str();
+                  //check if string or num constant
+
+                  if(res[res.size()-1] == 's'){
+                    // std::cout << "STRING " << res << std::endl;
+                    const char * str = res.substr(0,res.size()-2).c_str();
+                    magicClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
+                          std::unique_ptr<AstArgument>(arg->clone()), std::unique_ptr<AstArgument>(new AstStringConstant(translationUnit.getSymbolTable(), str)))));
+                  } else {
+                    //std::cout << "INT " <<  startstr << " - " << pos << " - " << tmpvarx.str() << " - " << *magicClause << std::endl;
+                    magicClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
+                          std::unique_ptr<AstArgument>(arg->clone()), std::unique_ptr<AstArgument>(new AstNumberConstant(stoi(startstr))))));
                   }
                 }
-
-                size_t nextpos;
-                for(nextpos = pos+1; nextpos < tmpvarx.str().size(); nextpos++){
-                  if(tmpvarx.str()[nextpos] == '_' ){
-                    break;
-                  }
-                }
-                std::string startstr = tmpvarx.str().substr(pos+1, nextpos-pos-1);
-
-                std::string res = tmpvarx.str().substr(pos+1, tmpvarx.str().size());
-                // 1 2 ... pos pos+1 ... size()-3 size()-2 size()-1
-                AstClause* newFact = new AstClause();
-                AstAtom* head = new AstAtom(magicClause->getHead()->getName());
-                // const char * str = res.substr(1,res.size()-2).c_str();
-                //check if string or num constant
-
-                // TODO: FIX THESE - ALL WRONG!
-                if(res[res.size()-1] == 's'){
-                  // std::cout << "STRING " << res << std::endl;
-                  const char * str = res.substr(0,res.size()-2).c_str();
-                  head->addArgument(std::unique_ptr<AstArgument> (new AstStringConstant(translationUnit.getSymbolTable(), str)));
-                } else {
-                  //std::cout << "INT " <<  startstr << " - " << pos << " - " << tmpvarx.str() << " - " << *magicClause << std::endl;
-                  head->addArgument(std::unique_ptr<AstArgument> (new AstNumberConstant(stoi(startstr))));
-                }
-                newFact->setHead(std::unique_ptr<AstAtom> (head));
-                program->appendClause(std::unique_ptr<AstClause> (newFact));
-                // continue;
-
-                program->removeClause(magicClause);
-                continue;
               }
               program->appendClause(std::unique_ptr<AstClause> (magicClause));
             }
@@ -561,13 +559,50 @@ namespace souffle {
       }
     }
 
-    // NOTE: what does std::unique_ptr do?
-
-    // TODO: check
-
     // remove all old IDB relations
     for(std::string relation : oldidb){
       program->removeRelation(relation);
+    }
+
+    // add output relations
+    for(size_t i = 0; i < outputQueries.size(); i++){
+      std::string oldname = outputQueries[i];
+      std::string newname = newQueryNames[i];
+
+      AstRelation* adornedRelation = program->getRelation(newname.substr(2,newname.size()-2));
+
+      size_t numargs = adornedRelation->getArity();
+
+      AstRelation* outputRelation = new AstRelation ();
+      for (AstAttribute* attr : adornedRelation->getAttributes()){
+        outputRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
+      }
+
+      outputRelation->setName(oldname);
+
+      // set as output relation
+      AstIODirective* newdir = new AstIODirective();
+      newdir->setAsOutput();
+      outputRelation->addIODirectives(std::unique_ptr<AstIODirective>(newdir));
+
+      program->appendRelation(std::unique_ptr<AstRelation> (outputRelation));
+
+      // oldname(arg1...argn) :- newname(arg1...argn)
+      AstAtom* headatom = new AstAtom (oldname);
+      AstAtom* bodyatom = new AstAtom (newname.substr(2,newname.size()-2));
+
+      for(size_t j = 0; j < numargs; j++){
+        std::stringstream argname; argname.str("");
+        argname << "arg" << j;
+        headatom->addArgument(std::unique_ptr<AstArgument> (new AstVariable (argname.str()) ));
+        bodyatom->addArgument(std::unique_ptr<AstArgument> (new AstVariable (argname.str()) ));
+      }
+
+      AstClause* referringClause = new AstClause ();
+      referringClause->setHead(std::unique_ptr<AstAtom> (headatom));
+      referringClause->addToBody(std::unique_ptr<AstAtom> (bodyatom));
+
+      program->appendClause(std::unique_ptr<AstClause> (referringClause));
     }
 
     return changed;
