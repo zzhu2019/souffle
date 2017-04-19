@@ -4,6 +4,7 @@
 #include "AstVisitor.h"
 #include "PrecedenceGraph.h"
 #include "MagicSet.h"
+#include "IODirectives.h"
 
 #include <string>
 #include <vector>
@@ -45,8 +46,8 @@ namespace souffle {
     for(AstRelation* rel : program->getRelations()){
 
       std::stringstream name; name << rel->getName(); // TODO: check if correct?
-      // check if output relation
-      if(rel->isOutput()){
+      // check if output relation or size is printed
+      if(rel->isComputed()){
         // store the output name
         outputQueries.push_back(name.str());
         m_relations.push_back(name.str());
@@ -120,8 +121,16 @@ namespace souffle {
 
           // mark all bounded arguments from the body
           for(AstConstraint* constraint : clause->getConstraints()){
-            name.str(""); name << *constraint->getLHS();
-            boundedArgs.insert(name.str());
+            AstArgument* lhs = constraint->getLHS();
+            AstArgument* rhs = constraint->getRHS();
+            if(dynamic_cast<AstConstraint*>(lhs)){
+              name.str(""); name << *lhs;
+              boundedArgs.insert(name.str());
+            }
+            if(dynamic_cast<AstConstraint*>(rhs)){
+              name.str(""); name << *rhs;
+              boundedArgs.insert(name.str());
+            }
           }
 
           std::vector<AstAtom*> atoms = clause->getAtoms();
@@ -163,6 +172,8 @@ namespace souffle {
                 std::stringstream atomAdornment;
 
                 // find the adornment pattern
+                std::set<std::string> newlyBoundedArgs;
+
                 // std::cout << "BOUNDED:" << boundedArgs << std::endl;
                 for(AstArgument* arg : currAtom->getArguments()){
                   std::stringstream argName; argName << *arg;
@@ -171,9 +182,13 @@ namespace souffle {
                     // std::cout << *currAtom << " with arg " << argName.str() << std::endl;
                   } else {
                     atomAdornment << "f"; // free
-                    boundedArgs.insert(argName.str()); // now bounded
+                    newlyBoundedArgs.insert(argName.str()); // now bounded
                   }
                   // std::cout << "SO FAR: " << atomAdornment.str() << std::endl;
+                }
+
+                for(std::string argx : newlyBoundedArgs){
+                  boundedArgs.insert(argx);
                 }
 
                 name.str(""); name << currAtom->getName();
@@ -220,15 +235,22 @@ namespace souffle {
               AstAtom* currAtom = atoms[i];
               name.str(""); name << currAtom->getName();
 
+              std::set<std::string> newlyBoundedArgs;
+
               for(AstArgument* arg : currAtom->getArguments()){
                 std::stringstream argName; argName << *arg;
                 if(boundedArgs.find(argName.str()) != boundedArgs.end()){
                   atomAdornment << "b"; // bounded
                 } else {
                   atomAdornment << "f"; // free
-                  boundedArgs.insert(argName.str()); // now bounded
+                  newlyBoundedArgs.insert(argName.str()); // now bounded
                 }
               }
+
+              for(std::string argx : newlyBoundedArgs){
+                boundedArgs.insert(argx);
+              }
+
               bool seenBefore = false;
               for(AdornedPredicate seenPred : seenPredicates){
                 if( (seenPred.getName().compare(name.str()) == 0)
@@ -278,13 +300,17 @@ namespace souffle {
   std::vector<std::string> reorderAdornment(std::vector<std::string> adornment, std::vector<unsigned int> order){
     std::vector<std::string> result (adornment.size());
     for(size_t i = 0; i < adornment.size(); i++){
-      result[order[i]] = adornment[i];
+      result[i] = adornment[order[i]];
     }
     return result;
   }
 
   bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit){
     AstProgram* program = translationUnit.getProgram();
+    // std::cout << *program << std::endl;
+    // std::stringstream adornmentstr;
+    // translationUnit.getAnalysis<Adornment>()->outputAdornment(adornmentstr);
+    // std::cout << adornmentstr.str();
 
     // make EDB and IDB independent
     int edbNum = 0;
@@ -372,6 +398,8 @@ namespace souffle {
 
     std::vector<std::vector<AdornedClause>> allAdornedClauses = adornment->getAdornedClauses();
     std::vector<std::string> outputQueries = adornment->getRelations();
+    std::set<std::string> addAsOutput;
+    std::set<std::string> addAsPrintSize;
     std::vector<std::string> newQueryNames;
     std::set<std::string> oldidb = adornment->getIDB();
     std::set<std::string> newidb;
@@ -388,6 +416,7 @@ namespace souffle {
       for(size_t i = 0; i < num_free; i++){
         thefs << "f";
       }
+      // AstRelation* olderRelation = program->getRelation(outputQuery);
       std::stringstream relnamey; relnamey << "m" << querynum << "_" << outputQuery << thefs.str();
       outputRelationFree->setName(relnamey.str());
       newQueryNames.push_back(relnamey.str());
@@ -396,6 +425,12 @@ namespace souffle {
       AstClause* newAtomClauseThing2 = new AstClause();
       newAtomClauseThing2->setHead(std::unique_ptr<AstAtom> (newAtomClauseThing));
       program->appendClause(std::unique_ptr<AstClause> (newAtomClauseThing2));
+      // std::cout << *olderRelation << std::endl;
+      // if(olderRelation->isInput()){
+      //   for(const AstIODirective* current : olderRelation->getIODirectives()){
+      //     std::cout << *current << std::endl;
+      //   }
+      // }
 
       for(AdornedClause adornedClause : adornedClauses){
         AstClause* clause = adornedClause.getClause();
@@ -419,12 +454,38 @@ namespace souffle {
           for(AstAttribute* attr : originalRelation->getAttributes()){
             newRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
           }
+          // TODO: CHECK IF NEEDED ELSEWHERE (espec for output relations)
+          // TODO: fix the setup v messy
+          if(originalRelation->isInput()){
+            IODirectives inputDirectives;
+            AstIODirective* newDirective = new AstIODirective();
+            inputDirectives.setRelationName(relName.str());
+            newDirective->setAsInput();
+            for(AstIODirective* current : originalRelation->getIODirectives()){
+              if(current->isInput()){
+                for(const auto& currentPair : current->getIODirectiveMap()){
+                  newDirective->addKVP(currentPair.first, currentPair.second);
+                  inputDirectives.set(currentPair.first, currentPair.second);
+                }
+              }
+            }
+            if(!inputDirectives.has("IO")){
+              inputDirectives.setIOType("file");
+              newDirective->addKVP("IO", "file");
+            }
+            if(inputDirectives.getIOType()=="file" && !inputDirectives.has("filename")){
+              inputDirectives.setFileName(tmp.str() + ".facts");
+              newDirective->addKVP("filename", tmp.str() + ".facts");
+            }
+            newRelation->addIODirectives(std::unique_ptr<AstIODirective>(newDirective));
+          }
 
           program->appendRelation(std::unique_ptr<AstRelation> (newRelation));
           adornedRelation = newRelation;
         }
 
         AstClause* newClause = clause->clone();
+        //std::cout << "BEOFRE: " << *newClause << " " <<  adornedClause.getBodyAdornment() << std::endl;
         newClause->reorderAtoms(adornedClause.getOrdering());
         newClause->getHead()->setName(relName.str());
 
@@ -433,7 +494,12 @@ namespace souffle {
         std::vector<AstLiteral*> body = newClause->getBodyLiterals();
         std::vector<std::string> bodyAdornment = adornedClause.getBodyAdornment();
 
-        bodyAdornment = reorderAdornment(bodyAdornment, adornedClause.getOrdering());
+        std::vector<unsigned int> adordering = adornedClause.getOrdering();
+
+        // std::cout << adordering << std::endl;
+        bodyAdornment = reorderAdornment(bodyAdornment, adordering);
+        //std::cout << "AFTER: " << *newClause << " " <<  bodyAdornment << std::endl;
+
         int count = 0;
 
         // TODO: NEED TO IGNORE ADORNMENT AFTER IN DEBUG-REPORT
@@ -515,12 +581,32 @@ namespace souffle {
               magicClause->setHead(std::unique_ptr<AstAtom> (mclauseHead));
 
               // make the body
+              // TODO: CHECK WHAT THIS PART DOES AND WHY - not working
+              // TODO: FIX FROM THIS POINT!!
               argCount = 0;
               std::stringstream magPredName;
               magPredName << "m" << querynum << "_" << newClause->getHead()->getName();
+              int endpt = magPredName.str().size()-1;
+              while(endpt >= 0 && magPredName.str()[endpt] != '_'){
+                endpt--;
+              }
+              if(endpt == -1){
+                endpt = magPredName.str().size();
+              }
+
+              // changed stuff here ...
+              std::string curradorn = magPredName.str().substr(endpt+1, magPredName.str().size() - (endpt + 1));
+
               if(program->getRelation(magPredName.str()) == nullptr){
                 AstRelation* freeRelation = new AstRelation();
                 freeRelation->setName(magPredName.str());
+                AstRelation* currrel =  program->getRelation(newClause->getHead()->getName());
+                std::vector<AstAttribute*> attrs = currrel->getAttributes();
+                for(size_t currarg = 0; currarg < currrel->getArity(); currarg++){
+                  if(curradorn[currarg] == 'b'){
+                    freeRelation->addAttribute(std::unique_ptr<AstAttribute> (attrs[currarg]->clone()));
+                  }
+                }
                 program->appendRelation(std::unique_ptr<AstRelation>(freeRelation));
               }
               AstAtom* addedMagPred = new AstAtom(magPredName.str());
@@ -611,6 +697,11 @@ namespace souffle {
 
     // remove all old IDB relations
     for(std::string relation : oldidb){
+      if(program->getRelation(relation)->isOutput()){
+        addAsOutput.insert(relation);
+      } else if (program->getRelation(relation)->isPrintSize()){
+        addAsPrintSize.insert(relation);
+      }
       program->removeRelation(relation);
     }
 
@@ -643,7 +734,12 @@ namespace souffle {
 
       // set as output relation
       AstIODirective* newdir = new AstIODirective();
-      newdir->setAsOutput();
+
+      if(addAsOutput.find(oldname) != addAsOutput.end()){
+        newdir->setAsOutput();
+      } else {
+        newdir->setAsPrintSize();
+      }
       outputRelation->addIODirectives(std::unique_ptr<AstIODirective>(newdir));
 
       program->appendRelation(std::unique_ptr<AstRelation> (outputRelation));
