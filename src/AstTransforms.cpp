@@ -760,6 +760,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
   std::vector<AstRelation*> relations = program->getRelations();
 
   int count = 0;
+  int underscore_count = 0;
 
   for(AstRelation* rel : relations){
     std::vector<AstClause*> clauses = rel->getClauses();
@@ -809,6 +810,18 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
             // add in constraint (abdulX = constant)
             newClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
                   std::unique_ptr<AstArgument>(var->clone()), std::unique_ptr<AstArgument>(cons->clone()))));
+          } else if (dynamic_cast<const AstUnnamedVariable*>(currArg)){
+            changed = true;
+
+            // create new variable name (with appropriate suffix)
+            std::stringstream tmpVar; tmpVar.str("");
+            tmpVar << "underscore" << underscore_count;
+            underscore_count++;
+
+            AstArgument* var = new AstVariable(tmpVar.str());
+
+            // update argument to be a variable
+            newLit->setArgument(argNum, std::unique_ptr<AstArgument>(var));
           }
 
         }

@@ -252,9 +252,17 @@ int main(int argc, char** argv) {
     transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRedundantRelationsTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new NormaliseConstraintsTransformer())); // check what this does
     transforms.push_back(std::unique_ptr<AstTransformer>(new MagicSetTransformer()));
+
+    /* Get rid of the following if not needed after testing... */
     if (Global::config().get("bddbddb").empty()) { // better way to do this?
-        transforms.push_back(std::unique_ptr<AstTransformer>(new ResolveAliasesTransformer()));
+        transforms.push_back(std::unique_ptr<AstTransformer>(new ResolveAliasesTransformer())); // this seems to be needed
     }
+    transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRelationCopiesTransformer()));
+    transforms.push_back(std::unique_ptr<AstTransformer>(new MaterializeAggregationQueriesTransformer()));
+    transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveEmptyRelationsTransformer()));
+    transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRedundantRelationsTransformer()));
+    /* --- */
+
     transforms.push_back(std::unique_ptr<AstTransformer>(new AstExecutionPlanChecker()));
     if (Global::config().has("auto-schedule")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));

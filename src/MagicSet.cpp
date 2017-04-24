@@ -1,4 +1,4 @@
-#include "AstTransforms.h"
+  #include "AstTransforms.h"
 #include "AstTypeAnalysis.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
@@ -69,6 +69,7 @@ namespace souffle {
       }
     }
 
+
     for(size_t querynum = 0; querynum < outputQueries.size(); querynum++){
       std::string outputQuery = outputQueries[querynum];
       // adornment algorithm
@@ -94,7 +95,12 @@ namespace souffle {
         // std::cout << "Adorning with respect to " << currPredicate << "..." << std::endl;
 
         // go through all clauses defining it
-        AstRelation* rel = program->getRelation(currPredicate.getName());
+        AstRelation* rel = program->getRelation(currPredicate.getName()); // PROBLEM!!! with dfa.dl and co.
+
+        if(rel == nullptr){
+            continue; // TODO: THIS STUFFS UP FOR DFA.DL BECAUSE OF XYZ.out AS PREDICATES!!! what do htey do!?!?! check!
+        }
+
         for(AstClause* clause : rel->getClauses()){
 
           if(clause->isFact()){
@@ -273,13 +279,16 @@ namespace souffle {
               atomsAdorned++;
             }
           }
+
           // std::cout << *clause << std::endl;
           // std::cout << clauseAtomAdornments << std::endl << std::endl;
           // AdornedClause finishedClause (clause, headAdornment, clauseAtomAdornments);
           adornedClauses.push_back(AdornedClause (clause, headAdornment, clauseAtomAdornments, ordering));
+
           //adornedClauses.push_back(AdornedClause (clause, headAdornment, clauseAtomAdornments));
         }
       }
+
       //std::cout << adornedClauses << std::endl;
       m_adornedClauses.push_back(adornedClauses);
     }
@@ -297,20 +306,48 @@ namespace souffle {
     }
   }
 
+  AstRelation* backupGetRelation(AstProgram* program, std::string relname){
+    AstRelation* relation = program->getRelation(relname);
+    if(relation == nullptr){
+      return nullptr;
+      // for(AstRelation* rel : program->getRelations()){
+      //   std::stringstream check; check.str("");
+      //   check << rel->getName();
+      //   if(check.str().compare(relname) == 0){
+      //     return rel;
+      //   }
+      // }
+    } else {
+      return relation;
+    }
+    // std::cout << "ultimate fail " << relname << std::endl;
+    return nullptr;
+  }
+
+  std::vector<unsigned int> reorderOrdering(std::vector<unsigned int> order){
+    std::vector<unsigned int> neworder (order.size());
+    for(size_t i = 0; i < order.size(); i++){
+      neworder[order[i]] = i;
+    }
+    return neworder;
+  }
+
   std::vector<std::string> reorderAdornment(std::vector<std::string> adornment, std::vector<unsigned int> order){
     std::vector<std::string> result (adornment.size());
+  //  std::cout << "ORIGINAL: " << adornment << " " << order << std::endl;
     for(size_t i = 0; i < adornment.size(); i++){
-      result[i] = adornment[order[i]];
+      result[order[i]] = adornment[i];
     }
+  //  std::cout << "FINAL: " << result << std::endl;
     return result;
+  }
+
+  void DEBUGprintProgram(std::unique_ptr<AstProgram> program){
+      std::cout << *program << std::endl;
   }
 
   bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit){
     AstProgram* program = translationUnit.getProgram();
-    // std::cout << *program << std::endl;
-    // std::stringstream adornmentstr;
-    // translationUnit.getAnalysis<Adornment>()->outputAdornment(adornmentstr);
-    // std::cout << adornmentstr.str();
 
     // make EDB and IDB independent
     int edbNum = 0;
@@ -371,8 +408,10 @@ namespace souffle {
       }
 
     }
-
+    // analysis breaks for dfa.dl - get rid of the 'continue' flag and check the failures again
     Adornment* adornment = translationUnit.getAnalysis<Adornment>();
+    //adornment->outputAdornment(std::cout);
+
     //if(adornment->getRelations().size() != 1){
       // TODO: More than one output
       // NOTE: maybe prepend o[outputnumber]_m_[name]_[adornment]: instead
@@ -404,6 +443,7 @@ namespace souffle {
     std::set<std::string> oldidb = adornment->getIDB();
     std::set<std::string> newidb;
     std::vector<AstClause*> newClauses;
+    int num_underscores = 0; // FIND BETTER WAY TO DO THIS
 
     for(size_t querynum = 0; querynum < outputQueries.size(); querynum++){
       std::string outputQuery = outputQueries[querynum];
@@ -485,8 +525,14 @@ namespace souffle {
         }
 
         AstClause* newClause = clause->clone();
-        //std::cout << "BEOFRE: " << *newClause << " " <<  adornedClause.getBodyAdornment() << std::endl;
-        newClause->reorderAtoms(adornedClause.getOrdering());
+        //std::cout << "BEOFRE: " << adornedClause.getOrdering() << " " << *newClause << " " <<  adornedClause.getBodyAdornment() << std::endl;
+        newClause->reorderAtoms(reorderOrdering(adornedClause.getOrdering()));
+        //std::cout << "AFTER: " << *newClause << " " <<  adornedClause.getBodyAdornment() << std::endl;
+
+        // for (AstAtom* atom : newClause->getAtoms()){
+        //   std::cout << *atom;
+        // }
+        // std::cout << std::endl;
         newClause->getHead()->setName(relName.str());
 
 
@@ -496,8 +542,9 @@ namespace souffle {
 
         std::vector<unsigned int> adordering = adornedClause.getOrdering();
 
-        // std::cout << adordering << std::endl;
+        //std::cout << relName.str() << " " << bodyAdornment << std::endl;
         bodyAdornment = reorderAdornment(bodyAdornment, adordering);
+        //std::cout << relName.str() << " " << bodyAdornment << std::endl;
         //std::cout << "AFTER: " << *newClause << " " <<  bodyAdornment << std::endl;
 
         int count = 0;
@@ -525,6 +572,7 @@ namespace souffle {
         for(size_t i = 0; i < body.size(); i++){
           // TODO: PROBLEM of ungroundedness! how to remove ungrounded stuff...
           AstLiteral* currentLiteral = body[i];
+          // TODO: between here and the end of this for loop, theres an error for dfa.dl
           count = 0;
           if(dynamic_cast<AstAtom*>(currentLiteral)){
             AstAtom* lit = (AstAtom*) currentLiteral;
@@ -544,6 +592,8 @@ namespace souffle {
 
                 AstRelation* magicRelation = new AstRelation();
                 magicRelation->setName(newLit.str());
+
+                // put this in a function
                 int endpt = litname.str().size()-1;
                 while(endpt >= 0 && litname.str()[endpt] != '_'){
                   endpt--;
@@ -551,9 +601,14 @@ namespace souffle {
                 if(endpt == -1){
                   endpt = litname.str().size();
                 }
-                AstRelation* originalRelation = program->getRelation(litname.str().substr(0, endpt)); // check not defined
+                std::string originalrelationame = litname.str().substr(0, endpt);
+                AstRelation* originalRelation = backupGetRelation(program, originalrelationame);
+
+
                 std::string currAdornment = bodyAdornment[i];
                 int argcount = 0;
+
+                // TODO: dominance.dl - immdom.dom
 
                 for(AstAttribute* attr : originalRelation->getAttributes()){
                   if(currAdornment[argcount] == 'b'){
@@ -569,11 +624,46 @@ namespace souffle {
 
               std::string currAdornment = bodyAdornment[i];
 
+
               int argCount = 0;
 
               for(AstArgument* arg : lit->getArguments()){
                 if(currAdornment[argCount] == 'b'){
+                  //std::cout << "ARG: " << newLit.str() << " " << *arg << std::endl;
                   mclauseHead->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
+
+                  // THE FOLLOWING IS FOR UDNERSCORES - CHANGE IT IN THE OTHER
+                  /*
+                  std::stringstream undercheck; undercheck.str("");
+                  undercheck << *arg;
+                  // should we check for underscores??
+                  if(undercheck.str().compare("_") == 0){
+
+                    // put this outside - just here while testing
+                    int endpt = litname.str().size()-1;
+                    while(endpt >= 0 && litname.str()[endpt] != '_'){
+                      endpt--;
+                    }
+                    if(endpt == -1){
+                      endpt = litname.str().size();
+                    }
+                    std::string originalrelationame = litname.str().substr(0, endpt);
+                    AstRelation* originalRelation = backupGetRelation(program, originalrelationame);
+
+                    std::cout << "ARG " << *arg << std::endl;
+                    undercheck.str(""); undercheck << "underscore" << num_underscores;
+                    //std::string typeName = originalRelation->getAttribute(argCount)->getTypeName();
+                    AstVariable* new_arg = new AstVariable(undercheck.str());
+                    //AstArgument* new_arg = arg->clone();
+                    //std::cout << "THIS: " << arg->
+                    //new_arg->setName(undercheck.str());
+                    mclauseHead->addArgument(std::unique_ptr<AstArgument> (new_arg));
+                    num_underscores++;
+                  } else {
+                    mclauseHead->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
+                  }*/
+                } else {
+                  //std::cout << "FAILED:: " << newLit.str() << " " << *arg << std::endl;
                 }
                 argCount++;
               }
@@ -583,7 +673,6 @@ namespace souffle {
               // make the body
               // TODO: CHECK WHAT THIS PART DOES AND WHY - not working
               // TODO: FIX FROM THIS POINT!!
-              argCount = 0;
               std::stringstream magPredName;
               magPredName << "m" << querynum << "_" << newClause->getHead()->getName();
               int endpt = magPredName.str().size()-1;
@@ -610,9 +699,13 @@ namespace souffle {
                 program->appendRelation(std::unique_ptr<AstRelation>(freeRelation));
               }
               AstAtom* addedMagPred = new AstAtom(magPredName.str());
+              argCount = 0;
               for(AstArgument* arg : newClause->getHead()->getArguments()){
                 if(headAdornment[argCount] == 'b'){
+                  //std::cout << "PART 2 YES: " << newLit.str() << " " << *arg << " " << *newClause->getHead() << std::endl;
                   addedMagPred->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
+                } else {
+                //  std::cout << "PART 2 FAILED: " << newLit.str() << " " << *arg << " " << *newClause->getHead() << std::endl;
                 }
                 argCount++;
               }
@@ -665,6 +758,7 @@ namespace souffle {
               program->appendClause(std::unique_ptr<AstClause> (magicClause));
             }
           }
+
         }
 
         // replace with H :- mag(H), T
@@ -686,7 +780,7 @@ namespace souffle {
         }
 
         newClauseOrder[numAtoms] = 0;
-        newClause->reorderAtoms(newClauseOrder);
+        newClause->reorderAtoms(reorderOrdering(newClauseOrder));
 
 
         // add the clause
@@ -697,12 +791,13 @@ namespace souffle {
 
     // remove all old IDB relations
     for(std::string relation : oldidb){
-      if(program->getRelation(relation)->isOutput()){
+      if(backupGetRelation(program, relation)->isOutput()){
         addAsOutput.insert(relation);
-      } else if (program->getRelation(relation)->isPrintSize()){
+      } else if (backupGetRelation(program, relation)->isPrintSize()){
         addAsPrintSize.insert(relation);
       }
       program->removeRelation(relation);
+      // need AST RELATION NAME here too !! TODO
     }
 
     // add output relations
