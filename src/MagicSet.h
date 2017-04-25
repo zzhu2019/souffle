@@ -114,6 +114,7 @@ namespace souffle {
     std::vector<std::string> m_relations;
     std::set<std::string> m_edb;
     std::set<std::string> m_idb;
+    std::set<std::string> m_negatedAtoms;
 
   public:
     static constexpr const char* name = "adorned-clauses";
@@ -139,6 +140,10 @@ namespace souffle {
 
     const std::set<std::string> getIDB(){
       return m_idb;
+    }
+
+    const std::set<std::string> getNegatedAtoms(){
+      return m_negatedAtoms;
     }
   };
 }

@@ -69,6 +69,38 @@ namespace souffle {
       }
     }
 
+    /*----TODO: move this later -------*/
+    /* GET LIST OF NEGATED LITERALS */
+    std::set<std::string> negatedliterals;
+    for(AstRelation* rel : program->getRelations()){
+      std::vector<AstClause*> clauses = rel->getClauses();
+      for(size_t clauseNum = 0; clauseNum < clauses.size(); clauseNum++){
+        AstClause* clause = clauses[clauseNum];
+        for(AstLiteral* lit : clause->getBodyLiterals()){
+          if(dynamic_cast<AstNegation*>(lit)){
+            std::stringstream negatedname; negatedname.str("");
+            negatedname << (lit->getAtom()->getName());
+            negatedliterals.insert(negatedname.str());
+          }
+        }
+      }
+    }
+
+    // TO KEEP ALL DEPENDENCIES TODO: CHECK
+    // TODO: CEHCK SETOPS TEST WIHTOUT THIS - AND ALL TESTS REALLY
+    for(std::string negatom : negatedliterals){
+      for(AstClause* clause : program->getRelation(negatom)->getClauses()){
+        for(AstAtom* atom : clause->getAtoms()){
+          std::stringstream newatomname; newatomname.str("");
+          newatomname << (atom->getName());
+          negatedliterals.insert(newatomname.str());
+        }
+      }
+    }
+    m_negatedAtoms = negatedliterals;
+    /*------------------------------*/
+
+
 
     for(size_t querynum = 0; querynum < outputQueries.size(); querynum++){
       std::string outputQuery = outputQueries[querynum];
@@ -443,7 +475,7 @@ namespace souffle {
     std::set<std::string> oldidb = adornment->getIDB();
     std::set<std::string> newidb;
     std::vector<AstClause*> newClauses;
-    int num_underscores = 0; // FIND BETTER WAY TO DO THIS
+    std::set<std::string> negatedAtoms = adornment->getNegatedAtoms();
 
     for(size_t querynum = 0; querynum < outputQueries.size(); querynum++){
       std::string outputQuery = outputQueries[querynum];
@@ -631,39 +663,6 @@ namespace souffle {
                 if(currAdornment[argCount] == 'b'){
                   //std::cout << "ARG: " << newLit.str() << " " << *arg << std::endl;
                   mclauseHead->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
-
-                  // THE FOLLOWING IS FOR UDNERSCORES - CHANGE IT IN THE OTHER
-                  /*
-                  std::stringstream undercheck; undercheck.str("");
-                  undercheck << *arg;
-                  // should we check for underscores??
-                  if(undercheck.str().compare("_") == 0){
-
-                    // put this outside - just here while testing
-                    int endpt = litname.str().size()-1;
-                    while(endpt >= 0 && litname.str()[endpt] != '_'){
-                      endpt--;
-                    }
-                    if(endpt == -1){
-                      endpt = litname.str().size();
-                    }
-                    std::string originalrelationame = litname.str().substr(0, endpt);
-                    AstRelation* originalRelation = backupGetRelation(program, originalrelationame);
-
-                    std::cout << "ARG " << *arg << std::endl;
-                    undercheck.str(""); undercheck << "underscore" << num_underscores;
-                    //std::string typeName = originalRelation->getAttribute(argCount)->getTypeName();
-                    AstVariable* new_arg = new AstVariable(undercheck.str());
-                    //AstArgument* new_arg = arg->clone();
-                    //std::cout << "THIS: " << arg->
-                    //new_arg->setName(undercheck.str());
-                    mclauseHead->addArgument(std::unique_ptr<AstArgument> (new_arg));
-                    num_underscores++;
-                  } else {
-                    mclauseHead->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
-                  }*/
-                } else {
-                  //std::cout << "FAILED:: " << newLit.str() << " " << *arg << std::endl;
                 }
                 argCount++;
               }
@@ -796,7 +795,9 @@ namespace souffle {
       } else if (backupGetRelation(program, relation)->isPrintSize()){
         addAsPrintSize.insert(relation);
       }
-      program->removeRelation(relation);
+      if(negatedAtoms.find(relation) == negatedAtoms.end()){
+        program->removeRelation(relation);
+      }
       // need AST RELATION NAME here too !! TODO
     }
 
@@ -818,26 +819,30 @@ namespace souffle {
 
       size_t numargs = adornedRelation->getArity();
 
-
-      AstRelation* outputRelation = new AstRelation ();
-
-      for (AstAttribute* attr : adornedRelation->getAttributes()){
-        outputRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
-      }
-
-      outputRelation->setName(oldname);
-
-      // set as output relation
-      AstIODirective* newdir = new AstIODirective();
-
-      if(addAsOutput.find(oldname) != addAsOutput.end()){
-        newdir->setAsOutput();
+      AstRelation* outputRelation;
+      if(program->getRelation(oldname) != nullptr){
+        outputRelation = program->getRelation(oldname);
       } else {
-        newdir->setAsPrintSize();
-      }
-      outputRelation->addIODirectives(std::unique_ptr<AstIODirective>(newdir));
+        outputRelation = new AstRelation ();
 
-      program->appendRelation(std::unique_ptr<AstRelation> (outputRelation));
+        for (AstAttribute* attr : adornedRelation->getAttributes()){
+          outputRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
+        }
+
+        outputRelation->setName(oldname);
+
+        // set as output relation
+        AstIODirective* newdir = new AstIODirective();
+
+        if(addAsOutput.find(oldname) != addAsOutput.end()){
+          newdir->setAsOutput();
+        } else {
+          newdir->setAsPrintSize();
+        }
+        outputRelation->addIODirectives(std::unique_ptr<AstIODirective>(newdir));
+
+        program->appendRelation(std::unique_ptr<AstRelation> (outputRelation));
+      }
 
       // oldname(arg1...argn) :- newname(arg1...argn)
       AstAtom* headatom = new AstAtom (oldname);
