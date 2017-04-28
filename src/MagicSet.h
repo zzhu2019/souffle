@@ -12,14 +12,14 @@
 namespace souffle {
   class AdornedPredicate {
   private:
-    std::string m_name;
+    AstRelationIdentifier m_name;
     std::string m_adornment;
   public:
-    AdornedPredicate(std::string name, std::string adornment) : m_name(name), m_adornment(adornment) {}
+    AdornedPredicate(AstRelationIdentifier name, std::string adornment) : m_name(name), m_adornment(adornment) {}
 
     ~AdornedPredicate() {}
 
-    std::string getName() const {
+    AstRelationIdentifier getName() const {
       return m_name;
     }
 
@@ -111,10 +111,10 @@ namespace souffle {
   private:
     // TODO: map instead
     std::vector<std::vector<AdornedClause>> m_adornedClauses;
-    std::vector<std::string> m_relations;
-    std::set<std::string> m_edb;
-    std::set<std::string> m_idb;
-    std::set<std::string> m_negatedAtoms;
+    std::vector<AstRelationIdentifier> m_relations;
+    std::set<AstRelationIdentifier> m_edb;
+    std::set<AstRelationIdentifier> m_idb;
+    std::set<AstRelationIdentifier> m_negatedAtoms;
 
   public:
     static constexpr const char* name = "adorned-clauses";
@@ -130,19 +130,19 @@ namespace souffle {
      return m_adornedClauses;
     }
 
-    const std::vector<std::string> getRelations(){
+    const std::vector<AstRelationIdentifier> getRelations(){
       return m_relations;
     }
 
-    const std::set<std::string> getEDB(){
+    const std::set<AstRelationIdentifier> getEDB(){
       return m_edb;
     }
 
-    const std::set<std::string> getIDB(){
+    const std::set<AstRelationIdentifier> getIDB(){
       return m_idb;
     }
 
-    const std::set<std::string> getNegatedAtoms(){
+    const std::set<AstRelationIdentifier> getNegatedAtoms(){
       return m_negatedAtoms;
     }
   };
