@@ -1,4 +1,5 @@
-  #include "AstTransforms.h"
+// remove unnecessary
+#include "AstTransforms.h"
 #include "AstTypeAnalysis.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
@@ -10,6 +11,11 @@
 #include <vector>
 
 namespace souffle {
+  bool argumentContainsFunctors(AstArgument*);
+  bool containsFunctors(AstClause*);
+  bool literalContainsFunctors(AstLiteral*);
+  bool atomContainsFunctors(AstAtom*);
+
   void Adornment::run(const AstTranslationUnit& translationUnit){
     // Every adorned clause is of the form R^c :- a^c, b^c, etc.
     // Copy over constraints directly (including negated)
@@ -129,6 +135,7 @@ namespace souffle {
     /*------------------------------*/
 
 
+    std::set<AstRelationIdentifier> ignoredAtoms;
 
     for(size_t querynum = 0; querynum < outputQueries.size(); querynum++){
       AstRelationIdentifier outputQuery = outputQueries[querynum];
@@ -163,6 +170,11 @@ namespace souffle {
 
           if(clause->isFact()){
             continue;
+          }
+
+          // TODO: check if it contains it first before doing this
+          if(containsFunctors(clause)){
+            ignoredAtoms.insert(clause->getHead()->getName());
           }
 
           // TODO: check if ordering correct, and if this is correct C++ vectoring
@@ -343,6 +355,89 @@ namespace souffle {
       }
       m_adornedClauses.push_back(adornedClauses);
     }
+    m_ignoredAtoms = ignoredAtoms;
+  }
+
+  bool atomContainsFunctors(AstAtom* atom){
+    for(AstArgument* arg : atom->getArguments()){
+      if(argumentContainsFunctors(arg)){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool argumentContainsFunctors(AstArgument* arg){
+    if(dynamic_cast<AstVariable*> (arg)){
+      return false;
+    } else if(dynamic_cast<AstCounter*> (arg)){
+      // skip
+      return false;
+    } else if(dynamic_cast<AstConstant*> (arg)){
+      // skip
+      return false;
+    } else if(dynamic_cast<AstFunctor*> (arg)){
+      // functor found!
+      return true;
+    } else if(dynamic_cast<AstRecordInit*>(arg)){
+      AstRecordInit* recordarg = dynamic_cast<AstRecordInit*> (arg);
+      for(AstArgument* subarg : recordarg->getArguments()){
+        if(argumentContainsFunctors(subarg)){
+          return true;
+        }
+      }
+    } else if(dynamic_cast<AstTypeCast*>(arg)){
+      AstTypeCast* typearg = dynamic_cast<AstTypeCast*> (arg);
+      if(argumentContainsFunctors(typearg->getValue())){
+        return true;
+      }
+    } else if(dynamic_cast<AstAggregator*>(arg)){
+		return true; // also want to get rid of aggregators
+        // AstAggregator* aggarg = dynamic_cast<AstAggregator*> (arg);
+        // if(argumentContainsFunctors(aggarg->getTargetExpression())){
+        //   return true;
+        // }
+        // for(AstLiteral* sublit : aggarg->getBodyLiterals()){
+        //   if(literalContainsFunctors(sublit)){
+        //     return true;
+        //   }
+        // }
+    } else {
+      // nothing should get here...
+      return false;
+    }
+    return false;
+  }
+
+  bool literalContainsFunctors(AstLiteral* lit){
+    if(dynamic_cast<AstAtom*> (lit)){
+      if(atomContainsFunctors(dynamic_cast<AstAtom*> (lit))){
+        return true;
+      }
+    } else if(dynamic_cast<AstNegation*> (lit)){
+      AstNegation* negLit = dynamic_cast<AstNegation*> (lit);
+      if(atomContainsFunctors(negLit->getAtom())){
+        return true;
+      }
+    } else {
+      AstConstraint* cons = dynamic_cast<AstConstraint*> (lit);
+      if(argumentContainsFunctors(cons->getLHS()) || argumentContainsFunctors(cons->getRHS())){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool containsFunctors(AstClause* clause){
+    if(atomContainsFunctors(clause->getHead())){
+      return true;
+    }
+    for(AstLiteral* lit : clause->getBodyLiterals()){
+      if(literalContainsFunctors(lit)){
+        return true;
+      }
+    }
+    return false;
   }
 
   void Adornment::outputAdornment(std::ostream& os){
@@ -428,6 +523,306 @@ namespace souffle {
     }
     return newRelationName;
   }
+
+  int getMin(std::set<int> numbers){
+    int min = INT_MAX;
+    for(int num : numbers){
+      if(num < min){
+        min = num;
+      }
+    }
+    return min;
+  }
+
+  // // MAJOR MAJOR TODO TODO: now only works for addition!!!! need to fix
+  // // ALSO need to fix where var = var
+  // AstClause* fixClauseNumber(AstProgram* program, AstClause* clause, std::string varName, int diff){
+  //   // change it so that every appearance of y is changed to y-diff
+  //   AstClause* fixedClause = new AstClause ();
+  //   // TODO: fix the head
+  //   AstAtom* head = new AstAtom(clause->getHead()->getName());
+  //   fixedClause->setHead(std::unique_ptr<AstAtom>(head));
+  //   for(AstArgument* arg : clause->getHead()->getArguments()){
+  //     if(dynamic_cast<AstBinaryFunctor*>(arg)){
+  //       AstBinaryFunctor* binArg = dynamic_cast<AstBinaryFunctor*> (arg);
+  //       if(dynamic_cast<AstVariable*>(binArg->getLHS()) && dynamic_cast<AstNumberConstant*>(binArg->getRHS())){
+  //         std::stringstream var; var.str(""); var << *binArg->getLHS();
+  //         if(var.str().compare(varName)!=0){
+  //           head->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //           continue;
+  //         }
+  //         std::stringstream numarg; numarg.str(""); numarg << *binArg->getRHS();
+  //         head->addArgument(std::unique_ptr<AstArgument> (new AstBinaryFunctor(getBinaryOpForSymbol("+"),
+  //           std::unique_ptr<AstArgument>(new AstVariable(var.str())), std::unique_ptr<AstArgument> (new AstNumberConstant(stoi(numarg.str())-diff)))));  // TODO: FOR NOW ONLY PLUS WOKRS
+  //       }
+  //       else if(dynamic_cast<AstVariable*>(binArg->getRHS()) && dynamic_cast<AstNumberConstant*>(binArg->getLHS())){
+  //         std::stringstream var; var.str(""); var << *binArg->getRHS();
+  //         if(var.str().compare(varName)!=0){
+  //           head->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //           continue;
+  //         }
+  //         std::stringstream numarg; numarg.str(""); numarg << *binArg->getLHS();
+  //         head->addArgument(std::unique_ptr<AstArgument> (new AstBinaryFunctor(getBinaryOpForSymbol("+"),
+  //           std::unique_ptr<AstArgument>(new AstVariable(var.str())), std::unique_ptr<AstArgument>(new AstNumberConstant(stoi(numarg.str())-diff)))));  // TODO: FOR NOW ONLY PLUS WOKRS
+  //       } else {
+  //         head->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //       }
+  //     } else if (dynamic_cast<AstVariable*>(arg)) {
+  //       std::stringstream argnamestream; argnamestream.str(""); argnamestream << *arg;
+  //       if(argnamestream.str().compare(varName)!=0){
+  //         head->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //         continue;
+  //       }
+  //       head->addArgument(std::unique_ptr<AstArgument> (new AstBinaryFunctor(getBinaryOpForSymbol("+"),
+  //         std::unique_ptr<AstArgument>(arg->clone()), std::unique_ptr<AstArgument>(new AstNumberConstant(diff)))));  // TODO: CHECK IF NEGATIVES NEED TOBE TAKEN INTO ACCOUNT
+  //     } else {
+  //       head->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //     }
+  //   }
+  //
+  //   // fix the body
+  //   std::vector<AstLiteral*> bodyLiterals = clause->getBodyLiterals();
+  //   for(size_t litnum = 0; litnum < bodyLiterals.size(); litnum++){
+  //     AstLiteral* lit = bodyLiterals[litnum];
+  //     if(lit->getAtom()==nullptr){
+  //       // TODO: check if always a constraint - also check if need to take into account both lhs and rhs
+  //       AstConstraint* constraint = dynamic_cast<AstConstraint*> (lit);
+  //       AstBinaryFunctor* binArg;
+  //       if(dynamic_cast<AstBinaryFunctor*>(constraint->getLHS())){
+  //         binArg = dynamic_cast<AstBinaryFunctor*>(constraint->getLHS());
+  //       } else if (dynamic_cast<AstBinaryFunctor*>(constraint->getRHS())){
+  //         binArg = dynamic_cast<AstBinaryFunctor*>(constraint->getRHS());
+  //       } else {
+  //         fixedClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
+  //         continue;
+  //       }
+  //       if(dynamic_cast<AstVariable*>(binArg->getLHS()) && dynamic_cast<AstNumberConstant*>(binArg->getRHS())){
+  //         std::stringstream darg; darg.str(""); darg << *binArg->getLHS();
+  //         if(darg.str().compare(varName) == 0){
+  //           std::stringstream numstr; numstr.str(""); numstr << *binArg->getRHS();
+  //           int num = stoi(numstr.str());
+  //           if(num == diff){
+  //             AstVariable* newVar = new AstVariable(darg.str());
+  //             fixedClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(constraint->getOperator(),
+  //                   std::unique_ptr<AstArgument>(newVar), std::unique_ptr<AstArgument>(constraint->getRHS()->clone()))));
+  //           } else {
+  //             num = num - diff;
+  //             AstBinaryFunctor* newBin = new AstBinaryFunctor(
+  //                 binArg->getFunction(),
+  //                 std::unique_ptr<AstArgument> (binArg->getLHS()->clone()),
+  //                 std::unique_ptr<AstArgument> (new AstNumberConstant (num)));
+  //             fixedClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(constraint->getOperator(),
+  //                     std::unique_ptr<AstArgument>(newBin), std::unique_ptr<AstArgument>(constraint->getRHS()->clone()))));
+  //           }
+  //         } else {
+  //           fixedClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
+  //           continue;
+  //         }
+  //       }
+  //       else if (dynamic_cast<AstVariable*>(binArg->getRHS()) && dynamic_cast<AstNumberConstant*>(binArg->getLHS())){
+  //         std::stringstream darg; darg.str(""); darg << *binArg->getRHS();
+  //         if(darg.str().compare(varName) == 0){
+  //           std::stringstream numstr; numstr.str(""); numstr << *binArg->getLHS();
+  //           int num = stoi(numstr.str());
+  //           if(num == diff){
+  //             AstVariable* newVar = new AstVariable(darg.str());
+  //             fixedClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(constraint->getOperator(),
+  //                   std::unique_ptr<AstArgument>(constraint->getLHS()->clone()), std::unique_ptr<AstArgument>(newVar))));
+  //           } else {
+  //             num = num - diff;
+  //             AstBinaryFunctor* newBin = new AstBinaryFunctor(binArg->getFunction(),
+  //               std::unique_ptr<AstArgument> (new AstNumberConstant (num)), std::unique_ptr<AstArgument> (binArg->getRHS()->clone()));
+  //             fixedClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(constraint->getOperator(),
+  //               std::unique_ptr<AstArgument>(constraint->getLHS()->clone()), std::unique_ptr<AstArgument>(newBin))));
+  //           }
+  //         }
+  //       } else {
+  //         fixedClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
+  //         continue;
+  //       }
+  //       continue;
+  //     }
+  //     AstAtom* newAtom = new AstAtom(lit->getAtom()->getName());
+  //     for(AstArgument* arg : lit->getAtom()->getArguments()){
+  //       if(dynamic_cast<AstBinaryFunctor*>(arg)){
+  //         AstBinaryFunctor* binArg = dynamic_cast<AstBinaryFunctor*> (arg);
+  //         if(dynamic_cast<AstVariable*>(binArg->getLHS()) && dynamic_cast<AstNumberConstant*>(binArg->getRHS())){
+  //           std::stringstream var; var.str(""); var << *binArg->getLHS();
+  //           if(var.str().compare(varName)!=0){
+  //             newAtom->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //             continue;
+  //           }
+  //           std::stringstream numarg; numarg.str(""); numarg << *binArg->getRHS();
+  //           if(stoi(numarg.str()) - diff == 0){
+  //             newAtom->addArgument(std::unique_ptr<AstArgument> (new AstVariable(var.str())));
+  //             continue;
+  //           }
+  //           newAtom->addArgument(std::unique_ptr<AstArgument> (new AstBinaryFunctor(getBinaryOpForSymbol("+"),
+  //             std::unique_ptr<AstArgument>(new AstVariable(var.str())), std::unique_ptr<AstArgument>(new AstNumberConstant(stoi(numarg.str())-diff)))));  // TODO: FOR NOW ONLY PLUS WOKRS
+  //         }
+  //         else if(dynamic_cast<AstVariable*>(binArg->getRHS()) && dynamic_cast<AstNumberConstant*>(binArg->getLHS())){
+  //           std::stringstream var; var.str(""); var << *binArg->getRHS();
+  //           if(var.str().compare(varName)!=0){
+  //             newAtom->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //             continue;
+  //           }
+  //           std::stringstream numarg; numarg.str(""); numarg << *binArg->getLHS();
+  //           if(stoi(numarg.str()) - diff == 0){
+  //             newAtom->addArgument(std::unique_ptr<AstArgument> (new AstVariable(var.str())));
+  //             continue;
+  //           }
+  //           newAtom->addArgument(std::unique_ptr<AstArgument> (new AstBinaryFunctor(getBinaryOpForSymbol("+"),
+  //             std::unique_ptr<AstArgument>(new AstVariable(var.str())), std::unique_ptr<AstArgument>(new AstNumberConstant(stoi(numarg.str())-diff)))));  // TODO: FOR NOW ONLY PLUS WOKRS
+  //         // } else if(dynamic_cast<AstVariable*>(binArg->getLHS()) && dynamic_cast<AstVariable*>(binArg->getRHS())){
+  //         //   std::stringstream leftvar; leftvar.str(""); leftvar << *binArg->getLHS();
+  //         //   std::stringstream rightvar; rightvar.str(""); rightvar << *binArg->getRHS();
+  //         //   // TODO: maybe add LEFT = RIGHT potential
+  //         //   if(leftvar.str().compare(varName)==0){
+  //         //
+  //         //   } else if (rightvar.str().compare(varName)==0){
+  //         //
+  //         //   } else {
+  //         //     newAtom->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //         //   }
+  //         } else {
+  //           newAtom->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //         }
+  //       } else if (dynamic_cast<AstVariable*>(arg)) {
+  //         std::stringstream argnamestream; argnamestream.str(""); argnamestream << *arg;
+  //         if(argnamestream.str().compare(varName)!=0){
+  //           newAtom->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //           continue;
+  //         }
+  //         newAtom->addArgument(std::unique_ptr<AstArgument> (new AstBinaryFunctor(getBinaryOpForSymbol("+"),
+  //           std::unique_ptr<AstArgument>(arg->clone()), std::unique_ptr<AstArgument>(new AstNumberConstant(diff)))));  // TODO: CHECK IF NEGATIVES NEED TOBE TAKEN INTO ACCOUNT
+  //       } else {
+  //         newAtom->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+  //       }
+  //     }
+  //     if(dynamic_cast<AstNegation*>(lit)){
+  //       AstNegation* newNeg = new AstNegation (std::unique_ptr<AstAtom>(newAtom));
+  //       fixedClause->addToBody(std::unique_ptr<AstLiteral>(newNeg));
+  //     } else {
+  //       fixedClause->addToBody(std::unique_ptr<AstLiteral>(newAtom));
+  //     }
+  //   }
+  //   program->removeClause(clause);
+  //   program->appendClause(std::unique_ptr<AstClause>(fixedClause));
+  //   return fixedClause;
+  // }
+
+  // void addVariableToMap(std::map<std::string, std::set<int>>* argMapPtr, AstVariable* var, AstNumberConstant* constant){
+  //   std::stringstream numStream; numStream.str(""); numStream << *constant;
+  //   int num = stoi(numStream.str());
+  //
+  //   std::stringstream darg; darg.str(""); darg << *var;
+  //
+  //   std::map<std::string, std::set<int>> argMap = *argMapPtr;
+  //   if(argMap.find(darg.str())!=argMap.end()){
+  //     argMap.find(darg.str())->second.insert(num);
+  //   } else {
+  //     argMap[darg.str()] = std::set<int>();
+  //     argMap[darg.str()].insert(num);
+  //   }
+  // }
+
+  // void fixProgramNumbers(AstProgram* program){
+  //   // ---------
+  //
+  //   // make a map, where each variable maps to a vector of numbers that it has seen
+  //   // if 0 is not in the vector, then get the minimum, iterate through, and decrease by that much
+  //   //    then fix up the head
+  //
+  //   // can definitely cut this down...
+  //   for(AstRelation* relation : program->getRelations()){
+  //     for(AstClause* newClause : relation->getClauses()){
+  //       std::map<std::string, std::set<int>> argMap;
+  //       for(AstLiteral* lit : newClause->getBodyLiterals()){
+  //         AstLiteral* litClone = lit;
+  //
+  //         if(litClone->getAtom() == nullptr){
+  //           // TODO: NEED TO CHECK IF THIS IS ALWAYS A CONSTRAINT!
+  //           AstConstraint* constraint = dynamic_cast<AstConstraint*> (litClone);
+  //           AstBinaryFunctor* binArg;
+  //           if(dynamic_cast<AstBinaryFunctor*>(constraint->getLHS())){
+  //             binArg = dynamic_cast<AstBinaryFunctor*>(constraint->getLHS());
+  //           } else if (dynamic_cast<AstBinaryFunctor*>(constraint->getRHS())){
+  //             binArg = dynamic_cast<AstBinaryFunctor*>(constraint->getRHS());
+  //           } else {
+  //             continue;
+  //           }
+  //           // TODO: NEED TO TAKE INTO ACCOUNT BOTH LHS AND RHS VARS?!
+  //           if(dynamic_cast<AstVariable*>(binArg->getLHS()) && dynamic_cast<AstNumberConstant*>(binArg->getRHS())){
+  //             addVariableToMap(&argMap, dynamic_cast<AstVariable*>(binArg->getLHS()), dynamic_cast<AstNumberConstant*>(binArg->getRHS()));
+  //           }
+  //           if(dynamic_cast<AstVariable*>(binArg->getRHS()) && dynamic_cast<AstNumberConstant*>(binArg->getLHS())){
+  //             addVariableToMap(&argMap, dynamic_cast<AstVariable*>(binArg->getRHS()), dynamic_cast<AstNumberConstant*>(binArg->getLHS()));
+  //           }
+  //           continue;
+  //         }
+  //         for(AstArgument* arg : litClone->getAtom()->getArguments()){
+  //           if(dynamic_cast<AstBinaryFunctor*>(arg)){
+  //             AstBinaryFunctor* binArg = dynamic_cast<AstBinaryFunctor*> (arg);
+  //             if(dynamic_cast<AstVariable*>(binArg->getLHS()) && dynamic_cast<AstNumberConstant*>(binArg->getRHS())){
+  //               // addVariableToMap(&argMap, dynamic_cast<AstVariable*>(binArg->getLHS()), dynamic_cast<AstNumberConstant*>(binArg->getRHS()));
+  //               std::stringstream numarg; numarg.str(""); numarg << *binArg->getRHS();
+  //               int num = stoi(numarg.str());
+  //               std::stringstream darg; darg.str(""); darg << *binArg->getLHS();
+  //               if(argMap.find(darg.str())!=argMap.end()){
+  //                 argMap.find(darg.str())->second.insert(num);
+  //               } else {
+  //                 argMap[darg.str()] = std::set<int>();
+  //                 argMap[darg.str()].insert(num);
+  //               }
+  //             }
+  //             if(dynamic_cast<AstVariable*>(binArg->getRHS()) && dynamic_cast<AstNumberConstant*>(binArg->getLHS())){
+  //               std::stringstream numarg; numarg.str(""); numarg << *binArg->getLHS();
+  //               int num = stoi(numarg.str());
+  //               std::stringstream darg; darg.str(""); darg << *binArg->getRHS();
+  //               if(argMap.find(darg.str())!=argMap.end()){
+  //                 argMap.find(darg.str())->second.insert(num);
+  //               } else {
+  //                 argMap[darg.str()] = std::set<int>();
+  //                 argMap[darg.str()].insert(num);
+  //               }
+  //             }
+  //           } else if (dynamic_cast<AstVariable*>(arg)) {
+  //             std::stringstream darg; darg.str(""); darg << *arg;
+  //             if(argMap.find(darg.str())!=argMap.end()){
+  //               argMap.find(darg.str())->second.insert(0);
+  //             } else {
+  //               argMap[darg.str()] = std::set<int>();
+  //               argMap[darg.str()].insert(0);
+  //             }
+  //           }
+  //         }
+  //       }
+  //       // -----------
+  //       std::map<std::string, int> newArgMap;
+  //       for(std::pair<std::string , std::set<int>> argPair : argMap){
+  //         std::string arg = argPair.first;
+  //         std::set<int> shifts = argPair.second;
+  //         if(shifts.find(0) == shifts.end()){
+  //           newArgMap[arg] = getMin(shifts);
+  //         }
+  //       }
+  //       for(std::pair<std::string, int> varPair : newArgMap){
+  //         // std::cout << "BEFORE " << *newClause << std::endl;
+  //         newClause = fixClauseNumber(program, newClause, varPair.first, varPair.second);
+  //         // std::cout << "AFTER " << *newClause << std::endl;
+  //       }
+  //     }
+  //   }
+  // }
+
+  // deleteIgnored(AstProgram* program, std::set<AstRelationIdentifier> ignoredAtoms){
+  //   for(AstRelation* rel : program->getRelations()){
+  //     AstRelationIdentifier newName = getBaseName(rel->getName());
+  //     if(ignoredAtoms.find(newName) != ignoredAtoms.end()){
+  //       program->removeRelation(rel);
+  //     }
+  //   }
+  // }
 
   bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit){
     AstProgram* program = translationUnit.getProgram();
@@ -526,6 +921,7 @@ namespace souffle {
     std::set<AstRelationIdentifier> newidb;
     std::vector<AstClause*> newClauses;
     std::set<AstRelationIdentifier> negatedAtoms = adornment->getNegatedAtoms();
+    std::set<AstRelationIdentifier> ignoredAtoms = adornment->getIgnoredAtoms();
 
     for(size_t querynum = 0; querynum < outputQueries.size(); querynum++){
       AstRelationIdentifier outputQuery = outputQueries[querynum];
@@ -662,7 +1058,6 @@ namespace souffle {
             AstRelationIdentifier litName = lit->getAtom()->getName();
 
             if (newidb.find(litName) != newidb.end()){
-
               // AstClause* magicClause = newClause->clone();
               AstRelationIdentifier newLitName = createMagicIdentifier(litName, querynum);
               // std::stringstream newLit; newLit << "m" << querynum << "_" << lit->getAtom()->getName();
@@ -714,12 +1109,12 @@ namespace souffle {
               magicClause->setHead(std::unique_ptr<AstAtom> (mclauseHead));
 
               // make the body
-              // TODO: CHECK WHAT THIS PART DOES AND WHY - not working
               // TODO: FIX FROM THIS POINT!!
               AstRelationIdentifier magPredName = createMagicIdentifier(newClause->getHead()->getName(), querynum);
               std::string mainLitName = magPredName.getNames()[0];
-              //std::stringstream magPredName;
+
               //magPredName << "m" << querynum << "_" << newClause->getHead()->getName();
+
               int endpt = mainLitName.size()-1;
               while(endpt >= 0 && mainLitName[endpt] != '_'){
                 endpt--;
@@ -747,10 +1142,7 @@ namespace souffle {
               argCount = 0;
               for(AstArgument* arg : newClause->getHead()->getArguments()){
                 if(headAdornment[argCount] == 'b'){
-                  //std::cout << "PART 2 YES: " << newLit.str() << " " << *arg << " " << *newClause->getHead() << std::endl;
                   addedMagPred->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
-                } else {
-                //  std::cout << "PART 2 FAILED: " << newLit.str() << " " << *arg << " " << *newClause->getHead() << std::endl;
                 }
                 argCount++;
               }
@@ -760,7 +1152,6 @@ namespace souffle {
                 magicClause->addToBody(std::unique_ptr<AstLiteral> (body[j]->clone()));
               }
 
-              // std::cout << *magicClause << std::endl;
               // std::stringstream tmpvarx; tmpvarx << magicClause->getBodyLiteral(0)->getAtom()->getName();
 
               std::vector<AstArgument*> currArguments = magicClause->getHead()->getArguments();
@@ -783,10 +1174,10 @@ namespace souffle {
                   }
                   std::string startstr = tmpvarx.str().substr(pos+1, nextpos-pos-1);
 
-                  std::string res = tmpvarx.str().substr(pos+1, tmpvarx.str().size());
                   // 1 2 ... pos pos+1 ... size()-3 size()-2 size()-1
                   // const char * str = res.substr(1,res.size()-2).c_str();
                   //check if string or num constant
+                  std::string res = tmpvarx.str().substr(pos+1, tmpvarx.str().size());
 
                   if(res[res.size()-1] == 's'){
                     // std::cout << "STRING " << res << std::endl;
@@ -794,7 +1185,6 @@ namespace souffle {
                     magicClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
                           std::unique_ptr<AstArgument>(arg->clone()), std::unique_ptr<AstArgument>(new AstStringConstant(translationUnit.getSymbolTable(), str)))));
                   } else {
-                    //std::cout << "INT " <<  startstr << " - " << pos << " - " << tmpvarx.str() << " - " << *magicClause << std::endl;
                     magicClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
                           std::unique_ptr<AstArgument>(arg->clone()), std::unique_ptr<AstArgument>(new AstNumberConstant(stoi(startstr))))));
                   }
@@ -823,15 +1213,16 @@ namespace souffle {
           newClauseOrder[k] = k+1;
         }
 
+
         newClauseOrder[numAtoms] = 0;
         newClause->reorderAtoms(reorderOrdering(newClauseOrder));
-
 
         // add the clause
         newClauses.push_back(newClause);
         adornedRelation->addClause(std::unique_ptr<AstClause> (newClause));
       }
     }
+
 
     // remove all old IDB relations
     for(AstRelationIdentifier relation : oldidb){
@@ -907,7 +1298,11 @@ namespace souffle {
 
       program->appendClause(std::unique_ptr<AstClause> (referringClause));
     }
-    //std::cout << *program << std::endl;
+
+    deleteIgnored(program, ignoredAtoms);
+    //fixProgramNumbers(program);
+
+    std::cout << *program << std::endl;
     return true;
   }
 } // end of namespace souffle

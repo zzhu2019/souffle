@@ -115,6 +115,7 @@ namespace souffle {
     std::set<AstRelationIdentifier> m_edb;
     std::set<AstRelationIdentifier> m_idb;
     std::set<AstRelationIdentifier> m_negatedAtoms;
+    std::set<AstRelationIdentifier> m_ignoredAtoms;
 
   public:
     static constexpr const char* name = "adorned-clauses";
@@ -144,6 +145,10 @@ namespace souffle {
 
     const std::set<AstRelationIdentifier> getNegatedAtoms(){
       return m_negatedAtoms;
+    }
+
+    const std::set<AstRelationIdentifier> getIgnoredAtoms(){
+      return m_ignoredAtoms;
     }
   };
 }
