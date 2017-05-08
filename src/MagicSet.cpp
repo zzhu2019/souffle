@@ -25,7 +25,10 @@ namespace souffle {
   }
 
   std::set<AstRelationIdentifier> argumentAddAggregations(AstArgument* arg, std::set<AstRelationIdentifier> ignoredVec){
+    //std::cout << *arg << std::endl;
     std::set<AstRelationIdentifier> retVal = ignoredVec;
+
+    // TODO: check if everything covered
     if(dynamic_cast<AstAggregator*>(arg)){
       AstAggregator* aggregator = dynamic_cast<AstAggregator*>(arg);
       // TODO: double check this section
@@ -34,7 +37,34 @@ namespace souffle {
           retVal.insert(lit->getAtom()->getName());
         }
       }
+    } else if (dynamic_cast<AstFunctor*>(arg)){
+      if(dynamic_cast<AstUnaryFunctor*>(arg)){
+        AstUnaryFunctor* func = dynamic_cast<AstUnaryFunctor*>(arg);
+        // std::cout << "adding functor (unary)..." << *func << std::endl;
+        retVal = argumentAddAggregations(func->getOperand(), retVal);
+      } else if (dynamic_cast<AstBinaryFunctor*>(arg)){
+        AstBinaryFunctor* func = dynamic_cast<AstBinaryFunctor*>(arg);
+        // std::cout << "adding functor (binary)..." << *func << std::endl;
+        retVal = argumentAddAggregations(func->getLHS(), retVal);
+        retVal = argumentAddAggregations(func->getRHS(), retVal);
+      } else if (dynamic_cast<AstTernaryFunctor*>(arg)){
+        AstTernaryFunctor* func = dynamic_cast<AstTernaryFunctor*>(arg);
+        // std::cout << "adding functor (ternary)..." << *func << std::endl;
+        retVal = argumentAddAggregations(func->getArg(0), retVal);
+        retVal = argumentAddAggregations(func->getArg(1), retVal);
+        retVal = argumentAddAggregations(func->getArg(2), retVal);
+      }
+      // std::cout << *arg << " it's a functor " << std::endl;
+    } else if (dynamic_cast<AstRecordInit*>(arg)){
+      AstRecordInit* rec = dynamic_cast<AstRecordInit*>(arg);
+      for(AstArgument* subarg : rec->getArguments()){
+        retVal = argumentAddAggregations(subarg, retVal);
+      }
+    } else if (dynamic_cast<AstTypeCast*>(arg)){
+      AstTypeCast* tcast = dynamic_cast<AstTypeCast*>(arg);
+      retVal = argumentAddAggregations(tcast->getValue(), retVal);
     }
+
     return retVal;
   }
 
@@ -48,6 +78,7 @@ namespace souffle {
 
   std::set<AstRelationIdentifier> addAggregations(AstClause* clause, std::set<AstRelationIdentifier> ignoredVec){
     std::set<AstRelationIdentifier> retVal = ignoredVec;
+    retVal = atomAddAggregations(clause->getHead(), retVal);
     for(AstLiteral* lit : clause->getBodyLiterals()){
       if(dynamic_cast<AstAtom*> (lit)){
         retVal = atomAddAggregations((AstAtom*) lit, retVal);
@@ -62,6 +93,7 @@ namespace souffle {
     return retVal;
   }
 
+  // TODO: CHECK DEPENDENCIES
 
   std::set<AstRelationIdentifier> addDependencies(const AstProgram* program, std::set<AstRelationIdentifier> relations){
     // TODO much more efficient way to do this... for now leave this...
@@ -212,6 +244,15 @@ namespace souffle {
 
     std::set<AstRelationIdentifier> ignoredAtoms;
 
+    for(AstRelation* rel : program->getRelations()){
+      for(AstClause* clause : rel->getClauses()){
+        if(containsFunctors(clause)){
+          ignoredAtoms.insert(clause->getHead()->getName());
+        }
+        ignoredAtoms = addAggregations(clause, ignoredAtoms);
+      }
+    }
+
     for(size_t querynum = 0; querynum < outputQueries.size(); querynum++){
       AstRelationIdentifier outputQuery = outputQueries[querynum];
       // adornment algorithm
@@ -242,16 +283,15 @@ namespace souffle {
         }
 
         for(AstClause* clause : rel->getClauses()){
-
           if(clause->isFact()){
             continue;
           }
 
           // TODO: check if it contains it first before doing this
-          if(containsFunctors(clause)){
-            ignoredAtoms.insert(clause->getHead()->getName());
-          }
-          ignoredAtoms = addAggregations(clause, ignoredAtoms);
+          // if(containsFunctors(clause)){
+          //   ignoredAtoms.insert(clause->getHead()->getName());
+          // }
+          // ignoredAtoms = addAggregations(clause, ignoredAtoms);
 
           // TODO: check if ordering correct, and if this is correct C++ vectoring
           std::vector<std::string> clauseAtomAdornments (clause->getAtoms().size());
@@ -785,7 +825,6 @@ namespace souffle {
         AstRelation* adornedRelation;
 
         if((adornedRelation = program->getRelation(newRelName))==nullptr){
-          // tmpName = origName, relName = newRelName
           AstRelation* originalRelation = program->getRelation(origName);
 
           AstRelation* newRelation = new AstRelation();
@@ -803,12 +842,14 @@ namespace souffle {
             IODirectives inputDirectives;
             AstIODirective* newDirective = new AstIODirective();
             inputDirectives.setRelationName(newRelName.getNames()[0]); // TODO: CHECK IF FIRSTN AME
+            newDirective->addName(newRelName);
             newDirective->setAsInput();
             for(AstIODirective* current : originalRelation->getIODirectives()){
               if(current->isInput()){
                 for(const auto& currentPair : current->getIODirectiveMap()){
                   newDirective->addKVP(currentPair.first, currentPair.second);
                   inputDirectives.set(currentPair.first, currentPair.second);
+                  //std::cout << currentPair.first << " " << currentPair.second << std::endl;
                 }
               }
             }
@@ -820,6 +861,7 @@ namespace souffle {
               inputDirectives.setFileName(origName.getNames()[0] + ".facts"); // TODO: CHECK IF FIRSTN AME
               newDirective->addKVP("filename", origName.getNames()[0] + ".facts");
             }
+
             newRelation->addIODirectives(std::unique_ptr<AstIODirective>(newDirective));
           }
 
@@ -1040,8 +1082,8 @@ namespace souffle {
       }
     }
 
-
     // remove all old IDB relations
+    // std::cout << ignoredAtoms << " " << negatedAtoms << std::endl;
     for(AstRelationIdentifier relation : oldidb){
       if(program->getRelation(relation)->isOutput()){
         addAsOutput.insert(relation);
@@ -1139,9 +1181,8 @@ namespace souffle {
         program->getRelation(iopair.first)->addIODirectives(std::unique_ptr<AstIODirective> (iodir));
       }
     }
-    // deleteIgnored(program, ignoredAtoms);
-    //fixProgramNumbers(program);
     replaceUnderscores(program);
+    //std::cout << ignoredAtoms << std::endl;
 
     // std::cout << *program << std::endl;
     return true;

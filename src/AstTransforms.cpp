@@ -770,7 +770,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
       for(AstLiteral* lit : clause->getBodyLiterals()){
 
-        // TODO: check if needed:
+        // TODO: better cases - right now only looks at atoms
         if(dynamic_cast<AstAtom*>(lit)==0){
           newClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
           continue;
