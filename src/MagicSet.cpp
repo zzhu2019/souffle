@@ -618,12 +618,18 @@ namespace souffle {
 
   AstSrcLocation nextSrcLoc(AstSrcLocation orig){
     static int pos = 0;
-    AstSrcLocation newLoc = orig;
-    newLoc.start.line += 969 + pos;
-    newLoc.end.line += 970 + pos;
-    newLoc.start.column += 971;
-    newLoc.end.column += 972;
     pos += 1;
+    //AstSrcLocation newLoc = orig;
+    AstSrcLocation newLoc;
+    newLoc.filename = orig.filename + "__MAGIC.dl";
+    newLoc.start.line = pos;
+    newLoc.end.line = pos;
+    newLoc.start.column = 0;
+    newLoc.end.column = 1;
+    // newLoc.start.line += 969 + pos;
+    // newLoc.end.line += 970 + pos;
+    // newLoc.start.column += 971;
+    // newLoc.end.column += 972;
     // orig.start.line += 1000;
     // orig.end.line += 1000;
     return newLoc;
@@ -768,7 +774,7 @@ namespace souffle {
           AstRelation* originalRelation = program->getRelation(origName);
 
           AstRelation* newRelation = new AstRelation();
-          newRelation->setSrcLoc(clause->getSrcLoc());
+          newRelation->setSrcLoc(nextSrcLoc(clause->getSrcLoc()));
           newRelation->setName(newRelName);
 
           for(AstAttribute* attr : originalRelation->getAttributes()){
@@ -905,7 +911,7 @@ namespace souffle {
               }
 
               AstClause* magicClause = new AstClause ();
-              magicClause->setSrcLoc(lit->getSrcLoc()); // TODO: FIX THSI!!! also this wa the huge problem
+              magicClause->setSrcLoc(nextSrcLoc(lit->getSrcLoc())); // TODO: FIX THSI!!! also this wa the huge problem
               magicClause->setHead(std::unique_ptr<AstAtom> (mclauseHead));
 
               // make the body
@@ -1088,7 +1094,7 @@ namespace souffle {
         outputRelation = program->getRelation(oldname);
       } else {
         outputRelation = new AstRelation ();
-        outputRelation->setSrcLoc(adornedRelation->getSrcLoc());
+        outputRelation->setSrcLoc(nextSrcLoc(adornedRelation->getSrcLoc()));
 
         for (AstAttribute* attr : adornedRelation->getAttributes()){
           outputRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
@@ -1125,7 +1131,7 @@ namespace souffle {
       }
 
       AstClause* referringClause = new AstClause ();
-      referringClause->setSrcLoc(outputRelation->getSrcLoc()); // TODO
+      referringClause->setSrcLoc(nextSrcLoc(outputRelation->getSrcLoc())); // TODO
       referringClause->setHead(std::unique_ptr<AstAtom> (headatom));
       referringClause->addToBody(std::unique_ptr<AstAtom> (bodyatom));
 
