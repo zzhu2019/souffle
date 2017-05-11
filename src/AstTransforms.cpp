@@ -790,14 +790,12 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
             std::stringstream argNamex; argNamex << *currArg;
             std::string argtype;
             if(dynamic_cast<AstNumberConstant*>(currArg)){
-              //std::cout << "HELLO " << argNamex.str() << std::endl;
               argtype = "n";
               tmpVar << "abdul" << count << "_" << argNamex.str() << "_" << argtype; //TODO: find a special character for vars and separators
             } else {
               argtype = "s";
               tmpVar << "abdul" << count << "_" << argNamex.str().substr(1, argNamex.str().size()-2) << "_" << argtype; //TODO: find a special character for vars and separators
             }
-            //std::cout << "GOODBYE " << tmpVar.str() << std::endl;
             AstArgument* var = new AstVariable(tmpVar.str());
 
             AstArgument* cons = args[argNum]->clone();
