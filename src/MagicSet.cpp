@@ -1,6 +1,7 @@
 #include "AstTransforms.h"
 #include "MagicSet.h"
 #include "IODirectives.h"
+#include "BinaryConstraintOps.h"
 
 #include <string>
 #include <vector>
@@ -107,8 +108,23 @@ namespace souffle {
     return false;
   }
 
-  // TODO: CHECK DEPENDENCIES
+  bool isBoundedArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundedArgs){
+    std::stringstream lhs_stream; lhs_stream << *lhs;
+    std::stringstream rhs_stream; rhs_stream << *rhs;
+    std::string lhs_name = lhs_stream.str();
+    std::string rhs_name = rhs_stream.str();
 
+    if(dynamic_cast<AstVariable*> (lhs) && (boundedArgs.find(lhs_name) == boundedArgs.end())){
+      if(dynamic_cast<AstVariable*> (rhs) && (boundedArgs.find(rhs_name) != boundedArgs.end())){
+        return true;
+      } else if(dynamic_cast<AstConstant*> (rhs)){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // TODO: CHECK DEPENDENCIES
   std::set<AstRelationIdentifier> addDependencies(const AstProgram* program, std::set<AstRelationIdentifier> relations){
     // TODO much more efficient way to do this... for now leave this...
     int countAdded = 0;
@@ -133,6 +149,23 @@ namespace souffle {
     } else {
       return retVals;
     }
+  }
+
+  std::pair<std::string, std::set<std::string>> bindArguments(AstAtom* currAtom, std::set<std::string> boundedArgs){
+    std::set<std::string> newlyBoundedArgs;
+    std::string atomAdornment = "";
+    for(AstArgument* arg : currAtom->getArguments()){
+      std::stringstream argName; argName << *arg;
+      if(boundedArgs.find(argName.str()) != boundedArgs.end()){
+        atomAdornment += "b"; // bounded
+      } else {
+        atomAdornment += "f"; // free
+        newlyBoundedArgs.insert(argName.str()); // now bounded
+      }
+    }
+    std::pair<std::string, std::set<std::string>> result;
+    result.first = atomAdornment; result.second = newlyBoundedArgs;
+    return result;
   }
 
   void Adornment::run(const AstTranslationUnit& translationUnit){
@@ -180,7 +213,7 @@ namespace souffle {
       bool is_edb = true;
       for(AstClause* clause : rel->getClauses()){
         if(!clause->isFact()){
-          is_edb = false; // TODO: check if correct
+          is_edb = false;
           break;
         }
       }
@@ -192,37 +225,23 @@ namespace souffle {
       }
     }
 
-    /*----TODO: move this later -------*/
-    /* GET LIST OF NEGATED LITERALS */
+    // find all negated literals
     std::set<AstRelationIdentifier> negatedLiterals;
     for(AstRelation* rel : program->getRelations()){
-      std::vector<AstClause*> clauses = rel->getClauses();
-      for(size_t clauseNum = 0; clauseNum < clauses.size(); clauseNum++){
-        AstClause* clause = clauses[clauseNum];
+      for(AstClause* clause : rel->getClauses()){
         for(AstLiteral* lit : clause->getBodyLiterals()){
           if(dynamic_cast<AstNegation*>(lit)){
-            AstRelationIdentifier negatedName = lit->getAtom()->getName(); // check this
-            negatedLiterals.insert(negatedName);
+            negatedLiterals.insert(lit->getAtom()->getName());
           }
         }
       }
     }
+
     // TODO: check if all dependencies properly added
-
-    // TODO: only keeping atoms - need to check if more should be kept
-    for(AstRelationIdentifier negatedName : negatedLiterals){
-      for(AstClause* clause : program->getRelation(negatedName)->getClauses()){
-        for(AstAtom* atom : clause->getAtoms()){
-          negatedLiterals.insert(atom->getName());
-        }
-      }
-    }
-
     negatedLiterals = addDependencies(program, negatedLiterals);
     m_negatedAtoms = negatedLiterals;
 
-    /*------------------------------*/
-
+    // find atoms that should be ignored
     std::set<AstRelationIdentifier> ignoredAtoms;
 
     for(AstRelation* rel : program->getRelations()){
@@ -241,29 +260,23 @@ namespace souffle {
       std::set<AdornedPredicate> seenPredicates;
       std::vector<AdornedClause> adornedClauses;
 
-      std::stringstream frepeat;
+      std::string frepeat = "";
       size_t arity = program->getRelation(outputQuery)->getArity();
       for(size_t i = 0; i < arity; i++){
-        frepeat << "f"; // 'f'*(number of arguments in output query)
+        frepeat +="f"; // 'f'*(number of arguments in output query)
       }
 
-      AdornedPredicate outputPredicate (outputQuery, frepeat.str());
+      AdornedPredicate outputPredicate (outputQuery, frepeat);
       currentPredicates.push_back(outputPredicate);
       seenPredicates.insert(outputPredicate);
 
-      // TODO: modularise better
       while(!currentPredicates.empty()){
         // pop out the first element
         AdornedPredicate currPredicate = currentPredicates[0];
         currentPredicates.erase(currentPredicates.begin());
 
         // go through all clauses defining it
-        AstRelation* rel = program->getRelation(currPredicate.getName()); // PROBLEM!!! with dfa.dl and co.
-
-        if(rel == nullptr){
-            // TODO: This used to stuff up for DFA.dl because of dots in pred names - check if we ever hit this stage anymore
-            continue;
-        }
+        AstRelation* rel = program->getRelation(currPredicate.getName());
 
         for(AstClause* clause : rel->getClauses()){
           if(clause->isFact()){
@@ -276,7 +289,7 @@ namespace souffle {
           // }
           // ignoredAtoms = addAggregations(clause, ignoredAtoms);
 
-          // TODO: check if ordering correct, and if this is correct C++ vectoring
+          // TODO: check if ordering correct
           std::vector<std::string> clauseAtomAdornments (clause->getAtoms().size());
           std::vector<unsigned int> ordering (clause->getAtoms().size());
           std::stringstream name;
@@ -295,14 +308,23 @@ namespace souffle {
           }
 
           // mark all bounded arguments from the body
-          for(AstConstraint* constraint : clause->getConstraints()){
+          std::vector<AstConstraint*> constraints = clause->getConstraints();
+
+          for(size_t i = 0; i < constraints.size(); i++){
+            AstConstraint* constraint = constraints[i];
+            BinaryConstraintOp op = constraint->getOperator();
+            // TODO: check if MATCH works (or if this works at all)
+            if(op != BinaryConstraintOp::EQ && op != BinaryConstraintOp::MATCH){
+              continue;
+            }
             AstArgument* lhs = constraint->getLHS();
             AstArgument* rhs = constraint->getRHS();
-            if(dynamic_cast<AstConstraint*>(lhs)){
+
+            if(isBoundedArg(lhs, rhs, boundedArgs)){
               name.str(""); name << *lhs;
               boundedArgs.insert(name.str());
             }
-            if(dynamic_cast<AstConstraint*>(rhs)){
+            if(isBoundedArg(rhs, lhs, boundedArgs)){
               name.str(""); name << *rhs;
               boundedArgs.insert(name.str());
             }
@@ -330,54 +352,40 @@ namespace souffle {
                 firstedb = i;
               }
 
-              // bound argument found, so based on this SIPS we adorn it
               if(hasBoundArgument(currAtom, boundedArgs)){
+                // bound argument found, so based on this SIPS, we adorn it
                 atomAdded = true;
-                std::stringstream atomAdornment;
 
                 // find the adornment pattern
-                std::set<std::string> newlyBoundedArgs;
+                std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundedArgs);
+                std::string atomAdornment = result.first;
+                std::set<std::string> newlyBoundedArgs = result.second;
 
-                // std::cout << "BOUNDED:" << boundedArgs << std::endl;
-                for(AstArgument* arg : currAtom->getArguments()){
-                  std::stringstream argName; argName << *arg;
-                  if(boundedArgs.find(argName.str()) != boundedArgs.end()){
-                    atomAdornment << "b"; // bounded
-                    // std::cout << *currAtom << " with arg " << argName.str() << std::endl;
-                  } else {
-                    atomAdornment << "f"; // free
-                    newlyBoundedArgs.insert(argName.str()); // now bounded
-                  }
-                  // std::cout << "SO FAR: " << atomAdornment.str() << std::endl;
-                }
-
-                for(std::string argx : newlyBoundedArgs){
-                  boundedArgs.insert(argx);
+                for(std::string newlyAddedArg : newlyBoundedArgs){
+                  boundedArgs.insert(newlyAddedArg);
                 }
 
                 AstRelationIdentifier atomName = currAtom->getName();
-                // name.str(""); name << currAtom->getName();
                 bool seenBefore = false;
 
                 // check if we've already dealt with this adornment before
                 for(AdornedPredicate seenPred : seenPredicates){
-                  if( (seenPred.getName() == atomName)
-                      && (seenPred.getAdornment().compare(atomAdornment.str()) == 0)){ // TODO: check if correct/better way to do
+                  if((seenPred.getName() == atomName)
+                      && (seenPred.getAdornment().compare(atomAdornment) == 0)){ // TODO: check if correct/better way to do
                         seenBefore = true;
                         break;
                   }
                 }
 
                 if(!seenBefore){
-                  currentPredicates.push_back(AdornedPredicate (atomName, atomAdornment.str()));
-                  seenPredicates.insert(AdornedPredicate (atomName, atomAdornment.str()));
+                  currentPredicates.push_back(AdornedPredicate (atomName, atomAdornment));
+                  seenPredicates.insert(AdornedPredicate (atomName, atomAdornment));
                 }
 
-                clauseAtomAdornments[i] = atomAdornment.str();
+                clauseAtomAdornments[i] = atomAdornment;
                 ordering[i] = atomsAdorned;
 
                 atoms[i] = nullptr;
-                //atoms.erase(atoms.begin() + i);
                 atomsAdorned++;
                 break;
               }
@@ -396,21 +404,12 @@ namespace souffle {
               }
 
               // TODO: get rid of repetitive code
-              std::stringstream atomAdornment;
               AstAtom* currAtom = atoms[i];
               AstRelationIdentifier atomName = currAtom->getName();
 
-              std::set<std::string> newlyBoundedArgs;
-
-              for(AstArgument* arg : currAtom->getArguments()){
-                std::stringstream argName; argName << *arg;
-                if(boundedArgs.find(argName.str()) != boundedArgs.end()){
-                  atomAdornment << "b"; // bounded
-                } else {
-                  atomAdornment << "f"; // free
-                  newlyBoundedArgs.insert(argName.str()); // now bounded
-                }
-              }
+              std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundedArgs);
+              std::string atomAdornment = result.first;
+              std::set<std::string> newlyBoundedArgs = result.second;
 
               for(std::string argx : newlyBoundedArgs){
                 boundedArgs.insert(argx);
@@ -419,22 +418,21 @@ namespace souffle {
               bool seenBefore = false;
               for(AdornedPredicate seenPred : seenPredicates){
                 if( (seenPred.getName() == atomName)
-                    && (seenPred.getAdornment().compare(atomAdornment.str()) == 0)){ // TODO: check if correct/better way to do
+                    && (seenPred.getAdornment().compare(atomAdornment) == 0)){ // TODO: check if correct/better way to do
                       seenBefore = true;
                       break;
                 }
               }
 
               if(!seenBefore){
-                currentPredicates.push_back(AdornedPredicate (atomName, atomAdornment.str()));
-                seenPredicates.insert(AdornedPredicate (atomName, atomAdornment.str()));
+                currentPredicates.push_back(AdornedPredicate (atomName, atomAdornment));
+                seenPredicates.insert(AdornedPredicate (atomName, atomAdornment));
               }
 
-              clauseAtomAdornments[i] = atomAdornment.str();
+              clauseAtomAdornments[i] = atomAdornment;
               ordering[i] = atomsAdorned;
 
               atoms[i] = nullptr;
-              //atoms.erase(atoms.begin() + i);
               atomsAdorned++;
             }
           }
@@ -456,16 +454,9 @@ namespace souffle {
     return false;
   }
 
+  // NOTE: also getting rid of aggregators
   bool argumentContainsFunctors(AstArgument* arg){
-    if(dynamic_cast<AstVariable*> (arg)){
-      return false;
-    } else if(dynamic_cast<AstCounter*> (arg)){
-      // skip
-      return false;
-    } else if(dynamic_cast<AstConstant*> (arg)){
-      // skip
-      return false;
-    } else if(dynamic_cast<AstFunctor*> (arg)){
+    if(dynamic_cast<AstFunctor*> (arg)){
       // functor found!
       return true;
     } else if(dynamic_cast<AstRecordInit*>(arg)){
@@ -481,19 +472,7 @@ namespace souffle {
         return true;
       }
     } else if(dynamic_cast<AstAggregator*>(arg)){
-		    return true; // also want to get rid of aggregators
-        // AstAggregator* aggarg = dynamic_cast<AstAggregator*> (arg);
-        // if(argumentContainsFunctors(aggarg->getTargetExpression())){
-        //   return true;
-        // }
-        // for(AstLiteral* sublit : aggarg->getBodyLiterals()){
-        //   if(literalContainsFunctors(sublit)){
-        //     return true;
-        //   }
-        // }
-    } else {
-      // nothing should get here...
-      return false;
+		    return true;
     }
     return false;
   }
@@ -554,10 +533,8 @@ namespace souffle {
               }
             }
           }
-            // negation not working: ungrounded assertion failure
             newClause->addToBody(std::unique_ptr<AstLiteral> (newLit));
         }
-        // need a clone in the above constraint creation, otherwise fails on removal
         rel->removeClause(clause);
         rel->addClause(std::unique_ptr<AstClause> (newClause));
       }
@@ -587,7 +564,7 @@ namespace souffle {
   AstRelationIdentifier createMagicIdentifier(AstRelationIdentifier relationName, size_t outputNumber){
     std::vector<std::string> relationNames = relationName.getNames();
     std::stringstream newMainName; newMainName.str("");
-    newMainName << "m" << outputNumber << "_" << relationNames[0]; //<< "_" << adornment; // MAJOR MAJOR TODO: SHOULD BE AN UNDERSCORE HERE!
+    newMainName << "m" << outputNumber << "_" << relationNames[0]; //<< "_" << adornment; // MAJOR TODO: SHOULD BE AN UNDERSCORE HERE!
     AstRelationIdentifier newRelationName(newMainName.str()); // TODO: Check valid [0]
     for(size_t i = 1; i < relationNames.size(); i++){
       newRelationName.append(relationNames[i]);
@@ -620,33 +597,26 @@ namespace souffle {
   AstSrcLocation nextSrcLoc(AstSrcLocation orig){
     static int pos = 0;
     pos += 1;
-    //AstSrcLocation newLoc = orig;
+
     AstSrcLocation newLoc;
     newLoc.filename = orig.filename + "__MAGIC.dl";
     newLoc.start.line = pos;
     newLoc.end.line = pos;
     newLoc.start.column = 0;
     newLoc.end.column = 1;
-    // newLoc.start.line += 969 + pos;
-    // newLoc.end.line += 970 + pos;
-    // newLoc.start.column += 971;
-    // newLoc.end.column += 972;
-    // orig.start.line += 1000;
-    // orig.end.line += 1000;
+
     return newLoc;
   }
 
-  bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit){
-    AstProgram* program = translationUnit.getProgram();
-
-    // make EDB and IDB independent
+  void separateDBs(AstProgram* program){
     int edbNum = 0;
-    for(AstRelation* rel : program->getRelations()){
-      AstRelationIdentifier relName = rel->getName();
+    for(AstRelation* relation : program->getRelations()){
+      AstRelationIdentifier relName = relation->getName();
 
       bool is_edb = false;
       bool is_idb = false;
-      for(AstClause* clause : rel->getClauses()){
+
+      for(AstClause* clause : relation->getClauses()){
         if(clause->isFact()){
           is_edb = true;
         } else {
@@ -659,48 +629,77 @@ namespace souffle {
 
       if(is_edb && is_idb){
         AstRelation* newedbrel = new AstRelation ();
-        for (AstAttribute* attr : rel->getAttributes()){
+        newedbrel->setSrcLoc(nextSrcLoc(relation->getSrcLoc()));
+
+        for (AstAttribute* attr : relation->getAttributes()){
           newedbrel->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
         }
-        std::stringstream newedbrelname;
+
+        std::stringstream newEdbName;
         do {
-          newedbrelname.str(""); // check
+          newEdbName.str(""); // check
           edbNum++;
-          newedbrelname << "newedb" << edbNum;
-        } while (program->getRelation(newedbrelname.str())!=nullptr);
-        newedbrel->setName(newedbrelname.str());
+          newEdbName << "newedb" << edbNum;
+        } while (program->getRelation(newEdbName.str())!=nullptr);
+
+        newedbrel->setName(newEdbName.str());
         program->appendRelation(std::unique_ptr<AstRelation> (newedbrel));
-        for(AstClause* clause : rel->getClauses()){
+        for(AstClause* clause : relation->getClauses()){
           if(clause->isFact()){
-            AstClause* newedbclause = clause->clone();
-            newedbclause->getHead()->setName(newedbrelname.str());
-            program->appendClause(std::unique_ptr<AstClause> (newedbclause));
+            AstClause* newEdbClause = clause->clone(); // TODO: check if should setSrcLoc
+            newEdbClause->getHead()->setName(newEdbName.str());
+            program->appendClause(std::unique_ptr<AstClause> (newEdbClause));
           }
         }
-        AstClause* newidbclause = new AstClause ();
+
+        AstClause* newIdbClause = new AstClause();
+        newIdbClause->setSrcLoc(nextSrcLoc(relation->getSrcLoc()));
 
         // oldname(arg1...argn) :- newname(arg1...argn)
-        AstAtom* headatom = new AstAtom (relName);
-        AstAtom* bodyatom = new AstAtom (newedbrelname.str());
+        AstAtom* headAtom = new AstAtom (relName);
+        AstAtom* bodyAtom = new AstAtom (newEdbName.str());
 
-        size_t numargs = rel->getArity();
+        size_t numargs = relation->getArity();
         for(size_t j = 0; j < numargs; j++){
           std::stringstream argname; argname.str("");
           argname << "arg" << j;
-          headatom->addArgument(std::unique_ptr<AstArgument> (new AstVariable (argname.str()) ));
-          bodyatom->addArgument(std::unique_ptr<AstArgument> (new AstVariable (argname.str()) ));
+          headAtom->addArgument(std::unique_ptr<AstArgument> (new AstVariable (argname.str()) ));
+          bodyAtom->addArgument(std::unique_ptr<AstArgument> (new AstVariable (argname.str()) ));
         }
 
-        newidbclause->setHead(std::unique_ptr<AstAtom> (headatom));
-        newidbclause->addToBody(std::unique_ptr<AstAtom> (bodyatom));
+        newIdbClause->setHead(std::unique_ptr<AstAtom> (headAtom));
+        newIdbClause->addToBody(std::unique_ptr<AstAtom> (bodyAtom));
 
-        program->appendClause(std::unique_ptr<AstClause> (newidbclause));
+        program->appendClause(std::unique_ptr<AstClause> (newIdbClause));
       }
-
     }
-    // analysis breaks for dfa.dl - get rid of the 'continue' flag and check the failures again
+  }
+
+  int getEndpoint(std::string mainName){
+    int endpt = mainName.size()-1;
+    while(endpt >= 0 && mainName[endpt] != '_'){
+      endpt--;
+    }
+    if(endpt == -1){
+      endpt = mainName.size();
+    }
+    return endpt;
+  }
+
+  bool contains(std::set<AstRelationIdentifier> set, AstRelationIdentifier element){
+    if(set.find(element) != set.end()){
+      return true;
+    }
+    return false;
+  }
+
+  bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit){
+    AstProgram* program = translationUnit.getProgram();
+    separateDBs(program);
+
+    // analysis used to break for dfa.dl - get rid of the 'continue' flag and check the failures again
+
     Adornment* adornment = translationUnit.getAnalysis<Adornment>();
-    //adornment->outputAdornment(std::cout);
 
     // need to create new IDB - so first work with the current IDB
     // then remove old IDB, add all clauses from new IDB (S)
@@ -717,16 +716,19 @@ namespace souffle {
     // S is the new IDB
     // adornment->getIDB() is the old IDB
 
-    // MAJOR TODO FACTS!!!! - think about this!
+    // TODO: make sure facts can be left alone
 
+    // db handling
     std::vector<std::vector<AdornedClause>> allAdornedClauses = adornment->getAdornedClauses();
-    std::vector<AstRelationIdentifier> outputQueries = adornment->getRelations();
     std::set<AstRelationIdentifier> negatedAtoms = adornment->getNegatedAtoms();
     std::set<AstRelationIdentifier> ignoredAtoms = adornment->getIgnoredAtoms();
-    std::set<AstRelationIdentifier> oldidb = adornment->getIDB();
-    std::set<AstRelationIdentifier> newidb;
+    std::set<AstRelationIdentifier> oldIdb = adornment->getIDB();
+    std::set<AstRelationIdentifier> newIdb;
     std::vector<AstRelationIdentifier> newQueryNames;
     std::vector<AstClause*> newClauses;
+
+    // output handling
+    std::vector<AstRelationIdentifier> outputQueries = adornment->getRelations();
     std::set<AstRelationIdentifier> addAsOutput;
     std::set<AstRelationIdentifier> addAsPrintSize;
     std::map<AstRelationIdentifier, std::vector<AstIODirective*>> outputDirectives;
@@ -737,21 +739,23 @@ namespace souffle {
 
       // add a relation for the output query
       AstRelation* outputRelationFree = new AstRelation();
+
       size_t num_free = program->getRelation(outputQuery)->getArity();
-      std::stringstream thefs; thefs.str(""); //thefs << "_";
+      std::string thefs = "";
       for(size_t i = 0; i < num_free; i++){
-        thefs << "f";
+        thefs += "f";
       }
-      // AstRelation* olderRelation = program->getRelation(outputQuery);
-      AstRelationIdentifier relNameY = createMagicIdentifier(createAdornedIdentifier(outputQuery, thefs.str()), querynum);
-      outputRelationFree->setName(relNameY);
-      newQueryNames.push_back(relNameY);
+
+      AstRelationIdentifier magicOutputName = createMagicIdentifier(createAdornedIdentifier(outputQuery, thefs), querynum);
+      outputRelationFree->setName(magicOutputName);
+      newQueryNames.push_back(magicOutputName);
+
       program->appendRelation(std::unique_ptr<AstRelation> (outputRelationFree));
-      AstAtom* newAtomClauseThing = new AstAtom(relNameY);
-      AstClause* newAtomClauseThing2 = new AstClause();
-      newAtomClauseThing2->setHead(std::unique_ptr<AstAtom> (newAtomClauseThing));
-      program->appendClause(std::unique_ptr<AstClause> (newAtomClauseThing2));
-      // std::cout << *olderRelation << std::endl;
+      AstClause* finalOutputClause = new AstClause();
+      finalOutputClause->setSrcLoc(nextSrcLoc(program->getRelation(outputQuery)->getSrcLoc()));
+      finalOutputClause->setHead(std::unique_ptr<AstAtom> (new AstAtom(magicOutputName)));
+      program->appendClause(std::unique_ptr<AstClause> (finalOutputClause));
+
       // if(olderRelation->isInput()){
       //   for(const AstIODirective* current : olderRelation->getIODirectives()){
       //     std::cout << *current << std::endl;
@@ -760,19 +764,20 @@ namespace souffle {
 
       for(AdornedClause adornedClause : adornedClauses){
         AstClause* clause = adornedClause.getClause(); // TODO: everything following should have this
-        if(ignoredAtoms.find(clause->getHead()->getName()) != ignoredAtoms.end()){
+        AstRelationIdentifier originalName = clause->getHead()->getName();
+
+        if(contains(ignoredAtoms, originalName)){
           continue;
         }
+
         std::string headAdornment = adornedClause.getHeadAdornment();
 
-        // TODO: maybe merge createAdornedIdentifier and createMagicIdentifier
-        AstRelationIdentifier origName = clause->getHead()->getName();
-        AstRelationIdentifier newRelName = createAdornedIdentifier(origName, headAdornment);
+        AstRelationIdentifier newRelName = createAdornedIdentifier(originalName, headAdornment);
 
         AstRelation* adornedRelation;
 
         if((adornedRelation = program->getRelation(newRelName)) == nullptr){
-          AstRelation* originalRelation = program->getRelation(origName);
+          AstRelation* originalRelation = program->getRelation(originalName);
 
           AstRelation* newRelation = new AstRelation();
           newRelation->setSrcLoc(nextSrcLoc(clause->getSrcLoc()));
@@ -806,8 +811,8 @@ namespace souffle {
               newDirective->addKVP("IO", "file");
             }
             if(inputDirectives.getIOType()=="file" && !inputDirectives.has("filename")){
-              inputDirectives.setFileName(origName.getNames()[0] + ".facts"); // TODO: CHECK IF FIRSTN AME
-              newDirective->addKVP("filename", origName.getNames()[0] + ".facts");
+              inputDirectives.setFileName(originalName.getNames()[0] + ".facts"); // TODO: CHECK IF FIRSTN AME
+              newDirective->addKVP("filename", originalName.getNames()[0] + ".facts");
             }
 
             newRelation->addIODirectives(std::unique_ptr<AstIODirective>(newDirective));
@@ -837,22 +842,22 @@ namespace souffle {
         // set the name of each IDB pred in the clause to be the adorned version
         for(size_t i = 0; i < body.size(); i++){
           AstLiteral* lit = body[i];
-          // only IDB should be added
 
+          // only IDB should be added
           if(dynamic_cast<AstAtom*>(lit)){
             AstRelationIdentifier litName = lit->getAtom()->getName();
-            if (oldidb.find(litName) != oldidb.end()){
+            if(contains(oldIdb, litName)){
               // only do this to the IDB
-              if(ignoredAtoms.find(litName) == ignoredAtoms.end()){
+              if(!contains(ignoredAtoms, litName)){
                 AstRelationIdentifier newLitName = createAdornedIdentifier(litName, bodyAdornment[count]);
                 AstAtom* atomlit = dynamic_cast<AstAtom*>(lit);
                 atomlit->setName(newLitName);
-                newidb.insert(newLitName);
+                newIdb.insert(newLitName);
               } else {
-                newidb.insert(litName);
+                newIdb.insert(litName);
               }
             }
-            count++;
+            count++; // TODO: check if placement of this line is correct
           }
         }
 
@@ -864,24 +869,15 @@ namespace souffle {
           if(dynamic_cast<AstAtom*>(currentLiteral)){
             AstAtom* lit = (AstAtom*) currentLiteral;
             AstRelationIdentifier litName = lit->getAtom()->getName();
-
-            if (newidb.find(litName) != newidb.end() && ignoredAtoms.find(litName) == ignoredAtoms.end()){
+            if(contains(newIdb, litName) && !contains(ignoredAtoms, litName)){
               // AstClause* magicClause = newClause->clone();
               AstRelationIdentifier newLitName = createMagicIdentifier(litName, querynum);
-              // std::stringstream newLit; newLit << "m" << querynum << "_" << lit->getAtom()->getName();
               if(program->getRelation(newLitName) == nullptr){
                 AstRelation* magicRelation = new AstRelation();
                 magicRelation->setName(newLitName);
 
-                // TODO: put this in a function
                 std::string mainLitName = litName.getNames()[0];
-                int endpt = mainLitName.size()-1;
-                while(endpt >= 0 && mainLitName[endpt] != '_'){
-                  endpt--;
-                }
-                if(endpt == -1){
-                  endpt = mainLitName.size();
-                }
+                int endpt = getEndpoint(mainLitName);
 
                 AstRelationIdentifier originalRelationName = createSubIdentifier(litName, 0, endpt);
                 AstRelation* originalRelation = program->getRelation(originalRelationName);
@@ -898,38 +894,27 @@ namespace souffle {
                 program->appendRelation(std::unique_ptr<AstRelation> (magicRelation));
               }
 
-              AstAtom* mclauseHead = new AstAtom (newLitName);
-
+              AstAtom* magicHead = new AstAtom(newLitName);
               std::string currAdornment = bodyAdornment[i];
-
               int argCount = 0;
 
               for(AstArgument* arg : lit->getArguments()){
                 if(currAdornment[argCount] == 'b'){
-                  mclauseHead->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
+                  magicHead->addArgument(std::unique_ptr<AstArgument> (arg->clone()));
                 }
                 argCount++;
               }
 
-              AstClause* magicClause = new AstClause ();
-              magicClause->setSrcLoc(nextSrcLoc(lit->getSrcLoc())); // TODO: FIX THSI!!! also this wa the huge problem
-              magicClause->setHead(std::unique_ptr<AstAtom> (mclauseHead));
+              AstClause* magicClause = new AstClause();
+              magicClause->setSrcLoc(nextSrcLoc(lit->getSrcLoc()));
+              magicClause->setHead(std::unique_ptr<AstAtom> (magicHead));
 
               // make the body
               // TODO: FIX FROM THIS POINT!!
               AstRelationIdentifier magPredName = createMagicIdentifier(newClause->getHead()->getName(), querynum);
               std::string mainLitName = magPredName.getNames()[0];
 
-              //magPredName << "m" << querynum << "_" << newClause->getHead()->getName();
-
-              // TODO: function to get these endpoints
-              int endpt = mainLitName.size()-1;
-              while(endpt >= 0 && mainLitName[endpt] != '_'){
-                endpt--;
-              }
-              if(endpt == -1){
-                endpt = mainLitName.size();
-              }
+              int endpt = getEndpoint(mainLitName);
 
               // changed stuff here ...
               std::string curradorn = mainLitName.substr(endpt+1, mainLitName.size() - (endpt + 1));
@@ -960,32 +945,30 @@ namespace souffle {
                 magicClause->addToBody(std::unique_ptr<AstLiteral> (body[j]->clone()));
               }
 
-              // std::stringstream tmpvarx; tmpvarx << magicClause->getBodyLiteral(0)->getAtom()->getName();
-
               std::vector<AstArgument*> currArguments = magicClause->getHead()->getArguments();
               for(size_t i = 0; i < currArguments.size(); i++){
                 AstArgument* arg = currArguments[i];
-                std::stringstream tmpvarx; tmpvarx << *arg;
-                if(tmpvarx.str().substr(0, 5).compare("abdul")==0){
+                std::stringstream tmpvar; tmpvar << *arg;
+                if(tmpvar.str().substr(0, 5).compare("abdul")==0){
                   size_t pos;
-                  for(pos = 0; pos < tmpvarx.str().size(); pos++){
-                    if(tmpvarx.str()[pos] == '_'){
+                  for(pos = 0; pos < tmpvar.str().size(); pos++){
+                    if(tmpvar.str()[pos] == '_'){
                       break;
                     }
                   }
 
                   size_t nextpos;
-                  for(nextpos = pos+1; nextpos < tmpvarx.str().size(); nextpos++){
-                    if(tmpvarx.str()[nextpos] == '_' ){
+                  for(nextpos = pos+1; nextpos < tmpvar.str().size(); nextpos++){
+                    if(tmpvar.str()[nextpos] == '_' ){
                       break;
                     }
                   }
-                  std::string startstr = tmpvarx.str().substr(pos+1, nextpos-pos-1);
+                  std::string startstr = tmpvar.str().substr(pos+1, nextpos-pos-1);
 
                   // 1 2 ... pos pos+1 ... size()-3 size()-2 size()-1
-                  // const char * str = res.substr(1,res.size()-2).c_str();
-                  //check if string or num constant
-                  std::string res = tmpvarx.str().substr(pos+1, tmpvarx.str().size());
+
+                  // check if string or num constant
+                  std::string res = tmpvar.str().substr(pos+1, tmpvar.str().size());
 
                   if(res[res.size()-1] == 's'){
                     const char * str = res.substr(0,res.size()-2).c_str();
@@ -1004,9 +987,10 @@ namespace souffle {
 
         // replace with H :- mag(H), T
         size_t numAtoms = newClause->getAtoms().size();
-        AstRelationIdentifier newMag = createMagicIdentifier(newClause->getHead()->getAtom()->getName(), querynum);
+        const AstAtom* newClauseHead = newClause->getHead()->getAtom();
+        AstRelationIdentifier newMag = createMagicIdentifier(newClauseHead->getName(), querynum);
         AstAtom* newMagAtom = new AstAtom (newMag);
-        std::vector<AstArgument*> args = newClause->getHead()->getAtom()->getArguments();
+        std::vector<AstArgument*> args = newClauseHead->getArguments();
 
         for(size_t k = 0; k < args.size(); k++){
           if(headAdornment[k] == 'b'){
@@ -1017,82 +1001,68 @@ namespace souffle {
         newClause->addToBody(std::unique_ptr<AstAtom> (newMagAtom));
         std::vector<unsigned int> newClauseOrder (numAtoms+1);
 
-        // for(size_t k = 1; k <= numAtoms; k++){
-        //   newClauseOrder[k] = k-1;
-        // }
-        //
-        // newClauseOrder[0] = numAtoms; TODO: fix
-        // TODO ^ : can just reorder using reorderOrdering
-
         for(size_t k = 0; k < numAtoms; k++){
           newClauseOrder[k] = k+1;
         }
-
         newClauseOrder[numAtoms] = 0;
         newClause->reorderAtoms(reorderOrdering(newClauseOrder));
-        AstSrcLocation newLoc = nextSrcLoc(newClause->getSrcLoc());
-        // newLoc.start.line += 969;
-        // newLoc.end.line += 970;
-        // newLoc.start.column += 971;
-        // newLoc.end.column += 972;
-        // std::cout << newLoc << " " << newClause->getSrcLoc() << std::endl;
-        newClause->setSrcLoc(newLoc);
+
+        newClause->setSrcLoc(nextSrcLoc(newClause->getSrcLoc()));
 
         // add the clause
-        // std::cout << *newClause << " " << newClause->getBodySize() << " " << newClause->getSrcLoc() << std::endl;
         newClauses.push_back(newClause);
         adornedRelation->addClause(std::unique_ptr<AstClause> (newClause));
       }
     }
 
     // remove all old IDB relations
-    for(AstRelationIdentifier relation : oldidb){
-      if(program->getRelation(relation)->isOutput()){
-        addAsOutput.insert(relation);
+    for(AstRelationIdentifier relationName : oldIdb){
+      AstRelation* relation = program->getRelation(relationName);
+      if(relation->isOutput()){
+        addAsOutput.insert(relationName);
         std::vector<AstIODirective*> clonedDirectives;
-        for(AstIODirective* iodir : program->getRelation(relation)->getIODirectives()){
+        for(AstIODirective* iodir : relation->getIODirectives()){
           clonedDirectives.push_back(iodir->clone());
         }
-        outputDirectives[relation] = clonedDirectives;
-      } else if (program->getRelation(relation)->isPrintSize()){
-        addAsPrintSize.insert(relation);
+        outputDirectives[relationName] = clonedDirectives;
+      } else if (relation->isPrintSize()){
+        addAsPrintSize.insert(relationName);
         std::vector<AstIODirective*> clonedDirectives;
-        for(AstIODirective* iodir : program->getRelation(relation)->getIODirectives()){
+        for(AstIODirective* iodir : relation->getIODirectives()){
           clonedDirectives.push_back(iodir->clone());
         }
-        outputDirectives[relation] = clonedDirectives;
+        outputDirectives[relationName] = clonedDirectives;
       }
-      if(ignoredAtoms.find(relation) != ignoredAtoms.end()){
+      if(contains(ignoredAtoms, relationName) || contains(negatedAtoms, relationName)){
         continue;
       }
-      if(negatedAtoms.find(relation) == negatedAtoms.end() && (!isAggRel(relation))){
-        program->removeRelation(relation);
+      if(!isAggRel(relationName)){
+        program->removeRelation(relationName);
       }
-      // need AST RELATION NAME here too !! TODO
     }
 
     // add output relations
     for(size_t i = 0; i < outputQueries.size(); i++){
-      AstRelationIdentifier oldname = outputQueries[i];
-      AstRelationIdentifier newname = newQueryNames[i];
+      AstRelationIdentifier oldName = outputQueries[i];
+      AstRelationIdentifier newName = newQueryNames[i];
 
       size_t prefixpoint = 0;
-      std::string mainnewname = newname.getNames()[0];
+      std::string mainnewname = newName.getNames()[0];
       while(mainnewname[prefixpoint]!='_'){
         prefixpoint++;
       }
 
-      AstRelationIdentifier newrelationname = createSubIdentifier(newname, prefixpoint+1,mainnewname.size()-(prefixpoint+1));
+      AstRelationIdentifier newrelationname = createSubIdentifier(newName, prefixpoint+1,mainnewname.size()-(prefixpoint+1));
       AstRelation* adornedRelation = program->getRelation(newrelationname);
       if(adornedRelation==nullptr){
-        continue; // TODO: WHY DOES THIS WORK?
+        continue; // TODO: WHY IS THIS HERE?
       }
 
       size_t numargs = adornedRelation->getArity();
 
       AstRelation* outputRelation;
-      if(program->getRelation(oldname) != nullptr){
-        outputRelation = program->getRelation(oldname);
+      if(program->getRelation(oldName) != nullptr){
+        outputRelation = program->getRelation(oldName);
       } else {
         outputRelation = new AstRelation ();
         outputRelation->setSrcLoc(nextSrcLoc(adornedRelation->getSrcLoc()));
@@ -1101,12 +1071,12 @@ namespace souffle {
           outputRelation->addAttribute(std::unique_ptr<AstAttribute> (attr->clone()));
         }
 
-        outputRelation->setName(oldname);
+        outputRelation->setName(oldName);
 
         // set as output relation - TODO: check if needed with the new model!
         AstIODirective* newdir = new AstIODirective();
 
-        if(addAsOutput.find(oldname) != addAsOutput.end()){
+        if(addAsOutput.find(oldName) != addAsOutput.end()){
           newdir->setAsOutput();
         } else {
           newdir->setAsPrintSize();
@@ -1121,7 +1091,7 @@ namespace souffle {
       }
 
       // oldname(arg1...argn) :- newname(arg1...argn)
-      AstAtom* headatom = new AstAtom (oldname);
+      AstAtom* headatom = new AstAtom (oldName);
       AstAtom* bodyatom = new AstAtom (newrelationname);
 
       for(size_t j = 0; j < numargs; j++){
@@ -1132,7 +1102,7 @@ namespace souffle {
       }
 
       AstClause* referringClause = new AstClause ();
-      referringClause->setSrcLoc(nextSrcLoc(outputRelation->getSrcLoc())); // TODO
+      referringClause->setSrcLoc(nextSrcLoc(outputRelation->getSrcLoc()));
       referringClause->setHead(std::unique_ptr<AstAtom> (headatom));
       referringClause->addToBody(std::unique_ptr<AstAtom> (bodyatom));
 
