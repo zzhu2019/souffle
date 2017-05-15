@@ -1,6 +1,7 @@
 #include "AstTransforms.h"
 #include "MagicSet.h"
 #include "IODirectives.h"
+#include "BinaryConstraintOps.h"
 
 #include <string>
 #include <vector>
@@ -109,8 +110,23 @@ namespace souffle {
     return retVal;
   }
 
-  // TODO: CHECK DEPENDENCIES
+  bool isBoundedArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundedArgs){
+    std::stringstream lhs_stream; lhs_stream << *lhs;
+    std::stringstream rhs_stream; rhs_stream << *rhs;
+    std::string lhs_name = lhs_stream.str();
+    std::string rhs_name = rhs_stream.str();
 
+    if(dynamic_cast<AstVariable*> (lhs) && (boundedArgs.find(lhs_name) == boundedArgs.end())){
+      if(dynamic_cast<AstVariable*> (rhs) && (boundedArgs.find(rhs_name) != boundedArgs.end())){
+        return true;
+      } else if(dynamic_cast<AstConstant*> (rhs)){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // TODO: CHECK DEPENDENCIES
   std::set<AstRelationIdentifier> addDependencies(const AstProgram* program, std::set<AstRelationIdentifier> relations){
     // TODO much more efficient way to do this... for now leave this...
     int countAdded = 0;
@@ -294,14 +310,23 @@ namespace souffle {
           }
 
           // mark all bounded arguments from the body
-          for(AstConstraint* constraint : clause->getConstraints()){
+          std::vector<AstConstraint*> constraints = clause->getConstraints();
+
+          for(size_t i = 0; i < constraints.size(); i++){
+            AstConstraint* constraint = constraints[i];
+            BinaryConstraintOp op = constraint->getOperator();
+            // TODO: check if MATCH works (or if this works at all)
+            if(op != BinaryConstraintOp::EQ && op != BinaryConstraintOp::MATCH){
+              continue;
+            }
             AstArgument* lhs = constraint->getLHS();
             AstArgument* rhs = constraint->getRHS();
-            if(dynamic_cast<AstConstraint*>(lhs)){
+
+            if(isBoundedArg(lhs, rhs, boundedArgs)){
               name.str(""); name << *lhs;
               boundedArgs.insert(name.str());
             }
-            if(dynamic_cast<AstConstraint*>(rhs)){
+            if(isBoundedArg(rhs, lhs, boundedArgs)){
               name.str(""); name << *rhs;
               boundedArgs.insert(name.str());
             }
