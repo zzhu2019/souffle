@@ -297,11 +297,11 @@ namespace souffle {
           for(AstConstraint* constraint : clause->getConstraints()){
             AstArgument* lhs = constraint->getLHS();
             AstArgument* rhs = constraint->getRHS();
-            if(dynamic_cast<AstVariable*>(lhs)){
+            if(dynamic_cast<AstConstraint*>(lhs)){
               name.str(""); name << *lhs;
               boundedArgs.insert(name.str());
             }
-            if(dynamic_cast<AstVariable*>(rhs)){
+            if(dynamic_cast<AstConstraint*>(rhs)){
               name.str(""); name << *rhs;
               boundedArgs.insert(name.str());
             }
