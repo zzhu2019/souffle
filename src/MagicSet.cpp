@@ -96,6 +96,17 @@ namespace souffle {
     return retVal;
   }
 
+  bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundedArgs){
+    std::stringstream name; name.str("");
+    for(AstArgument* arg : atom->getArguments()){
+      name.str(""); name << *arg;
+      if(boundedArgs.find(name.str()) != boundedArgs.end()){
+        return true; // found a bound argument, so can stop
+      }
+    }
+    return false;
+  }
+
   // TODO: CHECK DEPENDENCIES
 
   std::set<AstRelationIdentifier> addDependencies(const AstProgram* program, std::set<AstRelationIdentifier> relations){
@@ -311,26 +322,16 @@ namespace souffle {
                 // already done
                 continue;
               }
-              bool foundBound = false;
-              name.str(""); name << *currAtom;
+
+              AstRelationIdentifier atomName = currAtom->getName();
 
               // check if this is the first edb atom met
-              if(firstedb < 0 && (m_edb.find(name.str()) != m_edb.end())){
+              if(firstedb < 0 && contains(m_edb, atomName)){
                 firstedb = i;
               }
 
-              // check if any of the atom's arguments are bounded
-              for(AstArgument* arg : currAtom->getArguments()){
-                name.str(""); name << *arg;
-                // check if this argument has been bounded
-                if(boundedArgs.find(name.str()) != boundedArgs.end()){
-                  foundBound = true;
-                  break; // we found a bound argument, so we can adorn this
-                }
-              }
-
               // bound argument found, so based on this SIPS we adorn it
-              if(foundBound){
+              if(hasBoundArgument(currAtom, boundedArgs)){
                 atomAdded = true;
                 std::stringstream atomAdornment;
 
