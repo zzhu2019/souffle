@@ -1,10 +1,6 @@
 #pragma once
 
 #include "AstTransforms.h"
-#include "AstTypeAnalysis.h"
-#include "AstUtils.h"
-#include "AstVisitor.h"
-#include "PrecedenceGraph.h"
 
 #include <string>
 #include <vector>
