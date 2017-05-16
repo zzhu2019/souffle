@@ -32,6 +32,19 @@ namespace souffle {
     friend bool operator< (const AdornedPredicate& p1, const AdornedPredicate& p2){
       //TODO: NEED TO CHECK THIS
       std::stringstream comp1, comp2;
+      // should change this!!! replacement code fails though because of:
+      // //
+      // if((seenPred.getName() == atomName)
+      //     && (seenPred.getAdornment().compare(atomAdornment) == 0)){
+      //       seenBefore = true;
+      //       break;
+      // }
+      // //
+      // AstRelationIdentifier p1_name = p1.getName();
+      // p1_name.append(p1.getAdornment());
+      // AstRelationIdentifier p2_name = p2.getName();
+      // p2_name.append(p2.getAdornment());
+      // return p1.getName() < p2.getName();
       comp1 << p1.getName() << "_ADD_" << p1.getAdornment();
       comp2 << p2.getName() << "_ADD_" << p2.getAdornment();
       return (comp1.str() < comp2.str());
@@ -66,15 +79,12 @@ namespace souffle {
     }
 
     friend std::ostream& operator<<(std::ostream& out, const AdornedClause& arg){
-    //  std::stringstream str; str << arg.m_clause->getAtom()->getName();
-
       size_t currpos = 0;
       bool firstadded = true;
       out << arg.m_clause->getHead()->getName() << "{" << arg.m_headAdornment << "} :- ";
 
       std::vector<AstLiteral*> bodyLiterals = arg.m_clause->getBodyLiterals();
-      for(size_t i = 0; i < bodyLiterals.size(); i++){
-        AstLiteral* lit = bodyLiterals[i];
+      for(AstLiteral* lit : bodyLiterals){
         if(dynamic_cast<AstAtom*>(lit) == 0){
           const AstAtom* corresAtom = lit->getAtom();
           if(corresAtom != nullptr){

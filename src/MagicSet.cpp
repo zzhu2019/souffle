@@ -296,6 +296,7 @@ namespace souffle {
           AstAtom* clauseHead = clause->getHead();
           std::string headAdornment = currPredicate.getAdornment();
           std::vector<AstArgument*> headArguments = clauseHead->getArguments();
+
           for(size_t argnum = 0; argnum < headArguments.size(); argnum++){
             if(headAdornment[argnum] == 'b'){
               AstArgument* currArg = headArguments[argnum];
