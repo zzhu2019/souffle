@@ -19,6 +19,7 @@
 
 #include "AstComponent.h"
 #include "AstRelation.h"
+#include "AstPragma.h"
 #include "ErrorReport.h"
 #include "TypeSystem.h"
 #include "Util.h"
@@ -36,6 +37,7 @@ class AstRelation;
 class AstLiteral;
 class AstAtom;
 class AstArgument;
+class AstPragma;
 
 /**
  *  Intermediate representation of a datalog program
@@ -66,6 +68,9 @@ class AstProgram : public AstNode {
 
     /** Component instantiations */
     std::vector<std::unique_ptr<AstComponentInit>> instantiations;
+
+    /** Pragmas */
+    std::vector<std::unique_ptr<AstPragma>> pragmaDirectives;
 
     /** a private constructor to restrict creation */
     AstProgram() {}
@@ -107,6 +112,9 @@ private:
     /** Add an IO directive to the program */
     void addIODirective(std::unique_ptr<AstIODirective> r);
 
+    /** Add a pragma to the program */
+    void addPragma(std::unique_ptr<AstPragma> r);
+
 public:
     /** Find and return the relation in the program given its name */
     AstRelation* getRelation(const AstRelationIdentifier& name) const;
@@ -116,6 +124,9 @@ public:
 
     /** Get all io directives in the program */
     const std::vector<std::unique_ptr<AstIODirective>>& getIODirectives() const;
+
+    /** Get all pragma directives in the program */
+    const std::vector<std::unique_ptr<AstPragma>>& getPragmaDirectives() const;
 
     /** Return the number of relations in the program */
     size_t relationSize() const {

@@ -74,6 +74,7 @@ souffle_sources = \
               AstAttribute.h                            \
               AstClause.cpp         AstClause.h         \
               AstComponent.h                            \
+              AstPragma.cpp         AstPragma.h         \
               AstIODirective.h                          \
               AstLiteral.h                              \
               AstNode.h                                 \

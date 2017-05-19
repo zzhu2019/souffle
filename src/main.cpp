@@ -17,6 +17,7 @@
 #include "AstAnalysis.h"
 #include "AstProgram.h"
 #include "AstSemanticChecker.h"
+#include "AstPragma.h"
 #include "AstTransformer.h"
 #include "AstTransforms.h"
 #include "AstTranslationUnit.h"
@@ -264,6 +265,10 @@ int main(int argc, char** argv) {
     /* --- */
 
     transforms.push_back(std::unique_ptr<AstTransformer>(new AstExecutionPlanChecker()));
+
+    /* Set up options based on pragma declaratives */
+    (std::unique_ptr<AstTransformer> (new AstPragmaChecker()))->apply(*translationUnit);
+
     if (Global::config().has("auto-schedule")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));
     }

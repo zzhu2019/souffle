@@ -96,6 +96,9 @@ struct AstVisitor : public ast_visitor_tag {
         FORWARD(Relation);
         FORWARD(Program);
 
+        // pragma
+        FORWARD(Pragma);
+
 #undef FORWARD
 
         // did not work ...
@@ -149,6 +152,8 @@ protected:
     LINK(Attribute, Node);
     LINK(Clause, Node);
     LINK(Relation, Node);
+
+    LINK(Pragma, Node);
 
 #undef LINK
 
