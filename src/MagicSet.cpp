@@ -1,5 +1,6 @@
 #include "MagicSet.h"
 #include "IODirectives.h"
+#include "Global.h"
 
 namespace souffle {
   /* functor/aggregator check functions */
@@ -216,6 +217,38 @@ namespace souffle {
     std::pair<std::string, std::set<std::string>> result;
     result.first = atomAdornment; result.second = newlyBoundedArgs;
     return result;
+  }
+
+  std::set<std::string> split(std::string str, char delimiter){
+    std::set<std::string> res;
+    int begin = 0;
+    for(size_t i = 0; i < str.size(); i++){
+      if(str[i] == delimiter){
+        std::string token = str.substr(begin, (i - begin));
+        res.insert(token);
+        begin = i+1;
+      }
+    }
+    res.insert(str.substr(begin));
+    res.erase("");
+    return res;
+  }
+
+  std::set<AstRelationIdentifier> addIgnoredRelations(const AstProgram* program, std::set<AstRelationIdentifier> relations){
+    std::set<std::string> specifiedRelations = split(Global::config().get("magic-transform"), ',');
+    if(contains(specifiedRelations, "*")){
+      return relations;
+    }
+
+    std::set<AstRelationIdentifier> retVal (relations);
+    for(AstRelation* rel : program->getRelations()){
+      std::string mainName = rel->getName().getNames()[0];
+      if(!contains(specifiedRelations, mainName)){
+        retVal.insert(rel->getName());
+      }
+    }
+
+    return retVal;
   }
 
   void Adornment::run(const AstTranslationUnit& translationUnit){
@@ -483,6 +516,8 @@ namespace souffle {
       }
       m_adornedClauses.push_back(adornedClauses);
     }
+
+    ignoredAtoms = addIgnoredRelations(program, ignoredAtoms);
     ignoredAtoms = addDependencies(program, ignoredAtoms);
     m_ignoredAtoms = ignoredAtoms;
   }
@@ -684,6 +719,13 @@ namespace souffle {
   }
 
   bool contains(std::set<AstRelationIdentifier> set, AstRelationIdentifier element){
+    if(set.find(element) != set.end()){
+      return true;
+    }
+    return false;
+  }
+
+  bool contains(std::set<std::string> set, std::string element){
     if(set.find(element) != set.end()){
       return true;
     }
