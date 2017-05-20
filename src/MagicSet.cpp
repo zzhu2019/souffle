@@ -312,7 +312,8 @@ namespace souffle {
             AstConstraint* constraint = constraints[i];
             BinaryConstraintOp op = constraint->getOperator();
             // TODO: check if MATCH works (or if this works at all)
-            if(op != BinaryConstraintOp::EQ && op != BinaryConstraintOp::MATCH){
+            // if(op != BinaryConstraintOp::EQ && op != BinaryConstraintOp::MATCH){
+            if(op != BinaryConstraintOp::EQ){
               continue;
             }
             AstArgument* lhs = constraint->getLHS();
