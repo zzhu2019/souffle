@@ -2,14 +2,57 @@
 #include "IODirectives.h"
 
 namespace souffle {
-  bool argumentContainsFunctors(AstArgument*);
-  bool literalContainsFunctors(AstLiteral*);
-  bool atomContainsFunctors(AstAtom*);
+  /* functor/aggregator check functions */
 
-  std::string getString(AstArgument* arg){
-    std::stringstream argStream; argStream.str("");
-    argStream << *arg;
-    return argStream.str();
+  bool argumentContainsFunctors(AstArgument* arg){
+    if(dynamic_cast<AstFunctor*> (arg)){
+      // functor found!
+      return true;
+    } else if(dynamic_cast<AstRecordInit*>(arg)){
+      AstRecordInit* recordarg = dynamic_cast<AstRecordInit*> (arg);
+      for(AstArgument* subarg : recordarg->getArguments()){
+        if(argumentContainsFunctors(subarg)){
+          return true;
+        }
+      }
+    } else if(dynamic_cast<AstTypeCast*>(arg)){
+      AstTypeCast* typearg = dynamic_cast<AstTypeCast*> (arg);
+      if(argumentContainsFunctors(typearg->getValue())){
+        return true;
+      }
+    } else if(dynamic_cast<AstAggregator*>(arg)){
+      //aggregator found!
+		  return true;
+    }
+    return false;
+  }
+
+  bool atomContainsFunctors(AstAtom* atom){
+    for(AstArgument* arg : atom->getArguments()){
+      if(argumentContainsFunctors(arg)){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool literalContainsFunctors(AstLiteral* lit){
+    if(dynamic_cast<AstAtom*> (lit)){
+      if(atomContainsFunctors(dynamic_cast<AstAtom*> (lit))){
+        return true;
+      }
+    } else if(dynamic_cast<AstNegation*> (lit)){
+      AstNegation* negLit = dynamic_cast<AstNegation*> (lit);
+      if(atomContainsFunctors(negLit->getAtom())){
+        return true;
+      }
+    } else {
+      AstConstraint* cons = dynamic_cast<AstConstraint*> (lit);
+      if(argumentContainsFunctors(cons->getLHS()) || argumentContainsFunctors(cons->getRHS())){
+        return true;
+      }
+    }
+    return false;
   }
 
   // checks whether the clause contains functors or aggregators
@@ -25,13 +68,22 @@ namespace souffle {
     return false;
   }
 
+  std::string getString(AstArgument* arg){
+    std::stringstream argStream; argStream.str("");
+    argStream << *arg;
+    return argStream.str();
+  }
+
+  bool hasPrefix(std::string str, std::string prefix){
+    if(str.substr(0, prefix.size()).compare(prefix) == 0){
+        return true;
+    }
+    return false;
+  }
+
   bool isAggRel(AstRelationIdentifier rel){
     // TODO: check if this covers too much (__agg_rel_x defined when aggregations used)
-    if(rel.getNames()[0].substr(0, 10).compare("__agg_rel_")==0){
-      return true;
-    } else {
-      return false;
-    }
+    return hasPrefix(rel.getNames()[0], "__agg_rel_");
   }
 
   std::set<AstRelationIdentifier> argumentAddAggregations(AstArgument* arg, std::set<AstRelationIdentifier> ignoredVec){
@@ -189,18 +241,14 @@ namespace souffle {
 
     // Output: D' [the set of all adorned clauses]
 
-    // TODO: Check if Clause has to be reordered! (i.e. new one has to be made)
     const AstProgram* program = translationUnit.getProgram();
 
     // set up IDB/EDB and the output queries
     std::vector<AstRelationIdentifier> outputQueries;
-
     std::vector<std::vector<AdornedClause>> adornedProgram;
 
     for(AstRelation* rel : program->getRelations()){
-
       AstRelationIdentifier relName = rel->getName();
-
       // check if output relation or size is printed
       if(rel->isComputed()){
         outputQueries.push_back(rel->getName());
@@ -258,11 +306,8 @@ namespace souffle {
       std::set<AdornedPredicate> seenPredicates;
       std::vector<AdornedClause> adornedClauses;
 
-      std::string frepeat = "";
       size_t arity = program->getRelation(outputQuery)->getArity();
-      for(size_t i = 0; i < arity; i++){
-        frepeat +="f"; // 'f'*(number of arguments in output query)
-      }
+      std::string frepeat = std::string(arity, 'f');
 
       AdornedPredicate outputPredicate (outputQuery, frepeat);
       currentPredicates.push_back(outputPredicate);
@@ -442,57 +487,6 @@ namespace souffle {
     m_ignoredAtoms = ignoredAtoms;
   }
 
-  bool atomContainsFunctors(AstAtom* atom){
-    for(AstArgument* arg : atom->getArguments()){
-      if(argumentContainsFunctors(arg)){
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // NOTE: also getting rid of aggregators
-  bool argumentContainsFunctors(AstArgument* arg){
-    if(dynamic_cast<AstFunctor*> (arg)){
-      // functor found!
-      return true;
-    } else if(dynamic_cast<AstRecordInit*>(arg)){
-      AstRecordInit* recordarg = dynamic_cast<AstRecordInit*> (arg);
-      for(AstArgument* subarg : recordarg->getArguments()){
-        if(argumentContainsFunctors(subarg)){
-          return true;
-        }
-      }
-    } else if(dynamic_cast<AstTypeCast*>(arg)){
-      AstTypeCast* typearg = dynamic_cast<AstTypeCast*> (arg);
-      if(argumentContainsFunctors(typearg->getValue())){
-        return true;
-      }
-    } else if(dynamic_cast<AstAggregator*>(arg)){
-		    return true;
-    }
-    return false;
-  }
-
-  bool literalContainsFunctors(AstLiteral* lit){
-    if(dynamic_cast<AstAtom*> (lit)){
-      if(atomContainsFunctors(dynamic_cast<AstAtom*> (lit))){
-        return true;
-      }
-    } else if(dynamic_cast<AstNegation*> (lit)){
-      AstNegation* negLit = dynamic_cast<AstNegation*> (lit);
-      if(atomContainsFunctors(negLit->getAtom())){
-        return true;
-      }
-    } else {
-      AstConstraint* cons = dynamic_cast<AstConstraint*> (lit);
-      if(argumentContainsFunctors(cons->getLHS()) || argumentContainsFunctors(cons->getRHS())){
-        return true;
-      }
-    }
-    return false;
-  }
-
   void Adornment::outputAdornment(std::ostream& os){
     for(size_t i = 0; i < m_adornedClauses.size(); i++){
       std::vector<AdornedClause> clauses = m_adornedClauses[i];
@@ -525,7 +519,7 @@ namespace souffle {
 
             if(dynamic_cast<const AstVariable*>(currArg)){
               AstVariable* var = (AstVariable*) currArg;
-              if(var->getName().substr(0,10).compare("underscore") == 0){
+              if(hasPrefix(var->getName(), "underscore")){
                 newLit->setArgument(argNum, std::unique_ptr<AstArgument> (new AstUnnamedVariable()));
               }
             }
@@ -697,16 +691,6 @@ namespace souffle {
   }
 
   bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit){
-    AstProgram* program = translationUnit.getProgram();
-    separateDBs(program);
-
-    // analysis used to break for dfa.dl - get rid of the 'continue' flag and check the failures again
-
-    Adornment* adornment = translationUnit.getAnalysis<Adornment>();
-
-    // need to create new IDB - so first work with the current IDB
-    // then remove old IDB, add all clauses from new IDB (S)
-
     // STEPS:
     // For all output relations G:
     // -- Get the adornment S for this clause
@@ -716,10 +700,11 @@ namespace souffle {
     // -- Add the fact m_G_f...f to S
     // Remove all old idb rules
 
-    // S is the new IDB
-    // adornment->getIDB() is the old IDB
+    AstProgram* program = translationUnit.getProgram();
 
-    // TODO: make sure facts can be left alone
+    separateDBs(program); // make EDB int IDB = empty
+
+    Adornment* adornment = translationUnit.getAnalysis<Adornment>(); // perform adornment
 
     // edb/idb handling
     std::vector<std::vector<AdornedClause>> allAdornedClauses = adornment->getAdornedClauses();
@@ -747,12 +732,10 @@ namespace souffle {
       AstRelation* outputRelationFree = new AstRelation();
 
       size_t num_free = program->getRelation(outputQuery)->getArity();
-      std::string thefs = "";
-      for(size_t i = 0; i < num_free; i++){
-        thefs += "f";
-      }
+      std::string frepeat = std::string(num_free, 'f');
 
-      AstRelationIdentifier magicOutputName = createMagicIdentifier(createAdornedIdentifier(outputQuery, thefs), querynum);
+      // mN_outputname_ff...f()
+      AstRelationIdentifier magicOutputName = createMagicIdentifier(createAdornedIdentifier(outputQuery, frepeat), querynum);
       outputRelationFree->setName(magicOutputName);
       newQueryNames.push_back(magicOutputName);
 
@@ -762,14 +745,8 @@ namespace souffle {
       finalOutputClause->setHead(std::unique_ptr<AstAtom> (new AstAtom(magicOutputName)));
       program->appendClause(std::unique_ptr<AstClause> (finalOutputClause));
 
-      // if(olderRelation->isInput()){
-      //   for(const AstIODirective* current : olderRelation->getIODirectives()){
-      //     std::cout << *current << std::endl;
-      //   }
-      // }
-
       for(AdornedClause adornedClause : adornedClauses){
-        AstClause* clause = adornedClause.getClause(); // TODO: everything following should have this
+        AstClause* clause = adornedClause.getClause();
         AstRelationIdentifier originalName = clause->getHead()->getName();
 
         if(contains(ignoredAtoms, originalName)){
@@ -780,9 +757,9 @@ namespace souffle {
 
         AstRelationIdentifier newRelName = createAdornedIdentifier(originalName, headAdornment);
 
-        AstRelation* adornedRelation;
+        AstRelation* adornedRelation = program->getRelation(newRelName);
 
-        if((adornedRelation = program->getRelation(newRelName)) == nullptr){
+        if(adornedRelation == nullptr){
           AstRelation* originalRelation = program->getRelation(originalName);
 
           AstRelation* newRelation = new AstRelation();
@@ -817,8 +794,7 @@ namespace souffle {
               newDirective->addKVP("IO", "file");
             }
             if(inputDirectives.getIOType()=="file" && !inputDirectives.has("filename")){
-              inputDirectives.setFileName(originalName.getNames()[0] + ".facts"); // TODO: CHECK IF FIRSTN AME
-              newDirective->addKVP("filename", originalName.getNames()[0] + ".facts");
+              newDirective->addKVP("filename", originalName.getNames()[0] + ".facts"); // TODO: CHECK IF FIRSTN AME
             }
 
             newRelation->addIODirectives(std::unique_ptr<AstIODirective>(newDirective));
@@ -843,8 +819,6 @@ namespace souffle {
 
         int count = 0;
 
-        // TODO: NEED TO IGNORE ADORNMENT AFTER IN DEBUG-REPORT
-
         // set the name of each IDB pred in the clause to be the adorned version
         for(size_t i = 0; i < body.size(); i++){
           AstLiteral* lit = body[i];
@@ -867,7 +841,6 @@ namespace souffle {
           }
         }
 
-        // Possible TODO: function outside this to check if IDB
         // Add the set of magic rules
         for(size_t i = 0; i < body.size(); i++){
           AstLiteral* currentLiteral = body[i];
@@ -953,7 +926,7 @@ namespace souffle {
               for(size_t i = 0; i < currArguments.size(); i++){
                 AstArgument* arg = currArguments[i];
                 std::string argName = getString(arg);
-                if(argName.substr(0, 5).compare("abdul")==0){
+                if(hasPrefix(argName, "abdul")){
                   // TODO: fix up this section
                   size_t pos = argName.find('_');
                   size_t nextpos = argName.find('_', pos+1);
@@ -1070,11 +1043,8 @@ namespace souffle {
         } else {
           newdir->setAsPrintSize();
         }
-        outputRelation->addIODirectives(std::unique_ptr<AstIODirective>(newdir));
 
-        // for(AstIODirective* iodir : originalRelation->getIODirectives()){
-        //   newRelation->addIODirectives(std::unique_ptr<AstIODirective> (iodir->clone()));
-        // }
+        outputRelation->addIODirectives(std::unique_ptr<AstIODirective>(newdir));
 
         program->appendRelation(std::unique_ptr<AstRelation> (outputRelation));
       }
