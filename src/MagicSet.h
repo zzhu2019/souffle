@@ -10,6 +10,7 @@ namespace souffle {
   private:
     AstRelationIdentifier m_name;
     std::string m_adornment;
+    
   public:
     AdornedPredicate(AstRelationIdentifier name, std::string adornment) : m_name(name), m_adornment(adornment) {}
 
@@ -23,7 +24,6 @@ namespace souffle {
       return m_adornment;
     }
 
-    // TODO: Check if correct
     friend std::ostream& operator<<(std::ostream& out, const AdornedPredicate& arg){
       out << "(" <<  arg.m_name << ", " << arg.m_adornment << ")";
       return out;

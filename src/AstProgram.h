@@ -37,7 +37,6 @@ class AstRelation;
 class AstLiteral;
 class AstAtom;
 class AstArgument;
-class AstPragma;
 
 /**
  *  Intermediate representation of a datalog program
@@ -207,6 +206,9 @@ public:
             res.push_back(cur.get());
         }
         for (const auto& cur : clauses) {
+            res.push_back(cur.get());
+        }
+        for (const auto& cur : pragmaDirectives){
             res.push_back(cur.get());
         }
         return res;

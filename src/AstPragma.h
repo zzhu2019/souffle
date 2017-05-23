@@ -17,9 +17,7 @@
 #pragma once
 
 #include "AstNode.h"
-#include "AstPragma.h"
 #include "AstTransformer.h"
-#include "AstTranslationUnit.h"
 
 #include <string>
 
@@ -67,7 +65,7 @@ public:
         os << ".pragma " << key << " " << value << "\n";
     }
 
-    std::pair<std::string, std::string> getkvp(){
+    std::pair<std::string, std::string> getkvp() const {
       return std::pair<std::string, std::string>(key,value);
     }
 
