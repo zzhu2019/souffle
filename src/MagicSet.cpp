@@ -151,22 +151,22 @@ namespace souffle {
     return retVal;
   }
 
-  bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundedArgs){
+  bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs){
     for(AstArgument* arg : atom->getArguments()){
       std::string name = getString(arg);
-      if(boundedArgs.find(name) != boundedArgs.end()){
+      if(boundArgs.find(name) != boundArgs.end()){
         return true; // found a bound argument, so can stop
       }
     }
     return false;
   }
 
-  bool isBoundedArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundedArgs){
+  bool isBoundArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundArgs){
     std::string lhs_name = getString(lhs);
     std::string rhs_name = getString(rhs);
 
-    if(dynamic_cast<AstVariable*> (lhs) && (boundedArgs.find(lhs_name) == boundedArgs.end())){
-      if(dynamic_cast<AstVariable*> (rhs) && (boundedArgs.find(rhs_name) != boundedArgs.end())){
+    if(dynamic_cast<AstVariable*> (lhs) && (boundArgs.find(lhs_name) == boundArgs.end())){
+      if(dynamic_cast<AstVariable*> (rhs) && (boundArgs.find(rhs_name) != boundArgs.end())){
         return true;
       } else if(dynamic_cast<AstConstant*> (rhs)){
         return true;
@@ -202,20 +202,20 @@ namespace souffle {
     }
   }
 
-  std::pair<std::string, std::set<std::string>> bindArguments(AstAtom* currAtom, std::set<std::string> boundedArgs){
-    std::set<std::string> newlyBoundedArgs;
+  std::pair<std::string, std::set<std::string>> bindArguments(AstAtom* currAtom, std::set<std::string> boundArgs){
+    std::set<std::string> newlyBoundArgs;
     std::string atomAdornment = "";
     for(AstArgument* arg : currAtom->getArguments()){
       std::string argName = getString(arg);
-      if(boundedArgs.find(argName) != boundedArgs.end()){
-        atomAdornment += "b"; // bounded
+      if(boundArgs.find(argName) != boundArgs.end()){
+        atomAdornment += "b"; // bound
       } else {
         atomAdornment += "f"; // free
-        newlyBoundedArgs.insert(argName); // now bounded
+        newlyBoundArgs.insert(argName); // now bound
       }
     }
     std::pair<std::string, std::set<std::string>> result;
-    result.first = atomAdornment; result.second = newlyBoundedArgs;
+    result.first = atomAdornment; result.second = newlyBoundArgs;
     return result;
   }
 
@@ -263,7 +263,7 @@ namespace souffle {
 
     // Get the program
     // Get the query
-    // Adorn the query based on boundedness, and add it to P and S
+    // Adorn the query based on boundness, and add it to P and S
     // While P is not empty
     // -- Get the first atom out, call it R^c (remove from P)
     // -- For every clause Q defining R (i.e. all related clauses in EDB):
@@ -368,9 +368,9 @@ namespace souffle {
           // TODO: check if ordering correct
           std::vector<std::string> clauseAtomAdornments (clause->getAtoms().size());
           std::vector<unsigned int> ordering (clause->getAtoms().size());
-          std::set<std::string> boundedArgs;
+          std::set<std::string> boundArgs;
 
-          // mark all bounded arguments from head adornment
+          // mark all bound arguments from head adornment
           AstAtom* clauseHead = clause->getHead();
           std::string headAdornment = currPredicate.getAdornment();
           std::vector<AstArgument*> headArguments = clauseHead->getArguments();
@@ -379,11 +379,11 @@ namespace souffle {
             if(headAdornment[argnum] == 'b'){
               AstArgument* currArg = headArguments[argnum];
               std::string name = getString(currArg);
-              boundedArgs.insert(name);
+              boundArgs.insert(name);
             }
           }
 
-          // mark all bounded arguments from the body
+          // mark all bound arguments from the body
           std::vector<AstConstraint*> constraints = clause->getConstraints();
 
           for(size_t i = 0; i < constraints.size(); i++){
@@ -397,11 +397,11 @@ namespace souffle {
             AstArgument* lhs = constraint->getLHS();
             AstArgument* rhs = constraint->getRHS();
 
-            if(isBoundedArg(lhs, rhs, boundedArgs)){
-              boundedArgs.insert(getString(lhs));
+            if(isBoundArg(lhs, rhs, boundArgs)){
+              boundArgs.insert(getString(lhs));
             }
-            if(isBoundedArg(rhs, lhs, boundedArgs)){
-              boundedArgs.insert(getString(rhs));
+            if(isBoundArg(rhs, lhs, boundArgs)){
+              boundArgs.insert(getString(rhs));
             }
           }
 
@@ -427,17 +427,17 @@ namespace souffle {
                 firstedb = i;
               }
 
-              if(hasBoundArgument(currAtom, boundedArgs)){
+              if(hasBoundArgument(currAtom, boundArgs)){
                 // bound argument found, so based on this SIPS, we adorn it
                 atomAdded = true;
 
                 // find the adornment pattern
-                std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundedArgs);
+                std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundArgs);
                 std::string atomAdornment = result.first;
-                std::set<std::string> newlyBoundedArgs = result.second;
+                std::set<std::string> newlyBoundArgs = result.second;
 
-                for(std::string newlyAddedArg : newlyBoundedArgs){
-                  boundedArgs.insert(newlyAddedArg);
+                for(std::string newlyAddedArg : newlyBoundArgs){
+                  boundArgs.insert(newlyAddedArg);
                 }
 
                 AstRelationIdentifier atomName = currAtom->getName();
@@ -482,12 +482,12 @@ namespace souffle {
               AstAtom* currAtom = atoms[i];
               AstRelationIdentifier atomName = currAtom->getName();
 
-              std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundedArgs);
+              std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundArgs);
               std::string atomAdornment = result.first;
-              std::set<std::string> newlyBoundedArgs = result.second;
+              std::set<std::string> newlyBoundArgs = result.second;
 
-              for(std::string argx : newlyBoundedArgs){
-                boundedArgs.insert(argx);
+              for(std::string argx : newlyBoundArgs){
+                boundArgs.insert(argx);
               }
 
               bool seenBefore = false;
