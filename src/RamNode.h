@@ -63,8 +63,8 @@ enum RamNodeType {
     RN_Loop,
     RN_Parallel,
     RN_Exit,
-    RN_LogTimer
-
+    RN_LogTimer,
+    RN_DebugInfo
 };
 
 /**
@@ -78,7 +78,7 @@ public:
     RamNode(RamNodeType type) : type(type) {}
 
     /** A virtual destructor for RAM nodes */
-    virtual ~RamNode() {}
+    virtual ~RamNode() = default;
 
     RamNodeType getNodeType() const {
         return type;

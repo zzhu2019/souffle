@@ -43,8 +43,6 @@ class AstArgument;
  *          that consists of relations, clauses and types
  */
 class AstProgram : public AstNode {
-    using SymbolTable = souffle::SymbolTable;  // XXX pending namespace cleanup
-
     // TODO: Check whether this is needed
     friend class ParserDriver;
     friend class ComponentInstantiationTransformer;
@@ -72,17 +70,17 @@ class AstProgram : public AstNode {
     std::vector<std::unique_ptr<AstPragma>> pragmaDirectives;
 
     /** a private constructor to restrict creation */
-    AstProgram() {}
+    AstProgram() = default;
 
 public:
     /** Deleted copy constructor since instances can not be copied */
     AstProgram(const AstProgram&) = delete;
 
     /** A move constructor */
-    AstProgram(AstProgram&&);
+    AstProgram(AstProgram&& other) noexcept;
 
     /** A programs destructor */
-    ~AstProgram() {}
+    ~AstProgram() override = default;
 
     // -- Types ----------------------------------------------------------------
 
@@ -106,10 +104,10 @@ private:
     void addRelation(std::unique_ptr<AstRelation> r);
 
     /** Add a clause to the program */
-    void addClause(std::unique_ptr<AstClause> r);
+    void addClause(std::unique_ptr<AstClause> clause);
 
     /** Add an IO directive to the program */
-    void addIODirective(std::unique_ptr<AstIODirective> r);
+    void addIODirective(std::unique_ptr<AstIODirective> directive);
 
     /** Add a pragma to the program */
     void addPragma(std::unique_ptr<AstPragma> r);
@@ -136,7 +134,7 @@ public:
     void appendRelation(std::unique_ptr<AstRelation> r);
 
     /** Remove a relation from the program. */
-    void removeRelation(const AstRelationIdentifier& r);
+    void removeRelation(const AstRelationIdentifier& name);
 
     /** append a new clause to this program -- after parsing */
     void appendClause(std::unique_ptr<AstClause> clause);
@@ -179,19 +177,19 @@ public:
     // -- I/O ------------------------------------------------------------------
 
     /** Output the program to a given output stream */
-    void print(std::ostream& os) const;
+    void print(std::ostream& os) const override;
 
     // -- Manipulation ---------------------------------------------------------
 
     /** Creates a clone if this AST sub-structure */
-    virtual AstProgram* clone() const;
+    AstProgram* clone() const override;
 
     /** Mutates this node */
-    virtual void apply(const AstNodeMapper& map);
+    void apply(const AstNodeMapper& map) override;
 
 public:
     /** Obtains a list of all embedded child nodes */
-    virtual std::vector<const AstNode*> getChildNodes() const {
+    std::vector<const AstNode*> getChildNodes() const override {
         std::vector<const AstNode*> res;
         for (const auto& cur : types) {
             res.push_back(cur.second.get());
@@ -209,6 +207,9 @@ public:
             res.push_back(cur.get());
         }
         for (const auto& cur : pragmaDirectives){
+          res.push_back(cur.get());
+        }
+        for (const auto& cur : ioDirectives) {
             res.push_back(cur.get());
         }
         return res;
@@ -219,32 +220,53 @@ private:
 
 protected:
     /** Implements the node comparison for this node type */
-    virtual bool equal(const AstNode& node) const {
+    bool equal(const AstNode& node) const override {
         assert(dynamic_cast<const AstProgram*>(&node));
         const AstProgram& other = static_cast<const AstProgram&>(node);
 
         // check list sizes
-        if (types.size() != other.types.size()) return false;
-        if (relations.size() != other.relations.size()) return false;
+        if (types.size() != other.types.size()) {
+            return false;
+        }
+        if (relations.size() != other.relations.size()) {
+            return false;
+        }
 
         // check types
         for (const auto& cur : types) {
             auto pos = other.types.find(cur.first);
-            if (pos == other.types.end()) return false;
-            if (*cur.second != *pos->second) return false;
+            if (pos == other.types.end()) {
+                return false;
+            }
+            if (*cur.second != *pos->second) {
+                return false;
+            }
         }
 
         // check relations
         for (const auto& cur : relations) {
             auto pos = other.relations.find(cur.first);
-            if (pos == other.relations.end()) return false;
-            if (*cur.second != *pos->second) return false;
+            if (pos == other.relations.end()) {
+                return false;
+            }
+            if (*cur.second != *pos->second) {
+                return false;
+            }
         }
 
         // check components
-        if (!equal_targets(components, other.components)) return false;
-        if (!equal_targets(instantiations, other.instantiations)) return false;
-        if (!equal_targets(clauses, other.clauses)) return false;
+        if (!equal_targets(components, other.components)) {
+            return false;
+        }
+        if (!equal_targets(instantiations, other.instantiations)) {
+            return false;
+        }
+        if (!equal_targets(clauses, other.clauses)) {
+            return false;
+        }
+        if (!equal_targets(ioDirectives, other.ioDirectives)) {
+            return false;
+        }
 
         // no different found => programs are equal
         return true;

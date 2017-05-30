@@ -19,6 +19,7 @@
 #include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
+#include "Global.h"
 #include "IOSystem.h"
 #include "RamAutoIndex.h"
 #include "RamData.h"
@@ -26,6 +27,7 @@
 #include "RamTranslator.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
+#include "SignalHandler.h"
 #include "TypeSystem.h"
 #include "UnaryFunctorOps.h"
 
@@ -55,7 +57,7 @@ bool useNoIndex() {
 }
 
 // See the CPPIdentifierMap, (it is a singleton class).
-CPPIdentifierMap* CPPIdentifierMap::instance = 0;
+CPPIdentifierMap* CPPIdentifierMap::instance = nullptr;
 
 // Static wrapper to get relation names without going directly though the CPPIdentifierMap.
 static const std::string getRelationName(const RamRelationIdentifier& rel) {
@@ -93,21 +95,21 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
         Evaluator(RamEnvironment& env, const EvalContext& ctxt) : env(env), ctxt(ctxt) {}
 
         // -- basics --
-        RamDomain visitNumber(const RamNumber& num) {
+        RamDomain visitNumber(const RamNumber& num) override {
             return num.getConstant();
         }
 
-        RamDomain visitElementAccess(const RamElementAccess& access) {
+        RamDomain visitElementAccess(const RamElementAccess& access) override {
             return ctxt[access.getLevel()][access.getElement()];
         }
 
-        RamDomain visitAutoIncrement(const RamAutoIncrement& inc) {
+        RamDomain visitAutoIncrement(const RamAutoIncrement& /*inc*/) override {
             return env.incCounter();
         }
 
         // unary functions
 
-        RamDomain visitUnaryOperator(const RamUnaryOperator& op) {
+        RamDomain visitUnaryOperator(const RamUnaryOperator& op) override {
             switch (op.getOperator()) {
                 case UnaryOp::NEG:
                     return -visit(op.getValue());
@@ -155,7 +157,7 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
 
         // binary functions
 
-        RamDomain visitBinaryOperator(const RamBinaryOperator& op) {
+        RamDomain visitBinaryOperator(const RamBinaryOperator& op) override {
             switch (op.getOperator()) {
                 // arithmetic
                 case BinaryOp::ADD: {
@@ -169,7 +171,6 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
                 }
                 case BinaryOp::DIV: {
                     RamDomain rhs = visit(op.getRHS());
-                    assert(rhs != 0 && "Unsupported Operand! (division by zero)");
                     return visit(op.getLHS()) / rhs;
                 }
                 case BinaryOp::EXP: {
@@ -177,7 +178,6 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
                 }
                 case BinaryOp::MOD: {
                     RamDomain rhs = visit(op.getRHS());
-                    assert(rhs != 0 && "Unsupported Operand! (modulo by zero)");
                     return visit(op.getLHS()) % rhs;
                 }
                 case BinaryOp::BAND: {
@@ -211,7 +211,7 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
 
         // ternary functions
 
-        RamDomain visitTernaryOperator(const RamTernaryOperator& op) {
+        RamDomain visitTernaryOperator(const RamTernaryOperator& op) override {
             switch (op.getOperator()) {
                 case TernaryOp::SUBSTR: {
                     auto symbol = visit(op.getArg(0));
@@ -235,7 +235,7 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
 
         // -- records --
 
-        RamDomain visitPack(const RamPack& op) {
+        RamDomain visitPack(const RamPack& op) override {
             auto values = op.getValues();
             auto arity = values.size();
             RamDomain data[arity];
@@ -247,7 +247,7 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
 
         // -- safety net --
 
-        RamDomain visitNode(const RamNode& node) {
+        RamDomain visitNode(const RamNode& node) override {
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
             assert(false && "Unsupported Node Type!");
             return 0;
@@ -272,17 +272,17 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
 
         // -- connectors operators --
 
-        bool visitAnd(const RamAnd& a) {
+        bool visitAnd(const RamAnd& a) override {
             return visit(a.getLHS()) && visit(a.getRHS());
         }
 
         // -- relation operations --
 
-        bool visitEmpty(const RamEmpty& empty) {
+        bool visitEmpty(const RamEmpty& empty) override {
             return env.getRelation(empty.getRelation()).empty();
         }
 
-        bool visitNotExists(const RamNotExists& ne) {
+        bool visitNotExists(const RamNotExists& ne) override {
             const RamRelation& rel = env.getRelation(ne.getRelation());
 
             // construct the pattern tuple
@@ -320,7 +320,7 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
 
         // -- comparison operators --
 
-        bool visitBinaryRelation(const RamBinaryRelation& relOp) {
+        bool visitBinaryRelation(const RamBinaryRelation& relOp) override {
             switch (relOp.getOperator()) {
                 // comparison operators
                 case BinaryConstraintOp::EQ:
@@ -366,7 +366,7 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
 
         // -- safety net --
 
-        bool visitNode(const RamNode& node) {
+        bool visitNode(const RamNode& node) override {
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
             assert(false && "Unsupported Node Type!");
             return 0;
@@ -387,7 +387,7 @@ void apply(const RamOperation& op, RamEnvironment& env) {
 
         // -- Operations -----------------------------
 
-        void visitSearch(const RamSearch& search) {
+        void visitSearch(const RamSearch& search) override {
             // check condition
             auto condition = search.getCondition();
             if (condition && !eval(*condition, env, ctxt)) {
@@ -398,7 +398,7 @@ void apply(const RamOperation& op, RamEnvironment& env) {
             visit(*search.getNestedOperation());
         }
 
-        void visitScan(const RamScan& scan) {
+        void visitScan(const RamScan& scan) override {
             // get the targeted relation
             const RamRelation& rel = env.getRelation(scan.getRelation());
 
@@ -459,7 +459,7 @@ void apply(const RamOperation& op, RamEnvironment& env) {
             }
         }
 
-        void visitLookup(const RamLookup& lookup) {
+        void visitLookup(const RamLookup& lookup) override {
             // get reference
             RamDomain ref = ctxt[lookup.getReferenceLevel()][lookup.getReferencePosition()];
 
@@ -479,7 +479,7 @@ void apply(const RamOperation& op, RamEnvironment& env) {
             visitSearch(lookup);
         }
 
-        void visitAggregate(const RamAggregate& aggregate) {
+        void visitAggregate(const RamAggregate& aggregate) override {
             // get the targeted relation
             const RamRelation& rel = env.getRelation(aggregate.getRelation());
 
@@ -530,7 +530,9 @@ void apply(const RamOperation& op, RamEnvironment& env) {
 
             // check for emptiness
             if (aggregate.getFunction() != RamAggregate::COUNT) {
-                if (range.first == range.second) return;  // no elements => no min/max
+                if (range.first == range.second) {
+                    return;  // no elements => no min/max
+                }
             }
 
             // iterate through values
@@ -581,7 +583,7 @@ void apply(const RamOperation& op, RamEnvironment& env) {
             visitSearch(aggregate);
         }
 
-        void visitProject(const RamProject& project) {
+        void visitProject(const RamProject& project) override {
             // check constraints
             RamCondition* condition = project.getCondition();
             if (condition && !eval(*condition, env, ctxt)) {
@@ -606,7 +608,7 @@ void apply(const RamOperation& op, RamEnvironment& env) {
         }
 
         // -- safety net --
-        void visitNode(const RamNode& node) {
+        void visitNode(const RamNode& node) override {
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
             assert(false && "Unsupported Node Type!");
         }
@@ -633,7 +635,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 
         // -- Statements -----------------------------
 
-        bool visitSequence(const RamSequence& seq) {
+        bool visitSequence(const RamSequence& seq) override {
             // process all statements in sequence
             for (const auto& cur : seq.getStatements()) {
                 if (!visit(cur)) {
@@ -645,7 +647,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
             return true;
         }
 
-        bool visitParallel(const RamParallel& parallel) {
+        bool visitParallel(const RamParallel& parallel) override {
             // get statements to be processed in parallel
             const auto& stmts = parallel.getStatements();
 
@@ -674,56 +676,62 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
             return cond;
         }
 
-        bool visitLoop(const RamLoop& loop) {
+        bool visitLoop(const RamLoop& loop) override {
             while (visit(loop.getBody())) {
             }
             return true;
         }
 
-        bool visitExit(const RamExit& exit) {
+        bool visitExit(const RamExit& exit) override {
             return !eval(exit.getCondition(), env);
         }
 
-        bool visitLogTimer(const RamLogTimer& timer) {
+        bool visitLogTimer(const RamLogTimer& timer) override {
             RamLogger logger(timer.getLabel().c_str(), *profile);
             return visit(timer.getNested());
         }
 
-        bool visitCreate(const RamCreate& create) {
+        bool visitDebugInfo(const RamDebugInfo& dbg) override {
+            SignalHandler::instance()->setMsg(dbg.getLabel().c_str());
+            return visit(dbg.getNested());
+        }
+
+        bool visitCreate(const RamCreate& create) override {
             env.getRelation(create.getRelation());
             return true;
         }
 
-        bool visitClear(const RamClear& clear) {
+        bool visitClear(const RamClear& clear) override {
             env.getRelation(clear.getRelation()).purge();
             return true;
         }
 
-        bool visitDrop(const RamDrop& drop) {
+        bool visitDrop(const RamDrop& drop) override {
             env.dropRelation(drop.getRelation());
             return true;
         }
 
-        bool visitPrintSize(const RamPrintSize& print) {
+        bool visitPrintSize(const RamPrintSize& print) override {
             std::cout << print.getLabel() << env.getRelation(print.getRelation()).size() << "\n";
             return true;
         }
 
-        bool visitLogSize(const RamLogSize& print) {
+        bool visitLogSize(const RamLogSize& print) override {
             *profile << print.getLabel() << env.getRelation(print.getRelation()).size() << "\n";
             return true;
         }
 
-        bool visitLoad(const RamLoad& load) {
+        bool visitLoad(const RamLoad& load) override {
+#ifdef USE_JAVAI
             if (load.getRelation().isData()) {
                 // Load from mem
                 std::string name = load.getRelation().getName();
-                if (data == NULL) {
+                if (data == nullptr) {
                     std::cout << "data is null\n";
                     return false;
                 }
                 PrimData* pd = data->getTuples(name);
-                if (pd == NULL || pd->data.size() == 0) {
+                if (pd == nullptr || pd->data.empty()) {
                     std::cout << "relation " << name << " is empty\n";
                     return true;
                 }
@@ -732,7 +740,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
                                    .load(pd->data, env.getSymbolTable(), load.getRelation().getSymbolMask());
                 return !err;
             }
-
+#endif
             try {
                 RamRelation& relation = env.getRelation(load.getRelation());
                 std::unique_ptr<ReadStream> reader =
@@ -746,11 +754,12 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
             return true;
         }
 
-        bool visitStore(const RamStore& store) {
+        bool visitStore(const RamStore& store) override {
+#ifdef USE_JAVAI
             if (store.getRelation().isData()) {
                 return true;
             }
-
+#endif
             auto& rel = env.getRelation(store.getRelation());
             for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
                 try {
@@ -766,7 +775,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
             return true;
         }
 
-        bool visitFact(const RamFact& fact) {
+        bool visitFact(const RamFact& fact) override {
             auto arity = fact.getRelation().getArity();
             RamDomain tuple[arity];
             auto values = fact.getValues();
@@ -779,13 +788,13 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
             return true;
         }
 
-        bool visitInsert(const RamInsert& insert) {
+        bool visitInsert(const RamInsert& insert) override {
             // run generic query executor
             queryExecutor(insert, env, report);
             return true;
         }
 
-        bool visitMerge(const RamMerge& merge) {
+        bool visitMerge(const RamMerge& merge) override {
             // get involved relation
             RamRelation& src = env.getRelation(merge.getSourceRelation());
             RamRelation& trg = env.getRelation(merge.getTargetRelation());
@@ -797,14 +806,14 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
             return true;
         }
 
-        bool visitSwap(const RamSwap& swap) {
+        bool visitSwap(const RamSwap& swap) override {
             std::swap(env.getRelation(swap.getFirstRelation()), env.getRelation(swap.getSecondRelation()));
             return true;
         }
 
         // -- safety net --
 
-        bool visitNode(const RamNode& node) {
+        bool visitNode(const RamNode& node) override {
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
             assert(false && "Unsupported Node Type!");
             return false;
@@ -814,7 +823,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
     // create and run interpreter
     Interpreter(env, executor, report, profile, data).visit(stmt);
 }
-}
+}  // namespace
 
 void RamGuidedInterpreter::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData* data) const {
     if (Global::config().has("profile")) {
@@ -927,7 +936,7 @@ Order scheduleByModel(AstClause& clause, RamEnvironment& env, std::ostream* repo
     // done
     return res;
 }
-}
+}  // namespace
 
 /** With this strategy queries will be processed as they are stated by the user */
 const QueryExecutionStrategy DirectExecution = [](
@@ -955,12 +964,16 @@ const QueryExecutionStrategy ScheduledExecution = [](
     Order order;
 
     // (re-)schedule clause
-    if (report) *report << "\nScheduling clause @ " << clause->getSrcLoc() << "\n";
+    if (report) {
+        *report << "\nScheduling clause @ " << clause->getSrcLoc() << "\n";
+    }
     {
         auto start = now();
         order = scheduleByModel(*clause, env, report);
         auto end = now();
-        if (report) *report << "    Original Query: " << insert.getOrigin() << "\n";
+        if (report) {
+            *report << "    Original Query: " << insert.getOrigin() << "\n";
+        }
         if (report) {
             *report << "       Rescheduled: " << *clause << "\n";
         }
@@ -969,7 +982,9 @@ const QueryExecutionStrategy ScheduledExecution = [](
                 *report << "            Order has Changed!\n";
             }
         }
-        if (report) *report << "   Scheduling Time: " << duration_in_ms(start, end) << "ms\n";
+        if (report) {
+            *report << "   Scheduling Time: " << duration_in_ms(start, end) << "ms\n";
+        }
     }
 
     // create operation
@@ -1092,7 +1107,7 @@ class Printer : public RamVisitor<void, std::ostream&> {
         Printer& p;
         const RamNode& node;
         printer(Printer& p, const RamNode& n) : p(p), node(n) {}
-        printer(const printer& other) : p(other.p), node(other.node) {}
+        printer(const printer& other) = default;
         friend std::ostream& operator<<(std::ostream& out, const printer& p) {
             p.p.visit(p.node, out);
             return out;
@@ -1100,24 +1115,24 @@ class Printer : public RamVisitor<void, std::ostream&> {
     };
 
 public:
-    Printer(const IndexMap&) {
+    Printer(const IndexMap& /*indexMap*/) {
         rec = [&](std::ostream& out, const RamNode* node) { this->visit(*node, out); };
     }
 
     // -- relation statements --
 
-    void visitCreate(const RamCreate& create, std::ostream& out) {}
+    void visitCreate(const RamCreate& /*create*/, std::ostream& /*out*/) override {}
 
-    void visitFact(const RamFact& fact, std::ostream& out) {
+    void visitFact(const RamFact& fact, std::ostream& out) override {
         out << getRelationName(fact.getRelation()) << "->"
             << "insert(" << join(fact.getValues(), ",", rec) << ");\n";
     }
 
-    void visitLoad(const RamLoad& load, std::ostream& out) {}
+    void visitLoad(const RamLoad& /*load*/, std::ostream& /*out*/) override {}
 
-    void visitStore(const RamStore& store, std::ostream& out) {}
+    void visitStore(const RamStore& /*store*/, std::ostream& /*out*/) override {}
 
-    void visitInsert(const RamInsert& insert, std::ostream& out) {
+    void visitInsert(const RamInsert& insert, std::ostream& out) override {
         // enclose operation with a check for an empty relation
         std::set<RamRelationIdentifier> input_relations;
         visitDepthFirst(insert, [&](const RamScan& scan) { input_relations.insert(scan.getRelation()); });
@@ -1176,9 +1191,11 @@ public:
             out << "num_failed_proofs += private_num_failed_proofs;\n";
         }
 
-        if (parallel) out << "PARALLEL_END;\n";  // end parallel
+        if (parallel) {
+            out << "PARALLEL_END;\n";  // end parallel
 
-        // aggregate proof counters
+            // aggregate proof counters
+        }
         if (Global::config().has("profile")) {
             // get target relation
             RamRelationIdentifier rel;
@@ -1205,27 +1222,27 @@ public:
         // out << "();";  // call lambda
     }
 
-    void visitMerge(const RamMerge& merge, std::ostream& out) {
+    void visitMerge(const RamMerge& merge, std::ostream& out) override {
         out << getRelationName(merge.getTargetRelation()) << "->"
             << "insertAll("
             << "*" << getRelationName(merge.getSourceRelation()) << ");\n";
     }
 
-    void visitClear(const RamClear& clear, std::ostream& out) {
+    void visitClear(const RamClear& clear, std::ostream& out) override {
         out << getRelationName(clear.getRelation()) << "->"
             << "purge();\n";
     }
 
-    void visitDrop(const RamDrop& drop, std::ostream& out) {
+    void visitDrop(const RamDrop& drop, std::ostream& out) override {
         if (drop.getRelation().isTemp()) {
             out << getRelationName(drop.getRelation()) << "->"
                 << "purge();\n";
         }
     }
 
-    void visitPrintSize(const RamPrintSize& print, std::ostream& out) {}
+    void visitPrintSize(const RamPrintSize& /*print*/, std::ostream& /*out*/) override {}
 
-    void visitLogSize(const RamLogSize& print, std::ostream& out) {
+    void visitLogSize(const RamLogSize& print, std::ostream& out) override {
         out << "{ auto lease = getOutputLock().acquire(); \n";
         out << "profile << R\"(" << print.getLabel() << ")\" <<  ";
         out << getRelationName(print.getRelation());
@@ -1236,13 +1253,13 @@ public:
 
     // -- control flow statements --
 
-    void visitSequence(const RamSequence& seq, std::ostream& out) {
+    void visitSequence(const RamSequence& seq, std::ostream& out) override {
         for (const auto& cur : seq.getStatements()) {
             out << print(cur);
         }
     }
 
-    void visitParallel(const RamParallel& parallel, std::ostream& out) {
+    void visitParallel(const RamParallel& parallel, std::ostream& out) override {
         auto stmts = parallel.getStatements();
 
         // special handling cases
@@ -1272,11 +1289,11 @@ public:
         out << "SECTIONS_END;\n";
     }
 
-    void visitLoop(const RamLoop& loop, std::ostream& out) {
+    void visitLoop(const RamLoop& loop, std::ostream& out) override {
         out << "for(;;) {\n" << print(loop.getBody()) << "}\n";
     }
 
-    void visitSwap(const RamSwap& swap, std::ostream& out) {
+    void visitSwap(const RamSwap& swap, std::ostream& out) override {
         const std::string tempKnowledge = "rel_0";
         const std::string& deltaKnowledge = getRelationName(swap.getFirstRelation());
         const std::string& newKnowledge = getRelationName(swap.getSecondRelation());
@@ -1288,11 +1305,11 @@ public:
             << "}\n";
     }
 
-    void visitExit(const RamExit& exit, std::ostream& out) {
+    void visitExit(const RamExit& exit, std::ostream& out) override {
         out << "if(" << print(exit.getCondition()) << ") break;\n";
     }
 
-    void visitLogTimer(const RamLogTimer& timer, std::ostream& out) {
+    void visitLogTimer(const RamLogTimer& timer, std::ostream& out) override {
         // create local scope for name resolution
         out << "{\n";
 
@@ -1306,9 +1323,18 @@ public:
         out << "}\n";
     }
 
+    void visitDebugInfo(const RamDebugInfo& dbg, std::ostream& out) override {
+        out << "SignalHandler::instance()->setMsg(R\"_(";
+        out << dbg.getLabel();
+        out << ")_\");\n";
+
+        // insert statements of the rule
+        visit(dbg.getNested(), out);
+    }
+
     // -- operations --
 
-    void visitSearch(const RamSearch& search, std::ostream& out) {
+    void visitSearch(const RamSearch& search, std::ostream& out) override {
         auto condition = search.getCondition();
         if (condition) {
             out << "if( " << print(condition) << ") {\n" << print(search.getNestedOperation()) << "}\n";
@@ -1320,7 +1346,7 @@ public:
         }
     }
 
-    void visitScan(const RamScan& scan, std::ostream& out) {
+    void visitScan(const RamScan& scan, std::ostream& out) override {
         // get relation name
         const auto& rel = scan.getRelation();
         auto relName = getRelationName(rel);
@@ -1332,16 +1358,22 @@ public:
             if (scan.isPureExistenceCheck()) {
                 out << "if(!" << relName << "->"
                     << "empty()) {\n";
+                visitSearch(scan, out);
+                out << "}\n";
             } else if (scan.getLevel() == 0) {
                 // make this loop parallel
                 out << "pfor(auto it = part.begin(); it<part.end(); ++it) \n";
+                out << "try{";
                 out << "for(const auto& env0 : *it) {\n";
+                visitSearch(scan, out);
+                out << "}\n";
+                out << "} catch(std::exception &e) { SignalHandler::instance()->error(e.what());}\n";
             } else {
                 out << "for(const auto& env" << level << " : "
                     << "*" << relName << ") {\n";
+                visitSearch(scan, out);
+                out << "}\n";
             }
-            visitSearch(scan, out);
-            out << "}\n";
             return;
         }
 
@@ -1386,7 +1418,7 @@ public:
         return;
     }
 
-    void visitLookup(const RamLookup& lookup, std::ostream& out) {
+    void visitLookup(const RamLookup& lookup, std::ostream& out) override {
         auto arity = lookup.getArity();
 
         // get the tuple type working with
@@ -1406,7 +1438,7 @@ public:
         out << "}\n";
     }
 
-    void visitAggregate(const RamAggregate& aggregate, std::ostream& out) {
+    void visitAggregate(const RamAggregate& aggregate, std::ostream& out) override {
         // get some properties
         const auto& rel = aggregate.getRelation();
         auto arity = rel.getArity();
@@ -1547,7 +1579,7 @@ public:
         }
     }
 
-    void visitProject(const RamProject& project, std::ostream& out) {
+    void visitProject(const RamProject& project, std::ostream& out) override {
         const auto& rel = project.getRelation();
         auto arity = rel.getArity();
         auto relName = getRelationName(rel);
@@ -1560,13 +1592,14 @@ public:
         }
 
         // create projected tuple
-        if (project.getValues().size() == 0)
+        if (project.getValues().empty()) {
             out << "Tuple<RamDomain," << arity << "> tuple({});\n";
-        else
+        } else {
             out << "Tuple<RamDomain," << arity << "> tuple({(RamDomain)("
                 << join(project.getValues(), "),(RamDomain)(", rec) << ")});\n";
 
-        // check filter
+            // check filter
+        }
         if (project.hasFilter()) {
             auto relFilter = getRelationName(project.getFilter());
             auto ctxFilter = "READ_OP_CONTEXT(" + getOpContextName(project.getFilter()) + ")";
@@ -1605,11 +1638,11 @@ public:
 
     // -- conditions --
 
-    void visitAnd(const RamAnd& c, std::ostream& out) {
+    void visitAnd(const RamAnd& c, std::ostream& out) override {
         out << "((" << print(c.getLHS()) << ") && (" << print(c.getRHS()) << "))";
     }
 
-    void visitBinaryRelation(const RamBinaryRelation& rel, std::ostream& out) {
+    void visitBinaryRelation(const RamBinaryRelation& rel, std::ostream& out) override {
         switch (rel.getOperator()) {
             // comparison operators
             case BinaryConstraintOp::EQ:
@@ -1670,12 +1703,12 @@ public:
         }
     }
 
-    void visitEmpty(const RamEmpty& empty, std::ostream& out) {
+    void visitEmpty(const RamEmpty& empty, std::ostream& out) override {
         out << getRelationName(empty.getRelation()) << "->"
             << "empty()";
     }
 
-    void visitNotExists(const RamNotExists& ne, std::ostream& out) {
+    void visitNotExists(const RamNotExists& ne, std::ostream& out) override {
         // get some details
         const auto& rel = ne.getRelation();
         auto relName = getRelationName(rel);
@@ -1696,28 +1729,29 @@ public:
         out << toIndex(ne.getKey());
         out << "(Tuple<RamDomain," << arity << ">({";
         out << join(ne.getValues(), ",", [&](std::ostream& out, RamValue* value) {
-            if (!value)
+            if (!value) {
                 out << "0";
-            else
+            } else {
                 visit(*value, out);
+            }
         });
         out << "})," << ctxName << ").empty()";
     }
 
     // -- values --
-    void visitNumber(const RamNumber& num, std::ostream& out) {
+    void visitNumber(const RamNumber& num, std::ostream& out) override {
         out << num.getConstant();
     }
 
-    void visitElementAccess(const RamElementAccess& access, std::ostream& out) {
+    void visitElementAccess(const RamElementAccess& access, std::ostream& out) override {
         out << "env" << access.getLevel() << "[" << access.getElement() << "]";
     }
 
-    void visitAutoIncrement(const RamAutoIncrement& inc, std::ostream& out) {
+    void visitAutoIncrement(const RamAutoIncrement& /*inc*/, std::ostream& out) override {
         out << "(ctr++)";
     }
 
-    void visitUnaryOperator(const RamUnaryOperator& op, std::ostream& out) {
+    void visitUnaryOperator(const RamUnaryOperator& op, std::ostream& out) override {
         switch (op.getOperator()) {
             case UnaryOp::ORD:
                 out << print(op.getValue());
@@ -1782,7 +1816,7 @@ public:
         }
     }
 
-    void visitBinaryOperator(const RamBinaryOperator& op, std::ostream& out) {
+    void visitBinaryOperator(const RamBinaryOperator& op, std::ostream& out) override {
         switch (op.getOperator()) {
             // arithmetic
             case BinaryOp::ADD: {
@@ -1846,7 +1880,7 @@ public:
         }
     }
 
-    void visitTernaryOperator(const RamTernaryOperator& op, std::ostream& out) {
+    void visitTernaryOperator(const RamTernaryOperator& op, std::ostream& out) override {
         switch (op.getOperator()) {
             case TernaryOp::SUBSTR:
                 out << "(RamDomain)symTable.lookup(";
@@ -1865,7 +1899,7 @@ public:
 
     // -- records --
 
-    void visitPack(const RamPack& pack, std::ostream& out) {
+    void visitPack(const RamPack& pack, std::ostream& out) override {
         out << "pack("
             << "ram::Tuple<RamDomain," << pack.getValues().size() << ">({" << join(pack.getValues(), ",", rec)
             << "})"
@@ -1874,7 +1908,7 @@ public:
 
     // -- safety net --
 
-    void visitNode(const RamNode& node, std::ostream&) {
+    void visitNode(const RamNode& node, std::ostream& /*out*/) override {
         std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
         assert(false && "Unsupported Node Type!");
     }
@@ -1893,12 +1927,12 @@ void genCode(std::ostream& out, const RamStatement& stmt, const IndexMap& indice
     // use printer
     Printer(indices).visit(stmt, out);
 }
-}
+}  // namespace
 
 std::string RamCompiler::resolveFileName() const {
     if (Global::config().get("dl-program") == "") {
         // generate temporary file
-        char templ[40] = "./fileXXXXXX";
+        char templ[40] = "./souffleXXXXXX";
         close(mkstemp(templ));
         return templ;
     }
@@ -1959,32 +1993,26 @@ std::string RamCompiler::generateCode(
     //                      Code Generation
     // ---------------------------------------------------------------
 
-    // open output file
-    std::string fname = filename;
-    if (fname == "") {
-        fname = resolveFileName();
-    }
-
     // generate class name
-    std::string classname = fname;
-    if (endsWith(classname, ".h")) {
-        classname = classname.substr(0, classname.size() - 2);
-    } else if (endsWith(classname, ".cpp")) {
-        classname = classname.substr(0, classname.size() - 4);
+    std::string simplename = baseName(filename);
+    // strip .h/.cpp, if present
+    if (endsWith(simplename, ".h")) {
+        simplename = simplename.substr(0, simplename.size() - 2);
+    } else if (endsWith(simplename, ".cpp")) {
+        simplename = simplename.substr(0, simplename.size() - 4);
     }
-    char* bname = strdup(classname.c_str());
-    std::string simplename = basename(bname);
-    free(bname);
+    // Remove invalid characters
     for (size_t i = 0; i < simplename.length(); i++) {
         if ((!isalpha(simplename[i]) && i == 0) || !isalnum(simplename[i])) {
             simplename[i] = '_';
         }
     }
-    classname = "Sf_" + simplename;
+
+    std::string classname = "Sf_" + simplename;
 
     // add filename extension
-    std::string source = fname;
-    if (!(endsWith(fname, ".h") || endsWith(fname, ".cpp"))) {
+    std::string source = filename;
+    if (!(endsWith(source, ".h") || endsWith(source, ".cpp"))) {
         source += ".cpp";
     }
 
@@ -2160,7 +2188,7 @@ std::string RamCompiler::generateCode(
                 os << "if (!dirname.empty() && directiveMap[\"IO\"] == \"file\" && ";
                 os << "directiveMap[\"filename\"].front() != '/') {";
                 os << "directiveMap[\"filename\"] = dirname + \"/\" + directiveMap[\"filename\"];";
-                os << "}";
+                os << "}\n";
                 os << "IODirectives ioDirectives(directiveMap);\n";
                 os << "IOSystem::getInstance().getWriter(";
                 os << "SymbolMask({" << store->getRelation().getSymbolMask() << "})";
@@ -2192,7 +2220,7 @@ std::string RamCompiler::generateCode(
         os << "if (!dirname.empty() && directiveMap[\"IO\"] == \"file\" && ";
         os << "directiveMap[\"filename\"].front() != '/') {";
         os << "directiveMap[\"filename\"] = dirname + \"/\" + directiveMap[\"filename\"];";
-        os << "}";
+        os << "}\n";
         os << "IODirectives ioDirectives(directiveMap);\n";
         os << "IOSystem::getInstance().getReader(";
         os << "SymbolMask({" << load.getRelation().getSymbolMask() << "})";
@@ -2210,7 +2238,6 @@ std::string RamCompiler::generateCode(
         os << "IODirectives ioDirectives;\n";
         os << "ioDirectives.setIOType(\"stdout\");\n";
         os << "ioDirectives.setRelationName(\"" << name << "\");\n";
-        // TODO (mmcgr): Allow copying of all IODirectives contents
         os << "IOSystem::getInstance().getWriter(";
         os << "SymbolMask({" << mask << "})";
         os << ", symTable, ioDirectives";
@@ -2265,6 +2292,7 @@ std::string RamCompiler::generateCode(
     os << "#else\n";
     os << "}\n";
     os << "int main(int argc, char** argv)\n{\n";
+    os << "try{\n";
 
     // parse arguments
     os << "souffle::CmdOptions opt(";
@@ -2298,6 +2326,7 @@ std::string RamCompiler::generateCode(
     os << "obj.run();\n";
     os << "obj.printAll(opt.getOutputFileDir());\n";
     os << "return 0;\n";
+    os << "} catch(std::exception &e) { souffle::SignalHandler::instance()->error(e.what());}\n";
     os << "}\n";
     os << "#endif\n";
 
@@ -2309,11 +2338,11 @@ std::string RamCompiler::generateCode(
 }
 
 std::string RamCompiler::compileToLibrary(
-        const SymbolTable& symTable, const RamStatement& stmt, const std::string& name) const {
-    std::string source = generateCode(symTable, stmt, name + ".cpp");
+        const SymbolTable& symTable, const RamStatement& stmt, const std::string& filename) const {
+    std::string source = generateCode(symTable, stmt, filename + ".cpp");
 
     // execute shell script that compiles the generated C++ program
-    std::string libCmd = "souffle-compilelib " + name;
+    std::string libCmd = "souffle-compilelib " + filename;
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2322,13 +2351,13 @@ std::string RamCompiler::compileToLibrary(
 
     // run executable
     if (system(libCmd.c_str()) != 0) {
-        std::cerr << "failed to compile C++ source " << name << "\n";
+        std::cerr << "failed to compile C++ source " << filename << "\n";
         std::cerr << "Have you installed souffle with java?\n";
         return "";
     }
 
     // done
-    return name;
+    return filename;
 }
 
 std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamStatement& stmt) const {
@@ -2368,7 +2397,7 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamS
     return binary;
 }
 
-void RamCompiler::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData* data) const {
+void RamCompiler::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData* /*data*/) const {
     // compile statement
     std::string binary = compileToBinary(env.getSymbolTable(), stmt);
 
@@ -2384,6 +2413,10 @@ void RamCompiler::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData
 
     // run executable
     int result = system(binary.c_str());
+    if (Global::config().get("dl-program").empty()) {
+        remove(binary.c_str());
+        remove((binary + ".cpp").c_str());
+    }
     if (result != 0) {
         exit(result);
     }

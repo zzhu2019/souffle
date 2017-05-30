@@ -21,16 +21,18 @@
 #include "AstAttribute.h"
 #include "AstClause.h"
 #include "AstLiteral.h"
+#include "AstNode.h"
 #include "AstProgram.h"
 #include "AstRelation.h"
 #include "AstType.h"
 
 #include <functional>
+#include <memory>
 #include <vector>
 
 namespace souffle {
 
-/** A tag type required for the is_visitor type trait to identify AstVisitors */
+/** A tag type required for the is_ast_visitor type trait to identify AstVisitors */
 struct ast_visitor_tag {};
 
 /**
@@ -45,7 +47,7 @@ struct ast_visitor_tag {};
 template <typename R = void, typename... Params>
 struct AstVisitor : public ast_visitor_tag {
     /** A virtual destructor */
-    virtual ~AstVisitor() {}
+    virtual ~AstVisitor() = default;
 
     /** The main entry for the user allowing visitors to be utilized as functions */
     R operator()(const AstNode& node, Params... args) {
@@ -94,6 +96,7 @@ struct AstVisitor : public ast_visitor_tag {
         FORWARD(Attribute);
         FORWARD(Clause);
         FORWARD(Relation);
+        FORWARD(IODirective);
         FORWARD(Program);
         FORWARD(Pragma);
 
@@ -149,13 +152,14 @@ protected:
     LINK(Program, Node);
     LINK(Attribute, Node);
     LINK(Clause, Node);
+    LINK(IODirective, Node);
     LINK(Relation, Node);
     LINK(Pragma, Node);
 
 #undef LINK
 
     /** The base case for all visitors -- if no more specific overload was defined */
-    virtual R visitNode(const AstNode& node, Params... args) {
+    virtual R visitNode(const AstNode& /*node*/, Params... /*args*/) {
         return R();
     }
 };
@@ -173,7 +177,9 @@ template <typename R, typename... Ps, typename... Args>
 void visitDepthFirstPreOrder(const AstNode& root, AstVisitor<R, Ps...>& visitor, Args&... args) {
     visitor(root, args...);
     for (const AstNode* cur : root.getChildNodes()) {
-        if (cur) visitDepthFirstPreOrder(*cur, visitor, args...);
+        if (cur) {
+            visitDepthFirstPreOrder(*cur, visitor, args...);
+        }
     }
 }
 
@@ -189,7 +195,9 @@ void visitDepthFirstPreOrder(const AstNode& root, AstVisitor<R, Ps...>& visitor,
 template <typename R, typename... Ps, typename... Args>
 void visitDepthFirstPostOrder(const AstNode& root, AstVisitor<R, Ps...>& visitor, Args&... args) {
     for (const AstNode* cur : root.getChildNodes()) {
-        if (cur) visitDepthFirstPreOrder(*cur, visitor, args...);
+        if (cur) {
+            visitDepthFirstPreOrder(*cur, visitor, args...);
+        }
     }
     visitor(root, args...);
 }
@@ -208,17 +216,17 @@ void visitDepthFirst(const AstNode& root, AstVisitor<R, Ps...>& visitor, Args&..
     visitDepthFirstPreOrder(root, visitor, args...);
 }
 
-namespace {
+namespace detail {
 
 /**
  * A specialized visitor wrapping a lambda function -- an auxiliary type required
  * for visitor convenience functions.
  */
 template <typename R, typename N>
-struct LambdaVisitor : public AstVisitor<void> {
+struct LambdaAstVisitor : public AstVisitor<void> {
     std::function<R(const N&)> lambda;
-    LambdaVisitor(const std::function<R(const N&)>& lambda) : lambda(lambda) {}
-    virtual void visit(const AstNode& node) {
+    LambdaAstVisitor(const std::function<R(const N&)>& lambda) : lambda(lambda) {}
+    void visit(const AstNode& node) override {
         if (const N* n = dynamic_cast<const N*>(&node)) {
             lambda(*n);
         }
@@ -226,27 +234,27 @@ struct LambdaVisitor : public AstVisitor<void> {
 };
 
 /**
- * A factory function for creating LambdaVisitor instances.
+ * A factory function for creating LambdaAstVisitor instances.
  */
 template <typename R, typename N>
-LambdaVisitor<R, N> makeLambdaVisitor(const std::function<R(const N&)>& fun) {
-    return LambdaVisitor<R, N>(fun);
+LambdaAstVisitor<R, N> makeLambdaAstVisitor(const std::function<R(const N&)>& fun) {
+    return LambdaAstVisitor<R, N>(fun);
 }
 
 /**
  * A type trait determining whether a given type is a visitor or not.
  */
 template <typename T>
-struct is_visitor {
+struct is_ast_visitor {
     enum { value = std::is_base_of<ast_visitor_tag, T>::value };
 };
 
 template <typename T>
-struct is_visitor<const T> : public is_visitor<T> {};
+struct is_ast_visitor<const T> : public is_ast_visitor<T> {};
 
 template <typename T>
-struct is_visitor<T&> : public is_visitor<T> {};
-}
+struct is_ast_visitor<T&> : public is_ast_visitor<T> {};
+}  // namespace detail
 
 /**
  * A utility function visiting all nodes within the ast rooted by the given node
@@ -259,7 +267,7 @@ struct is_visitor<T&> : public is_visitor<T> {};
  */
 template <typename R, typename N>
 void visitDepthFirst(const AstNode& root, const std::function<R(const N&)>& fun) {
-    auto visitor = makeLambdaVisitor(fun);
+    auto visitor = detail::makeLambdaAstVisitor(fun);
     visitDepthFirst<void>(root, visitor);
 }
 
@@ -274,7 +282,7 @@ void visitDepthFirst(const AstNode& root, const std::function<R(const N&)>& fun)
  */
 template <typename Lambda, typename R = typename lambda_traits<Lambda>::result_type,
         typename N = typename lambda_traits<Lambda>::arg0_type>
-typename std::enable_if<!is_visitor<Lambda>::value, void>::type visitDepthFirst(
+typename std::enable_if<!detail::is_ast_visitor<Lambda>::value, void>::type visitDepthFirst(
         const AstNode& root, const Lambda& fun) {
     visitDepthFirst(root, std::function<R(const N&)>(fun));
 }
@@ -322,7 +330,7 @@ void visitDepthFirst(const std::vector<std::unique_ptr<T>>& list, const Lambda& 
  */
 template <typename R, typename N>
 void visitDepthFirstPostOrder(const AstNode& root, const std::function<R(const N&)>& fun) {
-    auto visitor = makeLambdaVisitor(fun);
+    auto visitor = detail::makeLambdaAstVisitor(fun);
     visitDepthFirstPostOrder<void>(root, visitor);
 }
 
@@ -337,9 +345,9 @@ void visitDepthFirstPostOrder(const AstNode& root, const std::function<R(const N
  */
 template <typename Lambda, typename R = typename lambda_traits<Lambda>::result_type,
         typename N = typename lambda_traits<Lambda>::arg0_type>
-typename std::enable_if<!is_visitor<Lambda>::value, void>::type visitDepthFirstPostOrder(
+typename std::enable_if<!detail::is_ast_visitor<Lambda>::value, void>::type visitDepthFirstPostOrder(
         const AstNode& root, const Lambda& fun) {
     visitDepthFirstPostOrder(root, std::function<R(const N&)>(fun));
 }
 
-}  // end of namespace souffle
+}  // namespace souffle

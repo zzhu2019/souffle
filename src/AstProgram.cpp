@@ -38,7 +38,7 @@ namespace souffle {
  * Program
  */
 
-AstProgram::AstProgram(AstProgram&& other) {
+AstProgram::AstProgram(AstProgram&& other) noexcept {
     types.swap(other.types);
     relations.swap(other.relations);
     clauses.swap(other.clauses);
@@ -230,6 +230,11 @@ AstProgram* AstProgram::clone() const {
         res->instantiations.push_back(std::unique_ptr<AstComponentInit>(cur->clone()));
     }
 
+    // move ioDirectives
+    for (const auto& cur : ioDirectives) {
+        res->ioDirectives.push_back(std::unique_ptr<AstIODirective>(cur->clone()));
+    }
+
     ErrorReport errors;
 
     res->finishParsing();
@@ -253,6 +258,9 @@ void AstProgram::apply(const AstNodeMapper& map) {
         cur = map(std::move(cur));
     }
     for (auto& cur : pragmaDirectives) {
+      cur = map(std::move(cur));
+    }
+    for (auto& cur : ioDirectives) {
         cur = map(std::move(cur));
     }
 }

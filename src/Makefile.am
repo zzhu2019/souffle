@@ -9,8 +9,6 @@ SUFFIXES = .cpp .h .yy .ll .cc .hh .hpp
 
 bin_PROGRAMS = souffle souffle-mcpp souffle-profile
 
-BUILT_SOURCES = parser.hh stack.hh
-
 nodist_souffle_profile_SOURCES = $(BUILT_SOURCES)
 
 souffle_profile_SOURCES = souffle_prof.cpp profilerlib/Cell.hpp \
@@ -119,6 +117,7 @@ souffle_sources = \
               RamRelationStats.cpp  RamRelationStats.h  \
               RamVisitor.h                              \
               RuleScheduler.h                           \
+              SignalHandler.h                           \
               StringPool.h                              \
               TypeSystem.cpp        TypeSystem.h        \
               PrecedenceGraph.cpp   PrecedenceGraph.h   \
@@ -135,7 +134,11 @@ souffle_sources = \
 # -- build souffle as a library so it can be reused in testing
 noinst_LTLIBRARIES = libsouffle.la
 libsouffle_la_SOURCES  = $(souffle_sources)
+if JAVAI
 libsouffle_la_CXXFLAGS = $(souffle_CPPFLAGS) -DJNI_INTERFACE
+else
+libsouffle_la_CXXFLAGS = $(souffle_CPPFLAGS)
+endif
 libsouffle_la_LDFLAGS = --static --dlopen --pic
 
 souffle_SOURCES = main.cpp
@@ -153,10 +156,14 @@ soufflepublic_HEADERS = CompiledRamOptions.h    \
                         CompiledRamTuple.h      \
                         CompiledRamRecord.h     \
                         CompiledSouffle.h       \
+                        SignalHandler.h         \
                         SouffleInterface.h      \
                         ParallelUtils.h         \
                         BTree.h                 \
                         Trie.h                  \
+                        UnionFind.h             \
+                        BinaryRelation.h        \
+                        BlockList.h             \
                         Table.h                 \
                         Util.h                  \
                         Macro.h                 \
@@ -181,17 +188,16 @@ souffle_CPPFLAGS = -DPACKAGE_VERSION="\"${PACKAGE_VERSION}\""
 CLEANFILES = $(BUILT_SOURCES)  parser.cc scanner.cc parser.hh stack.hh
 
 # run Bison
-$(builddir)/parser.hh: $(srcdir)/parser.yy
+$(builddir)/parser.cc $(builddir)/parser.hh $(builddir)/stack.hh: $(srcdir)/parser.yy
 	$(BISON) -Wall -Werror -v -d -o parser.cc $(srcdir)/parser.yy
-
-$(builddir)/parser.cc $(builddir)/stack.hh: $(builddir)/parser.hh
 
 # and FLEX
 $(builddir)/scanner.cc: $(srcdir)/scanner.ll
 	$(FLEX) -o scanner.cc $(srcdir)/scanner.ll
 
 # driver depends on the generated header
-$(builddir)/ParserDriver.cpp: $(builddir)/parser.hh
+$(builddir)/parser.cc $(builddir)/scanner.cc $(builddir)/main.cpp $(builddir)/ParserDriver.cpp: \
+	$(builddir)/parser.hh
 
 ########## Unit Tests
 
@@ -232,11 +238,23 @@ test_btree_multiset_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/
 test_btree_multiset_test_SOURCES = test/btree_multiset_test.cpp
 test_btree_multiset_test_LDADD = libsouffle.la
 
+# binary relation tests
+check_PROGRAMS += test/binary_relation_test
+test_binary_relation_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
+test_binary_relation_test_SOURCES = test/binary_relation_test.cpp
+test_binary_relation_test_LDADD = libsouffle.la
+
 # compiled ram tuple test
 check_PROGRAMS += test/compiled_ram_tuple_test
 test_compiled_ram_tuple_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
 test_compiled_ram_tuple_test_SOURCES = test/compiled_ram_tuple_test.cpp
 test_compiled_ram_tuple_test_LDADD = libsouffle.la
+
+# compiled ram index utils test
+check_PROGRAMS += test/compiled_ram_index_utils_test
+test_compiled_ram_index_utils_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
+test_compiled_ram_index_utils_test_SOURCES = test/compiled_ram_index_utils_test.cpp
+test_compiled_ram_index_utils_test_LDADD = libsouffle.la
 
 # compiled ram relation test
 check_PROGRAMS += test/compiled_ram_relation_test
