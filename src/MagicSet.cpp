@@ -756,7 +756,7 @@ void replaceUnderscores(AstProgram* program) {
 
                     if (dynamic_cast<const AstVariable*>(currArg)) {
                         AstVariable* var = (AstVariable*)currArg;
-                        if (hasPrefix(var->getName(), "underscore")) {
+                        if (hasPrefix(var->getName(), "+underscore")) {
                             newLit->setArgument(
                                     argNum, std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
                         }
@@ -1007,8 +1007,8 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             AstArgument* arg = currArguments[i];
                             std::string argName = getString(arg);
 
-                            // all bound arguments begin with "abdul"
-                            if (hasPrefix(argName, "abdul")) {
+                            // all bound arguments begin with "+abdul" (see AstTransforms.cpp)
+                            if (hasPrefix(argName, "+abdul")) {
                                 // check if string or num constant
                                 size_t argStart = argName.find('_');
                                 std::string res = argName.substr(argStart + 1, argName.size());

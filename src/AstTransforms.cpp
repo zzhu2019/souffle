@@ -756,6 +756,10 @@ bool RemoveRedundantRelationsTransformer::transform(AstTranslationUnit& translat
 bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationUnit){
   bool changed = false;
 
+  // set a prefix for variables bound by magic-set for identification later
+  // prepended by + to avoid conflict with user-defined variables
+  const std::string boundPrefix = "+abdul";
+
   AstProgram* program = translationUnit.getProgram();
   std::vector<AstRelation*> relations = program->getRelations();
 
@@ -770,7 +774,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
       for(AstLiteral* lit : clause->getBodyLiterals()){
 
-        // TODO: better cases - right now only looks at atoms
+        // TODO: check if enough to only look at atoms
         if(dynamic_cast<AstAtom*>(lit)==0){
           newClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
           continue;
@@ -792,10 +796,10 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
             if(dynamic_cast<AstNumberConstant*>(currArg)){
               argtype = "n";
-              tmpVar << "abdul" << count << "_" << argNamex.str() << "_" << argtype; //TODO: find a special character for vars and separators
+              tmpVar << boundPrefix << count << "_" << argNamex.str() << "_" << argtype;
             } else {
               argtype = "s";
-              tmpVar << "abdul" << count << "_" << argNamex.str().substr(1, argNamex.str().size()-2) << "_" << argtype; //TODO: find a special character for vars and separators
+              tmpVar << boundPrefix << count << "_" << argNamex.str().substr(1, argNamex.str().size()-2) << "_" << argtype;
             }
             AstArgument* var = new AstVariable(tmpVar.str());
 
@@ -806,7 +810,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
             // update argument to be a variable
             newLit->setArgument(argNum, std::unique_ptr<AstArgument>(var));
 
-            // add in constraint (abdulX = constant)
+            // add in constraint (+abdulX = constant)
             newClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
                   std::unique_ptr<AstArgument>(var->clone()), std::unique_ptr<AstArgument>(cons->clone()))));
           } else if (dynamic_cast<const AstUnnamedVariable*>(currArg)){
@@ -814,7 +818,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
             // create new variable name (with appropriate suffix)
             std::stringstream tmpVar; tmpVar.str("");
-            tmpVar << "underscore" << underscore_count;
+            tmpVar << "+underscore" << underscore_count;
             underscore_count++;
 
             AstArgument* var = new AstVariable(tmpVar.str());
