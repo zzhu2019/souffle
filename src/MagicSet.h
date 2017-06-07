@@ -8,24 +8,24 @@
 namespace souffle {
   class AdornedPredicate {
   private:
-    AstRelationIdentifier m_name;
-    std::string m_adornment;
-    
+    AstRelationIdentifier predicateName;
+    std::string adornment;
+
   public:
-    AdornedPredicate(AstRelationIdentifier name, std::string adornment) : m_name(name), m_adornment(adornment) {}
+    AdornedPredicate(AstRelationIdentifier name, std::string adornment) : predicateName(name), adornment(adornment) {}
 
     ~AdornedPredicate() {}
 
     AstRelationIdentifier getName() const {
-      return m_name;
+      return predicateName;
     }
 
     std::string getAdornment() const {
-      return m_adornment;
+      return adornment;
     }
 
     friend std::ostream& operator<<(std::ostream& out, const AdornedPredicate& arg){
-      out << "(" <<  arg.m_name << ", " << arg.m_adornment << ")";
+      out << "(" <<  arg.predicateName << ", " << arg.adornment << ")";
       return out;
     }
 
@@ -53,37 +53,37 @@ namespace souffle {
 
   class AdornedClause {
   private:
-    AstClause* m_clause;
-    std::string m_headAdornment;
-    std::vector<std::string> m_bodyAdornment;
-    std::vector<unsigned int> m_ordering;
+    AstClause* clause;
+    std::string headAdornment;
+    std::vector<std::string> bodyAdornment;
+    std::vector<unsigned int> ordering;
 
   public:
     AdornedClause(AstClause* clause, std::string headAdornment, std::vector<std::string> bodyAdornment, std::vector<unsigned int> ordering)
-    : m_clause(clause), m_headAdornment(headAdornment), m_bodyAdornment(bodyAdornment), m_ordering(ordering) {}
+    : clause(clause), headAdornment(headAdornment), bodyAdornment(bodyAdornment), ordering(ordering) {}
 
     AstClause* getClause() const {
-      return m_clause;
+      return clause;
     }
 
     std::string getHeadAdornment() const {
-      return m_headAdornment;
+      return headAdornment;
     }
 
     std::vector<std::string> getBodyAdornment() const {
-      return m_bodyAdornment;
+      return bodyAdornment;
     }
 
     std::vector<unsigned int> getOrdering() const {
-      return m_ordering;
+      return ordering;
     }
 
     friend std::ostream& operator<<(std::ostream& out, const AdornedClause& arg){
       size_t currpos = 0;
       bool firstadded = true;
-      out << arg.m_clause->getHead()->getName() << "{" << arg.m_headAdornment << "} :- ";
+      out << arg.clause->getHead()->getName() << "{" << arg.headAdornment << "} :- ";
 
-      std::vector<AstLiteral*> bodyLiterals = arg.m_clause->getBodyLiterals();
+      std::vector<AstLiteral*> bodyLiterals = arg.clause->getBodyLiterals();
       for(AstLiteral* lit : bodyLiterals){
         if(dynamic_cast<AstAtom*>(lit) == 0){
           const AstAtom* corresAtom = lit->getAtom();
@@ -100,14 +100,14 @@ namespace souffle {
         } else {
           if(firstadded) {
             firstadded = false;
-            out << lit->getAtom()->getName() << "{" << arg.m_bodyAdornment[currpos] << "}";
+            out << lit->getAtom()->getName() << "{" << arg.bodyAdornment[currpos] << "}";
           } else {
-            out << ", " << lit->getAtom()->getName() << "{" << arg.m_bodyAdornment[currpos] << "}";
+            out << ", " << lit->getAtom()->getName() << "{" << arg.bodyAdornment[currpos] << "}";
           }
           currpos++;
         }
       }
-      out << ". [order: " << arg.m_ordering << "]";
+      out << ". [order: " << arg.ordering << "]";
 
       return out;
     }
@@ -116,12 +116,12 @@ namespace souffle {
   class Adornment : public AstAnalysis {
   private:
     // TODO: map instead
-    std::vector<std::vector<AdornedClause>> m_adornedClauses;
-    std::vector<AstRelationIdentifier> m_relations;
-    std::set<AstRelationIdentifier> m_edb;
-    std::set<AstRelationIdentifier> m_idb;
-    std::set<AstRelationIdentifier> m_negatedAtoms;
-    std::set<AstRelationIdentifier> m_ignoredAtoms;
+    std::vector<std::vector<AdornedClause>> adornmentClauses;
+    std::vector<AstRelationIdentifier> adornmentRelations;
+    std::set<AstRelationIdentifier> adornmentEdb;
+    std::set<AstRelationIdentifier> adornmentIdb;
+    std::set<AstRelationIdentifier> negatedAtoms;
+    std::set<AstRelationIdentifier> ignoredAtoms;
 
   public:
     static constexpr const char* name = "adorned-clauses";
@@ -134,27 +134,27 @@ namespace souffle {
 
     // NOTE: why do these sometimes return a reference instead of the vector
     const std::vector<std::vector<AdornedClause>> getAdornedClauses(){
-     return m_adornedClauses;
+     return adornmentClauses;
     }
 
     const std::vector<AstRelationIdentifier> getRelations(){
-      return m_relations;
+      return adornmentRelations;
     }
 
     const std::set<AstRelationIdentifier> getEDB(){
-      return m_edb;
+      return adornmentEdb;
     }
 
     const std::set<AstRelationIdentifier> getIDB(){
-      return m_idb;
+      return adornmentIdb;
     }
 
     const std::set<AstRelationIdentifier> getNegatedAtoms(){
-      return m_negatedAtoms;
+      return negatedAtoms;
     }
 
     const std::set<AstRelationIdentifier> getIgnoredAtoms(){
-      return m_ignoredAtoms;
+      return ignoredAtoms;
     }
   };
 }
