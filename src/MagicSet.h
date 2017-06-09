@@ -6,116 +6,106 @@
 #include <vector>
 
 namespace souffle {
-  class AdornedPredicate {
-  private:
+class AdornedPredicate {
+private:
     AstRelationIdentifier predicateName;
     std::string adornment;
 
-  public:
-    AdornedPredicate(AstRelationIdentifier name, std::string adornment) : predicateName(name), adornment(adornment) {}
+public:
+    AdornedPredicate(AstRelationIdentifier name, std::string adornment)
+            : predicateName(name), adornment(adornment) {}
 
     ~AdornedPredicate() {}
 
     AstRelationIdentifier getName() const {
-      return predicateName;
+        return predicateName;
     }
 
     std::string getAdornment() const {
-      return adornment;
+        return adornment;
     }
 
-    friend std::ostream& operator<<(std::ostream& out, const AdornedPredicate& arg){
-      out << "(" <<  arg.predicateName << ", " << arg.adornment << ")";
-      return out;
+    friend std::ostream& operator<<(std::ostream& out, const AdornedPredicate& arg) {
+        out << "(" << arg.predicateName << ", " << arg.adornment << ")";
+        return out;
     }
 
-    friend bool operator< (const AdornedPredicate& p1, const AdornedPredicate& p2){
-      //TODO: NEED TO CHECK THIS
-      std::stringstream comp1, comp2;
-      // should change this!!! replacement code fails though because of:
-      // //
-      // if((seenPred.getName() == atomName)
-      //     && (seenPred.getAdornment().compare(atomAdornment) == 0)){
-      //       seenBefore = true;
-      //       break;
-      // }
-      // //
-      // AstRelationIdentifier p1_name = p1.getName();
-      // p1_name.append(p1.getAdornment());
-      // AstRelationIdentifier p2_name = p2.getName();
-      // p2_name.append(p2.getAdornment());
-      // return p1.getName() < p2.getName();
-      comp1 << p1.getName() << "_ADD_" << p1.getAdornment();
-      comp2 << p2.getName() << "_ADD_" << p2.getAdornment();
-      return (comp1.str() < comp2.str());
+    friend bool operator<(const AdornedPredicate& p1, const AdornedPredicate& p2) {
+        // TODO: think of a better way to compare adorned predicates
+        std::stringstream comp1, comp2;
+        comp1 << p1.getName() << "+ _ADD_ +" << p1.getAdornment();
+        comp2 << p2.getName() << "+ _ADD_ +" << p2.getAdornment();
+        return (comp1.str() < comp2.str());
     }
-  };
+};
 
-  class AdornedClause {
-  private:
+class AdornedClause {
+private:
     AstClause* clause;
     std::string headAdornment;
     std::vector<std::string> bodyAdornment;
     std::vector<unsigned int> ordering;
 
-  public:
-    AdornedClause(AstClause* clause, std::string headAdornment, std::vector<std::string> bodyAdornment, std::vector<unsigned int> ordering)
-    : clause(clause), headAdornment(headAdornment), bodyAdornment(bodyAdornment), ordering(ordering) {}
+public:
+    AdornedClause(AstClause* clause, std::string headAdornment, std::vector<std::string> bodyAdornment,
+            std::vector<unsigned int> ordering)
+            : clause(clause), headAdornment(headAdornment), bodyAdornment(bodyAdornment), ordering(ordering) {
+    }
 
     AstClause* getClause() const {
-      return clause;
+        return clause;
     }
 
     std::string getHeadAdornment() const {
-      return headAdornment;
+        return headAdornment;
     }
 
     std::vector<std::string> getBodyAdornment() const {
-      return bodyAdornment;
+        return bodyAdornment;
     }
 
     std::vector<unsigned int> getOrdering() const {
-      return ordering;
+        return ordering;
     }
 
-    friend std::ostream& operator<<(std::ostream& out, const AdornedClause& arg){
-      size_t currpos = 0;
-      bool firstadded = true;
-      out << arg.clause->getHead()->getName() << "{" << arg.headAdornment << "} :- ";
+    friend std::ostream& operator<<(std::ostream& out, const AdornedClause& arg) {
+        size_t currpos = 0;
+        bool firstadded = true;
+        out << arg.clause->getHead()->getName() << "{" << arg.headAdornment << "} :- ";
 
-      std::vector<AstLiteral*> bodyLiterals = arg.clause->getBodyLiterals();
-      for(AstLiteral* lit : bodyLiterals){
-        if(dynamic_cast<AstAtom*>(lit) == 0){
-          const AstAtom* corresAtom = lit->getAtom();
-          if(corresAtom != nullptr){
-            if(firstadded){
-              firstadded = false;
-              out << corresAtom->getName() << "{_}";
+        std::vector<AstLiteral*> bodyLiterals = arg.clause->getBodyLiterals();
+        for (AstLiteral* lit : bodyLiterals) {
+            if (dynamic_cast<AstAtom*>(lit) == 0) {
+                const AstAtom* corresAtom = lit->getAtom();
+                if (corresAtom != nullptr) {
+                    if (firstadded) {
+                        firstadded = false;
+                        out << corresAtom->getName() << "{_}";
+                    } else {
+                        out << ", " << corresAtom->getName() << "{_}";
+                    }
+                } else {
+                    continue;
+                }
             } else {
-              out << ", " << corresAtom->getName() << "{_}";
+                if (firstadded) {
+                    firstadded = false;
+                    out << lit->getAtom()->getName() << "{" << arg.bodyAdornment[currpos] << "}";
+                } else {
+                    out << ", " << lit->getAtom()->getName() << "{" << arg.bodyAdornment[currpos] << "}";
+                }
+                currpos++;
             }
-          } else {
-            continue;
-          }
-        } else {
-          if(firstadded) {
-            firstadded = false;
-            out << lit->getAtom()->getName() << "{" << arg.bodyAdornment[currpos] << "}";
-          } else {
-            out << ", " << lit->getAtom()->getName() << "{" << arg.bodyAdornment[currpos] << "}";
-          }
-          currpos++;
         }
-      }
-      out << ". [order: " << arg.ordering << "]";
+        out << ". [order: " << arg.ordering << "]";
 
-      return out;
+        return out;
     }
-  };
+};
 
-  class Adornment : public AstAnalysis {
-  private:
-    // TODO: map instead
+class Adornment : public AstAnalysis {
+private:
+    // TODO: maybe use a map instead to clean things up
     std::vector<std::vector<AdornedClause>> adornmentClauses;
     std::vector<AstRelationIdentifier> adornmentRelations;
     std::set<AstRelationIdentifier> adornmentEdb;
@@ -123,7 +113,7 @@ namespace souffle {
     std::set<AstRelationIdentifier> negatedAtoms;
     std::set<AstRelationIdentifier> ignoredAtoms;
 
-  public:
+public:
     static constexpr const char* name = "adorned-clauses";
 
     ~Adornment() {}
@@ -132,29 +122,28 @@ namespace souffle {
 
     void outputAdornment(std::ostream& os);
 
-    // NOTE: why do these sometimes return a reference instead of the vector
-    const std::vector<std::vector<AdornedClause>> getAdornedClauses(){
-     return adornmentClauses;
+    const std::vector<std::vector<AdornedClause>> getAdornedClauses() {
+        return adornmentClauses;
     }
 
-    const std::vector<AstRelationIdentifier> getRelations(){
-      return adornmentRelations;
+    const std::vector<AstRelationIdentifier> getRelations() {
+        return adornmentRelations;
     }
 
-    const std::set<AstRelationIdentifier> getEDB(){
-      return adornmentEdb;
+    const std::set<AstRelationIdentifier> getEDB() {
+        return adornmentEdb;
     }
 
-    const std::set<AstRelationIdentifier> getIDB(){
-      return adornmentIdb;
+    const std::set<AstRelationIdentifier> getIDB() {
+        return adornmentIdb;
     }
 
-    const std::set<AstRelationIdentifier> getNegatedAtoms(){
-      return negatedAtoms;
+    const std::set<AstRelationIdentifier> getNegatedAtoms() {
+        return negatedAtoms;
     }
 
-    const std::set<AstRelationIdentifier> getIgnoredAtoms(){
-      return ignoredAtoms;
+    const std::set<AstRelationIdentifier> getIgnoredAtoms() {
+        return ignoredAtoms;
     }
-  };
+};
 }

@@ -791,75 +791,76 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
   AstProgram* program = translationUnit.getProgram();
   std::vector<AstRelation*> relations = program->getRelations();
 
-  int count = 0;
-  int underscore_count = 0;
+  int constantCount = 0; // number of constants seen so far
+  int underscoreCount = 0; // number of underscores seen so far
 
+  // go through the relations, replacing constants and underscores with constraints and variables
   for(AstRelation* rel : relations){
     std::vector<AstClause*> clauses = rel->getClauses();
-    for(size_t clauseNum = 0; clauseNum < clauses.size(); clauseNum++){
-      AstClause* clause = clauses[clauseNum];
+    for(AstClause* clause : clauses){
+      // create the replacement clause
       AstClause* newClause = clause->cloneHead();
 
       for(AstLiteral* lit : clause->getBodyLiterals()){
-
+        // if not an atom, just add it immediately
         // TODO: check if enough to only look at atoms
         if(dynamic_cast<AstAtom*>(lit)==0){
           newClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
           continue;
         }
 
-        AstAtom* newLit = lit->getAtom()->clone();
-        std::vector<AstArgument*> args = newLit->getArguments();
+        AstAtom* newAtom = lit->getAtom()->clone();
+        std::vector<AstArgument*> args = newAtom->getArguments();
         for(size_t argNum = 0; argNum < args.size(); argNum++){
           AstArgument* currArg = args[argNum];
 
           // check if the argument is constant
-          if(dynamic_cast<const AstConstant*>(currArg)){ // check correctness
+          if(dynamic_cast<const AstConstant*>(currArg)){
+            // constant found
             changed = true;
 
             // create new variable name (with appropriate suffix)
-            std::stringstream tmpVar;
-            std::stringstream argNamex; argNamex << *currArg;
-            std::string argtype;
+            std::stringstream newVariableName;
+            std::stringstream currArgName; currArgName << *currArg;
 
             if(dynamic_cast<AstNumberConstant*>(currArg)){
-              argtype = "n";
-              tmpVar << boundPrefix << count << "_" << argNamex.str() << "_" << argtype;
+              newVariableName << boundPrefix << constantCount << "_" << currArgName.str() << "_n";
             } else {
-              argtype = "s";
-              tmpVar << boundPrefix << count << "_" << argNamex.str().substr(1, argNamex.str().size()-2) << "_" << argtype;
+              newVariableName << boundPrefix << constantCount << "_" << currArgName.str().substr(1, currArgName.str().size()-2) << "_s";
             }
-            AstArgument* var = new AstVariable(tmpVar.str());
 
-            AstArgument* cons = args[argNum]->clone();
+            AstArgument* variable = new AstVariable(newVariableName.str());
+            AstArgument* constant = currArg->clone();
 
-            count++;
+            constantCount++;
 
-            // update argument to be a variable
-            newLit->setArgument(argNum, std::unique_ptr<AstArgument>(var));
+            // update argument to be the variable created
+            newAtom->setArgument(argNum, std::unique_ptr<AstArgument>(variable));
 
             // add in constraint (+abdulX = constant)
             newClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
-                  std::unique_ptr<AstArgument>(var->clone()), std::unique_ptr<AstArgument>(cons->clone()))));
+                  std::unique_ptr<AstArgument>(variable->clone()), std::unique_ptr<AstArgument>(constant->clone()))));
           } else if (dynamic_cast<const AstUnnamedVariable*>(currArg)){
+            // underscore found
             changed = true;
 
-            // create new variable name (with appropriate suffix)
-            std::stringstream tmpVar; tmpVar.str("");
-            tmpVar << "+underscore" << underscore_count;
-            underscore_count++;
+            // create new variable name for the underscore (with appropriate suffix)
+            std::stringstream newVariableName; newVariableName.str("");
+            newVariableName << "+underscore" << underscoreCount;
+            underscoreCount++;
 
-            AstArgument* var = new AstVariable(tmpVar.str());
+            AstArgument* variable = new AstVariable(newVariableName.str());
 
             // update argument to be a variable
-            newLit->setArgument(argNum, std::unique_ptr<AstArgument>(var));
+            newAtom->setArgument(argNum, std::unique_ptr<AstArgument>(variable));
           }
-
         }
-          // negation not working: ungrounded assertion failure
-          newClause->addToBody(std::unique_ptr<AstLiteral> (newLit));
+
+        // add the new atom to the body
+        newClause->addToBody(std::unique_ptr<AstLiteral> (newAtom));
       }
-      // need a clone in the above constraint creation, otherwise fails on removal
+
+      // swap out the old clause with the new one
       rel->removeClause(clause);
       rel->addClause(std::unique_ptr<AstClause> (newClause));
     }
