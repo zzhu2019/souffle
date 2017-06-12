@@ -695,7 +695,18 @@ bool RemoveEmptyRelationsTransformer::removeEmptyRelations(AstTranslationUnit& t
         if (rel->clauseSize() == 0 && !rel->isInput()) {
             removeEmptyRelationUses(translationUnit, rel);
 
-            if (!rel->isComputed()) {
+            bool usedInAggregate = false;
+            visitDepthFirst(program, [&](const AstAggregator& agg) {
+                for (const auto lit : agg.getBodyLiterals()) {
+                    visitDepthFirst(*lit, [&](const AstAtom& atom) {
+                        if (getAtomRelation(&atom, &program) == rel) {
+                            usedInAggregate = true;
+                        }
+                    });
+                }
+            });
+
+            if (!usedInAggregate && !rel->isComputed()) {
                 program.removeRelation(rel->getName());
             }
             changed = true;
