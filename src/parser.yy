@@ -350,16 +350,19 @@ iodirective_body : rel_id LPAREN key_value_pairs RPAREN {
 	   $$ = $3;
            $3->addName(*$1);
            $3->setSrcLoc(@1);
+           delete $1;
 	  }
         | rel_id {
            $$ = new AstIODirective();
            $$->setName(*$1);
            $$->setSrcLoc(@1);
+           delete $1;
           }
         | rel_id COMMA iodirective_body {
            $$ = $3;
            $3->addName(*$1);
            $3->setSrcLoc(@1);
+           delete $1;
           }
         ;
 
