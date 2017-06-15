@@ -277,7 +277,8 @@ AstRelationIdentifier createAdornedIdentifier(AstRelationIdentifier relationName
     // change the base name
     std::stringstream newMainName;
     newMainName.str("");
-    newMainName << relationNames[0] << "_" << adornment;  // TODO: check if relationNames[0] always defined
+    // add a '+' to avoid name conflict
+    newMainName << relationNames[0] << "+_" << adornment;  // TODO: check if relationNames[0] always defined
     AstRelationIdentifier newRelationName(newMainName.str());
 
     // add in the other names
@@ -1104,7 +1105,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             std::string baseAtomName = atomName.getNames()[0];
                             int endpt = getEndpoint(baseAtomName);
                             AstRelationIdentifier originalRelationName =
-                                    createSubIdentifier(atomName, 0, endpt);
+                                    createSubIdentifier(atomName, 0, endpt-1); // get rid of the extra + at the end
                             AstRelation* originalRelation = program->getRelation(originalRelationName);
 
                             // copy over the (bound) attributes from the original relation
@@ -1306,6 +1307,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
         size_t prefixpoint = newBaseName.find("_");
         AstRelationIdentifier newRelationName =
                 createSubIdentifier(newName, prefixpoint + 1, newBaseName.size() - (prefixpoint + 1));
+
         AstRelation* adornedRelation = program->getRelation(newRelationName);
 
         if (adornedRelation == nullptr) {
