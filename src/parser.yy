@@ -571,8 +571,8 @@ arg: STRING {
        auto res = new AstAggregator(AstAggregator::count);
        auto bodies = $4->toClauseBodies();
        if (bodies.size() != 1) {
-    	   std::cerr << "ERROR: currently not supporting non-conjunctive aggreation clauses!";
-    	   exit(1);
+           std::cerr << "ERROR: currently not supporting non-conjunctive aggregation clauses!";
+           exit(1);
        }
        for(const auto& cur : bodies[0]->getBodyLiterals()) 
            res->addBodyLiteral(std::unique_ptr<AstLiteral>(cur->clone()));
@@ -592,10 +592,10 @@ arg: STRING {
        auto res = new AstAggregator(AstAggregator::min);
        res->setTargetExpression(std::unique_ptr<AstArgument>($2));
        auto bodies = $5->toClauseBodies();
-	   if (bodies.size() != 1) {
-		   std::cerr << "ERROR: currently not supporting non-conjunctive aggreation clauses!";
-		   exit(1);
-	   }
+       if (bodies.size() != 1) {
+           std::cerr << "ERROR: currently not supporting non-conjunctive aggregation clauses!";
+           exit(1);
+       }
        for(const auto& cur : bodies[0]->getBodyLiterals()) 
     	   res->addBodyLiteral(std::unique_ptr<AstLiteral>(cur->clone()));
        delete bodies[0];
@@ -614,10 +614,10 @@ arg: STRING {
        auto res = new AstAggregator(AstAggregator::min);
        res->setTargetExpression(std::unique_ptr<AstArgument>($2));
        auto bodies = $5->toClauseBodies();
-	   if (bodies.size() != 1) {
-		   std::cerr << "ERROR: currently not supporting non-conjunctive aggreation clauses!";
-		   exit(1);
-	   }
+       if (bodies.size() != 1) {
+           std::cerr << "ERROR: currently not supporting non-conjunctive aggregation clauses!";
+           exit(1);
+       }
        for(const auto& cur : bodies[0]->getBodyLiterals()) 
     	   res->addBodyLiteral(std::unique_ptr<AstLiteral>(cur->clone()));
        delete bodies[0];
@@ -636,10 +636,10 @@ arg: STRING {
        auto res = new AstAggregator(AstAggregator::max);
        res->setTargetExpression(std::unique_ptr<AstArgument>($2));
        auto bodies = $5->toClauseBodies();
-	   if (bodies.size() != 1) {
-		   std::cerr << "ERROR: currently not supporting non-conjunctive aggreation clauses!";
-		   exit(1);
-	   }
+       if (bodies.size() != 1) {
+           std::cerr << "ERROR: currently not supporting non-conjunctive aggregation clauses!";
+           exit(1);
+       }
        for(const auto& cur : bodies[0]->getBodyLiterals()) 
           res->addBodyLiteral(std::unique_ptr<AstLiteral>(cur->clone()));
        delete bodies[0];
