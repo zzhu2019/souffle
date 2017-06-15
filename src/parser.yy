@@ -744,14 +744,26 @@ term : literal							{ $$ = $1; }
 	 ;
 	
 /* Conjunction */
-conjunction: term 						{ $$ = $1; }
-    | conjunction COMMA term 			{ $$ = $1; $$->conjunct(std::move(*$3)); }
+conjunction: term {
+        $$ = $1;
+      }
+    | conjunction COMMA term {
+        $$ = $1;
+        $$->conjunct(std::move(*$3));
+        delete $3;
+      }
     ;
 
 /* Disjunction */
-disjunction : conjunction				 { $$ = $1; }
-	 | disjunction SEMICOLON conjunction { $$ = $1; $$->disjunct(std::move(*$3)); }
-	 ;
+disjunction : conjunction {
+        $$ = $1;
+      }
+    | disjunction SEMICOLON conjunction {
+        $$ = $1;
+        $$->disjunct(std::move(*$3));
+        delete $3;
+      }
+    ;
 	 
 /* Body */
 body : disjunction						{ $$ = $1; }
