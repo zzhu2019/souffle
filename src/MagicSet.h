@@ -1,3 +1,19 @@
+/*
+ * Souffle - A Datalog Compiler
+ * Copyright (c) 2017 Souffle Developers
+ * Licensed under the Universal Permissive License v 1.0 as shown at:
+ * - https://opensource.org/licenses/UPL
+ * - <souffle root>/licenses/SOUFFLE-UPL.txt
+ */
+
+/************************************************************************
+ *
+ * @file MagicSet.h
+ *
+ * Define classes and functionality related to the magic set transformation.
+ *
+ ***********************************************************************/
+
 #pragma once
 
 #include "AstTransforms.h"

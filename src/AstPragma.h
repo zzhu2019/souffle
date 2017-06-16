@@ -10,7 +10,7 @@
  *
  * @file AstPragma.h
  *
- * Define the class AstPragma to hold key=value pairs for IO.
+ * Define the class AstPragma to update global options based on parameter.
  *
  ***********************************************************************/
 

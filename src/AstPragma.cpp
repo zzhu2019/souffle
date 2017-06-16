@@ -1,3 +1,19 @@
+/*
+ * Souffle - A Datalog Compiler
+ * Copyright (c) 2017 Souffle Developers
+ * Licensed under the Universal Permissive License v 1.0 as shown at:
+ * - https://opensource.org/licenses/UPL
+ * - <souffle root>/licenses/SOUFFLE-UPL.txt
+ */
+
+/************************************************************************
+ *
+ * @file AstPragma.h
+ *
+ * Define the class AstPragma to update global options based on parameter.
+ *
+ ***********************************************************************/
+
 #include "AstTranslationUnit.h"
 #include "AstPragma.h"
 #include "Global.h"
