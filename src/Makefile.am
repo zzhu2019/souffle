@@ -121,7 +121,7 @@ souffle_sources = \
               StringPool.h                              \
               TypeSystem.cpp        TypeSystem.h        \
               PrecedenceGraph.cpp   PrecedenceGraph.h   \
-              MagicSet.cpp                              \
+              MagicSet.cpp          MagicSet.h          \
               $(sqlite_sources)     $(libz_sources)     \
               ReadStream.h                              \
               ReadStreamCSV.h                           \
