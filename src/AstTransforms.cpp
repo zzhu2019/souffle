@@ -571,6 +571,9 @@ bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
             // -- create a new clause --
 
             auto relName = "__agg_rel_" + toString(counter++);
+            while (program.getRelation(relName) != nullptr) {
+                relName = "__agg_rel_" + toString(counter++);
+            }
 
             AstAtom* head = new AstAtom();
             head->setName(relName);
