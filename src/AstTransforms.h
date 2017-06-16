@@ -186,7 +186,7 @@ public:
  */
 class NormaliseConstraintsTransformer : public AstTransformer {
 private:
-  virtual bool transform(AstTranslationUnit& translationUnit);
+    virtual bool transform(AstTranslationUnit& translationUnit);
 
 public:
     virtual std::string getName() const {
@@ -199,7 +199,7 @@ public:
  */
 class MagicSetTransformer : public AstTransformer {
 private:
-  virtual bool transform(AstTranslationUnit& translationUnit);
+    virtual bool transform(AstTranslationUnit& translationUnit);
 
 public:
     virtual std::string getName() const {

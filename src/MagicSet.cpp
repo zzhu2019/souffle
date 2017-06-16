@@ -14,10 +14,10 @@
  *
  ***********************************************************************/
 
+#include "MagicSet.h"
 #include "AstVisitor.h"
 #include "Global.h"
 #include "IODirectives.h"
-#include "MagicSet.h"
 
 namespace souffle {
 /* general functions */
@@ -241,14 +241,14 @@ std::string getNextEdbName(AstProgram* program) {
 // copies over necessary qualifiers from original into new relation
 // note that input/output directives are handled at the end of the MST
 // TODO: check if others need to be copied over
-void updateQualifier(AstRelation* originalRelation, AstRelation* newRelation){
-  int currentQualifier = newRelation->getQualifier();
+void updateQualifier(AstRelation* originalRelation, AstRelation* newRelation) {
+    int currentQualifier = newRelation->getQualifier();
 
-  if(originalRelation->isEqRel()){
-    currentQualifier |= EQREL_RELATION;
-  }
+    if (originalRelation->isEqRel()) {
+        currentQualifier |= EQREL_RELATION;
+    }
 
-  newRelation->setQualifier(currentQualifier);
+    newRelation->setQualifier(currentQualifier);
 }
 
 // create a new relation with a given name based on a previous relation
@@ -886,12 +886,11 @@ void separateDBs(AstProgram* program) {
 }
 
 // returns the adornment of an (adorned) magic identifier
-std::string extractAdornment(AstRelationIdentifier magicRelationName){
-  std::string baseRelationName = magicRelationName.getNames()[0];
-  int endpt = getEndpoint(baseRelationName);
-  std::string adornment =
-          baseRelationName.substr(endpt + 1, baseRelationName.size() - (endpt + 1));
-  return adornment;
+std::string extractAdornment(AstRelationIdentifier magicRelationName) {
+    std::string baseRelationName = magicRelationName.getNames()[0];
+    int endpt = getEndpoint(baseRelationName);
+    std::string adornment = baseRelationName.substr(endpt + 1, baseRelationName.size() - (endpt + 1));
+    return adornment;
 }
 
 // transforms the program so that all underscores previously transformed
@@ -1120,8 +1119,8 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             // find out the original name of the relation (pre-adornment)
                             std::string baseAtomName = atomName.getNames()[0];
                             int endpt = getEndpoint(baseAtomName);
-                            AstRelationIdentifier originalRelationName =
-                                    createSubIdentifier(atomName, 0, endpt-1); // get rid of the extra + at the end
+                            AstRelationIdentifier originalRelationName = createSubIdentifier(
+                                    atomName, 0, endpt - 1);  // get rid of the extra + at the end
                             AstRelation* originalRelation = program->getRelation(originalRelationName);
 
                             // copy over the (bound) attributes from the original relation
@@ -1175,9 +1174,11 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             newMagRelation->setName(magPredName);
 
                             // copy over (bound) attributes from the original relation
-                            AstRelation* currentRelation = program->getRelation(newClause->getHead()->getName());
+                            AstRelation* currentRelation =
+                                    program->getRelation(newClause->getHead()->getName());
                             std::vector<AstAttribute*> attrs = currentRelation->getAttributes();
-                            for (size_t currentArg = 0; currentArg < currentRelation->getArity(); currentArg++) {
+                            for (size_t currentArg = 0; currentArg < currentRelation->getArity();
+                                    currentArg++) {
                                 if (adornment[currentArg] == 'b') {
                                     newMagRelation->addAttribute(
                                             std::unique_ptr<AstAttribute>(attrs[currentArg]->clone()));
@@ -1207,7 +1208,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
                         // go through the arguments in the head and bind the bound variables using constraints
                         std::vector<AstArgument*> currArguments = magicClause->getHead()->getArguments();
-                        for(AstArgument* arg : currArguments){
+                        for (AstArgument* arg : currArguments) {
                             std::string argName = getString(arg);
 
                             // all bound arguments begin with "+abdul" (see AstTransforms.cpp)
@@ -1381,7 +1382,6 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
         program->appendClause(std::unique_ptr<AstClause>(referringClause));
     }
-
 
     // add in all the output directives to their corresponding relations
     for (std::pair<AstRelationIdentifier, std::vector<AstIODirective*>> iopair : outputDirectives) {

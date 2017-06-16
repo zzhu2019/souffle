@@ -18,8 +18,8 @@
 #include "AstTypeAnalysis.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
-#include "PrecedenceGraph.h"
 #include "MagicSet.h"
+#include "PrecedenceGraph.h"
 
 namespace souffle {
 
@@ -795,92 +795,98 @@ bool RemoveRedundantRelationsTransformer::transform(AstTranslationUnit& translat
     return changed;
 }
 
-bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationUnit){
-  bool changed = false;
+bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationUnit) {
+    bool changed = false;
 
-  // set a prefix for variables bound by magic-set for identification later
-  // prepended by + to avoid conflict with user-defined variables
-  const std::string boundPrefix = "+abdul";
+    // set a prefix for variables bound by magic-set for identification later
+    // prepended by + to avoid conflict with user-defined variables
+    const std::string boundPrefix = "+abdul";
 
-  AstProgram* program = translationUnit.getProgram();
-  std::vector<AstRelation*> relations = program->getRelations();
+    AstProgram* program = translationUnit.getProgram();
+    std::vector<AstRelation*> relations = program->getRelations();
 
-  int constantCount = 0; // number of constants seen so far
-  int underscoreCount = 0; // number of underscores seen so far
+    int constantCount = 0;    // number of constants seen so far
+    int underscoreCount = 0;  // number of underscores seen so far
 
-  // go through the relations, replacing constants and underscores with constraints and variables
-  for(AstRelation* rel : relations){
-    std::vector<AstClause*> clauses = rel->getClauses();
-    for(AstClause* clause : clauses){
-      // create the replacement clause
-      AstClause* newClause = clause->cloneHead();
+    // go through the relations, replacing constants and underscores with constraints and variables
+    for (AstRelation* rel : relations) {
+        std::vector<AstClause*> clauses = rel->getClauses();
+        for (AstClause* clause : clauses) {
+            // create the replacement clause
+            AstClause* newClause = clause->cloneHead();
 
-      for(AstLiteral* lit : clause->getBodyLiterals()){
-        // if not an atom, just add it immediately
-        // TODO: check if enough to only look at atoms
-        if(dynamic_cast<AstAtom*>(lit)==0){
-          newClause->addToBody(std::unique_ptr<AstLiteral> (lit->clone()));
-          continue;
-        }
+            for (AstLiteral* lit : clause->getBodyLiterals()) {
+                // if not an atom, just add it immediately
+                // TODO: check if enough to only look at atoms
+                if (dynamic_cast<AstAtom*>(lit) == 0) {
+                    newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+                    continue;
+                }
 
-        AstAtom* newAtom = lit->getAtom()->clone();
-        std::vector<AstArgument*> args = newAtom->getArguments();
-        for(size_t argNum = 0; argNum < args.size(); argNum++){
-          AstArgument* currArg = args[argNum];
+                AstAtom* newAtom = lit->getAtom()->clone();
+                std::vector<AstArgument*> args = newAtom->getArguments();
+                for (size_t argNum = 0; argNum < args.size(); argNum++) {
+                    AstArgument* currArg = args[argNum];
 
-          // check if the argument is constant
-          if(dynamic_cast<const AstConstant*>(currArg)){
-            // constant found
-            changed = true;
+                    // check if the argument is constant
+                    if (dynamic_cast<const AstConstant*>(currArg)) {
+                        // constant found
+                        changed = true;
 
-            // create new variable name (with appropriate suffix)
-            std::stringstream newVariableName;
-            std::stringstream currArgName; currArgName << *currArg;
+                        // create new variable name (with appropriate suffix)
+                        std::stringstream newVariableName;
+                        std::stringstream currArgName;
+                        currArgName << *currArg;
 
-            if(dynamic_cast<AstNumberConstant*>(currArg)){
-              newVariableName << boundPrefix << constantCount << "_" << currArgName.str() << "_n";
-            } else {
-              newVariableName << boundPrefix << constantCount << "_" << currArgName.str().substr(1, currArgName.str().size()-2) << "_s";
+                        if (dynamic_cast<AstNumberConstant*>(currArg)) {
+                            newVariableName << boundPrefix << constantCount << "_" << currArgName.str()
+                                            << "_n";
+                        } else {
+                            newVariableName << boundPrefix << constantCount << "_"
+                                            << currArgName.str().substr(1, currArgName.str().size() - 2)
+                                            << "_s";
+                        }
+
+                        AstArgument* variable = new AstVariable(newVariableName.str());
+                        AstArgument* constant = currArg->clone();
+
+                        constantCount++;
+
+                        // update argument to be the variable created
+                        newAtom->setArgument(argNum, std::unique_ptr<AstArgument>(variable));
+
+                        // add in constraint (+abdulX = constant)
+                        newClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(
+                                BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(variable->clone()),
+                                std::unique_ptr<AstArgument>(constant->clone()))));
+                    } else if (dynamic_cast<const AstUnnamedVariable*>(currArg)) {
+                        // underscore found
+                        changed = true;
+
+                        // create new variable name for the underscore (with appropriate suffix)
+                        std::stringstream newVariableName;
+                        newVariableName.str("");
+                        newVariableName << "+underscore" << underscoreCount;
+                        underscoreCount++;
+
+                        AstArgument* variable = new AstVariable(newVariableName.str());
+
+                        // update argument to be a variable
+                        newAtom->setArgument(argNum, std::unique_ptr<AstArgument>(variable));
+                    }
+                }
+
+                // add the new atom to the body
+                newClause->addToBody(std::unique_ptr<AstLiteral>(newAtom));
             }
 
-            AstArgument* variable = new AstVariable(newVariableName.str());
-            AstArgument* constant = currArg->clone();
-
-            constantCount++;
-
-            // update argument to be the variable created
-            newAtom->setArgument(argNum, std::unique_ptr<AstArgument>(variable));
-
-            // add in constraint (+abdulX = constant)
-            newClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(BinaryConstraintOp::EQ,
-                  std::unique_ptr<AstArgument>(variable->clone()), std::unique_ptr<AstArgument>(constant->clone()))));
-          } else if (dynamic_cast<const AstUnnamedVariable*>(currArg)){
-            // underscore found
-            changed = true;
-
-            // create new variable name for the underscore (with appropriate suffix)
-            std::stringstream newVariableName; newVariableName.str("");
-            newVariableName << "+underscore" << underscoreCount;
-            underscoreCount++;
-
-            AstArgument* variable = new AstVariable(newVariableName.str());
-
-            // update argument to be a variable
-            newAtom->setArgument(argNum, std::unique_ptr<AstArgument>(variable));
-          }
+            // swap out the old clause with the new one
+            rel->removeClause(clause);
+            rel->addClause(std::unique_ptr<AstClause>(newClause));
         }
-
-        // add the new atom to the body
-        newClause->addToBody(std::unique_ptr<AstLiteral> (newAtom));
-      }
-
-      // swap out the old clause with the new one
-      rel->removeClause(clause);
-      rel->addClause(std::unique_ptr<AstClause> (newClause));
     }
-  }
 
-  return changed;
+    return changed;
 }
 
 }  // end of namespace souffle

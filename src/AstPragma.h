@@ -35,12 +35,13 @@ protected:
         const AstPragma& other = static_cast<const AstPragma&>(node);
         return other.key == key && other.value == value;
     }
+
 public:
     virtual ~AstPragma() {}
 
-     AstPragma() { }
+    AstPragma() {}
 
-     AstPragma(const std::string &k, const std::string &v) : key(k), value(v) { }
+    AstPragma(const std::string& k, const std::string& v) : key(k), value(v) {}
 
     /** Obtains a list of all embedded child nodes */
     virtual std::vector<const AstNode*> getChildNodes() const {
@@ -66,12 +67,12 @@ public:
     }
 
     std::pair<std::string, std::string> getkvp() const {
-      return std::pair<std::string, std::string>(key,value);
+        return std::pair<std::string, std::string>(key, value);
     }
 
-    friend std::ostream& operator<<(std::ostream& out, const AstPragma& arg){
-      out << arg.key << " \"" << arg.value << "\"";
-      return out;
+    friend std::ostream& operator<<(std::ostream& out, const AstPragma& arg) {
+        out << arg.key << " \"" << arg.value << "\"";
+        return out;
     }
 
     /** Name of the key */
@@ -83,12 +84,12 @@ public:
 
 class AstPragmaChecker : public AstTransformer {
 private:
-	virtual bool transform(AstTranslationUnit&);
+    virtual bool transform(AstTranslationUnit&);
 
 public:
-  virtual std::string getName() const {
-      return "AstPragmaChecker";
-  }
+    virtual std::string getName() const {
+        return "AstPragmaChecker";
+    }
 };
 
 }  // end of namespace souffle

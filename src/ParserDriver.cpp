@@ -83,7 +83,7 @@ std::unique_ptr<AstTranslationUnit> ParserDriver::parseTranslationUnit(const std
 }
 
 void ParserDriver::addPragma(AstPragma* p) {
-     translationUnit->getProgram()->addPragma(std::unique_ptr<AstPragma>(p));
+    translationUnit->getProgram()->addPragma(std::unique_ptr<AstPragma>(p));
 }
 
 void ParserDriver::addRelation(AstRelation* r) {

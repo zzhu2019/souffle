@@ -258,7 +258,7 @@ void AstProgram::apply(const AstNodeMapper& map) {
         cur = map(std::move(cur));
     }
     for (auto& cur : pragmaDirectives) {
-      cur = map(std::move(cur));
+        cur = map(std::move(cur));
     }
     for (auto& cur : ioDirectives) {
         cur = map(std::move(cur));

@@ -18,8 +18,8 @@
 #pragma once
 
 #include "AstComponent.h"
-#include "AstRelation.h"
 #include "AstPragma.h"
+#include "AstRelation.h"
 #include "ErrorReport.h"
 #include "TypeSystem.h"
 #include "Util.h"
@@ -206,8 +206,8 @@ public:
         for (const auto& cur : clauses) {
             res.push_back(cur.get());
         }
-        for (const auto& cur : pragmaDirectives){
-          res.push_back(cur.get());
+        for (const auto& cur : pragmaDirectives) {
+            res.push_back(cur.get());
         }
         for (const auto& cur : ioDirectives) {
             res.push_back(cur.get());
