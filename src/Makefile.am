@@ -188,7 +188,7 @@ souffle_CPPFLAGS = -DPACKAGE_VERSION="\"${PACKAGE_VERSION}\""
 CLEANFILES = $(BUILT_SOURCES)  parser.cc scanner.cc parser.hh stack.hh
 
 # run Bison
-$(builddir)/parser.cc $(builddir)/parser.hh $(builddir)/stack.hh: $(srcdir)/parser.yy
+$(builddir)/parser.hh $(builddir)/stack.hh: $(srcdir)/parser.yy
 	$(BISON) -Wall -Werror -v -d -o parser.cc $(srcdir)/parser.yy
 
 # and FLEX
