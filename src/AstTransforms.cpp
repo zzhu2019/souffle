@@ -817,7 +817,6 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
             for (AstLiteral* lit : clause->getBodyLiterals()) {
                 // if not an atom, just add it immediately
-                // TODO: check if enough to only look at atoms
                 if (dynamic_cast<AstAtom*>(lit) == 0) {
                     newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
                     continue;

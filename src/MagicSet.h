@@ -1,6 +1,6 @@
 /*
  * Souffle - A Datalog Compiler
- * Copyright (c) 2017 Souffle Developers
+ * Copyright (c) 2017, The Souffle Developers. All rights reserved.
  * Licensed under the Universal Permissive License v 1.0 as shown at:
  * - https://opensource.org/licenses/UPL
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
@@ -47,7 +47,6 @@ public:
     }
 
     friend bool operator<(const AdornedPredicate& p1, const AdornedPredicate& p2) {
-        // TODO: think of a better way to compare adorned predicates
         std::stringstream comp1, comp2;
         comp1 << p1.getName() << "+ _ADD_ +" << p1.getAdornment();
         comp2 << p2.getName() << "+ _ADD_ +" << p2.getAdornment();
@@ -121,7 +120,6 @@ public:
 
 class Adornment : public AstAnalysis {
 private:
-    // TODO: maybe use a map instead to clean things up
     std::vector<std::vector<AdornedClause>> adornmentClauses;
     std::vector<AstRelationIdentifier> adornmentRelations;
     std::set<AstRelationIdentifier> adornmentEdb;

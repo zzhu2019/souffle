@@ -251,7 +251,7 @@ int main(int argc, char** argv) {
 
     // ------- rewriting / optimizations -------------
 
-    /* set up extra options based on pragma declaratives */
+    /* set up additional global options based on pragma declaratives */
     (std::unique_ptr<AstTransformer>(new AstPragmaChecker()))->apply(*translationUnit);
 
     std::vector<std::unique_ptr<AstTransformer>> transforms;
@@ -270,16 +270,13 @@ int main(int argc, char** argv) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new NormaliseConstraintsTransformer()));
         transforms.push_back(std::unique_ptr<AstTransformer>(new MagicSetTransformer()));
 
-        /* Get rid of the following if not needed after testing... */
         if (Global::config().get("bddbddb").empty()) {
             transforms.push_back(std::unique_ptr<AstTransformer>(
-                    new ResolveAliasesTransformer()));  // this seems to be needed
+                    new ResolveAliasesTransformer()));
         }
         transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRelationCopiesTransformer()));
-        transforms.push_back(std::unique_ptr<AstTransformer>(new MaterializeAggregationQueriesTransformer()));
         transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveEmptyRelationsTransformer()));
         transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRedundantRelationsTransformer()));
-        /* --- */
     }
 
     transforms.push_back(std::unique_ptr<AstTransformer>(new AstExecutionPlanChecker()));

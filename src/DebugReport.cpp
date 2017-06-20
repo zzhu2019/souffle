@@ -230,7 +230,6 @@ void DebugReporter::generateDebugReport(
     DebugReportSection topsortSCCGraphSection =
             getCodeSection(id + "-topsort-scc-graph", "SCC Topological Sort Order", topsortSCCGraph.str());
 
-    // TODO: check if correct - also check if you can just print it once at the end
     std::stringstream adornment;
     translationUnit.getAnalysis<Adornment>()->outputAdornment(adornment);
     DebugReportSection adornmentSection =
