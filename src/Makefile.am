@@ -44,14 +44,14 @@ DIR := ${CURDIR}
 souffle_profile_CXXFLAGS = $(souffle_CPPFLAGS) -DMAKEDIR='"$(DIR)"'
 
 nodist_souffle_mcpp_SOURCES = $(BUILT_SOURCES)
- 
+
 souffle_mcpp_SOURCES = mcpp-system.H mcpp-configed.H mcpp-internal.H mcpp-main.c mcpp-directive.c mcpp-eval.c \
                         mcpp-expand.c mcpp-mbchar.c mcpp-support.c mcpp-system.c mcpp_out.h
- 
+
 mcpp-main.o mcpp-directive.o mcpp-eval.o mcpp-expand.o mcpp-mbchar.o mcpp-support.o mcpp-system.o    :    \
      mcpp-system.H mcpp-internal.H mcpp_out.h
 mcpp-system.H    : mcpp-configed.H
- 
+
 
 # ... which should no go to distribution
 nodist_souffle_SOURCES = $(BUILT_SOURCES)
@@ -72,6 +72,7 @@ souffle_sources = \
               AstAttribute.h                            \
               AstClause.cpp         AstClause.h         \
               AstComponent.h                            \
+              AstPragma.cpp         AstPragma.h         \
               AstIODirective.h                          \
               AstLiteral.h                              \
               AstNode.h                                 \
@@ -120,6 +121,7 @@ souffle_sources = \
               StringPool.h                              \
               TypeSystem.cpp        TypeSystem.h        \
               PrecedenceGraph.cpp   PrecedenceGraph.h   \
+              MagicSet.cpp          MagicSet.h          \
               $(sqlite_sources)     $(libz_sources)     \
               ReadStream.h                              \
               ReadStreamCSV.h                           \
@@ -328,4 +330,3 @@ test_parallel_utils_test_LDADD = libsouffle.la
 
 # make all check-programs tests
 TESTS = $(check_PROGRAMS)
-
