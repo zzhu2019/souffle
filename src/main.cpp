@@ -271,8 +271,7 @@ int main(int argc, char** argv) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new MagicSetTransformer()));
 
         if (Global::config().get("bddbddb").empty()) {
-            transforms.push_back(std::unique_ptr<AstTransformer>(
-                    new ResolveAliasesTransformer()));
+            transforms.push_back(std::unique_ptr<AstTransformer>(new ResolveAliasesTransformer()));
         }
         transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRelationCopiesTransformer()));
         transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveEmptyRelationsTransformer()));

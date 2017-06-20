@@ -1011,10 +1011,9 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                 // copy over input directives to new adorned relation
                 // also - update input directives to correctly use default fact file names
                 if (originalRelation->isInput()) {
-                    IODirectives inputDirectives; // to more easily work with the directive
+                    IODirectives inputDirectives;  // to more easily work with the directive
                     AstIODirective* newDirective = new AstIODirective();
-                    inputDirectives.setRelationName(
-                            newRelName.getNames()[0]);
+                    inputDirectives.setRelationName(newRelName.getNames()[0]);
                     newDirective->addName(newRelName);
                     newDirective->setAsInput();
                     for (AstIODirective* current : originalRelation->getIODirectives()) {
@@ -1030,8 +1029,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                         newDirective->addKVP("IO", "file");
                     }
                     if (inputDirectives.getIOType() == "file" && !inputDirectives.has("filename")) {
-                        newDirective->addKVP("filename",
-                                originalName.getNames()[0] + ".facts");
+                        newDirective->addKVP("filename", originalName.getNames()[0] + ".facts");
                     }
 
                     newRelation->addIODirectives(std::unique_ptr<AstIODirective>(newDirective));
