@@ -185,6 +185,14 @@ public:
         out << "}\n";
     }
 
+    void lock() const {
+        access.lock();
+    }
+
+    void unlock() const {
+        access.unlock();
+    }
+
     /** Stream operator, used as a convenience for print. */
     friend std::ostream& operator<<(std::ostream& out, const SymbolTable& table) {
         table.print(out);

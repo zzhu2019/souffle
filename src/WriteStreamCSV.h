@@ -28,81 +28,41 @@
 
 namespace souffle {
 
-class WriteStreamCSV : public WriteStream {
-public:
-    WriteStreamCSV(std::ostream& out, const SymbolMask& symbolMask, const SymbolTable& symbolTable,
-            char delimiter = '\t')
-            : delimiter(delimiter), out(out), symbolMask(symbolMask), symbolTable(symbolTable) {}
-    void writeNextTuple(const RamDomain* tuple) override {
-        if (symbolMask.getArity() == 0) {
-            out << "()\n";
-            return;
-        }
-
-        if (symbolMask.isSymbol(0)) {
-            out << symbolTable.resolve(tuple[0]);
-        } else {
-            out << static_cast<int32_t>(tuple[0]);
-        }
-        for (size_t col = 1; col < symbolMask.getArity(); ++col) {
-            out << delimiter;
-            if (symbolMask.isSymbol(col)) {
-                std::string s = symbolTable.resolve(tuple[col]);
-                out << s;
-            } else {
-                out << static_cast<int32_t>(tuple[col]);
-            }
-        }
-        out << "\n";
-    }
-
-    // optimizing, unsafe version. Doesn't lock, doesn't bound-check.
-    void writeNextTupleUnsafe(const RamDomain* tuple) {
-        size_t arity = symbolMask.getArity();
-        if (arity == 0) {
-            out << "()\n";
-            return;
-        }
-
-        if (symbolMask.isSymbol(0)) {
-            out << symbolTable.unsafeResolve(tuple[0]);
-        } else {
-            out << static_cast<int32_t>(tuple[0]);
-        }
-        for (size_t col = 1; col < arity; ++col) {
-            out << delimiter;
-            if (symbolMask.isSymbol(col)) {
-                out << symbolTable.unsafeResolve(tuple[col]);
-            } else {
-                out << static_cast<int32_t>(tuple[col]);
-            }
-        }
-        out << "\n";
-    }
-
-    ~WriteStreamCSV() override = default;
-
-private:
-    const char delimiter;
-    std::ostream& out;
-    const SymbolMask& symbolMask;
-    const SymbolTable& symbolTable;
-};
-
 class WriteFileCSV : public WriteStream {
 public:
     WriteFileCSV(const std::string& filename, const SymbolMask& symbolMask, const SymbolTable& symbolTable,
             char delimiter = '\t')
-            : file(filename), writeStream(file, symbolMask, symbolTable, delimiter) {}
-    void writeNextTuple(const RamDomain* tuple) override {
-        writeStream.writeNextTupleUnsafe(tuple);
-    }
+            : WriteStream(symbolMask, symbolTable), delimiter(delimiter), file(filename) {}
 
     ~WriteFileCSV() override = default;
 
-private:
+protected:
+    void writeNextTuple(const RamDomain* tuple) override {
+        size_t arity = symbolMask.getArity();
+        if (arity == 0) {
+            file << "()\n";
+            return;
+        }
+
+        if (symbolMask.isSymbol(0)) {
+            file << symbolTable.unsafeResolve(tuple[0]);
+        } else {
+            file << static_cast<int32_t>(tuple[0]);
+        }
+        for (size_t col = 1; col < arity; ++col) {
+            file << delimiter;
+            if (symbolMask.isSymbol(col)) {
+                file << symbolTable.unsafeResolve(tuple[col]);
+            } else {
+                file << static_cast<int32_t>(tuple[col]);
+            }
+        }
+        file << "\n";
+    }
+
+protected:
+    const char delimiter;
     std::ofstream file;
-    WriteStreamCSV writeStream;
 };
 
 #ifdef USE_LIBZ
@@ -110,16 +70,36 @@ class WriteGZipFileCSV : public WriteStream {
 public:
     WriteGZipFileCSV(const std::string& filename, const SymbolMask& symbolMask,
             const SymbolTable& symbolTable, char delimiter = '\t')
-            : file(filename), writeStream(file, symbolMask, symbolTable, delimiter) {}
-    void writeNextTuple(const RamDomain* tuple) override {
-        writeStream.writeNextTuple(tuple);
-    }
+            : WriteStream(symbolMask, symbolTable), delimiter(delimiter), file(filename) {}
 
     ~WriteGZipFileCSV() override = default;
 
-private:
+protected:
+    void writeNextTuple(const RamDomain* tuple) override {
+        size_t arity = symbolMask.getArity();
+        if (arity == 0) {
+            file << "()\n";
+            return;
+        }
+
+        if (symbolMask.isSymbol(0)) {
+            file << symbolTable.unsafeResolve(tuple[0]);
+        } else {
+            file << static_cast<int32_t>(tuple[0]);
+        }
+        for (size_t col = 1; col < arity; ++col) {
+            file << delimiter;
+            if (symbolMask.isSymbol(col)) {
+                file << symbolTable.unsafeResolve(tuple[col]);
+            } else {
+                file << static_cast<int32_t>(tuple[col]);
+            }
+        }
+        file << "\n";
+    }
+
+    const char delimiter;
     gzfstream::ogzfstream file;
-    WriteStreamCSV writeStream;
 };
 #endif
 
@@ -127,19 +107,39 @@ class WriteCoutCSV : public WriteStream {
 public:
     WriteCoutCSV(const std::string& relationName, const SymbolMask& symbolMask,
             const SymbolTable& symbolTable, char delimiter = '\t')
-            : writeStream(std::cout, symbolMask, symbolTable, delimiter) {
+            : WriteStream(symbolMask, symbolTable), delimiter(delimiter) {
         std::cout << "---------------\n" << relationName << "\n===============\n";
-    }
-    void writeNextTuple(const RamDomain* tuple) override {
-        writeStream.writeNextTuple(tuple);
     }
 
     ~WriteCoutCSV() override {
         std::cout << "===============\n";
     }
 
-private:
-    WriteStreamCSV writeStream;
+protected:
+    void writeNextTuple(const RamDomain* tuple) override {
+        size_t arity = symbolMask.getArity();
+        if (arity == 0) {
+            std::cout << "()\n";
+            return;
+        }
+
+        if (symbolMask.isSymbol(0)) {
+            std::cout << symbolTable.unsafeResolve(tuple[0]);
+        } else {
+            std::cout << static_cast<int32_t>(tuple[0]);
+        }
+        for (size_t col = 1; col < arity; ++col) {
+            std::cout << delimiter;
+            if (symbolMask.isSymbol(col)) {
+                std::cout << symbolTable.unsafeResolve(tuple[col]);
+            } else {
+                std::cout << static_cast<int32_t>(tuple[col]);
+            }
+        }
+        std::cout << "\n";
+    }
+
+    const char delimiter;
 };
 
 class WriteCSVFactory {

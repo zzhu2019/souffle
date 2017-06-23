@@ -23,18 +23,26 @@ namespace souffle {
 
 class WriteStream {
 public:
+    WriteStream(const SymbolMask& symbolMask, const SymbolTable& symbolTable)
+            : symbolMask(symbolMask), symbolTable(symbolTable) {}
     template <typename T>
     void writeAll(const T& relation) {
+        symbolTable.lock();
         for (const auto& current : relation) {
             writeNext(current);
         }
+        symbolTable.unlock();
     }
+    virtual ~WriteStream() = default;
+
+protected:
+    virtual void writeNextTuple(const RamDomain* tuple) = 0;
     template <typename Tuple>
     void writeNext(Tuple tuple) {
         writeNextTuple(tuple.data);
     }
-    virtual void writeNextTuple(const RamDomain* tuple) = 0;
-    virtual ~WriteStream() = default;
+    const SymbolMask& symbolMask;
+    const SymbolTable& symbolTable;
 };
 
 class WriteStreamFactory {
