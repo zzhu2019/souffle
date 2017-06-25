@@ -11,7 +11,7 @@ if [ $TRAVIS_OS_NAME == linux ]
 then
   if [ "$TEST_FORMAT" == 1 ]
   then
-    /usr/bin/clang-format --version
+    clang-format --version
     $(dirname $0)/checkStyle.sh HEAD~
   elif [ "$MAKEPACKAGE" == 1 ]
   then
@@ -33,7 +33,7 @@ then
     then
       cd tests
     fi
-    TESTSUITEFLAGS="-j2 $TESTRANGE" make check
+    TESTSUITEFLAGS="-j2 $TESTRANGE" make check -j2
   fi
 fi
 
@@ -63,7 +63,7 @@ then
     then
       cd tests
     fi
-    TESTSUITEFLAGS="-j2 $TESTRANGE" make check
+    TESTSUITEFLAGS="-j2 $TESTRANGE" make check -j2
   fi
 fi
 

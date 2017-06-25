@@ -39,7 +39,7 @@ for f in $(git diff --name-only --diff-filter=ACMRTUXB $1); do
   if ! echo "$f" | egrep -q "^src/"; then
     continue
   fi
-  d=$(diff -u0 "$f" <(/usr/bin/clang-format -style=file "$f")) || true
+  d=$(diff -u0 "$f" <(clang-format -style=file "$f")) || true
   if [ -n "$d" ]; then
     echo "!!! $f not compliant to coding style. A suggested fix is below."
     echo "To make the fix automatically, use clang-format -i $f"
