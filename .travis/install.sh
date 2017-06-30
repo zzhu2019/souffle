@@ -12,8 +12,8 @@ set -x
 # Install requirements of Linux
 if [ $TRAVIS_OS_NAME == linux ]
 then
-  sudo apt-get -qq update # TODO comment this out if the apt repo is up-to-date
-  sudo apt-get -y install build-essential g++ automake autoconf bison flex openjdk-8-jdk lsb-release libtool libncurses5-dev
+#  sudo apt-get -qq update # TODO comment this out if the apt repo is up-to-date
+  sudo apt-get -y install automake autoconf bison build-essential flex g++ libncurses5-dev libtool lsb-release
 
   if [ "$TEST_FORMAT" == 1 ]
   then
@@ -24,7 +24,7 @@ then
   else
     if [ "$MAKEPACKAGE" == 1 ]
     then
-      sudo apt-get -y install debhelper devscripts
+      sudo apt-get -y install debhelper devscripts openjdk-8-jdk
     elif [[ "$CC" == "clang" ]]
     then
       sudo apt-get -y install clang-3.8
@@ -51,7 +51,7 @@ fi
 # Install requirements of MAC OS X
 if [ $TRAVIS_OS_NAME == osx ]
 then
-  brew update
+  #brew update #Uncomment this if brew database is out of date
   brew install md5sha1sum bison libtool
   brew link bison --force
 fi
