@@ -4,6 +4,7 @@ language: cpp
 install:
   - "./.travis/install.sh"
 
+stage: Testing
 os:
   - linux
   - osx
@@ -24,12 +25,14 @@ dist: trusty
 #default is 7.3
 #osx_image: xcode7.3
 
-matrix:
+jobs:
   include:
   - os: linux
+    stage: Packaging
     compiler: gcc
     env: MAKEPACKAGE=1
   - os: osx
+    stage: Packaging
     compiler: clang
     env: MAKEPACKAGE=1
   exclude:
