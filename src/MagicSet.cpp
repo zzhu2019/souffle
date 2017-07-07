@@ -22,10 +22,6 @@
 namespace souffle {
 /* general functions */
 
-void DEBUGprintProgram(std::unique_ptr<AstProgram> program) {
-    std::cout << *program << std::endl;
-}
-
 // checks whether the adorned version of two predicates is equal
 bool isEqualAdornment(
         AstRelationIdentifier pred1, std::string adorn1, AstRelationIdentifier pred2, std::string adorn2) {
@@ -520,6 +516,58 @@ std::pair<std::string, std::set<std::string>> bindArguments(
     return result;
 }
 
+// --- SIPS ---
+// Any SIPS strategy can be chosen
+// Current strategy very basic:
+// While not every atom has been adorned:
+// -- Find the first available atom with at least one bound argument
+// -- -- If one exists, choose it as the next atom to adorn/use
+// -- -- Otherwise, if an edb atom is still unadorned in the clause, choose it
+// -- -- Otherwise, choose the first remaining idb atom
+
+// TODO (azreika): implement a more effective SIPS
+int getNextAtomSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
+  // find the first available atom with at least one bound argument
+  int firstedb = -1;
+  int firstidb = -1;
+  for (size_t i = 0; i < atoms.size(); i++) {
+      AstAtom* currAtom = atoms[i];
+      if (currAtom == nullptr) {
+          // already done - move on
+          continue;
+      }
+
+      AstRelationIdentifier atomName = currAtom->getName();
+
+      // check if this is the first edb or idb atom met
+      if(contains(edb, atomName)){
+        if(firstedb < 0){
+          firstedb = i;
+        }
+      } else if (firstidb < 0){
+        firstidb = i;
+      }
+
+      // if it has at least one bound argument, then adorn this atom next
+      if (hasBoundArgument(currAtom, boundArgs)) {
+        return i;
+      }
+  }
+
+  // all unadorned body atoms only have free arguments
+  // choose the first edb remaining if available
+  if(firstedb >= 0){
+    return firstedb;
+  } else {
+    return firstidb;
+  }
+}
+
+// int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
+//
+// }
+
+
 // runs the adornment algorithm on an input program
 // Adornment algorithm:
 
@@ -679,106 +727,31 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
                 int atomsAdorned = 0;
                 int atomsTotal = atoms.size();
 
-                // --- SIPS ---
-                // Any SIPS strategy can be chosen
-                // Current strategy very basic:
-                // While not every atom has been adorned:
-                // -- Find the first available atom with at least one bound argument
-                // -- -- If one exists, choose it as the next atom to adorn/use
-                // -- -- Otherwise, if an edb atom is still unadorned in the clause, choose it
-                // -- -- Otherwise, choose the first remaining idb atom
-
-                // TODO (azreika): implement a more effective SIPS
-
                 while (atomsAdorned < atomsTotal) {
-                    int firstedb = -1;  // index of first edb atom
-                    bool atomAdded = false;
+                  // get the next body atom to adorn based on our SIPS
+                  int currIndex = getNextAtomSIPS(atoms, boundArgs, adornmentEdb);
+                  AstAtom* currAtom = atoms[currIndex];
+                  AstRelationIdentifier atomName = currAtom->getName();
 
-                    // find the first available atom with at least one bound argument
-                    for (size_t i = 0; i < atoms.size(); i++) {
-                        AstAtom* currAtom = atoms[i];
-                        if (currAtom == nullptr) {
-                            // already done - move on
-                            continue;
-                        }
+                  // compute the adornment pattern of this atom, and
+                  // add all its arguments to the list of bound args
+                  std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundArgs);
+                  std::string atomAdornment = result.first;
+                  boundArgs = result.second;
 
-                        AstRelationIdentifier atomName = currAtom->getName();
+                  // check if we've already dealt with this adornment before
+                  if (!contains(seenPredicates, atomName, atomAdornment)) {
+                      // not seen before, so push it onto the computation list
+                      // and mark it as seen
+                      currentPredicates.push_back(AdornedPredicate(atomName, atomAdornment));
+                      seenPredicates.insert(AdornedPredicate(atomName, atomAdornment));
+                  }
 
-                        // check if this is the first edb atom met
-                        if (firstedb < 0 && contains(adornmentEdb, atomName)) {
-                            firstedb = i;
-                        }
+                  clauseAtomAdornments[currIndex] = atomAdornment;  // store the adornment
+                  ordering[currIndex] = atomsAdorned;               // mark what atom number this is
+                  atoms[currIndex] = nullptr;                       // mark as done
 
-                        // if it has at least one bound argument, then adorn this atom next
-                        if (hasBoundArgument(currAtom, boundArgs)) {
-                            atomAdded = true;
-
-                            // compute the adornment pattern of this atom, and
-                            // add all its arguments to the list of bound args
-                            std::pair<std::string, std::set<std::string>> result =
-                                    bindArguments(currAtom, boundArgs);
-                            std::string atomAdornment = result.first;
-                            boundArgs = result.second;
-
-                            // check if we've already dealt with this adornment before
-                            if (!contains(seenPredicates, atomName, atomAdornment)) {
-                                // not seen before, so push it onto the computation list
-                                // and mark it as seen
-                                currentPredicates.push_back(AdornedPredicate(atomName, atomAdornment));
-                                seenPredicates.insert(AdornedPredicate(atomName, atomAdornment));
-                            }
-
-                            clauseAtomAdornments[i] = atomAdornment;  // store the adornment
-                            ordering[i] = atomsAdorned;               // mark what atom number this is
-                            atoms[i] = nullptr;                       // mark as done
-
-                            atomsAdorned++;
-                            break;
-                        }
-                    }
-
-                    // no such atom found
-                    if (!atomAdded) {
-                        size_t i = 0;
-                        if (firstedb >= 0) {
-                            // choose the first edb atom found in the clause,
-                            // if it exists
-                            i = firstedb;
-                        } else {
-                            // no available edb atom in the clause -
-                            // choose the first remaining atom
-                            for (i = 0; i < atoms.size(); i++) {
-                                if (atoms[i] != nullptr) {
-                                    // unadorned atom found
-                                    break;
-                                }
-                            }
-                        }
-
-                        AstAtom* currAtom = atoms[i];
-                        AstRelationIdentifier atomName = currAtom->getName();
-
-                        // compute the adornment pattern of this atom, and
-                        // add all its arguments to the list of bound args
-                        std::pair<std::string, std::set<std::string>> result =
-                                bindArguments(currAtom, boundArgs);
-                        std::string atomAdornment = result.first;
-                        std::set<std::string> boundArgs = result.second;
-
-                        // check if we've already dealt with this adornment before
-                        if (!contains(seenPredicates, atomName, atomAdornment)) {
-                            // not seen before, so push it onto the computation list
-                            // and mark it as seen
-                            currentPredicates.push_back(AdornedPredicate(atomName, atomAdornment));
-                            seenPredicates.insert(AdornedPredicate(atomName, atomAdornment));
-                        }
-
-                        clauseAtomAdornments[i] = atomAdornment;  // store the adornment
-                        ordering[i] = atomsAdorned;               // mark what atom number this is
-                        atoms[i] = nullptr;                       // mark as done
-
-                        atomsAdorned++;
-                    }
+                  atomsAdorned++;
                 }
 
                 // adornment of this clause is complete - add it to the list of
