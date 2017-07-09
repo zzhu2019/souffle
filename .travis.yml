@@ -22,6 +22,8 @@ aliases:
         packages:
         - *linux_deps
         - g++-6
+    before_script: ".travis/init_test.sh"
+    script: ".travis/run_test.sh"
   - &linuxclang
     stage: Testing
     os: linux
@@ -35,6 +37,9 @@ aliases:
         packages:
         - *linux_deps
         - clang-4.0
+    install: ".travis/linux/clang_install.sh"
+    before_script: ".travis/init_test.sh"
+    script: ".travis/run_test.sh"
   - &linuxpackage
     stage: Packaging
     os: linux
@@ -51,16 +56,24 @@ aliases:
         - debhelper
         - fakeroot
         - openjdk-7-jdk
+    before_script: ".travis/init_make_package.sh"
+    script: ".travis/linux/make_package.sh"
   - &osxclang
     stage: Testing
     os: osx
     compiler: clang
     osx_image: xcode8.2
+    install: ".travis/osx/install.sh"
+    before_script: ".travis/init_test.sh"
+    script: ".travis/run_test.sh"
   - &osxpackage
     stage: Packaging
     os: osx
     compiler: clang
     osx_image: xcode8.2
+    install: ".travis/osx/install.sh"
+    before_script: ".travis/init_make_package.sh"
+    script: ".travis/osx/make_package.sh"
   - &gcc MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
   - &clang MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
 
@@ -78,6 +91,7 @@ jobs:
         - llvm-toolchain-trusty-4.0
         packages:
         - clang-format-4.0
+    script: ".travis/run_test_format.sh"
     # Linux GCC
   - <<: *linuxgcc
     env:
@@ -134,16 +148,9 @@ jobs:
 
 before_install:
   - eval "${MATRIX_EVAL}"
-install:
-  - "./.travis/install.sh"
-
-before_script:
-  - "./.travis/init.sh"
-script:
-  - "./.travis/run.sh"
 
 after_failure:
-  - "./.travis/after_failure.sh"
+  - ".travis/after_failure.sh"
 
 deploy:
   skip_cleanup: true
