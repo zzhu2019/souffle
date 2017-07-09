@@ -516,17 +516,10 @@ std::pair<std::string, std::set<std::string>> bindArguments(
     return result;
 }
 
-// --- SIPS ---
-// Any SIPS strategy can be chosen
-// Current strategy very basic:
-// While not every atom has been adorned:
-// -- Find the first available atom with at least one bound argument
-// -- -- If one exists, choose it as the next atom to adorn/use
-// -- -- Otherwise, if an edb atom is still unadorned in the clause, choose it
-// -- -- Otherwise, choose the first remaining idb atom
-
-// TODO (azreika): implement a more effective SIPS
-int getNextAtomSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
+// SIPS #1:
+// Choose the left-most body atom with at least one bound argument
+// If none exist, prioritise EDB predicates.
+int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
   // find the first available atom with at least one bound argument
   int firstedb = -1;
   int firstidb = -1;
@@ -563,9 +556,89 @@ int getNextAtomSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs
   }
 }
 
-// int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
-//
-// }
+// SIPS #2:
+// Choose the body atom with the maximum number of bound arguments
+// If equal boundness, prioritise left-most EDB
+int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
+  int maxBound = -1;
+  int maxIndex = 0;
+  bool maxIsEDB = false; // checks if current max index is an EDB predicate
+
+  for(size_t i = 0; i < atoms.size(); i++){
+    AstAtom* currAtom = atoms[i];
+    if(currAtom == nullptr){
+      // already done - move on
+      continue;
+    }
+
+    int numBound = 0;
+    for (AstArgument* arg : currAtom->getArguments()) {
+        std::string name = getString(arg);
+        if (boundArgs.find(name) != boundArgs.end()) {
+            numBound++;  // found a bound argument
+        }
+    }
+
+    if(numBound > maxBound){
+      maxBound = numBound;
+      maxIndex = i;
+      maxIsEDB = contains(edb, currAtom->getName());
+    } else if(!maxIsEDB && numBound == maxBound && contains(edb, currAtom->getName())) {
+      // prioritise EDB predicates
+      maxIsEDB = true;
+      maxIndex = i;
+    }
+  }
+
+  return maxIndex;
+}
+
+// Choose the atom with the maximum ratio of bound arguments to total arguments
+int getNextAtomMaxRatioSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
+  double maxRatio = -1;
+  int maxIndex = 0;
+
+  for(size_t i = 0; i < atoms.size(); i++){
+    AstAtom* currAtom = atoms[i];
+    if(currAtom == nullptr){
+      // already done - move on
+      continue;
+    }
+
+    int numArguments = currAtom->getArity();
+    if(numArguments == 0){
+      return i; // no arguments!
+    }
+
+    int numBound = 0;
+    for (AstArgument* arg : currAtom->getArguments()) {
+        std::string name = getString(arg);
+        if (boundArgs.find(name) != boundArgs.end()) {
+            numBound++;  // found a bound argument
+        }
+    }
+
+    double currRatio = numBound*1.0/numArguments;
+
+    if(currRatio == 1){
+      return i; // all bound, not going to get better than this
+    }
+
+    if(currRatio > maxRatio){
+      maxRatio = currRatio;
+      maxIndex = i;
+    }
+  }
+
+  return maxIndex;
+}
+
+// Choose the SIP Strategy to be used
+// Current choice is the max ratio SIPS
+int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
+  return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb);
+}
+
 
 
 // runs the adornment algorithm on an input program
@@ -588,6 +661,11 @@ int getNextAtomSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs
 
 // Output: D' [the set of all adorned clauses]
 void Adornment::run(const AstTranslationUnit& translationUnit) {
+    // don't do anything if magic-transform not enabled
+    if(!Global::config().has("magic-transform")){
+      return;
+    }
+
     // -------------
     // --- Setup ---
     // -------------
