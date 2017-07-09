@@ -230,6 +230,8 @@ void DebugReporter::generateDebugReport(
     DebugReportSection topsortSCCGraphSection =
             getCodeSection(id + "-topsort-scc-graph", "SCC Topological Sort Order", topsortSCCGraph.str());
 
+    // TODO (azreika): adornment output temporarily disabled; unnecessarily recomputed too often - see issue #411
+    /*
     std::stringstream adornment;
     translationUnit.getAnalysis<Adornment>()->outputAdornment(adornment);
     DebugReportSection adornmentSection =
@@ -237,7 +239,14 @@ void DebugReporter::generateDebugReport(
 
     translationUnit.getDebugReport().addSection(
             DebugReportSection(id, title, {datalogSection, precedenceGraphSection, sccGraphSection,
-                                                  topsortSCCGraphSection, adornmentSection},
+                                                  topsortSCCGraphSection, adornment-section},
+                    ""));
+    */
+
+
+    translationUnit.getDebugReport().addSection(
+            DebugReportSection(id, title, {datalogSection, precedenceGraphSection, sccGraphSection,
+                                                  topsortSCCGraphSection},
                     ""));
 }
 
