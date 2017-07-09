@@ -519,127 +519,129 @@ std::pair<std::string, std::set<std::string>> bindArguments(
 // SIPS #1:
 // Choose the left-most body atom with at least one bound argument
 // If none exist, prioritise EDB predicates.
-int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
-  // find the first available atom with at least one bound argument
-  int firstedb = -1;
-  int firstidb = -1;
-  for (size_t i = 0; i < atoms.size(); i++) {
-      AstAtom* currAtom = atoms[i];
-      if (currAtom == nullptr) {
-          // already done - move on
-          continue;
-      }
-
-      AstRelationIdentifier atomName = currAtom->getName();
-
-      // check if this is the first edb or idb atom met
-      if(contains(edb, atomName)){
-        if(firstedb < 0){
-          firstedb = i;
+int getNextAtomNaiveSIPS(
+        std::vector<AstAtom*> atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+    // find the first available atom with at least one bound argument
+    int firstedb = -1;
+    int firstidb = -1;
+    for (size_t i = 0; i < atoms.size(); i++) {
+        AstAtom* currAtom = atoms[i];
+        if (currAtom == nullptr) {
+            // already done - move on
+            continue;
         }
-      } else if (firstidb < 0){
-        firstidb = i;
-      }
 
-      // if it has at least one bound argument, then adorn this atom next
-      if (hasBoundArgument(currAtom, boundArgs)) {
-        return i;
-      }
-  }
+        AstRelationIdentifier atomName = currAtom->getName();
 
-  // all unadorned body atoms only have free arguments
-  // choose the first edb remaining if available
-  if(firstedb >= 0){
-    return firstedb;
-  } else {
-    return firstidb;
-  }
+        // check if this is the first edb or idb atom met
+        if (contains(edb, atomName)) {
+            if (firstedb < 0) {
+                firstedb = i;
+            }
+        } else if (firstidb < 0) {
+            firstidb = i;
+        }
+
+        // if it has at least one bound argument, then adorn this atom next
+        if (hasBoundArgument(currAtom, boundArgs)) {
+            return i;
+        }
+    }
+
+    // all unadorned body atoms only have free arguments
+    // choose the first edb remaining if available
+    if (firstedb >= 0) {
+        return firstedb;
+    } else {
+        return firstidb;
+    }
 }
 
 // SIPS #2:
 // Choose the body atom with the maximum number of bound arguments
 // If equal boundness, prioritise left-most EDB
-int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
-  int maxBound = -1;
-  int maxIndex = 0;
-  bool maxIsEDB = false; // checks if current max index is an EDB predicate
+int getNextAtomMaxBoundSIPS(
+        std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+    int maxBound = -1;
+    int maxIndex = 0;
+    bool maxIsEDB = false;  // checks if current max index is an EDB predicate
 
-  for(size_t i = 0; i < atoms.size(); i++){
-    AstAtom* currAtom = atoms[i];
-    if(currAtom == nullptr){
-      // already done - move on
-      continue;
-    }
+    for (size_t i = 0; i < atoms.size(); i++) {
+        AstAtom* currAtom = atoms[i];
+        if (currAtom == nullptr) {
+            // already done - move on
+            continue;
+        }
 
-    int numBound = 0;
-    for (AstArgument* arg : currAtom->getArguments()) {
-        std::string name = getString(arg);
-        if (boundArgs.find(name) != boundArgs.end()) {
-            numBound++;  // found a bound argument
+        int numBound = 0;
+        for (AstArgument* arg : currAtom->getArguments()) {
+            std::string name = getString(arg);
+            if (boundArgs.find(name) != boundArgs.end()) {
+                numBound++;  // found a bound argument
+            }
+        }
+
+        if (numBound > maxBound) {
+            maxBound = numBound;
+            maxIndex = i;
+            maxIsEDB = contains(edb, currAtom->getName());
+        } else if (!maxIsEDB && numBound == maxBound && contains(edb, currAtom->getName())) {
+            // prioritise EDB predicates
+            maxIsEDB = true;
+            maxIndex = i;
         }
     }
 
-    if(numBound > maxBound){
-      maxBound = numBound;
-      maxIndex = i;
-      maxIsEDB = contains(edb, currAtom->getName());
-    } else if(!maxIsEDB && numBound == maxBound && contains(edb, currAtom->getName())) {
-      // prioritise EDB predicates
-      maxIsEDB = true;
-      maxIndex = i;
-    }
-  }
-
-  return maxIndex;
+    return maxIndex;
 }
 
 // Choose the atom with the maximum ratio of bound arguments to total arguments
-int getNextAtomMaxRatioSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
-  double maxRatio = -1;
-  int maxIndex = 0;
+int getNextAtomMaxRatioSIPS(
+        std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+    double maxRatio = -1;
+    int maxIndex = 0;
 
-  for(size_t i = 0; i < atoms.size(); i++){
-    AstAtom* currAtom = atoms[i];
-    if(currAtom == nullptr){
-      // already done - move on
-      continue;
-    }
+    for (size_t i = 0; i < atoms.size(); i++) {
+        AstAtom* currAtom = atoms[i];
+        if (currAtom == nullptr) {
+            // already done - move on
+            continue;
+        }
 
-    int numArguments = currAtom->getArity();
-    if(numArguments == 0){
-      return i; // no arguments!
-    }
+        int numArguments = currAtom->getArity();
+        if (numArguments == 0) {
+            return i;  // no arguments!
+        }
 
-    int numBound = 0;
-    for (AstArgument* arg : currAtom->getArguments()) {
-        std::string name = getString(arg);
-        if (boundArgs.find(name) != boundArgs.end()) {
-            numBound++;  // found a bound argument
+        int numBound = 0;
+        for (AstArgument* arg : currAtom->getArguments()) {
+            std::string name = getString(arg);
+            if (boundArgs.find(name) != boundArgs.end()) {
+                numBound++;  // found a bound argument
+            }
+        }
+
+        double currRatio = numBound * 1.0 / numArguments;
+
+        if (currRatio == 1) {
+            return i;  // all bound, not going to get better than this
+        }
+
+        if (currRatio > maxRatio) {
+            maxRatio = currRatio;
+            maxIndex = i;
         }
     }
 
-    double currRatio = numBound*1.0/numArguments;
-
-    if(currRatio == 1){
-      return i; // all bound, not going to get better than this
-    }
-
-    if(currRatio > maxRatio){
-      maxRatio = currRatio;
-      maxIndex = i;
-    }
-  }
-
-  return maxIndex;
+    return maxIndex;
 }
 
 // Choose the SIP Strategy to be used
 // Current choice is the max ratio SIPS
-int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb){
-  return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb);
+int getNextAtomSIPS(
+        std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+    return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb);
 }
-
-
 
 // runs the adornment algorithm on an input program
 // Adornment algorithm:
@@ -661,11 +663,6 @@ int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArg
 
 // Output: D' [the set of all adorned clauses]
 void Adornment::run(const AstTranslationUnit& translationUnit) {
-    // don't do anything if magic-transform not enabled
-    if(!Global::config().has("magic-transform")){
-      return;
-    }
-
     // -------------
     // --- Setup ---
     // -------------
@@ -806,30 +803,30 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
                 int atomsTotal = atoms.size();
 
                 while (atomsAdorned < atomsTotal) {
-                  // get the next body atom to adorn based on our SIPS
-                  int currIndex = getNextAtomSIPS(atoms, boundArgs, adornmentEdb);
-                  AstAtom* currAtom = atoms[currIndex];
-                  AstRelationIdentifier atomName = currAtom->getName();
+                    // get the next body atom to adorn based on our SIPS
+                    int currIndex = getNextAtomSIPS(atoms, boundArgs, adornmentEdb);
+                    AstAtom* currAtom = atoms[currIndex];
+                    AstRelationIdentifier atomName = currAtom->getName();
 
-                  // compute the adornment pattern of this atom, and
-                  // add all its arguments to the list of bound args
-                  std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundArgs);
-                  std::string atomAdornment = result.first;
-                  boundArgs = result.second;
+                    // compute the adornment pattern of this atom, and
+                    // add all its arguments to the list of bound args
+                    std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundArgs);
+                    std::string atomAdornment = result.first;
+                    boundArgs = result.second;
 
-                  // check if we've already dealt with this adornment before
-                  if (!contains(seenPredicates, atomName, atomAdornment)) {
-                      // not seen before, so push it onto the computation list
-                      // and mark it as seen
-                      currentPredicates.push_back(AdornedPredicate(atomName, atomAdornment));
-                      seenPredicates.insert(AdornedPredicate(atomName, atomAdornment));
-                  }
+                    // check if we've already dealt with this adornment before
+                    if (!contains(seenPredicates, atomName, atomAdornment)) {
+                        // not seen before, so push it onto the computation list
+                        // and mark it as seen
+                        currentPredicates.push_back(AdornedPredicate(atomName, atomAdornment));
+                        seenPredicates.insert(AdornedPredicate(atomName, atomAdornment));
+                    }
 
-                  clauseAtomAdornments[currIndex] = atomAdornment;  // store the adornment
-                  ordering[currIndex] = atomsAdorned;               // mark what atom number this is
-                  atoms[currIndex] = nullptr;                       // mark as done
+                    clauseAtomAdornments[currIndex] = atomAdornment;  // store the adornment
+                    ordering[currIndex] = atomsAdorned;               // mark what atom number this is
+                    atoms[currIndex] = nullptr;                       // mark as done
 
-                  atomsAdorned++;
+                    atomsAdorned++;
                 }
 
                 // adornment of this clause is complete - add it to the list of
