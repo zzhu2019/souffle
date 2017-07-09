@@ -232,7 +232,8 @@ void DebugReporter::generateDebugReport(
 
     // TODO (azreika): adornment output temporarily disabled; should only be computed just before MST
     //                 - unnecessarily recomputed too often, causing hangs. see issue #411
-    //                 - unnecessarily computed too early, causing segfaults with nonexistent relations. see issue #413
+    //                 - unnecessarily computed too early, causing segfaults with nonexistent relations. see
+    //                 issue #413
     /*
     std::stringstream adornment;
     translationUnit.getAnalysis<Adornment>()->outputAdornment(adornment);
@@ -245,11 +246,8 @@ void DebugReporter::generateDebugReport(
                     ""));
     */
 
-
-    translationUnit.getDebugReport().addSection(
-            DebugReportSection(id, title, {datalogSection, precedenceGraphSection, sccGraphSection,
-                                                  topsortSCCGraphSection},
-                    ""));
+    translationUnit.getDebugReport().addSection(DebugReportSection(id, title,
+            {datalogSection, precedenceGraphSection, sccGraphSection, topsortSCCGraphSection}, ""));
 }
 
 }  // end of namespace souffle
