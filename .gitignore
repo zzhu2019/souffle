@@ -45,5 +45,10 @@ doc
 prof
 
 .idea/
+
+*.swp
+*.tgz
+*-pak
+*.deb
 #macosx
 .DS_Store
