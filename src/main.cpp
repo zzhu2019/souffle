@@ -25,10 +25,12 @@
 #include "AstUtils.h"
 #include "BddbddbBackend.h"
 #include "ComponentModel.h"
+#include "Explain.h"
 #include "Global.h"
 #include "ParserDriver.h"
 #include "PrecedenceGraph.h"
 #include "RamExecutor.h"
+#include "RamInterface.h"
 #include "RamStatement.h"
 #include "RamTranslator.h"
 #include "SymbolTable.h"
@@ -122,6 +124,9 @@ int main(int argc, char** argv) {
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false,
                                     "Write debugging output to HTML report."},
+                            {"provenance", 't', "EXPLAIN", "", false,
+                                    "Enable provenance information (<EXPLAIN> can be 0 for no explain, 1 for "
+                                    "explain with ncurses, 2 for explain with stdout)."},
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
@@ -253,8 +258,8 @@ int main(int argc, char** argv) {
 
     /* set up additional global options based on pragma declaratives */
     (std::unique_ptr<AstTransformer>(new AstPragmaChecker()))->apply(*translationUnit);
-
     std::vector<std::unique_ptr<AstTransformer>> transforms;
+
     transforms.push_back(std::unique_ptr<AstTransformer>(new ComponentInstantiationTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new UniqueAggregationVariablesTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new AstSemanticChecker()));
@@ -282,6 +287,11 @@ int main(int argc, char** argv) {
 
     if (Global::config().has("auto-schedule")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));
+    }
+
+    // Add provenance information by transforming to records
+    if (Global::config().has("provenance")) {
+        transforms.push_back(std::unique_ptr<AstTransformer>(new NaiveProvenanceTransformer()));
     }
     if (!Global::config().get("debug-report").empty()) {
         auto parser_end = std::chrono::high_resolution_clock::now();
@@ -382,6 +392,7 @@ int main(int argc, char** argv) {
     }
 
     // check if this is code generation only
+    RamEnvironment* env = nullptr;
     if (Global::config().has("generate")) {
         // just generate, no compile, no execute
         static_cast<const RamCompiler*>(executor.get())
@@ -394,7 +405,7 @@ int main(int argc, char** argv) {
                 ->compileToBinary(translationUnit->getSymbolTable(), *ramProg);
     } else {
         // run executor
-        executor->execute(translationUnit->getSymbolTable(), *ramProg);
+        env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
     }
 
     /* Report overall run-time in verbose mode */
@@ -402,6 +413,17 @@ int main(int argc, char** argv) {
         auto souffle_end = std::chrono::high_resolution_clock::now();
         std::cout << "Total Time: " << std::chrono::duration<double>(souffle_end - souffle_start).count()
                   << "sec\n";
+    }
+
+    if (Global::config().has("provenance")) {
+        // construct SouffleProgram from env
+        SouffleInterpreterInterface interface(*env, translationUnit->getSymbolTable());
+        // invoke explain
+        if (Global::config().get("provenance") == "1") {
+            explain(interface, true);
+        } else if (Global::config().get("provenance") == "2") {
+            explain(interface, false);
+        }
     }
 
     return 0;
