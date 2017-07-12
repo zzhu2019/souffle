@@ -5,5 +5,5 @@
 set -e
 set -x
 
-clang-format --version
+#clang-format --version
 $(dirname $0)/checkStyle.sh HEAD~

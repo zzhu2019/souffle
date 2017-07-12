@@ -44,7 +44,6 @@ aliases:
     stage: Packaging
     os: linux
     sudo: false
-    compiler: gcc
     addons:
       apt:
         sources:
@@ -67,22 +66,18 @@ aliases:
     before_script: ".travis/init_test.sh"
     script: ".travis/run_test.sh"
   - &osxpackage
+    <<: *osxclang
     stage: Packaging
-    os: osx
-    compiler: clang
-    osx_image: xcode8.2
-    install: ".travis/osx/install.sh"
     before_script: ".travis/init_make_package.sh"
     script: ".travis/osx/make_package.sh"
-  - &gcc MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
-  - &clang MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
+  - &gcc_environment CC=gcc-6 CXX=g++-6
+  - &clang_environment CC=clang-4.0 CXX=clang++-4.0
 
 jobs:
   include:
   - stage: Style
     # Style check
     os: linux
-    compiler: clang
     env: TEST_FORMAT=1
     sudo: false
     addons:
@@ -92,62 +87,56 @@ jobs:
         packages:
         - clang-format-4.0
     script: ".travis/run_test_format.sh"
-    # Linux GCC
   - <<: *linuxgcc
     env:
-    - *gcc
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS=",-c"
-  - <<: *linuxgcc
-    env:
-    - *gcc
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
-  - <<: *linuxgcc
-    env:
-    - *gcc
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-p profile.log, -c -p profile.log"
-  - <<: *linuxgcc
-    env:
-    - *gcc
+    - *gcc_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance
-  # Linux Clang
   - <<: *linuxclang
     env:
-    - *clang
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS=",-c"
-  - <<: *linuxclang
-    env:
-    - *clang
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
-  - <<: *linuxclang
-    env:
-    - *clang
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-p profile.log, -c -p profile.log"
-  - <<: *linuxclang
-    env:
-    - *clang
+    - *clang_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance
-  # OSX Clang
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS=",-c"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-p profile.log, -c -p profile.log"
   - <<: *osxclang
     env:
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS=",-c,-c -p profile.log,-p profile.log"
+  - <<: *linuxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS=",-c"
+  - <<: *linuxclang
+    env:
+    - *clang_environment
+    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS=",-c"
+  - <<: *osxclang
+    env:
+    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS=",-c"
+  - <<: *linuxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
+  - <<: *linuxclang
+    env:
+    - *clang_environment
+    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
+  - <<: *linuxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-p profile.log, -c -p profile.log"
+  - <<: *linuxclang
+    env:
+    - *clang_environment
+    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-p profile.log, -c -p profile.log"
+  - <<: *osxclang
+    env:
+    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-p profile.log, -c -p profile.log"
   # Make the linux deb packages.
   - <<: *linuxpackage
     env:
-    - *gcc
+    - *gcc_environment
     - MAKEPACKAGE=1
   # Make the OSX deb packages.
   - <<: *osxpackage
     env:
     - MAKEPACKAGE=1
-
-before_install:
-  - eval "${MATRIX_EVAL}"
 
 after_failure:
   - ".travis/after_failure.sh"
