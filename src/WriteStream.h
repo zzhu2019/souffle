@@ -27,11 +27,11 @@ public:
             : symbolMask(symbolMask), symbolTable(symbolTable) {}
     template <typename T>
     void writeAll(const T& relation) {
-        symbolTable.lock();
+        auto lease = symbolTable.acquireLock();
+        (void)lease;
         for (const auto& current : relation) {
             writeNext(current);
         }
-        symbolTable.unlock();
     }
     virtual ~WriteStream() = default;
 

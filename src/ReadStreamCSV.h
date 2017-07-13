@@ -35,16 +35,19 @@ namespace souffle {
 
 class ReadStreamCSV : public ReadStream {
 public:
-    ReadStreamCSV(std::istream& in, const SymbolMask& symbolMask, SymbolTable& symbolTable,
+    ReadStreamCSV(std::istream& file, const SymbolMask& symbolMask, SymbolTable& symbolTable,
             std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t")
-            : delimiter(std::move(delimiter)), file(in), lineNumber(0), symbolMask(symbolMask),
-              symbolTable(symbolTable), inputMap(inputMap) {
+            : ReadStream(symbolMask, symbolTable), delimiter(std::move(delimiter)), file(file), lineNumber(0),
+              inputMap(inputMap) {
         while (this->inputMap.size() < symbolMask.getArity()) {
             int size = this->inputMap.size();
             this->inputMap[size] = size;
         }
     }
 
+    ~ReadStreamCSV() override = default;
+
+protected:
     /**
      * Read and return the next tuple.
      *
@@ -91,7 +94,7 @@ public:
             }
             ++columnsFilled;
             if (symbolMask.isSymbol(column)) {
-                tuple[inputMap[column]] = symbolTable.lookup(element.c_str());
+                tuple[inputMap[column]] = symbolTable.unsafeLookup(element.c_str());
             } else {
                 try {
                     tuple[inputMap[column]] = std::stoi(element.c_str());
@@ -124,22 +127,17 @@ public:
         return tuple;
     }
 
-    ~ReadStreamCSV() override = default;
-
-private:
     const std::string delimiter;
     std::istream& file;
     size_t lineNumber;
-    const SymbolMask& symbolMask;
-    SymbolTable& symbolTable;
     std::map<int, int> inputMap;
 };
 
-class ReadFileCSV : public ReadStream {
+class ReadFileCSV : public ReadStreamCSV {
 public:
     ReadFileCSV(const std::string& filename, const SymbolMask& symbolMask, SymbolTable& symbolTable,
             std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t")
-            : fileHandle(filename), readStream(fileHandle, symbolMask, symbolTable, inputMap, delimiter) {
+            : ReadStreamCSV(fileHandle, symbolMask, symbolTable, inputMap, delimiter), fileHandle(filename) {
         baseName = souffle::baseName(filename);
         if (!fileHandle.is_open()) {
             throw std::invalid_argument("Cannot open fact file " + baseName + "\n");
@@ -153,7 +151,7 @@ public:
      */
     std::unique_ptr<RamDomain[]> readNextTuple() override {
         try {
-            return readStream.readNextTuple();
+            return ReadStreamCSV::readNextTuple();
         } catch (std::exception& e) {
             std::stringstream errorMessage;
             errorMessage << e.what();
@@ -171,7 +169,6 @@ private:
 #else
     std::ifstream fileHandle;
 #endif
-    ReadStreamCSV readStream;
 };
 
 class ReadCSVFactory {
