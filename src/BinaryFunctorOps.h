@@ -36,6 +36,7 @@ enum class BinaryOp {
     BXOR,           // bitwise exclusive or
     LAND,           // logical and
     LOR,            // logical or
+    MAX,            // max of two numbers
     CAT,            // string concatenation
 };
 
@@ -66,6 +67,8 @@ inline std::string getSymbolForBinaryOp(BinaryOp op) {
             return "land";
         case BinaryOp::LOR:
             return "lor";
+        case BinaryOp::MAX:
+            return "max";
         case BinaryOp::CAT:
             return "cat";
         default:
@@ -90,6 +93,7 @@ inline BinaryOp getBinaryOpForSymbol(const std::string& symbol) {
     if (symbol == "bxor") return BinaryOp::BXOR;
     if (symbol == "land") return BinaryOp::LAND;
     if (symbol == "lor") return BinaryOp::LOR;
+    if (symbol == "maxnum") return BinaryOp::MAX;
     if (symbol == "cat") return BinaryOp::CAT;
     std::cout << "Unrecognised operator: " << symbol << "\n";
     assert(false && "Unsupported Operator!");
@@ -112,6 +116,7 @@ inline bool isNumericBinaryOp(const BinaryOp op) {
         case BinaryOp::LAND:
         case BinaryOp::LOR:
         case BinaryOp::MOD:
+        case BinaryOp::MAX:
             return true;
         case BinaryOp::CAT:
             return false;
@@ -146,6 +151,7 @@ inline bool binaryOpAcceptsNumbers(int arg, const BinaryOp op) {
         case BinaryOp::LAND:
         case BinaryOp::LOR:
         case BinaryOp::MOD:
+        case BinaryOp::MAX:
             return true;
         case BinaryOp::CAT:
             return false;

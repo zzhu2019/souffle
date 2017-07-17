@@ -124,9 +124,8 @@ int main(int argc, char** argv) {
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false,
                                     "Write debugging output to HTML report."},
-                            {"provenance", 't', "EXPLAIN", "", false,
-                                    "Enable provenance information (<EXPLAIN> can be 0 for no explain, 1 for "
-                                    "explain with ncurses, 2 for explain with stdout)."},
+                            {"provenance", 't', "", "", false,
+                                    "Enable provenance information."},
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
@@ -289,6 +288,7 @@ int main(int argc, char** argv) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));
     }
 
+    // original provenance transformer location
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new NaiveProvenanceTransformer()));
@@ -415,6 +415,7 @@ int main(int argc, char** argv) {
                   << "sec\n";
     }
 
+    /*
     if (Global::config().has("provenance")) {
         // construct SouffleProgram from env
         SouffleInterpreterInterface interface(*env, translationUnit->getSymbolTable());
@@ -425,6 +426,7 @@ int main(int argc, char** argv) {
             explain(interface, false);
         }
     }
+    */
 
     return 0;
 }

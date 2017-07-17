@@ -687,8 +687,22 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(
             // create constraint
             RamNotExists* notExists = new RamNotExists(getRelation(atom));
 
-            for (const auto& arg : atom->getArguments()) {
+            auto arity = atom->getArity();
+
+            // account for provenance information
+            if (Global::config().has("provenance")) {
+                arity -= 2;
+            }
+
+            for (size_t i = 0; i < arity; i++) {
+                const auto& arg = atom->getArgument(i);
+            // for (const auto& arg : atom->getArguments()) {
                 notExists->addArg(translateValue(*arg, valueIndex));
+            }
+
+            if (Global::config().has("provenance")) {
+                notExists->addArg(nullptr);
+                notExists->addArg(nullptr);
             }
 
             // add constraint
