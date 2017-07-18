@@ -375,4 +375,9 @@ public:
     }
 };
 
+class RamReturn : public RamOperation {
+    protected:
+        /** values for return */
+
+
 }  // namespace souffle

@@ -689,7 +689,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(
 
             auto arity = atom->getArity();
 
-            // account for provenance information
+            // account for two extra provenance columns
             if (Global::config().has("provenance")) {
                 arity -= 2;
             }
@@ -700,6 +700,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(
                 notExists->addArg(translateValue(*arg, valueIndex));
             }
 
+            // we don't care about the provenance columns when doing the existence check
             if (Global::config().has("provenance")) {
                 notExists->addArg(nullptr);
                 notExists->addArg(nullptr);
