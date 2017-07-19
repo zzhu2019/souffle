@@ -21,7 +21,6 @@ then
 
     sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-3.8 100
     sudo rm /usr/local/clang-3.5.0/bin/clang-format
-    sudo ln -s /usr/bin/clang-format  /usr/local/clang-3.5.0/bin/clang-format
   else
     if [ "$MAKEPACKAGE" == 1 ]
     then
@@ -30,14 +29,12 @@ then
     then
       sudo apt-get -y install clang-3.8
 
-      # Travis ignores our installed clang so we symlink it in place of clang's preferred version.
+      # Travis ignores our installed clang so we unlink the installed version.
       sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.8 100
       sudo rm /usr/local/clang-3.5.0/bin/clang
-      sudo ln -s /usr/bin/clang  /usr/local/clang-3.5.0/bin/clang
 
       sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-3.8 100
       sudo rm /usr/local/clang-3.5.0/bin/clang++
-      sudo ln -s /usr/bin/clang++  /usr/local/clang-3.5.0/bin/clang++
 
       # Install libomp
       sudo add-apt-repository -y "deb http://ftp.us.debian.org/debian unstable main contrib non-free"
