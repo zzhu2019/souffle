@@ -15,11 +15,10 @@ compiler:
 env:
   # include the style check here to make sure it runs first
   - TEST_FORMAT=1
-  - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS=",-c,-c -p profile.log,-p profile.log,--auto-schedule -o testprog"
-  - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile SOUFFLE_CONFS="-c -j8,-j8"
+  - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS=",-c,-c -p profile.log,-p profile.log"
+  - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Profile SOUFFLE_CONFS="-c -j8,-j8"
   - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
   - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS=",-c"
-  - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="--auto-schedule -o testprog"
   - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-p profile.log,-c -p profile.log"
 dist: trusty
 #default is 7.3
