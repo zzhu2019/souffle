@@ -426,6 +426,10 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (env != nullptr) {
+        delete env;
+    }
+
     return 0;
 }
 
