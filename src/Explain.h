@@ -443,7 +443,7 @@ private:
         bool isEDB = true;
         bool found = false;
         for (auto rel : prog.getAllRelations()) {
-            std::regex provRelName(relName + "-provenance-[0-9]+");
+            std::regex provRelName(relName + "-provenance-[0-9]+", std::regex_constants::basic);
             if (std::regex_match(rel->getName(), provRelName)) {
                 isEDB = false;
                 break;
