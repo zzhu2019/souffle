@@ -415,7 +415,7 @@ int main(int argc, char** argv) {
                   << "sec\n";
     }
 
-    if (Global::config().has("provenance")) {
+    if (Global::config().has("provenance") && env != nullptr) {
         // construct SouffleProgram from env
         SouffleInterpreterInterface interface(*env, translationUnit->getSymbolTable());
         // invoke explain
