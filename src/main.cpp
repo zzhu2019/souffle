@@ -124,8 +124,7 @@ int main(int argc, char** argv) {
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false,
                                     "Write debugging output to HTML report."},
-                            {"provenance", 't', "", "", false,
-                                    "Enable provenance information."},
+                            {"provenance", 't', "", "", false, "Enable provenance information."},
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
@@ -341,18 +340,20 @@ int main(int argc, char** argv) {
     auto ram_start = std::chrono::high_resolution_clock::now();
 
     /* translate AST to RAM */
-    std::unique_ptr<RamStatement> ramProg =
+    std::unique_ptr<RamProgram> ramProg =
             RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
 
+    std::unique_ptr<RamStatement> ramMainStmt = ramProg->getMain();
+
     if (!Global::config().get("debug-report").empty()) {
-        if (ramProg) {
+        if (ramMainStmt) {
             auto ram_end = std::chrono::high_resolution_clock::now();
             std::string runtimeStr =
                     "(" + std::to_string(std::chrono::duration<double>(ram_end - ram_start).count()) + "s)";
-            std::stringstream ramProgStr;
-            ramProgStr << *ramProg;
+            std::stringstream ramMainStmtStr;
+            ramMainStmtStr << *ramMainStmt;
             translationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
-                    "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
+                    "ram-program", "RAM Program " + runtimeStr, ramMainStmtStr.str()));
         }
 
         if (!translationUnit->getDebugReport().empty()) {
@@ -362,7 +363,7 @@ int main(int argc, char** argv) {
     }
 
     /* run RAM program */
-    if (!ramProg) {
+    if (!ramMainStmt) {
         return 0;
     }
 
@@ -395,16 +396,17 @@ int main(int argc, char** argv) {
     if (Global::config().has("generate")) {
         // just generate, no compile, no execute
         static_cast<const RamCompiler*>(executor.get())
-                ->generateCode(translationUnit->getSymbolTable(), *ramProg, Global::config().get("generate"));
+                ->generateCode(
+                        translationUnit->getSymbolTable(), *ramMainStmt, Global::config().get("generate"));
 
         // check if this is a compile only
     } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
         // just compile, no execute
         static_cast<const RamCompiler*>(executor.get())
-                ->compileToBinary(translationUnit->getSymbolTable(), *ramProg);
+                ->compileToBinary(translationUnit->getSymbolTable(), *ramMainStmt);
     } else {
         // run executor
-        env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
+        env = executor->execute(translationUnit->getSymbolTable(), *ramMainStmt);
     }
 
     /* Report overall run-time in verbose mode */

@@ -17,6 +17,7 @@
 #pragma once
 
 #include "AstTranslationUnit.h"
+#include "RamProgram.h"
 #include "RamRelation.h"
 
 #include <map>
@@ -74,7 +75,7 @@ public:
             const TypeEnvironment& typeEnv);
 
     /** translates the given datalog program into an equivalent RAM program  */
-    std::unique_ptr<RamStatement> translateProgram(const AstTranslationUnit& translationUnit);
+    std::unique_ptr<RamProgram> translateProgram(const AstTranslationUnit& translationUnit);
 };
 
 }  // end of namespace souffle

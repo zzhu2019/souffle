@@ -83,6 +83,15 @@ public:
     }
 
     /**
+     * Runs the main method of a RamProgram
+     */
+    /*
+    RamEnvironment* execute(SymbolTable& table, const RamProgram& prog, RamData* data = nullptr) const {
+        return execute(table, *prog.getMain(), data);
+    }
+    */
+
+    /**
      * Runs the given statement on the given environment.
      */
     virtual void applyOn(const RamStatement& stmt, RamEnvironment& env, RamData* data) const = 0;

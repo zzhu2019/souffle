@@ -269,7 +269,7 @@ public:
     RamPack(std::vector<std::unique_ptr<RamValue>> values)
             : RamValue(RN_Pack,
                       all_of(values,
-                               [](const std::unique_ptr<RamValue>& v) { return v && v->isConstant(); })),
+                              [](const std::unique_ptr<RamValue>& v) { return v && v->isConstant(); })),
               values(std::move(values)) {}
 
     ~RamPack() override = default;
@@ -307,6 +307,32 @@ public:
             }
         }
         return res;
+    }
+};
+
+/** Argument for ram subroutine */
+class RamArgument : public RamValue {
+    std::vector<std::unique_ptr<RamValue>> values;
+
+public:
+    RamArgument(std::vector<std::unique_ptr<RamValue>> values)
+            : RamValue(RN_Argument,
+                      all_of(values,
+                              [](const std::unique_ptr<RamValue>& v) { return v && v->isConstant(); })),
+              values(std::move(values)) {}
+
+    void print(std::ostream& os) const override {
+        os << "(" << join(values, ",", [](std::ostream& out, const std::unique_ptr<RamValue>& value) {
+            if (value) {
+                out << *value;
+            } else {
+                out << "_";
+            }
+        }) << ")";
+    }
+
+    size_t getLevel() const override {
+        return 0;
     }
 };
 

@@ -78,6 +78,7 @@ struct RamVisitor : public ram_visitor_tag {
             FORWARD(TernaryOperator);
             FORWARD(AutoIncrement);
             FORWARD(Pack);
+            FORWARD(Argument);
 
             // conditions
             FORWARD(Empty);
@@ -101,11 +102,13 @@ struct RamVisitor : public ram_visitor_tag {
             FORWARD(Drop);
             FORWARD(PrintSize);
             FORWARD(LogSize);
+            FORWARD(Return);
 
             FORWARD(Merge);
             FORWARD(Swap);
 
             // control flow
+            FORWARD(Program);
             FORWARD(Sequence);
             FORWARD(Loop);
             FORWARD(Parallel);
@@ -155,6 +158,7 @@ protected:
     LINK(Exit, Statement);
     LINK(LogTimer, Statement);
     LINK(DebugInfo, Statement);
+    LINK(Return, Statement);
 
     LINK(Statement, Node);
 
@@ -183,8 +187,12 @@ protected:
     LINK(TernaryOperator, Value)
     LINK(AutoIncrement, Value)
     LINK(Pack, Value)
+    LINK(Argument, Value)
 
     LINK(Value, Node)
+
+    // -- program --
+    LINK(Program, Node)
 
 #undef LINK
 

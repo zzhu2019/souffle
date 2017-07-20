@@ -562,4 +562,22 @@ public:
     }
 };
 
+/** A statement for returning from a ram subroutine */
+class RamReturn : public RamStatement {
+protected:
+    /** values for return */
+    std::vector<std::unique_ptr<RamValue>> values;
+
+public:
+    RamReturn() : RamStatement(RN_Return) {}
+
+    void addValue(std::unique_ptr<RamValue> v) {
+        values.push_back(std::move(v));
+    }
+
+    std::vector<RamValue*> getValues() const {
+        return toPtrVector(values);
+    }
+};
+
 }  // end of namespace souffle
