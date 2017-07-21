@@ -271,7 +271,8 @@ public:
         };
 
         // ctor for findBetween(..)
-        iterator(const BinaryRelation* br, const TupleType& start, const TupleType& end) : br(br), endPoint(end) {
+        iterator(const BinaryRelation* br, const TupleType& start, const TupleType& end)
+                : br(br), endPoint(end) {
             ityp = BETWEEN;
 
             if (!br->sds.nodeExists(start[0]) || !br->sds.nodeExists(start[1])) {
@@ -643,12 +644,10 @@ public:
      */
     template <unsigned levels>
     range<iterator> getBoundaries(const TupleType& entry, operation_hints& ctxt) const {
-
-        //TODO: use ctxt to exploit locality - does this really matter
+        // TODO: use ctxt to exploit locality - does this really matter
 
         // if nothing is bound => just use begin and end
         if (levels == 0) return make_range(begin(), end());
-
 
         // as disjoint set is exactly two args (equiv relation)
         // we only need to handle these cases
@@ -672,12 +671,13 @@ public:
             return make_range(findBetween(entry, entry), end());
         }
 
-        std::cerr << "invalid state, cannot search for >2 arg start point in getBoundaries, in 2 arg tuple store\n"; 
-        assert(false && "invalid state, cannot search for >2 arg start point in getBoundaries, in 2 arg tuple store");
+        std::cerr << "invalid state, cannot search for >2 arg start point in getBoundaries, in 2 arg tuple "
+                     "store\n";
+        assert(false &&
+                "invalid state, cannot search for >2 arg start point in getBoundaries, in 2 arg tuple store");
 
         return make_range(end(), end());
     }
-
 
     /**
      * Begin an iterator at/after the requested point, and mark it to finish at/before the specified one
