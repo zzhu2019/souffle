@@ -1106,11 +1106,9 @@ public:
 
     template <typename SubIndex>
     range<iterator> equalRange(const tuple_type& tuple, operation_hints& ctxt) const {
-        // TODO: unimplemented
-        std::cout << "poor call\n";
-        std::cerr << "poor call\n";
-        throw "unimplemented";
-        return make_range(iterator(begin()), iterator(end()));
+        static_assert(is_compatible_with<SubIndex, Index>::value, "Invalid sub-index query!");
+        auto r = data.template getBoundaries<SubIndex::size>(orderIn(tuple), ctxt);
+        return make_range(iterator(r.begin()), iterator(r.end()));
     }
 
     static void printDescription(std::ostream& out) {
