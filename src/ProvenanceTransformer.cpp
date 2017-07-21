@@ -25,39 +25,39 @@ namespace souffle {
 const std::string identifierToString(const AstRelationIdentifier& name) {
     std::stringstream ss;
     ss << name;
-    return *(new std::string(ss.str()));
+    return ss.str();
 }
 
 inline AstRelationIdentifier makeRelationName(
         const AstRelationIdentifier& orig, const std::string& type, int num = -1) {
-    auto newName = new AstRelationIdentifier(identifierToString(orig));
-    newName->append(type);
+    AstRelationIdentifier newName(identifierToString(orig));
+    newName.append(type);
     if (num != -1) {
-        newName->append((const std::string&)std::to_string(num));
+        newName.append((const std::string&)std::to_string(num));
     }
 
-    return *newName;
+    return newName;
 }
 
 AstRecordInit* makeNewRecordInit(
         const std::vector<AstArgument*> args, int recordInitNum = 0, bool negation = false) {
     auto newRecordInit = new AstRecordInit();
 
-    int* numUnnamed = new int(0);
-    int* recordInitNumber = new int(recordInitNum);
+    int numUnnamed = 0;
+    int recordInitNumber = recordInitNum;
     struct M : public AstNodeMapper {
-        int* numUnnamed;
-        int* recordInitNum;
+        int& numUnnamed;
+        int& recordInitNum;
 
         using AstNodeMapper::operator();
 
-        M(int* numUnnamed, int* recordInitNum) : numUnnamed(numUnnamed), recordInitNum(recordInitNum) {}
+        M(int& numUnnamed, int& recordInitNum) : numUnnamed(numUnnamed), recordInitNum(recordInitNum) {}
 
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
             // see whether it is a variable to be substituted
             if (dynamic_cast<AstUnnamedVariable*>(node.get())) {
                 return std::unique_ptr<AstNode>(new AstVariable(
-                        "unnamed_" + std::to_string(*recordInitNum) + "_" + std::to_string((*numUnnamed)++)));
+                        "unnamed_" + std::to_string(recordInitNum) + "_" + std::to_string(numUnnamed++)));
             }
 
             // otherwise - apply mapper recursively
@@ -90,7 +90,7 @@ void ProvenanceTransformedClause::makeInfoRelation() {
     AstRelationIdentifier name = makeRelationName(originalName, "info", clauseNumber);
 
     // initialise info relation
-    infoRelation = new AstRelation();
+    infoRelation.reset(new AstRelation());
     infoRelation->setName(name);
 
     // create new clause containing a single fact
@@ -147,7 +147,7 @@ void ProvenanceTransformedClause::makeProvenanceRelation(AstRelation* recordRela
     AstRelationIdentifier name = makeRelationName(originalName, "provenance", clauseNumber);
 
     // initialise provenance relation
-    provenanceRelation = new AstRelation();
+    provenanceRelation.reset(new AstRelation());
     provenanceRelation->setName(name);
 
     // create new clause
@@ -367,6 +367,9 @@ void ProvenanceTransformedRelation::makeOutputRelation() {
 
     // add clause to relation
     outputRelation->addClause(std::unique_ptr<AstClause>(outputClause));
+    for (auto* arg : args) {
+        delete arg;
+    }
 }
 
 bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) {
@@ -374,7 +377,7 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
     auto program = translationUnit.getProgram();
     auto relationToTypeMap = std::map<AstRelationIdentifier, AstTypeIdentifier>();
 
-    for (auto relation : program->getRelations()) {
+    for (auto& relation : program->getRelations()) {
         if (relation->getArity() == 0) {
             continue;
         }
@@ -394,7 +397,7 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
         program->addType(std::unique_ptr<AstType>(newRecordType));
     }
 
-    for (auto relation : program->getRelations()) {
+    for (auto& relation : program->getRelations()) {
         if (relation->getArity() == 0) {
             continue;
         }
@@ -402,18 +405,18 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
         changed = true;
 
         // create new ProvenanceTransformedRelation
-        auto transformedRelation = new ProvenanceTransformedRelation(
+        ProvenanceTransformedRelation transformedRelation(
                 translationUnit, relationToTypeMap, *relation, relation->getName());
 
         // add relations to program
-        for (auto transformedClause : transformedRelation->getTransformedClauses()) {
+        for (auto transformedClause : transformedRelation.getTransformedClauses()) {
             program->addRelation(transformedClause->getInfoRelation());
-            if (!transformedRelation->isEdbRelation()) {
+            if (!transformedRelation.isEdbRelation()) {
                 program->addRelation(transformedClause->getProvenanceRelation());
             }
         }
-        program->addRelation(transformedRelation->getRecordRelation());
-        program->addRelation(transformedRelation->getOutputRelation());
+        program->addRelation(transformedRelation.getRecordRelation());
+        program->addRelation(transformedRelation.getOutputRelation());
     }
 
     return changed;
