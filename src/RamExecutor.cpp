@@ -661,12 +661,6 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
                 return visit(stmts[0]);
             }
 
-#ifdef _OPENMP
-            if (std::stoi(Global::config().get("jobs")) != 0) {
-                omp_set_num_threads(std::stoi(Global::config().get("jobs")));
-            }
-#endif
-
             // parallel execution
             bool cond = true;
 #pragma omp parallel for reduction(&& : cond)
