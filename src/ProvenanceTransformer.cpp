@@ -29,6 +29,8 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
         // record clause number
         size_t clauseNum = 0;
         for (auto clause : relation->getClauses()) {
+            clause->setClauseNum(clauseNum);
+
             // if fact, level number is 0
             if (clause->isFact()) {
                 clause->getHead()->addArgument(std::unique_ptr<AstArgument>(new AstNumberConstant(clauseNum)));

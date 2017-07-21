@@ -1014,6 +1014,11 @@ std::unique_ptr<RamStatement> RamTranslator::translateRecursiveRelation(
     return nullptr;
 }
 
+/** make a subroutine to search for subproofs */
+std::unique_ptr<RamStatement> makeSubproofSubroutine(const AstClause& clause) {
+    return nullptr;
+}
+
 /** translates the given datalog program into an equivalent RAM program  */
 std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslationUnit& translationUnit) {
     const TypeEnvironment& typeEnv =
@@ -1105,8 +1110,21 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
         res = std::unique_ptr<RamStatement>(new RamLogTimer(std::move(res), "@runtime;"));
     }
 
-    // done
-    return std::unique_ptr<RamProgram>(new RamProgram(std::move(res)));
+    // done for main prog
+    std::unique_ptr<RamProgram> prog(new RamProgram(std::move(res)));
+
+    // add subroutines for each clause
+    if (Global::config().has("provenance")) {
+        visitDepthFirst(rels, [&](const AstClause& clause) {
+                std::stringstream relName;
+                relName << clause.getHead()->getName();
+                std::string subroutineLabel = relName.str() + "_" + std::to_string(clause.getClauseNum()) + "_subproof";
+                prog->addSubroutine(subroutineLabel, makeSubproofSubroutine(clause));
+                });
+    }
+    
+
+    return std::move(prog);
 }
 
 }  // end of namespace souffle
