@@ -100,7 +100,7 @@ m4_define([TEST_EVAL_IN],[
  m4_define([FACTS],[TESTDIR/$3])
  m4_define([EXPECTEDDIR], [TESTDIR$4])
  # invoke souffle
- AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [0])
+ AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTDIR/TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [0])
  # sort the expected and the generated CSV files
  # and compare whether both files are the same.
  for i in *.csv
@@ -187,7 +187,7 @@ m4_define([TEST_EVAL_ERROR_IN],[
  m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
  m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
  m4_define([FACTS],[TESTDIR/facts])
- AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [1])
+ AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTDIR/TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [1])
  SAME_FILES([TESTNAME.out],[TESTDIR/TESTNAME.out])
  SAME_FILES([TESTNAME.err],[TESTDIR/TESTNAME.err])
 ])
@@ -219,13 +219,14 @@ m4_define([POSITIVE_TEST],[
     ])
 ])
 
-dnl Positive testcase for Souffle
+dnl Positive testcase for Souffle provenance explainer
 dnl $1 -- test name
 dnl $2 -- category
-m4_define([POSITIVE_TEST_IN],[
-    TEST_GROUP([$1],[
-        TEST_EVAL_IN([$1],[$2], facts)
-    ])
+m4_define([POSITIVE_PROVENANCE_TEST],[
+  AT_SETUP([$1])
+  m4_define([FLAGS],[-t2])
+  TEST_EVAL_IN([$1],[$2], facts)
+  AT_CLEANUP([])
 ])
 
 dnl Positive testcase for Souffle
@@ -258,13 +259,14 @@ m4_define([NEGATIVE_TEST],[
     ])
 ])
 
-dnl Negative testcase for Souffle
+dnl Negative testcase for Souffle provenance explainer
 dnl $1 -- test name
 dnl $2 -- category
-m4_define([NEGATIVE_TEST_IN],[
-    TEST_GROUP([$1],[
-        TEST_EVAL_ERROR_IN([$1],[$2])
-    ])
+m4_define([NEGATIVE_PROVENANCE_TEST],[
+  AT_SETUP([$1])
+  m4_define([FLAGS],[-t2])
+  TEST_EVAL_ERROR_IN([$1],[$2])
+  AT_CLEANUP([])
 ])
 
 ##########################################################################
@@ -274,8 +276,6 @@ dnl NOTE: This is the default configuration that can be overridden
 dnl using SOUFFLE_CONFS environment variable.
 m4_define([DEFAULT_CONFS], [[], dnl interpreter
  [-c],                  dnl compilation
- [-t0],                 dnl provenance transformation
- [-c -t0],              dnl provenance transformation / compilation
  [-j8],                 dnl interpreter / parallel execution
  [-c -j8],              dnl compilation & parallel execution
  [--auto-schedule -o testprog],  dnl auto-scheduling & compilation
@@ -298,7 +298,8 @@ m4_define([DEFAULT_CATEGORIES], [[Syntactic],
   [Semantic],
   [Evaluation],
   [Interface],
-  [Profile]])
+  [Profile],
+  [Provenance]])
 
 dnl Store user-defined souffle flag configuration given by the SOUFFLE_CONFS env (if any)
 m4_define([ENV_CATEGORIES],
@@ -337,6 +338,11 @@ m4_foreach(current, [CATEGORIES],
   m4_if(current, Profile, [
     dnl Profile
     m4_include([profile.at])
+  ])
+
+  m4_if(current, Provenance, [
+   dnl Provenance
+   m4_include([provenance.at])
   ])
 
   m4_if(current, Example, [

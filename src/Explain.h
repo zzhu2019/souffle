@@ -443,7 +443,7 @@ private:
         bool isEDB = true;
         bool found = false;
         for (auto rel : prog.getAllRelations()) {
-            std::regex provRelName(relName + "-provenance-[0-9]+");
+            std::regex provRelName(relName + "-provenance-[0-9]+", std::regex_constants::basic);
             if (std::regex_match(rel->getName(), provRelName)) {
                 isEDB = false;
                 break;
@@ -597,12 +597,12 @@ private:
     void printTree(std::unique_ptr<TreeNode> t) {
         if (t) {
             t->place(0, 0);
-            ScreenBuffer* s = new ScreenBuffer(t->getWidth(), t->getHeight());
-            t->render(*s);
+            ScreenBuffer s(t->getWidth(), t->getHeight());
+            t->render(s);
             if (ncurses) {
-                wprintw(treePad, s->getString().c_str());
+                wprintw(treePad, s.getString().c_str());
             } else {
-                std::cout << s->getString();
+                std::cout << s.getString();
             }
         }
     }

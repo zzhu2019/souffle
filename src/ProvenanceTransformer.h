@@ -29,8 +29,8 @@ private:
     AstRelationIdentifier originalName;
     int clauseNumber;
 
-    AstRelation* infoRelation;
-    AstRelation* provenanceRelation;
+    std::unique_ptr<AstRelation> infoRelation;
+    std::unique_ptr<AstRelation> provenanceRelation;
 
 public:
     ProvenanceTransformedClause(AstTranslationUnit& transUnit,
@@ -42,11 +42,15 @@ public:
 
     // return relations
     std::unique_ptr<AstRelation> getInfoRelation() {
-        return std::unique_ptr<AstRelation>(infoRelation);
+        std::unique_ptr<AstRelation> tmp;
+        std::swap(tmp, infoRelation);
+        return tmp;
     }
 
     std::unique_ptr<AstRelation> getProvenanceRelation() {
-        return std::unique_ptr<AstRelation>(provenanceRelation);
+        std::unique_ptr<AstRelation> tmp;
+        std::swap(tmp, provenanceRelation);
+        return tmp;
     }
 };
 
@@ -67,6 +71,11 @@ public:
     ProvenanceTransformedRelation(AstTranslationUnit& transUnit,
             std::map<AstRelationIdentifier, AstTypeIdentifier> relTypeMap, AstRelation& origRelation,
             AstRelationIdentifier origName);
+    ~ProvenanceTransformedRelation() {
+        for (auto* current : transformedClauses) {
+            delete current;
+        }
+    }
 
     void makeRecordRelation();
     void makeOutputRelation();
