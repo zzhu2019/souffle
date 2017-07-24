@@ -92,6 +92,11 @@ public:
     */
 
     /**
+     * Runs a subroutine
+     */
+    virtual RamReturn* runSubroutine(std::string name, std::vector<RamValue> args) const;
+
+    /**
      * Runs the given statement on the given environment.
      */
     virtual void applyOn(const RamStatement& stmt, RamEnvironment& env, RamData* data) const = 0;

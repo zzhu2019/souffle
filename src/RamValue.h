@@ -269,7 +269,7 @@ public:
     RamPack(std::vector<std::unique_ptr<RamValue>> values)
             : RamValue(RN_Pack,
                       all_of(values,
-                              [](const std::unique_ptr<RamValue>& v) { return v && v->isConstant(); })),
+                               [](const std::unique_ptr<RamValue>& v) { return v && v->isConstant(); })),
               values(std::move(values)) {}
 
     ~RamPack() override = default;
@@ -312,27 +312,40 @@ public:
 
 /** Argument for ram subroutine */
 class RamArgument : public RamValue {
-    std::vector<std::unique_ptr<RamValue>> values;
+    std::unique_ptr<RamValue> value;
+    size_t number;
 
 public:
-    RamArgument(std::vector<std::unique_ptr<RamValue>> values)
-            : RamValue(RN_Argument,
-                      all_of(values,
-                              [](const std::unique_ptr<RamValue>& v) { return v && v->isConstant(); })),
-              values(std::move(values)) {}
+    RamArgument(std::unique_ptr<RamValue> value, size_t number)
+            : RamValue(RN_Argument, false), value(std::move(value)), number(number) {}
+
+    size_t getNumber() const {
+        return number;
+    }
+
+    void setNumber(size_t n) {
+        number = n;
+    }
+
+    RamValue* getValue() const {
+        return value.get();
+    }
+
+    void setValue(std::unique_ptr<RamValue> val) {
+        value.swap(val);
+    }
 
     void print(std::ostream& os) const override {
-        os << "(" << join(values, ",", [](std::ostream& out, const std::unique_ptr<RamValue>& value) {
-            if (value) {
-                out << *value;
-            } else {
-                out << "_";
-            }
-        }) << ")";
+        os << "(" << *value << ", " << number << ")";
     }
 
     size_t getLevel() const override {
         return 0;
+    }
+
+    std::vector<const RamNode*> getChildNodes() const override {
+        std::vector<const RamNode*> children = {value.get()};
+        return children;
     }
 };
 

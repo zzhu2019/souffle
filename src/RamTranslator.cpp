@@ -26,6 +26,7 @@
 #include "Global.h"
 #include "PrecedenceGraph.h"
 #include "RamStatement.h"
+#include "RamVisitor.h"
 
 namespace souffle {
 
@@ -365,6 +366,10 @@ std::unique_ptr<RamValue> translateValue(const AstArgument* arg, const ValueInde
         // here we look up the location the aggregation result gets bound
         auto loc = index.getAggregatorLocation(*agg);
         val = std::unique_ptr<RamValue>(new RamElementAccess(loc.level, loc.component, loc.name));
+    } else if (const AstSubroutineArgument* subArg = dynamic_cast<const AstSubroutineArgument*>(arg)) {
+        // TODO: RamNumber(0) temporary
+        val = std::unique_ptr<RamValue>(
+                new RamArgument(std::unique_ptr<RamValue>(new RamNumber(0)), subArg->getNumber()));
     } else {
         std::cout << "Unsupported node type of " << arg << ": " << typeid(*arg).name() << "\n";
         ASSERT(false && "unknown AST node type not permissible");
@@ -582,8 +587,8 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(
         for (size_t pos = 0; pos < atom->argSize(); ++pos) {
             if (AstConstant* c = dynamic_cast<AstConstant*>(atom->getArgument(pos))) {
                 op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(BinaryConstraintOp::EQ,
-                        std::unique_ptr<RamValue>(
-                                new RamElementAccess(level, pos, getRelation(atom).getArg(pos))),
+                        std::unique_ptr<RamValue>(new RamElementAccess(
+                                level, pos, getRelation(atom).getArg(pos))),
                         std::unique_ptr<RamValue>(new RamNumber(c->getIndex())))));
             }
         }
@@ -656,9 +661,9 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(
         // all other appearances
         for (const Location& loc : cur.second) {
             if (first != loc) {
-                op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(BinaryConstraintOp::EQ,
-                        std::unique_ptr<RamValue>(
-                                new RamElementAccess(first.level, first.component, first.name)),
+                op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(
+                        BinaryConstraintOp::EQ, std::unique_ptr<RamValue>(new RamElementAccess(
+                                                        first.level, first.component, first.name)),
                         std::unique_ptr<RamValue>(
                                 new RamElementAccess(loc.level, loc.component, loc.name)))));
             }
@@ -862,10 +867,10 @@ std::unique_ptr<RamStatement> RamTranslator::translateRecursiveRelation(
 
         /* create update statements for fixpoint (even iteration) */
         appendStmt(updateRelTable,
-                std::unique_ptr<RamStatement>(
-                        new RamSequence(std::unique_ptr<RamStatement>(new RamMerge(rrel[rel], relNew[rel])),
-                                std::unique_ptr<RamStatement>(new RamSwap(relDelta[rel], relNew[rel])),
-                                std::unique_ptr<RamStatement>(new RamClear(relNew[rel])))));
+                std::unique_ptr<RamStatement>(new RamSequence(
+                        std::unique_ptr<RamStatement>(new RamMerge(rrel[rel], relNew[rel])),
+                        std::unique_ptr<RamStatement>(new RamSwap(relDelta[rel], relNew[rel])),
+                        std::unique_ptr<RamStatement>(new RamClear(relNew[rel])))));
 
         /* measure update time for each relation */
         if (logging) {
@@ -1015,8 +1020,49 @@ std::unique_ptr<RamStatement> RamTranslator::translateRecursiveRelation(
 }
 
 /** make a subroutine to search for subproofs */
-std::unique_ptr<RamStatement> makeSubproofSubroutine(const AstClause& clause) {
-    return nullptr;
+std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
+        const AstClause& clause, const AstProgram* program, const TypeEnvironment& typeEnv) {
+    // make intermediate clause with constraints
+    AstClause* intermediateClause = clause.clone();
+
+    // add constraint for each argument in head of atom
+    AstAtom* head = intermediateClause->getHead();
+    for (size_t i = 0; i < head->getArguments().size() - 2; i++) {
+        auto arg = head->getArgument(i);
+
+        if (auto var = dynamic_cast<AstVariable*>(arg)) {
+            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
+                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(var),
+                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+        }
+    }
+
+    // index of level argument in argument list
+    size_t levelIndex = head->getArguments().size() - 2;
+
+    // add level constraints
+    for (size_t i = 0; i < intermediateClause->getBodyLiterals().size(); i++) {
+        auto lit = intermediateClause->getBodyLiteral(i);
+        if (auto atom = dynamic_cast<AstAtom*>(lit)) {
+            auto arity = atom->getArity();
+
+            // arity - 1 is the level number in body atoms
+            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(
+                    BinaryConstraintOp::LT, std::unique_ptr<AstArgument>(atom->getArgument(arity - 1)),
+                    std::unique_ptr<AstArgument>(new AstSubroutineArgument(levelIndex)))));
+        }
+    }
+
+    auto result = translateClause(*intermediateClause, program, &typeEnv);
+    // TODO: remove temporary values
+    /*
+    visitDepthFirst(dynamic_cast<const RamNode&>(*result), [&](RamArgument& arg) {
+            arg.setValue(std::unique_ptr<RamValue>(new RamNumber(0)));
+            });
+            */
+    result->print(std::cout);
+    std::cout << std::endl;
+    return std::move(result);
 }
 
 /** translates the given datalog program into an equivalent RAM program  */
@@ -1116,13 +1162,14 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
     // add subroutines for each clause
     if (Global::config().has("provenance")) {
         visitDepthFirst(rels, [&](const AstClause& clause) {
-                std::stringstream relName;
-                relName << clause.getHead()->getName();
-                std::string subroutineLabel = relName.str() + "_" + std::to_string(clause.getClauseNum()) + "_subproof";
-                prog->addSubroutine(subroutineLabel, makeSubproofSubroutine(clause));
-                });
+            std::stringstream relName;
+            relName << clause.getHead()->getName();
+            std::string subroutineLabel =
+                    relName.str() + "_" + std::to_string(clause.getClauseNum()) + "_subproof";
+            prog->addSubroutine(
+                    subroutineLabel, makeSubproofSubroutine(clause, translationUnit.getProgram(), typeEnv));
+        });
     }
-    
 
     return std::move(prog);
 }

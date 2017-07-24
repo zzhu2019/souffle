@@ -74,6 +74,10 @@ public:
             const AstProgram* program, const RecursiveClauses* recursiveClauses,
             const TypeEnvironment& typeEnv);
 
+    /** generate RAM code for subroutine to get subproofs */
+    std::unique_ptr<RamStatement> makeSubproofSubroutine(
+            const AstClause& clause, const AstProgram* program, const TypeEnvironment& typeEnv);
+
     /** translates the given datalog program into an equivalent RAM program  */
     std::unique_ptr<RamProgram> translateProgram(const AstTranslationUnit& translationUnit);
 };
