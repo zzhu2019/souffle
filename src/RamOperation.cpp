@@ -275,4 +275,12 @@ void RamProject::print(std::ostream& os, int tabpos) const {
     }
 }
 
+/* print return */
+void RamReturn::print(std::ostream& os, int tabpos) const {
+    const std::string tabs(tabpos, '\t');
+
+    // return
+    os << "RETURN";
+}
+
 }  // end of namespace souffle

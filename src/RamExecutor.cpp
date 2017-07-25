@@ -73,9 +73,11 @@ namespace {
 
 class EvalContext {
     std::vector<const RamDomain*> data;
+    std::vector<RamDomain> returnValues;
+    const std::vector<RamDomain> &args;  
 
 public:
-    EvalContext(size_t size = 0) : data(size) {}
+    EvalContext(size_t size = 0, const std::vector<RamDomain>& args = std::vector<RamDomain>()) : data(size), args(args) {}
 
     const RamDomain*& operator[](size_t index) {
         return data[index];
@@ -83,6 +85,11 @@ public:
 
     const RamDomain* const& operator[](size_t index) const {
         return data[index];
+    }
+
+    RamDomain getArg(size_t i) const {
+        assert((i > 0 && i < args.size()) && "argument out of range");
+        return args[i];
     }
 };
 
@@ -248,6 +255,13 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
             return pack(data, arity);
         }
 
+        // -- subroutine argument
+
+        RamDomain visitArgument(const RamArgument& arg) override {
+            assert(arg.getValue() != nullptr && "argument is null");
+            return visit(arg.getValue());
+        }
+
         // -- safety net --
 
         RamDomain visitNode(const RamNode& node) override {
@@ -380,7 +394,7 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
     return Evaluator(env, ctxt)(cond);
 }
 
-void apply(const RamOperation& op, RamEnvironment& env) {
+void apply(const RamOperation& op, RamEnvironment& env, EvalContext& ctxt = EvalContext()) {
     class Interpreter : public RamVisitor<void> {
         RamEnvironment& env;
         EvalContext& ctxt;
@@ -610,6 +624,14 @@ void apply(const RamOperation& op, RamEnvironment& env) {
             env.getRelation(project.getRelation()).insert(tuple);
         }
 
+        // -- return from subroutine -- 
+        void visitReturn(const RamReturn& ret) override {
+            auto vals = ret.getValues();
+            for (auto val : vals) {
+                retVals.push_back(eval(val));
+            }
+        }
+
         // -- safety net --
         void visitNode(const RamNode& node) override {
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
@@ -661,7 +683,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 
             // special handling for a single child
             if (stmts.size() == 1) {
-                return visit(stmts[0]);
+      = std::vector<RamDomain>()           return visit(stmts[0]);
             }
 
 #ifdef _OPENMP
@@ -1912,6 +1934,13 @@ public:
             << "ram::Tuple<RamDomain," << pack.getValues().size() << ">({" << join(pack.getValues(), ",", rec)
             << "})"
             << ")";
+    }
+
+    // -- subroutine argument
+
+    void visitArgument(const RamArgument& arg, std::ostream& out) override {
+        assert(arg.getValue() != nullptr && "argument is null");
+        out << "(" << print(arg.getValue()) << ")";
     }
 
     // -- safety net --

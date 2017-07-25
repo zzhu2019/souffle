@@ -21,6 +21,13 @@ public:
     void print(std::ostream& out) const {
         out << "PROGRAM " << std::endl;
         main->print(out);
+        // iterator over all subrountines
+        //  -> print subroutine code
+
+        for (auto it = subroutines.begin(); it != subroutines.end(); it++) {
+            out << "SUBROUTINE " << it->first << std::endl;
+            it->second->print(out);
+        }
     }
 
     std::unique_ptr<RamStatement> getMain() {

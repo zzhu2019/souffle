@@ -385,7 +385,7 @@ std::unique_ptr<RamValue> translateValue(const AstArgument& arg, const ValueInde
 
 /** generate RAM code for a clause */
 std::unique_ptr<RamStatement> RamTranslator::translateClause(
-        const AstClause& clause, const AstProgram* program, const TypeEnvironment* typeEnv, int version) {
+        const AstClause& clause, const AstProgram* program, const TypeEnvironment* typeEnv, int version, bool ret) {
     // check whether there is an imposed order constraint
     if (clause.getExecutionPlan() && clause.getExecutionPlan()->hasOrderFor(version)) {
         // get the imposed order
@@ -540,14 +540,31 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(
     // -- create RAM statement --
 
     // begin with projection
-    RamProject* project = new RamProject(getRelation(&head), level);
+    std::unique_ptr<RamOperation> op;
+    if (ret) {
+        RamReturn* returnValue = new RamReturn(level);
 
-    for (AstArgument* arg : head.getArguments()) {
-        project->addArg(translateValue(arg, valueIndex));
+        // get all values in the body
+        for (AstLiteral* lit : clause.getBodyLiterals()) {
+            if (auto atom = dynamic_cast<AstAtom*>(lit)) {
+                for (AstArgument* arg : atom->getArguments()) {
+                    returnValue->addValue(translateValue(arg, valueIndex));
+                }
+            }
+        }
+
+        op = std::unique_ptr<RamOperation>(returnValue);
+    } else {
+        RamProject* project = new RamProject(getRelation(&head), level);
+
+        for (AstArgument* arg : head.getArguments()) {
+            project->addArg(translateValue(arg, valueIndex));
+        }
+
+        // build up insertion call
+        op = std::unique_ptr<RamOperation>(project);
+        // std::unique_ptr<RamOperation> op(project);  // start with innermost
     }
-
-    // build up insertion call
-    std::unique_ptr<RamOperation> op(project);  // start with innermost
 
     // add aggregator levels
     for (auto it = aggregators.rbegin(); it != aggregators.rend(); ++it) {

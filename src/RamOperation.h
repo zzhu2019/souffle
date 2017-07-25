@@ -375,4 +375,27 @@ public:
     }
 };
 
+/** A statement for returning from a ram subroutine */
+class RamReturn : public RamOperation {
+protected:
+    std::vector<std::unique_ptr<RamValue>> values;
+
+public:
+    RamReturn(size_t level) : RamOperation(RN_Return, level) {}
+
+    void print(std::ostream& out, int tabpos) const override;
+
+    size_t getDepth() const override {
+        return 1;
+    }
+
+    void addValue(std::unique_ptr<RamValue> val) {
+        values.push_back(std::move(val));
+    }
+
+    std::vector<RamValue*> getValues() const {
+        return toPtrVector(values);
+    }
+};
+
 }  // namespace souffle

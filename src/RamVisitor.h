@@ -88,6 +88,7 @@ struct RamVisitor : public ram_visitor_tag {
 
             // operations
             FORWARD(Project);
+            FORWARD(Return);
             FORWARD(Lookup);
             FORWARD(Scan);
             FORWARD(Aggregate);
@@ -102,7 +103,6 @@ struct RamVisitor : public ram_visitor_tag {
             FORWARD(Drop);
             FORWARD(PrintSize);
             FORWARD(LogSize);
-            FORWARD(Return);
 
             FORWARD(Merge);
             FORWARD(Swap);
@@ -158,7 +158,6 @@ protected:
     LINK(Exit, Statement);
     LINK(LogTimer, Statement);
     LINK(DebugInfo, Statement);
-    LINK(Return, Statement);
 
     LINK(Statement, Node);
 
@@ -168,6 +167,7 @@ protected:
     LINK(Scan, Search)
     LINK(Aggregate, Search)
     LINK(Search, Operation)
+    LINK(Return, Operation);
 
     LINK(Operation, Node)
 
