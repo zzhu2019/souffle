@@ -90,7 +90,8 @@ bool AutoScheduleTransformer::autotune(AstTranslationUnit& translationUnit, std:
     if (verbose) {
         std::cout << "[ Converting to RAM Program ...                           ]\n";
     }
-    std::unique_ptr<RamStatement> stmt = RamTranslator().translateProgram(translationUnit)->getMain();
+
+    const RamStatement* stmt = RamTranslator().translateProgram(translationUnit)->getMain();
 
     // check whether there is something to tune
     if (!stmt) {

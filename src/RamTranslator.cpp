@@ -1070,7 +1070,7 @@ std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
         }
     }
 
-    auto result = translateClause(*intermediateClause, program, &typeEnv);
+    auto result = translateClause(*intermediateClause, program, &typeEnv, 0, true);
     // TODO: remove temporary values
     /*
     visitDepthFirst(dynamic_cast<const RamNode&>(*result), [&](RamArgument& arg) {
@@ -1079,7 +1079,7 @@ std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
             */
     result->print(std::cout);
     std::cout << std::endl;
-    return std::move(result);
+    return result;
 }
 
 /** translates the given datalog program into an equivalent RAM program  */
@@ -1188,7 +1188,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
         });
     }
 
-    return std::move(prog);
+    return prog;
 }
 
 }  // end of namespace souffle

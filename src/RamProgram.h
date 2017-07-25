@@ -30,20 +30,16 @@ public:
         }
     }
 
-    std::unique_ptr<RamStatement> getMain() {
-        return std::move(main);
+    const RamStatement* getMain() const {
+        return main.get();
     }
 
     void addSubroutine(std::string main, std::unique_ptr<RamStatement> subroutine) {
         subroutines.insert(std::make_pair(main, std::move(subroutine)));
     }
 
-    std::unique_ptr<RamStatement> getSubroutine(std::string name) {
-        if (subroutines.find(name) != subroutines.end()) {
-            return std::move(subroutines[name]);
-        } else {
-            return nullptr;
-        }
+    const RamStatement& getSubroutine(std::string name) const {
+        return *subroutines.at(name);
     }
 };
 

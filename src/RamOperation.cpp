@@ -280,7 +280,7 @@ void RamReturn::print(std::ostream& os, int tabpos) const {
     const std::string tabs(tabpos, '\t');
 
     // return
-    os << "RETURN";
+    os << tabs << "RETURN ("; //<< join(values, ", ", print_deref<std::unique_ptr<RamValue>>()) << ")";
 }
 
 }  // end of namespace souffle

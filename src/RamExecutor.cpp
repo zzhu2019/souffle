@@ -73,11 +73,11 @@ namespace {
 
 class EvalContext {
     std::vector<const RamDomain*> data;
-    std::vector<RamDomain> returnValues;
-    const std::vector<RamDomain> &args;  
+    std::vector<RamDomain>* returnValues;
+    const std::vector<RamDomain>* args;  
 
 public:
-    EvalContext(size_t size = 0, const std::vector<RamDomain>& args = std::vector<RamDomain>()) : data(size), args(args) {}
+    EvalContext(size_t size = 0, const std::vector<RamDomain>* args = new std::vector<RamDomain>()) : data(size), args(args) {}
 
     const RamDomain*& operator[](size_t index) {
         return data[index];
@@ -87,9 +87,29 @@ public:
         return data[index];
     }
 
+    std::vector<RamDomain>* getReturnValues() {
+        return returnValues;
+    }
+
+    void setReturnValues(std::vector<RamDomain>* retVals) {
+        returnValues = retVals;
+    }
+
+    void addReturnValue(RamDomain val) {
+        returnValues->push_back(val);
+    }
+
+    const std::vector<RamDomain>* getArgs() const {
+        return args;
+    }
+
+    void setArgs(const std::vector<RamDomain>* a) {
+        args = a;
+    }
+
     RamDomain getArg(size_t i) const {
-        assert((i > 0 && i < args.size()) && "argument out of range");
-        return args[i];
+        assert(i < args->size() && "argument out of range");
+        return (*args)[i];
     }
 };
 
@@ -394,7 +414,7 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
     return Evaluator(env, ctxt)(cond);
 }
 
-void apply(const RamOperation& op, RamEnvironment& env, EvalContext& ctxt = EvalContext()) {
+void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args = EvalContext()) {
     class Interpreter : public RamVisitor<void> {
         RamEnvironment& env;
         EvalContext& ctxt;
@@ -628,7 +648,7 @@ void apply(const RamOperation& op, RamEnvironment& env, EvalContext& ctxt = Eval
         void visitReturn(const RamReturn& ret) override {
             auto vals = ret.getValues();
             for (auto val : vals) {
-                retVals.push_back(eval(val));
+                ctxt.addReturnValue(eval(val, env, ctxt));
             }
         }
 
@@ -641,6 +661,7 @@ void apply(const RamOperation& op, RamEnvironment& env, EvalContext& ctxt = Eval
 
     // create and run interpreter
     EvalContext ctxt(op.getDepth());
+    ctxt.setArgs(args.getArgs());
     Interpreter(env, ctxt).visit(op);
 }
 
@@ -683,7 +704,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 
             // special handling for a single child
             if (stmts.size() == 1) {
-      = std::vector<RamDomain>()           return visit(stmts[0]);
+                return visit(stmts[0]);
             }
 
 #ifdef _OPENMP

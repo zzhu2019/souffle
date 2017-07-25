@@ -343,17 +343,24 @@ int main(int argc, char** argv) {
     std::unique_ptr<RamProgram> ramProg =
             RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
 
-    std::unique_ptr<RamStatement> ramMainStmt = ramProg->getMain();
+    const RamStatement* ramMainStmt = ramProg->getMain();
 
     if (!Global::config().get("debug-report").empty()) {
-        if (ramMainStmt) {
+        if (ramProg) {
             auto ram_end = std::chrono::high_resolution_clock::now();
             std::string runtimeStr =
                     "(" + std::to_string(std::chrono::duration<double>(ram_end - ram_start).count()) + "s)";
+            /*
             std::stringstream ramMainStmtStr;
             ramMainStmtStr << *ramMainStmt;
             translationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
                     "ram-program", "RAM Program " + runtimeStr, ramMainStmtStr.str()));
+                    */
+
+            std::stringstream ramProgStr;
+            ramProgStr << *ramProg;
+            translationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
+                        "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
         }
 
         if (!translationUnit->getDebugReport().empty()) {

@@ -16,3 +16,5 @@ libsouffle*
 
 test-suite.log
 wavelib/cpplexer/re2clex/.dirstamp
+
+souffle.dSYM
