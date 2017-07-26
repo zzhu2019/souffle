@@ -85,13 +85,10 @@ public:
     }
 
     /**
-     * Runs the main method of a RamProgram
+     * Runs a subroutine of a RamProgram
      */
-    /*
-    RamEnvironment* execute(SymbolTable& table, const RamProgram& prog, RamData* data = nullptr) const {
-        return execute(table, *prog.getMain(), data);
-    }
-    */
+    void executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
+            std::vector<RamDomain>* returnValues, const std::vector<RamDomain>* arguments);
 
     /**
      * Runs a subroutine

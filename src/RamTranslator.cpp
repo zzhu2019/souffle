@@ -368,8 +368,7 @@ std::unique_ptr<RamValue> translateValue(const AstArgument* arg, const ValueInde
         val = std::unique_ptr<RamValue>(new RamElementAccess(loc.level, loc.component, loc.name));
     } else if (const AstSubroutineArgument* subArg = dynamic_cast<const AstSubroutineArgument*>(arg)) {
         // TODO: RamNumber(0) temporary
-        val = std::unique_ptr<RamValue>(
-                new RamArgument(std::unique_ptr<RamValue>(new RamNumber(0)), subArg->getNumber()));
+        val = std::unique_ptr<RamValue>(new RamArgument(subArg->getNumber()));
     } else {
         std::cout << "Unsupported node type of " << arg << ": " << typeid(*arg).name() << "\n";
         ASSERT(false && "unknown AST node type not permissible");
@@ -384,8 +383,8 @@ std::unique_ptr<RamValue> translateValue(const AstArgument& arg, const ValueInde
 }  // namespace
 
 /** generate RAM code for a clause */
-std::unique_ptr<RamStatement> RamTranslator::translateClause(
-        const AstClause& clause, const AstProgram* program, const TypeEnvironment* typeEnv, int version, bool ret) {
+std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& clause,
+        const AstProgram* program, const TypeEnvironment* typeEnv, int version, bool ret) {
     // check whether there is an imposed order constraint
     if (clause.getExecutionPlan() && clause.getExecutionPlan()->hasOrderFor(version)) {
         // get the imposed order
@@ -1042,6 +1041,9 @@ std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
     // make intermediate clause with constraints
     AstClause* intermediateClause = clause.clone();
 
+    // name unnamed variables
+    nameUnnamedVariables(intermediateClause);
+
     // add constraint for each argument in head of atom
     AstAtom* head = intermediateClause->getHead();
     for (size_t i = 0; i < head->getArguments().size() - 2; i++) {
@@ -1071,14 +1073,6 @@ std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
     }
 
     auto result = translateClause(*intermediateClause, program, &typeEnv, 0, true);
-    // TODO: remove temporary values
-    /*
-    visitDepthFirst(dynamic_cast<const RamNode&>(*result), [&](RamArgument& arg) {
-            arg.setValue(std::unique_ptr<RamValue>(new RamNumber(0)));
-            });
-            */
-    result->print(std::cout);
-    std::cout << std::endl;
     return result;
 }
 
@@ -1165,7 +1159,9 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
             appendStmt(res, std::unique_ptr<RamStatement>(new RamPrintSize(rrel)));
         }
         if (rel->isOutput()) {
-            appendStmt(res, std::unique_ptr<RamStatement>(new RamDrop(rrel)));
+            if (!Global::config().has("provenance")) {
+                appendStmt(res, std::unique_ptr<RamStatement>(new RamDrop(rrel)));
+            }
         }
     }
 

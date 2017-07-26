@@ -74,10 +74,11 @@ namespace {
 class EvalContext {
     std::vector<const RamDomain*> data;
     std::vector<RamDomain>* returnValues;
-    const std::vector<RamDomain>* args;  
+    const std::vector<RamDomain>* args;
 
 public:
-    EvalContext(size_t size = 0, const std::vector<RamDomain>* args = new std::vector<RamDomain>()) : data(size), args(args) {}
+    EvalContext(size_t size = 0, const std::vector<RamDomain>* args = new std::vector<RamDomain>())
+            : data(size), args(args) {}
 
     const RamDomain*& operator[](size_t index) {
         return data[index];
@@ -87,7 +88,7 @@ public:
         return data[index];
     }
 
-    std::vector<RamDomain>* getReturnValues() {
+    std::vector<RamDomain>* getReturnValues() const {
         return returnValues;
     }
 
@@ -99,15 +100,15 @@ public:
         returnValues->push_back(val);
     }
 
-    const std::vector<RamDomain>* getArgs() const {
+    const std::vector<RamDomain>* getArguments() const {
         return args;
     }
 
-    void setArgs(const std::vector<RamDomain>* a) {
+    void setArguments(const std::vector<RamDomain>* a) {
         args = a;
     }
 
-    RamDomain getArg(size_t i) const {
+    RamDomain getArgument(size_t i) const {
         assert(i < args->size() && "argument out of range");
         return (*args)[i];
     }
@@ -278,8 +279,7 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
         // -- subroutine argument
 
         RamDomain visitArgument(const RamArgument& arg) override {
-            assert(arg.getValue() != nullptr && "argument is null");
-            return visit(arg.getValue());
+            return ctxt.getArgument(arg.getNumber());
         }
 
         // -- safety net --
@@ -644,7 +644,7 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
             env.getRelation(project.getRelation()).insert(tuple);
         }
 
-        // -- return from subroutine -- 
+        // -- return from subroutine --
         void visitReturn(const RamReturn& ret) override {
             auto vals = ret.getValues();
             for (auto val : vals) {
@@ -661,7 +661,8 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
 
     // create and run interpreter
     EvalContext ctxt(op.getDepth());
-    ctxt.setArgs(args.getArgs());
+    ctxt.setReturnValues(args.getReturnValues());
+    ctxt.setArguments(args.getArguments());
     Interpreter(env, ctxt).visit(op);
 }
 
@@ -1959,10 +1960,12 @@ public:
 
     // -- subroutine argument
 
+    /*
     void visitArgument(const RamArgument& arg, std::ostream& out) override {
         assert(arg.getValue() != nullptr && "argument is null");
         out << "(" << print(arg.getValue()) << ")";
     }
+    */
 
     // -- safety net --
 
@@ -2487,6 +2490,19 @@ void RamCompiler::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData
     if (result != 0) {
         exit(result);
     }
+}
+
+void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
+        std::vector<RamDomain>* returnValues, const std::vector<RamDomain>* arguments) {
+    EvalContext ctxt;
+    ctxt.setReturnValues(returnValues);
+    ctxt.setArguments(arguments);
+
+    // run subroutine
+    const RamOperation& op = static_cast<const RamInsert&>(stmt).getOperation();
+    op.print(std::cout);
+    std::cout << std::endl;
+    apply(op, env, ctxt);
 }
 
 }  // end of namespace souffle

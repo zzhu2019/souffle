@@ -25,7 +25,7 @@ public:
         //  -> print subroutine code
 
         for (auto it = subroutines.begin(); it != subroutines.end(); it++) {
-            out << "SUBROUTINE " << it->first << std::endl;
+            out << std::endl << "SUBROUTINE " << it->first << std::endl;
             it->second->print(out);
         }
     }

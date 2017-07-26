@@ -312,12 +312,11 @@ public:
 
 /** Argument for ram subroutine */
 class RamArgument : public RamValue {
-    std::unique_ptr<RamValue> value;
+    // std::unique_ptr<RamValue> value;
     size_t number;
 
 public:
-    RamArgument(std::unique_ptr<RamValue> value, size_t number)
-            : RamValue(RN_Argument, false), value(std::move(value)), number(number) {}
+    RamArgument(size_t number) : RamValue(RN_Argument, false), number(number) {}
 
     size_t getNumber() const {
         return number;
@@ -327,6 +326,7 @@ public:
         number = n;
     }
 
+    /*
     RamValue* getValue() const {
         return value.get();
     }
@@ -334,9 +334,10 @@ public:
     void setValue(std::unique_ptr<RamValue> val) {
         value.swap(val);
     }
+    */
 
     void print(std::ostream& os) const override {
-        os << "(" << *value << ", " << number << ")";
+        os << "argument(" << number << ")";
     }
 
     size_t getLevel() const override {
@@ -344,8 +345,9 @@ public:
     }
 
     std::vector<const RamNode*> getChildNodes() const override {
-        std::vector<const RamNode*> children = {value.get()};
-        return children;
+        // std::vector<const RamNode*> children = {value.get()};
+        // return children;
+        return std::vector<const RamNode*>();
     }
 };
 

@@ -72,6 +72,11 @@ public:
             }
         }
 
+        if (Global::config().has("provenance")) {
+            tuple[symbolMask.getArity() - 2] = 0;
+            tuple[symbolMask.getArity() - 1] = 0;
+        }
+
         return tuple;
     }
 

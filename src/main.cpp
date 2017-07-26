@@ -360,7 +360,7 @@ int main(int argc, char** argv) {
             std::stringstream ramProgStr;
             ramProgStr << *ramProg;
             translationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
-                        "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
+                    "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
         }
 
         if (!translationUnit->getDebugReport().empty()) {
@@ -423,6 +423,14 @@ int main(int argc, char** argv) {
                   << "sec\n";
     }
 
+    // TODO: remove testing for subroutine
+    std::vector<RamDomain>* ret = new std::vector<RamDomain>();
+    const std::vector<RamDomain>* args = new std::vector<RamDomain>({1, 4, 3});
+    executor->executeSubroutine(*env, ramProg->getSubroutine("path_1_subproof"), ret, args);
+
+    for (auto i : *ret) {
+        std::cout << i << std::endl;
+    }
     /*
     if (Global::config().has("provenance")) {
         // construct SouffleProgram from env
