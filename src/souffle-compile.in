@@ -91,7 +91,7 @@ test "$1" != "$exe"
 error "source file is not a .cpp file: '$1'" $?
 
 # Ensure binary is compiled to same directory as cpp file
-dir=$(dirname $(realpath $exe))
+dir=$(dirname $(realpath $1))
 
 # Compile
 rm -f $dir/$exe
