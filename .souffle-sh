@@ -37,24 +37,10 @@ EOF
 souffle_ubuntu() {
     sudo apt-get update && \
     sudo apt-get upgrade && \
-    sudo apt-get install \
-    git \
-    automake \
-    autoconf \
-    libtool \
-    doxygen \
-    flex \
-    bison \
-    sqlite \
-    libsqlite3-dev \
-    libedit-dev \
-    valgrind \
-    gdb \
-    graphviz \
-    default-jdk \
-    default-jre \
-    zlib* \
-    clang-format
+    sudo apt-get install $(echo $( \
+        cat README.md | \
+        grep "apt-get install" | \
+        sed 's/^.*apt-get install//g');
 }
 
 souffle_setup() {
@@ -90,7 +76,11 @@ souffle_reset() {
 
 souffle_format() {
     cd $SOUFFLE && \
-    clang-format -i -style=file $SOUFFLE/src/*.cpp $SOUFFLE/src/*.h $SOUFFLE/src/test/*.cpp $SOUFFLE/src/test/*.h && \
+    clang-format-3.8 -i -style=file \
+        $SOUFFLE/src/*.cpp \
+        $SOUFFLE/src/*.h \
+        $SOUFFLE/src/test/*.cpp \
+        $SOUFFLE/src/test/*.h && \
     cd -
 }
 
