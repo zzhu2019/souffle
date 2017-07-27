@@ -2337,6 +2337,19 @@ std::string RamCompiler::generateCode(
     os << "return symTable;\n";
     os << "}\n";  // end of getSymbolTable() method
 
+    // TODO: generate code for subroutines
+    if (Global::config().has("provenance")) {
+        for (auto sub : prog.getSubroutines()) {
+            // method header
+            os << "void " << sub.first << "(const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {\n";
+            
+            // generate code for body
+            genCode(os, sub.second, indices);    
+
+            os << "return;";
+        }
+    }
+   
     os << "};\n";  // end of class declaration
 
     // hidden hooks
@@ -2491,10 +2504,15 @@ void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* 
         exit(result);
     }
 }
-
-void RamCompiler::compileSubroutine(RamEnvironment& env, const RamStatement& stmt) const {
+/*
+void RamCompiler::compileSubroutine(std::string name, const RamStatement& stmt, IndexMap& indices, std::ostream& os) const {
+    // method header
+    os << "void " << name << "(const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {\n";
     
+    // generate code for body
+    genCode(os, stmt, indices);    
 }
+*/
 
 void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
         std::vector<RamDomain>* returnValues, const std::vector<RamDomain>* arguments) {

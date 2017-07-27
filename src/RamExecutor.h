@@ -249,7 +249,7 @@ public:
      * Compiles a subroutine into a separate method in the compiled
      * program
      */
-    void compileSubroutine(RamEnvironment& env, const RamStatement& stmt) const;
+    // void compileSubroutine(std::string name, const RamStatement& stmt, IndexMap& indices, std::ostream& os) const;
 private:
     /**
      * Obtains a file name for the resulting source and executable file.

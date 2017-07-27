@@ -17,6 +17,7 @@
 #pragma once
 
 #include "RamRelation.h"
+#include "RamExecutor.h"
 #include "SouffleInterface.h"
 
 #include <array>
@@ -131,6 +132,9 @@ public:
     void printAll(std::string) {}
     void dumpInputs(std::ostream&) {}
     void dumpOutputs(std::ostream&) {}
+
+    // run subroutine
+    void executeSubroutine(std::string name, const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {}
 
     const SymbolTable& getSymbolTable() const {
         return symTable;
