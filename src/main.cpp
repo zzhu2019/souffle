@@ -404,16 +404,16 @@ int main(int argc, char** argv) {
         // just generate, no compile, no execute
         static_cast<const RamCompiler*>(executor.get())
                 ->generateCode(
-                        translationUnit->getSymbolTable(), *ramMainStmt, Global::config().get("generate"));
+                        translationUnit->getSymbolTable(), *ramProg, Global::config().get("generate"));
 
         // check if this is a compile only
     } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
         // just compile, no execute
         static_cast<const RamCompiler*>(executor.get())
-                ->compileToBinary(translationUnit->getSymbolTable(), *ramMainStmt);
+                ->compileToBinary(translationUnit->getSymbolTable(), *ramProg);
     } else {
         // run executor
-        env = executor->execute(translationUnit->getSymbolTable(), *ramMainStmt);
+        env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
     }
 
     /* Report overall run-time in verbose mode */

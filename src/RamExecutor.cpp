@@ -872,7 +872,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 }
 }  // namespace
 
-void RamGuidedInterpreter::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData* data) const {
+void RamGuidedInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* data) const {
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
         // open output stream
@@ -882,9 +882,9 @@ void RamGuidedInterpreter::applyOn(const RamStatement& stmt, RamEnvironment& env
             std::cerr << "Cannot open fact file " << fname << " for profiling\n";
         }
         os << "@start-debug\n";
-        run(queryStrategy, report, &os, stmt, env, data);
+        run(queryStrategy, report, &os, *(prog.getMain()), env, data);
     } else {
-        run(queryStrategy, report, nullptr, stmt, env, data);
+        run(queryStrategy, report, nullptr, *(prog.getMain()), env, data);
     }
 }
 
@@ -2001,14 +2001,14 @@ std::string RamCompiler::resolveFileName() const {
 }
 
 std::string RamCompiler::generateCode(
-        const SymbolTable& symTable, const RamStatement& stmt, const std::string& filename) const {
+        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
     // ---------------------------------------------------------------
 
     // collect all used indices
     IndexMap indices;
-    visitDepthFirst(stmt, [&](const RamNode& node) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamNode& node) {
         if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
             indices[scan->getRelation()].addSearch(scan->getRangeQueryColumns());
         }
@@ -2122,7 +2122,7 @@ std::string RamCompiler::generateCode(
     std::string registerRel;   // registration of relations
     int relCtr = 0;
     std::string tempType;  // string to hold the type of the temporary relations
-    visitDepthFirst(stmt, [&](const RamCreate& create) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamCreate& create) {
 
         // get some table details
         const auto& rel = create.getRelation();
@@ -2236,16 +2236,16 @@ std::string RamCompiler::generateCode(
     if (Global::config().has("profile")) {
         os << "std::ofstream profile(profiling_fname);\n";
         os << "profile << \"@start-debug\\n\";\n";
-        genCode(os, stmt, indices);
+        genCode(os, *(prog.getMain()), indices);
     } else {
-        genCode(os, stmt, indices);
+        genCode(os, *(prog.getMain()), indices);
     }
     os << "}\n";  // end of run() method
 
     // issue printAll method
     os << "public:\n";
     os << "void printAll(std::string dirname) {\n";
-    visitDepthFirst(stmt, [&](const RamStatement& node) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) {
         if (auto store = dynamic_cast<const RamStore*>(&node)) {
             for (IODirectives ioDirectives : store->getRelation().getOutputDirectives()) {
                 os << "try {";
@@ -2275,7 +2275,7 @@ std::string RamCompiler::generateCode(
     // issue loadAll method
     os << "public:\n";
     os << "void loadAll(std::string dirname) {\n";
-    visitDepthFirst(stmt, [&](const RamLoad& load) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamLoad& load) {
         IODirectives ioDirectives = load.getRelation().getInputDirectives();
 
         // get some table details
@@ -2313,7 +2313,7 @@ std::string RamCompiler::generateCode(
     // dump inputs
     os << "public:\n";
     os << "void dumpInputs(std::ostream& out = std::cout) {\n";
-    visitDepthFirst(stmt, [&](const RamLoad& load) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamLoad& load) {
         auto& name = getRelationName(load.getRelation());
         auto& mask = load.getRelation().getSymbolMask();
         size_t arity = load.getRelation().getArity();
@@ -2324,7 +2324,7 @@ std::string RamCompiler::generateCode(
     // dump outputs
     os << "public:\n";
     os << "void dumpOutputs(std::ostream& out = std::cout) {\n";
-    visitDepthFirst(stmt, [&](const RamStore& store) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamStore& store) {
         auto& name = getRelationName(store.getRelation());
         auto& mask = store.getRelation().getSymbolMask();
         size_t arity = store.getRelation().getArity();
@@ -2408,8 +2408,8 @@ std::string RamCompiler::generateCode(
 }
 
 std::string RamCompiler::compileToLibrary(
-        const SymbolTable& symTable, const RamStatement& stmt, const std::string& filename) const {
-    std::string source = generateCode(symTable, stmt, filename + ".cpp");
+        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
+    std::string source = generateCode(symTable, prog, filename + ".cpp");
 
     // execute shell script that compiles the generated C++ program
     std::string libCmd = "souffle-compilelib " + filename;
@@ -2430,13 +2430,13 @@ std::string RamCompiler::compileToLibrary(
     return filename;
 }
 
-std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamStatement& stmt) const {
+std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog) const {
     // ---------------------------------------------------------------
     //                       Code Generation
     // ---------------------------------------------------------------
 
     std::string binary = resolveFileName();
-    std::string source = generateCode(symTable, stmt, binary + ".cpp");
+    std::string source = generateCode(symTable, prog, binary + ".cpp");
 
     // ---------------------------------------------------------------
     //                    Compilation & Execution
@@ -2467,9 +2467,9 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamS
     return binary;
 }
 
-void RamCompiler::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData* /*data*/) const {
+void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
     // compile statement
-    std::string binary = compileToBinary(env.getSymbolTable(), stmt);
+    std::string binary = compileToBinary(env.getSymbolTable(), prog);
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2490,6 +2490,10 @@ void RamCompiler::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData
     if (result != 0) {
         exit(result);
     }
+}
+
+void RamCompiler::compileSubroutine(RamEnvironment& env, const RamStatement& stmt) const {
+    
 }
 
 void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
