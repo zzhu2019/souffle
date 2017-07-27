@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
     }
 
     // check if this is code generation only
-    RamEnvironment* env = nullptr;
+    std::unique_ptr<RamEnvironment> env;
     if (Global::config().has("generate")) {
         // just generate, no compile, no execute
         static_cast<const RamCompiler*>(executor.get())
@@ -427,10 +427,6 @@ int main(int argc, char** argv) {
         } else if (Global::config().get("provenance") == "2") {
             explain(interface, false);
         }
-    }
-
-    if (env != nullptr) {
-        delete env;
     }
 
     return 0;
