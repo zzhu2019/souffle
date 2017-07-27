@@ -91,7 +91,7 @@ test "$1" != "$exe"
 error "source file is not a .cpp file: '$1'" $?
 
 # Ensure binary is compiled to same directory as cpp file
-dir=`realpath $exe`
+dir=$(dirname $(realpath $exe))
 
 # Compile
 rm -f $dir/$exe
@@ -106,7 +106,7 @@ then
   rm $dir/$exe.$$.ccerr
 else
   echo "compiler error: cannot compile source file $1" 1>&2
-  echo "$CXX $CXXFLAGS -o./$exe $1 $LIBS -I$HEADER_DIR $OMP_FLAG"
+  echo "$CXX $CXXFLAGS -o$dir/$exe $1 $LIBS -I$HEADER_DIR $OMP_FLAG"
   cat $dir/$exe.$$.ccerr 1>&2
   rm -f $dir/$exe.$$.ccerr
   exit 1
