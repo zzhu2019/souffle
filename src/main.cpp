@@ -108,22 +108,25 @@ int main(int argc, char** argv) {
                             {"jobs", 'j', "N", "1", false,
                                     "Run interpreter/compiler in parallel using N threads, N=auto for system "
                                     "default."},
-                            {"compile", 'c', "", "", false, "Generate C++ source code, compile to binary executable, then run this executable."},
+                            {"compile", 'c', "", "", false,
+                                    "Generate C++ source code, compile to binary executable, then run this "
+                                    "executable."},
                             {"auto-schedule", 'a', "", "", false,
                                     "Switch on automated clause scheduling for compiler."},
                             {"generate", 'g', "FILE", "", false,
-                                    "Generate C++ source code for the given Datalog program and write it to <FILE>."},
+                                    "Generate C++ source code for the given Datalog program and write it to "
+                                    "<FILE>."},
                             {"no-warn", 'w', "", "", false, "Disable warnings."},
                             {"magic-transform", 'm', "RELATIONS", "", false,
                                     "Enable magic set transformation changes on the given relations, use '*' "
                                     "for all."},
                             {"dl-program", 'o', "FILE", "", false,
-                                    "Generate C++ source code and compile this to a binary executable written to <FILE>."},
+                                    "Generate C++ source code and compile this to a binary executable "
+                                    "written to <FILE>."},
                             {"profile", 'p', "FILE", "", false,
                                     "Enable profiling and write profile data to <FILE>."},
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
-                            {"debug-report", 'r', "FILE", "", false,
-                                    "Write HTML debug report to <FILE>."},
+                            {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information (<EXPLAIN> can be 0 for no explain, 1 for "
                                     "explain with ncurses, 2 for explain with stdout)."},

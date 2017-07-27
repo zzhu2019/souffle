@@ -40,7 +40,7 @@ souffle_ubuntu() {
     sudo apt-get install $(echo $( \
         cat README.md | \
         grep "apt-get install" | \
-        sed 's/^.*apt-get install//g');
+        sed 's/^.*apt-get install//g'));
 }
 
 souffle_setup() {
