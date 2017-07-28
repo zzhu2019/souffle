@@ -351,6 +351,8 @@ private:
                         } else if (*(rel->getAttrType(i)) == 's') {
                             std::string s;
                             tuple >> s;
+                            // insert placeholder to refs
+                            refs.push_back(-1);
                         }
                     }
 
@@ -502,10 +504,11 @@ private:
                 // recursively add all provenance values for this value
                 for (size_t i = 0; i < provInfo.getInfo(infoKey).size(); i++) {
                     auto rel = provInfo.getInfo(infoKey)[i];
-                    auto newLab = provInfo.getSubproofs(internalRelName, label)[i];
                     if (std::regex_match(rel, std::regex("negated_.*"))) {
                         inner->add_child(std::unique_ptr<TreeNode>(new LeafNode(rel)));
                     } else {
+                        auto newLab = provInfo.getSubproofs(internalRelName, label)[i];
+                        assert(newLab != -1 && "subproof refers to negation");
                         inner->add_child(explainLabel(rel, newLab, depth - 1));
                     }
                 }
@@ -735,6 +738,14 @@ public:
                     printStr("Usage: rule <rule number>\n");
                     continue;
                 }
+            } else if (command[0] == "help") {
+                printStr(
+                        "Commands:\n"
+                        "setdepth <depth>: Set a limit for printed derivation tree height\n"
+                        "explain <relation>(<element1>, <element2>, ...): Prints derivation tree\n"
+                        "subproof <relation>(<label>): Prints derivation tree for a subproof, label is generated if a derivation tree exceeds height limit\n"
+                        "rule <rule number>: Prints a rule"
+                        );
             } else if (command[0] == "exit") {
                 break;
             }
