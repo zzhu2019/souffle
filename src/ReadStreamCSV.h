@@ -105,7 +105,7 @@ public:
         }
 
         // add two provenance columns
-        if (Global::config().has("provenance")) {
+        if (columnsFilled == symbolMask.getArity() - 2) {
             tuple[symbolMask.getArity() - 2] = 0;
             tuple[symbolMask.getArity() - 1] = 0;
             columnsFilled += 2;

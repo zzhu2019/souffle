@@ -53,7 +53,8 @@ public:
 
         std::unique_ptr<RamDomain[]> tuple(new RamDomain[symbolMask.getArity()]);
 
-        for (uint32_t column = 0; column < symbolMask.getArity(); column++) {
+        uint32_t column;
+        for (column = 0; column < symbolMask.getArity(); column++) {
             std::string element(reinterpret_cast<const char*>(sqlite3_column_text(selectStatement, column)));
 
             if (element == "") {
@@ -72,7 +73,7 @@ public:
             }
         }
 
-        if (Global::config().has("provenance")) {
+        if (column == symbolMask.getArity() - 2) {
             tuple[symbolMask.getArity() - 2] = 0;
             tuple[symbolMask.getArity() - 1] = 0;
         }

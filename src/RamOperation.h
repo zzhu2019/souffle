@@ -396,6 +396,11 @@ public:
     std::vector<RamValue*> getValues() const {
         return toPtrVector(values);
     }
+
+    RamValue& getValue(size_t i) const {
+        assert(i < values.size() && "value index out of range");
+        return *values[i];
+    }
 };
 
 }  // namespace souffle

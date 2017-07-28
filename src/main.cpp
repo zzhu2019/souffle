@@ -403,8 +403,7 @@ int main(int argc, char** argv) {
     if (Global::config().has("generate")) {
         // just generate, no compile, no execute
         static_cast<const RamCompiler*>(executor.get())
-                ->generateCode(
-                        translationUnit->getSymbolTable(), *ramProg, Global::config().get("generate"));
+                ->generateCode(translationUnit->getSymbolTable(), *ramProg, Global::config().get("generate"));
 
         // check if this is a compile only
     } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
@@ -423,26 +422,19 @@ int main(int argc, char** argv) {
                   << "sec\n";
     }
 
-    // TODO: remove testing for subroutine
-    std::vector<RamDomain>* ret = new std::vector<RamDomain>();
-    const std::vector<RamDomain>* args = new std::vector<RamDomain>({1, 4, 3});
-    executor->executeSubroutine(*env, ramProg->getSubroutine("path_1_subproof"), ret, args);
-
-    for (auto i : *ret) {
-        std::cout << i << std::endl;
-    }
-    /*
-    if (Global::config().has("provenance")) {
+    if (Global::config().has("provenance") && env != nullptr) {
         // construct SouffleProgram from env
-        SouffleInterpreterInterface interface(*env, translationUnit->getSymbolTable());
+        SouffleInterpreterInterface interface(*ramProg, *executor, *env, translationUnit->getSymbolTable());
+        /*
         // invoke explain
         if (Global::config().get("provenance") == "1") {
             explain(interface, true);
         } else if (Global::config().get("provenance") == "2") {
             explain(interface, false);
         }
+        */
+        explain(interface);
     }
-    */
 
     return 0;
 }

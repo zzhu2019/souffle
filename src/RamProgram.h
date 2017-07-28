@@ -34,8 +34,16 @@ public:
         return main.get();
     }
 
-    void addSubroutine(std::string main, std::unique_ptr<RamStatement> subroutine) {
-        subroutines.insert(std::make_pair(main, std::move(subroutine)));
+    void addSubroutine(std::string name, std::unique_ptr<RamStatement> subroutine) {
+        subroutines.insert(std::make_pair(name, std::move(subroutine)));
+    }
+
+    const std::map<std::string, RamStatement&> getSubroutines() const {
+        std::map<std::string, RamStatement&> subroutineRefs;
+        for (auto& s : subroutines) {
+            subroutineRefs.insert({s.first, *s.second});
+        }
+        return subroutineRefs;
     }
 
     const RamStatement& getSubroutine(std::string name) const {

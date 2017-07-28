@@ -1958,14 +1958,19 @@ public:
             << ")";
     }
 
-    // -- subroutine argument
+    // -- subroutine argument --
 
-    /*
     void visitArgument(const RamArgument& arg, std::ostream& out) override {
-        assert(arg.getValue() != nullptr && "argument is null");
-        out << "(" << print(arg.getValue()) << ")";
+        out << "(*args)[" << arg.getNumber() << "]";
     }
-    */
+
+    // -- subroutine return --
+
+    void visitReturn(const RamReturn& ret, std::ostream& out) override {
+        for (auto val : ret.getValues()) {
+            out << "ret->push_back(" << print(val) << ");\n";
+        }
+    }
 
     // -- safety net --
 
@@ -2339,17 +2344,30 @@ std::string RamCompiler::generateCode(
 
     // TODO: generate code for subroutines
     if (Global::config().has("provenance")) {
-        for (auto sub : prog.getSubroutines()) {
-            // method header
-            os << "void " << sub.first << "(const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {\n";
-            
-            // generate code for body
-            genCode(os, sub.second, indices);    
+        // generate subroutine adapter
+        os << "void executeSubroutine(std::string name, const std::vector<RamDomain>* args, "
+              "std::vector<RamDomain>* ret) {\n";
+        for (auto& sub : prog.getSubroutines()) {
+            os << "if (name == \"" << sub.first << "\") {\n"
+               << sub.first << "(args, ret);\n"
+               << "}\n";
+        }
+        os << "}\n";  // end of executeSubroutine
 
-            os << "return;";
+        // generate method for each subroutine
+        for (auto& sub : prog.getSubroutines()) {
+            // method header
+            os << "void " << sub.first
+               << "(const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {\n";
+
+            // generate code for body
+            genCode(os, sub.second, indices);
+
+            os << "return;\n";
+            os << "}\n";  // end of subroutine
         }
     }
-   
+
     os << "};\n";  // end of class declaration
 
     // hidden hooks
@@ -2403,11 +2421,16 @@ std::string RamCompiler::generateCode(
     os << "obj.loadAll(opt.getInputFileDir());\n";
     os << "obj.run();\n";
     os << "obj.printAll(opt.getOutputFileDir());\n";
+    if (Global::config().has("provenance")) {
+        os << "explain(obj);\n";
+    }
+    /*
     if (Global::config().get("provenance") == "1") {
         os << "explain(obj, true);\n";
     } else if (Global::config().get("provenance") == "2") {
         os << "explain(obj, false);\n";
     }
+    */
     os << "return 0;\n";
     os << "} catch(std::exception &e) { souffle::SignalHandler::instance()->error(e.what());}\n";
     os << "}\n";
@@ -2505,12 +2528,13 @@ void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* 
     }
 }
 /*
-void RamCompiler::compileSubroutine(std::string name, const RamStatement& stmt, IndexMap& indices, std::ostream& os) const {
+void RamCompiler::compileSubroutine(std::string name, const RamStatement& stmt, IndexMap& indices,
+std::ostream& os) const {
     // method header
     os << "void " << name << "(const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {\n";
-    
+
     // generate code for body
-    genCode(os, stmt, indices);    
+    genCode(os, stmt, indices);
 }
 */
 
@@ -2522,8 +2546,6 @@ void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stm
 
     // run subroutine
     const RamOperation& op = static_cast<const RamInsert&>(stmt).getOperation();
-    op.print(std::cout);
-    std::cout << std::endl;
     apply(op, env, ctxt);
 }
 

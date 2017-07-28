@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include "RamRelation.h"
 #include "RamExecutor.h"
+#include "RamRelation.h"
 #include "SouffleInterface.h"
 
 #include <array>
@@ -91,11 +91,14 @@ public:
  */
 class SouffleInterpreterInterface : public SouffleProgram {
 private:
+    RamProgram& prog;
+    RamExecutor& exec;
     RamEnvironment& env;
     SymbolTable& symTable;
 
 public:
-    SouffleInterpreterInterface(RamEnvironment& r, SymbolTable& s) : env(r), symTable(s) {
+    SouffleInterpreterInterface(RamProgram& p, RamExecutor& e, RamEnvironment& r, SymbolTable& s)
+            : prog(p), exec(e), env(r), symTable(s) {
         uint32_t id = 0;
         for (auto& rel_pair : r.getRelationMap()) {
             auto& rel = rel_pair.second;
@@ -134,7 +137,10 @@ public:
     void dumpOutputs(std::ostream&) {}
 
     // run subroutine
-    void executeSubroutine(std::string name, const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {}
+    void executeSubroutine(
+            std::string name, const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {
+        exec.executeSubroutine(env, prog.getSubroutine(name), ret, args);
+    }
 
     const SymbolTable& getSymbolTable() const {
         return symTable;
