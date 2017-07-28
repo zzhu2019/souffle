@@ -740,11 +740,14 @@ public:
                 }
             } else if (command[0] == "help") {
                 printStr(
+                        "\n----------\n"
                         "Commands:\n"
+                        "----------\n"
                         "setdepth <depth>: Set a limit for printed derivation tree height\n"
                         "explain <relation>(<element1>, <element2>, ...): Prints derivation tree\n"
                         "subproof <relation>(<label>): Prints derivation tree for a subproof, label is generated if a derivation tree exceeds height limit\n"
-                        "rule <rule number>: Prints a rule"
+                        "rule <rule number>: Prints a rule\n"
+                        "exit: Exits this interface\n\n"
                         );
             } else if (command[0] == "exit") {
                 break;
