@@ -661,12 +661,6 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
                 return visit(stmts[0]);
             }
 
-#ifdef _OPENMP
-            if (std::stoi(Global::config().get("jobs")) != 0) {
-                omp_set_num_threads(std::stoi(Global::config().get("jobs")));
-            }
-#endif
-
             // parallel execution
             bool cond = true;
 #pragma omp parallel for reduction(&& : cond)
@@ -712,11 +706,15 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
         }
 
         bool visitPrintSize(const RamPrintSize& print) override {
+            auto lease = getOutputLock().acquire();
+            (void)lease;
             std::cout << print.getLabel() << env.getRelation(print.getRelation()).size() << "\n";
             return true;
         }
 
         bool visitLogSize(const RamLogSize& print) override {
+            auto lease = getOutputLock().acquire();
+            (void)lease;
             *profile << print.getLabel() << env.getRelation(print.getRelation()).size() << "\n";
             return true;
         }
@@ -814,6 +812,8 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
         // -- safety net --
 
         bool visitNode(const RamNode& node) override {
+            auto lease = getOutputLock().acquire();
+            (void)lease;
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
             assert(false && "Unsupported Node Type!");
             return false;
@@ -1214,7 +1214,8 @@ public:
 
             // print log entry
             out << "{ auto lease = getOutputLock().acquire(); ";
-            out << "profile << R\"(#" << label << ";)\" << num_failed_proofs << \"\\n\";\n";
+            out << "(void)lease;\n";
+            out << "profile << R\"(#" << label << ";)\" << num_failed_proofs << std::endl;\n";
             out << "}";
         }
 
@@ -1244,10 +1245,11 @@ public:
 
     void visitLogSize(const RamLogSize& print, std::ostream& out) override {
         out << "{ auto lease = getOutputLock().acquire(); \n";
+        out << "(void)lease;\n";
         out << "profile << R\"(" << print.getLabel() << ")\" <<  ";
         out << getRelationName(print.getRelation());
         out << "->"
-            << "size() << \"\\n\";\n"
+            << "size() << std::endl;\n"
             << "}";
     }
 
@@ -2203,9 +2205,10 @@ std::string RamCompiler::generateCode(
             }
         } else if (auto print = dynamic_cast<const RamPrintSize*>(&node)) {
             os << "{ auto lease = getOutputLock().acquire(); \n";
+            os << "(void)lease;\n";
             os << "std::cout << R\"(" << print->getLabel() << ")\" <<  ";
             os << getRelationName(print->getRelation()) << "->"
-               << "size() << \"\\n\";\n";
+               << "size() << std::endl;\n";
             os << "}";
         }
     });
