@@ -18,6 +18,7 @@ then
   if [ "$TEST_FORMAT" == 1 ]
   then
     sudo apt-get -y install clang-format-3.8
+
     sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-3.8 100
     sudo rm /usr/local/clang-3.5.0/bin/clang-format
     sudo ln -s /usr/bin/clang-format  /usr/local/clang-3.5.0/bin/clang-format
