@@ -48,11 +48,26 @@ AS_VAR_APPEND(LIBS, ["$CURSES_LIB"])
 dnl Do not set default CFLAGS and CXXFLAGS
 CXXFLAGS=" -Wall -std=c++11  $CXXFLAGS"
 
+# Enable sanitise memory mode
+AC_ARG_ENABLE(
+  [sanitise-memory],
+  [AS_HELP_STRING([--enable-sanitise-memory], [Enable sanitise memory mode])]
+)
+AS_IF([test "x$enable_sanitise_memory" = "xyes"], [CXXFLAGS="$CXXFLAGS -fsanitize=address,leak"])
+
+# Enable sanitise threads mode
+AC_ARG_ENABLE(
+  [sanitise-thread],
+  [AS_HELP_STRING([--enable-sanitise-thread], [Enable sanitise thread mode])]
+)
+AS_IF([test "x$enable_sanitise_thread" = "xyes"], [CXXFLAGS="$CXXFLAGS -fsanitize=thread"])
+
 # Enable debug mode
 AC_ARG_ENABLE(
   [debug],
   [AS_HELP_STRING([--enable-debug], [Enable debug mode])]
 )
+
 AS_IF([test "x$enable_debug" = "xyes"], [CXXFLAGS="$CXXFLAGS -O0 -g3"],
   [test "x$enable_debug" != "xyes"], [CXXFLAGS="$CXXFLAGS -O3"]
 )
