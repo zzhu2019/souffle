@@ -1177,6 +1177,11 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
         visitDepthFirst(rels, [&](const AstClause& clause) {
             std::stringstream relName;
             relName << clause.getHead()->getName();
+
+            if (relName.str().find("@info") != std::string::npos) {
+                return;
+            }
+
             std::string subroutineLabel =
                     relName.str() + "_" + std::to_string(clause.getClauseNum()) + "_subproof";
             prog->addSubroutine(

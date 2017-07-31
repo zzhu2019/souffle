@@ -2,6 +2,75 @@
 
 namespace souffle {
 
+/**
+ * Helper functions
+ */
+const std::string identifierToString(const AstRelationIdentifier& name) {
+    std::stringstream ss;
+    ss << name;
+    return *(new std::string(ss.str()));
+}
+
+inline AstRelationIdentifier makeRelationName(
+        const AstRelationIdentifier& orig, const std::string& type, int num = -1) {
+    auto newName = new AstRelationIdentifier(identifierToString(orig));
+    newName->append(type);
+    if (num != -1) {
+        newName->append((const std::string&)std::to_string(num));
+    }
+
+    return *newName;
+}
+
+std::unique_ptr<AstRelation> makeInfoRelation(AstRelation& originalRel, AstTranslationUnit& translationUnit) {
+    AstRelationIdentifier name = makeRelationName(originalRel.getName(), "@info");
+
+    // initialise info relation
+    auto infoRelation = new AstRelation();
+    infoRelation->setName(name);
+
+    for (auto originalClause : originalRel.getClauses()) {
+        // create new clause containing a single fact
+        auto infoClause = new AstClause();
+        auto infoClauseHead = new AstAtom();
+        infoClauseHead->setName(name);
+
+        infoRelation->addAttribute(
+                std::unique_ptr<AstAttribute>(new AstAttribute("clause_num", AstTypeIdentifier("number"))));
+        infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
+                new AstNumberConstant(originalClause->getClauseNum())));
+
+        // visit all body literals and add to info clause head
+        for (size_t i = 0; i < originalClause.getBodyLiterals().size(); i++) {
+            auto lit = originalClause.getBodyLiterals()[i];
+            const AstAtom* atom = lit->getAtom();
+            if (atom != nullptr) {
+                const char* relName = identifierToString(atom->getName()).c_str();
+
+                infoRelation->addAttribute(std::unique_ptr<AstAttribute>(new AstAttribute(
+                        std::string("rel_") + std::to_string(i), AstTypeIdentifier("symbol"))));
+                infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
+                        new AstStringConstant(translationUnit.getSymbolTable(), relName)));
+            }
+        }
+
+        // generate and add clause representation
+        std::stringstream ss;
+        originalClause.print(ss);
+
+        infoRelation->addAttribute(
+                std::unique_ptr<AstAttribute>(new AstAttribute("clause_repr", AstTypeIdentifier("symbol"))));
+        infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
+                new AstStringConstant(translationUnit.getSymbolTable(), ss.str().c_str())));
+
+        // set clause head and add clause to info relation
+        infoClause->setHead(std::unique_ptr<AstAtom>(infoClauseHead));
+        infoRelation->addClause(std::unique_ptr<AstClause>(infoClause));
+    }
+
+    return std::unique_ptr<AstRelation>(infoRelation);
+}
+
 bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) {
     auto program = translationUnit.getProgram();
     
@@ -57,6 +126,9 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
             }
             clauseNum++;
         }
+
+        // add info relation
+        program->addRelation(makeInfoRelation(*relation, translationUnit));
     }
 
     return true;

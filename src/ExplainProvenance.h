@@ -16,7 +16,7 @@ public:
     ExplainProvenance(SouffleProgram& prog, SymbolTable& symTable) : prog(prog), symTable(symTable) {}
 
     virtual void setup();
-    virtual TreeNode explain(std::string relName, std::vector<RamDomain> tuple);
+    virtual std::unique_ptr<TreeNode> explain(std::string relName, std::vector<RamDomain> tuple);
 };
 
 } // end of namespace souffle
