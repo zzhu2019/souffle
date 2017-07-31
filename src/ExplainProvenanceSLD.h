@@ -54,6 +54,23 @@ private:
         return std::make_pair<-1, -1>;
     }
 
+    std::vector<RamDomain> argsToNums(std::string relName, std::vector<std::string> args) {
+        std::vector<RamDomain> nums;
+
+        auto rel = prog.getRelation(relName);
+
+        for (size_t i = 0; i < args.size(); i++) {
+            if (rel.getAttrType(i) == 's') {
+                nums.push_back(prog.getSymbolTable().lookup(args[i].c_str()));
+            } else {
+                nums.push_back(std::atoi(args[i].c_str()));
+            }
+        }
+
+        return nums;
+    }
+
+
 public:
     ExplainProvenanceSLD(SouffleProgram& prog, SymbolTable& symTable) : ExplainProvenance(prog, symTable) {}
 
