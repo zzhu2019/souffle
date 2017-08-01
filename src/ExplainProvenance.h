@@ -1,24 +1,22 @@
 #pragma once
 
 #include "ExplainTree.h"
+#include "SouffleInterface.h"
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace souffle {
 
 class ExplainProvenance {
-private:
+protected:
     SouffleProgram& prog;
-    SymbolTable& symTable;
 
 public:
-    ExplainProvenance(SouffleProgram& prog, SymbolTable& symTable) : prog(prog), symTable(symTable) {}
+    ExplainProvenance(SouffleProgram& prog) : prog(prog) {}
 
-    virtual void setup();
-    virtual std::unique_ptr<TreeNode> explain(std::string relName, std::vector<RamDomain> tuple);
+    virtual void setup() = 0;
+    virtual std::unique_ptr<TreeNode> explain(std::string relName, std::vector<std::string> tuple) = 0;
 };
 
-} // end of namespace souffle
-
-
+}  // end of namespace souffle

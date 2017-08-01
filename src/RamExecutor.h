@@ -17,8 +17,8 @@
 #pragma once
 
 #include "RamData.h"
-#include "RamRelation.h"
 #include "RamProgram.h"
+#include "RamRelation.h"
 #include "SymbolTable.h"
 #include "Util.h"
 
@@ -89,7 +89,7 @@ public:
      * Runs a subroutine of a RamProgram
      */
     void executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
-            std::vector<RamDomain>* returnValues, const std::vector<RamDomain>* arguments);
+            const std::vector<RamDomain>* arguments, std::vector<RamDomain>* returnValues);
 
     /**
      * Runs a subroutine
@@ -249,7 +249,8 @@ public:
      * Compiles a subroutine into a separate method in the compiled
      * program
      */
-    // void compileSubroutine(std::string name, const RamStatement& stmt, IndexMap& indices, std::ostream& os) const;
+    // void compileSubroutine(std::string name, const RamStatement& stmt, IndexMap& indices, std::ostream& os)
+    // const;
 private:
     /**
      * Obtains a file name for the resulting source and executable file.

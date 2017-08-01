@@ -160,4 +160,4 @@ public:
     }
 };
 
-} // end of namespace souffle
+}  // end of namespace souffle

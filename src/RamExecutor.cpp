@@ -2539,7 +2539,7 @@ std::ostream& os) const {
 */
 
 void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
-        std::vector<RamDomain>* returnValues, const std::vector<RamDomain>* arguments) {
+        const std::vector<RamDomain>* arguments, std::vector<RamDomain>* returnValues) {
     EvalContext ctxt;
     ctxt.setReturnValues(returnValues);
     ctxt.setArguments(arguments);

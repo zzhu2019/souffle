@@ -139,7 +139,7 @@ public:
     // run subroutine
     void executeSubroutine(
             std::string name, const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {
-        exec.executeSubroutine(env, prog.getSubroutine(name), ret, args);
+        exec.executeSubroutine(env, prog.getSubroutine(name), args, ret);
     }
 
     const SymbolTable& getSymbolTable() const {
