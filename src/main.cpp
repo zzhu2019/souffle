@@ -422,7 +422,8 @@ int main(int argc, char** argv) {
                   << "sec\n";
     }
 
-    if (Global::config().has("provenance") && env != nullptr) {
+    // only run explain interface if interpreted
+    if (Global::config().has("provenance") && dynamic_cast<RamInterpreter*>(executor.get()) && env != nullptr) {
         // construct SouffleProgram from env
         SouffleInterpreterInterface interface(*ramProg, *executor, *env, translationUnit->getSymbolTable());
         /*

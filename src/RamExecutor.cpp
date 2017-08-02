@@ -2150,7 +2150,7 @@ std::string RamCompiler::generateCode(
         }
         initCons += name + "(new " + type + "())";
         deleteForNew += "delete " + name + ";\n";
-        if ((rel.isInput() || rel.isComputed()) && !rel.isTemp()) {
+        if ((rel.isInput() || rel.isComputed() || Global::config().has("provenance")) && !rel.isTemp()) {
             os << "souffle::RelationWrapper<";
             os << relCtr++ << ",";
             os << type << ",";
