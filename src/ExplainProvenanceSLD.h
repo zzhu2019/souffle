@@ -188,7 +188,12 @@ public:
         // recursively get nodes for subproofs
         auto tupleStart = ret->begin();
         for (std::string bodyRel : info[std::make_pair(relName, ruleNum)]) {
-            size_t arity = prog.getRelation(bodyRel)->getArity();
+            auto bodyRelAtomName = bodyRel;
+            if (bodyRel[0] == '!') {
+                bodyRelAtomName = bodyRel.substr(1);
+            }
+
+            size_t arity = prog.getRelation(bodyRelAtomName)->getArity();
             auto tupleEnd = tupleStart + arity;
 
             std::vector<RamDomain> subproofTuple;
@@ -200,7 +205,15 @@ public:
             int subproofRuleNum = *(tupleStart);
             int subproofLevelNum = *(tupleStart + 1);
 
-            internalNode->add_child(explain(bodyRel, subproofTuple, subproofRuleNum, subproofLevelNum));
+            if (bodyRel[0] == '!') {
+                std::stringstream joinedTuple;
+                joinedTuple << join(numsToArgs(bodyRelAtomName, subproofTuple), ", ");
+                auto joinedTupleStr = joinedTuple.str();
+                internalNode->add_child(
+                        std::unique_ptr<TreeNode>(new LeafNode(bodyRel + "(" + joinedTupleStr + ")")));
+            } else {
+                internalNode->add_child(explain(bodyRel, subproofTuple, subproofRuleNum, subproofLevelNum));
+            }
 
             tupleStart = tupleEnd;
         }

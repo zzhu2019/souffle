@@ -549,6 +549,13 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& cl
                 for (AstArgument* arg : atom->getArguments()) {
                     returnValue->addValue(translateValue(arg, valueIndex));
                 }
+            } else if (auto neg = dynamic_cast<AstNegation*>(lit)) {
+                for (size_t i = 0; i < neg->getAtom()->getArguments().size() - 2; i++) {
+                    auto arg = neg->getAtom()->getArguments()[i];
+                    returnValue->addValue(translateValue(arg, valueIndex));
+                }
+                returnValue->addValue(std::unique_ptr<RamValue>(new RamNumber(-1)));
+                returnValue->addValue(std::unique_ptr<RamValue>(new RamNumber(-1)));
             }
         }
 

@@ -46,12 +46,18 @@ std::unique_ptr<AstRelation> makeInfoRelation(
         auto lit = originalClause.getBodyLiterals()[i];
         const AstAtom* atom = lit->getAtom();
         if (atom != nullptr) {
-            const char* relName = identifierToString(atom->getName()).c_str();
+            std::string relName = identifierToString(atom->getName());
 
             infoRelation->addAttribute(std::unique_ptr<AstAttribute>(
                     new AstAttribute(std::string("rel_") + std::to_string(i), AstTypeIdentifier("symbol"))));
-            infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
-                    new AstStringConstant(translationUnit.getSymbolTable(), relName)));
+
+            if (dynamic_cast<AstAtom*>(lit)) {
+                infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
+                        new AstStringConstant(translationUnit.getSymbolTable(), relName.c_str())));
+            } else if (dynamic_cast<AstNegation*>(lit)) {
+                infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
+                        new AstStringConstant(translationUnit.getSymbolTable(), ("!" + relName).c_str())));
+            }
         }
     }
 
