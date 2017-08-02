@@ -1449,7 +1449,7 @@ public:
         auto level = aggregate.getLevel();
 
         // get the tuple type working with
-        std::string tuple_type = "ram::Tuple<RamDomain," + toString(arity) + ">";
+        std::string tuple_type = "ram::Tuple<RamDomain," + toString(std::max(1u, arity)) + ">";
 
         // declare environment variable
         out << tuple_type << " env" << level << ";\n";

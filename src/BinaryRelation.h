@@ -320,7 +320,9 @@ public:
          * should only be called in the constructor
          */
         void initCheckEnd() {
-            if (frontIter == cTrie->end() && backIter == cTrie->end()) isEndVal = true;
+            if (!cTrie || (frontIter == cTrie->end() && backIter == cTrie->end())) {
+                isEndVal = true;
+            }
         }
 
         // copy ctor

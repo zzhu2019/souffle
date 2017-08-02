@@ -151,7 +151,6 @@ void Tui::outputJson() {
         throw 1;
     }
     DIR* dir;
-    struct dirent* ent;
     bool exists = false;
 
     if ((dir = opendir((workingdir + std::string("/profiler_html")).c_str())) != NULL) {
