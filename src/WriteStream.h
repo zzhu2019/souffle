@@ -22,7 +22,12 @@
 namespace souffle {
 
 class WriteStream {
+protected:
+    bool isProvenance;
+
 public:
+    WriteStream() {}
+    WriteStream(const bool prov) : isProvenance(prov) {}
     template <typename T>
     void writeAll(const T& relation) {
         for (const auto& current : relation) {
@@ -40,7 +45,7 @@ public:
 class WriteStreamFactory {
 public:
     virtual std::unique_ptr<WriteStream> getWriter(const SymbolMask& symbolMask,
-            const SymbolTable& symbolTable, const IODirectives& ioDirectives) = 0;
+            const SymbolTable& symbolTable, const IODirectives& ioDirectives, const bool provenance) = 0;
     virtual const std::string& getName() const = 0;
     virtual ~WriteStreamFactory() = default;
 };

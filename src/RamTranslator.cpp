@@ -567,6 +567,24 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& cl
             project->addArg(translateValue(arg, valueIndex));
         }
 
+        // check existence for original tuple if we have provenance
+        if (Global::config().has("provenance")) {
+            auto uniquenessEnforcement = new RamNotExists(getRelation(&head));
+            auto arity = head.getArity() - 2;
+
+            // add args for original tuple
+            for (size_t i = 0; i < arity; i++) {
+                auto arg = head.getArgument(i);
+                uniquenessEnforcement->addArg(translateValue(arg, valueIndex));
+            }
+
+            // add two unnamed args for provenance columns
+            uniquenessEnforcement->addArg(nullptr);
+            uniquenessEnforcement->addArg(nullptr);
+
+            project->addCondition(std::unique_ptr<RamCondition>(uniquenessEnforcement), project);
+        }
+
         // build up insertion call
         op = std::unique_ptr<RamOperation>(project);
         // std::unique_ptr<RamOperation> op(project);  // start with innermost

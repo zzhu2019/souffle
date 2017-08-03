@@ -790,9 +790,9 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 #endif
             try {
                 RamRelation& relation = env.getRelation(load.getRelation());
-                std::unique_ptr<ReadStream> reader =
-                        IOSystem::getInstance().getReader(load.getRelation().getSymbolMask(),
-                                env.getSymbolTable(), load.getRelation().getInputDirectives());
+                std::unique_ptr<ReadStream> reader = IOSystem::getInstance().getReader(
+                        load.getRelation().getSymbolMask(), env.getSymbolTable(),
+                        load.getRelation().getInputDirectives(), Global::config().has("provenance"));
                 reader->readAll(relation);
             } catch (std::exception& e) {
                 std::cerr << e.what();
@@ -811,8 +811,8 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
             for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
                 try {
                     IOSystem::getInstance()
-                            .getWriter(
-                                    store.getRelation().getSymbolMask(), env.getSymbolTable(), ioDirectives)
+                            .getWriter(store.getRelation().getSymbolMask(), env.getSymbolTable(),
+                                    ioDirectives, Global::config().has("provenance"))
                             ->writeAll(rel);
                 } catch (std::exception& e) {
                     std::cerr << e.what();
@@ -2262,7 +2262,7 @@ std::string RamCompiler::generateCode(
                 os << "IODirectives ioDirectives(directiveMap);\n";
                 os << "IOSystem::getInstance().getWriter(";
                 os << "SymbolMask({" << store->getRelation().getSymbolMask() << "})";
-                os << ", symTable, ioDirectives";
+                os << ", symTable, ioDirectives, " << Global::config().has("provenance");
                 os << ")->writeAll(*" << getRelationName(store->getRelation()) << ");\n";
 
                 os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
@@ -2294,7 +2294,9 @@ std::string RamCompiler::generateCode(
         os << "IODirectives ioDirectives(directiveMap);\n";
         os << "IOSystem::getInstance().getReader(";
         os << "SymbolMask({" << load.getRelation().getSymbolMask() << "})";
-        os << ", symTable, ioDirectives)->readAll(*" << getRelationName(load.getRelation());
+        os << ", symTable, ioDirectives";
+        os << ", " << Global::config().has("provenance");
+        os << ")->readAll(*" << getRelationName(load.getRelation());
         os << ");\n";
         os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
     });
@@ -2310,7 +2312,7 @@ std::string RamCompiler::generateCode(
         os << "ioDirectives.setRelationName(\"" << name << "\");\n";
         os << "IOSystem::getInstance().getWriter(";
         os << "SymbolMask({" << mask << "})";
-        os << ", symTable, ioDirectives";
+        os << ", symTable, ioDirectives, " << Global::config().has("provenance");
         os << ")->writeAll(*" << relName << ");\n";
         os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
     };

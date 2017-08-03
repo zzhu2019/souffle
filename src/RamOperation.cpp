@@ -275,6 +275,19 @@ void RamProject::print(std::ostream& os, int tabpos) const {
     }
 }
 
+/* add condition */
+void RamProject::addCondition(std::unique_ptr<RamCondition> c, RamOperation* root) {
+    // we can have condition arguments from lower levels, since the values we project are also from lower
+    // levels
+    assert(c->getLevel() <= level);
+
+    if (condition) {
+        condition = std::unique_ptr<RamCondition>(new RamAnd(std::move(condition), std::move(c)));
+    } else {
+        condition.swap(c);
+    }
+}
+
 /* print return */
 void RamReturn::print(std::ostream& os, int tabpos) const {
     const std::string tabs(tabpos, '\t');

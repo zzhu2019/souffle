@@ -31,10 +31,18 @@ namespace souffle {
 class WriteStreamCSV : public WriteStream {
 public:
     WriteStreamCSV(std::ostream& out, const SymbolMask& symbolMask, const SymbolTable& symbolTable,
-            char delimiter = '\t')
-            : delimiter(delimiter), out(out), symbolMask(symbolMask), symbolTable(symbolTable) {}
+            char delimiter = '\t', const bool provenance = false)
+            : WriteStream(provenance), delimiter(delimiter), out(out), symbolMask(symbolMask),
+              symbolTable(symbolTable) {}
     void writeNextTuple(const RamDomain* tuple) override {
-        if (symbolMask.getArity() == 0) {
+        auto arity = symbolMask.getArity();
+
+        // do not print last two provenance columns if provenance
+        if (isProvenance) {
+            arity -= 2;
+        }
+
+        if (arity == 0) {
             out << "()\n";
             return;
         }
@@ -44,7 +52,7 @@ public:
         } else {
             out << static_cast<int32_t>(tuple[0]);
         }
-        for (size_t col = 1; col < symbolMask.getArity(); ++col) {
+        for (size_t col = 1; col < arity; ++col) {
             out << delimiter;
             if (symbolMask.isSymbol(col)) {
                 std::string s = symbolTable.resolve(tuple[col]);
@@ -59,6 +67,12 @@ public:
     // optimizing, unsafe version. Doesn't lock, doesn't bound-check.
     void writeNextTupleUnsafe(const RamDomain* tuple) {
         size_t arity = symbolMask.getArity();
+
+        // do not print last two provenance columns if provenance
+        if (isProvenance) {
+            arity -= 2;
+        }
+
         if (arity == 0) {
             out << "()\n";
             return;
@@ -92,8 +106,8 @@ private:
 class WriteFileCSV : public WriteStream {
 public:
     WriteFileCSV(const std::string& filename, const SymbolMask& symbolMask, const SymbolTable& symbolTable,
-            char delimiter = '\t')
-            : file(filename), writeStream(file, symbolMask, symbolTable, delimiter) {}
+            char delimiter = '\t', const bool provenance = false)
+            : file(filename), writeStream(file, symbolMask, symbolTable, delimiter, provenance) {}
     void writeNextTuple(const RamDomain* tuple) override {
         writeStream.writeNextTupleUnsafe(tuple);
     }
@@ -109,8 +123,8 @@ private:
 class WriteGZipFileCSV : public WriteStream {
 public:
     WriteGZipFileCSV(const std::string& filename, const SymbolMask& symbolMask,
-            const SymbolTable& symbolTable, char delimiter = '\t')
-            : file(filename), writeStream(file, symbolMask, symbolTable, delimiter) {}
+            const SymbolTable& symbolTable, char delimiter = '\t', const bool provenance = false)
+            : file(filename), writeStream(file, symbolMask, symbolTable, delimiter, provenance) {}
     void writeNextTuple(const RamDomain* tuple) override {
         writeStream.writeNextTuple(tuple);
     }
@@ -126,8 +140,8 @@ private:
 class WriteCoutCSV : public WriteStream {
 public:
     WriteCoutCSV(const std::string& relationName, const SymbolMask& symbolMask,
-            const SymbolTable& symbolTable, char delimiter = '\t')
-            : writeStream(std::cout, symbolMask, symbolTable, delimiter) {
+            const SymbolTable& symbolTable, char delimiter = '\t', const bool provenance = false)
+            : writeStream(std::cout, symbolMask, symbolTable, delimiter, provenance) {
         std::cout << "---------------\n" << relationName << "\n===============\n";
     }
     void writeNextTuple(const RamDomain* tuple) override {
@@ -156,16 +170,16 @@ protected:
 class WriteFileCSVFactory : public WriteStreamFactory, public WriteCSVFactory {
 public:
     std::unique_ptr<WriteStream> getWriter(const SymbolMask& symbolMask, const SymbolTable& symbolTable,
-            const IODirectives& ioDirectives) override {
+            const IODirectives& ioDirectives, const bool provenance) override {
         char delimiter = getDelimiter(ioDirectives);
 #ifdef USE_LIBZ
         if (ioDirectives.has("compress")) {
-            return std::unique_ptr<WriteGZipFileCSV>(
-                    new WriteGZipFileCSV(ioDirectives.get("filename"), symbolMask, symbolTable, delimiter));
+            return std::unique_ptr<WriteGZipFileCSV>(new WriteGZipFileCSV(
+                    ioDirectives.get("filename"), symbolMask, symbolTable, delimiter, provenance));
         }
 #endif
-        return std::unique_ptr<WriteFileCSV>(
-                new WriteFileCSV(ioDirectives.get("filename"), symbolMask, symbolTable, delimiter));
+        return std::unique_ptr<WriteFileCSV>(new WriteFileCSV(
+                ioDirectives.get("filename"), symbolMask, symbolTable, delimiter, provenance));
     }
     const std::string& getName() const override {
         static const std::string name = "file";
@@ -177,10 +191,10 @@ public:
 class WriteCoutCSVFactory : public WriteStreamFactory, public WriteCSVFactory {
 public:
     std::unique_ptr<WriteStream> getWriter(const SymbolMask& symbolMask, const SymbolTable& symbolTable,
-            const IODirectives& ioDirectives) override {
+            const IODirectives& ioDirectives, const bool provenance) override {
         char delimiter = getDelimiter(ioDirectives);
-        return std::unique_ptr<WriteCoutCSV>(
-                new WriteCoutCSV(ioDirectives.getRelationName(), symbolMask, symbolTable, delimiter));
+        return std::unique_ptr<WriteCoutCSV>(new WriteCoutCSV(
+                ioDirectives.getRelationName(), symbolMask, symbolTable, delimiter, provenance));
     }
     const std::string& getName() const override {
         static const std::string name = "stdout";

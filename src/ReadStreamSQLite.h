@@ -32,9 +32,9 @@ namespace souffle {
 class ReadStreamSQLite : public ReadStream {
 public:
     ReadStreamSQLite(const std::string& dbFilename, const std::string& relationName,
-            const SymbolMask& symbolMask, SymbolTable& symbolTable)
-            : dbFilename(dbFilename), relationName(relationName), symbolMask(symbolMask),
-              symbolTable(symbolTable) {
+            const SymbolMask& symbolMask, SymbolTable& symbolTable, const bool provenance)
+            : ReadStream(provenance), dbFilename(dbFilename), relationName(relationName),
+              symbolMask(symbolMask), symbolTable(symbolTable) {
         openDB();
         checkTableExists();
         prepareSelectStatement();
@@ -73,7 +73,7 @@ public:
             }
         }
 
-        if (column == symbolMask.getArity() - 2) {
+        if (isProvenance) {
             tuple[symbolMask.getArity() - 2] = 0;
             tuple[symbolMask.getArity() - 1] = 0;
         }
@@ -159,11 +159,11 @@ private:
 class ReadStreamSQLiteFactory : public ReadStreamFactory {
 public:
     std::unique_ptr<ReadStream> getReader(const SymbolMask& symbolMask, SymbolTable& symbolTable,
-            const IODirectives& ioDirectives) override {
+            const IODirectives& ioDirectives, const bool provenance) override {
         std::string dbName = ioDirectives.get("dbname");
         std::string relationName = ioDirectives.getRelationName();
         return std::unique_ptr<ReadStreamSQLite>(
-                new ReadStreamSQLite(dbName, relationName, symbolMask, symbolTable));
+                new ReadStreamSQLite(dbName, relationName, symbolMask, symbolTable, provenance));
     }
     const std::string& getName() const override {
         static const std::string name = "sqlite";

@@ -24,7 +24,13 @@
 namespace souffle {
 
 class ReadStream {
+protected:
+    bool isProvenance = false;
+
 public:
+    ReadStream() {}
+    ReadStream(const bool prov) : isProvenance(prov) {}
+
     template <typename T>
     void readAll(T& relation) {
         while (const auto next = readNextTuple()) {
@@ -39,8 +45,8 @@ public:
 
 class ReadStreamFactory {
 public:
-    virtual std::unique_ptr<ReadStream> getReader(
-            const SymbolMask& symbolMask, SymbolTable& symbolTable, const IODirectives& ioDirectives) = 0;
+    virtual std::unique_ptr<ReadStream> getReader(const SymbolMask& symbolMask, SymbolTable& symbolTable,
+            const IODirectives& ioDirectives, const bool provenance) = 0;
     virtual const std::string& getName() const = 0;
     virtual ~ReadStreamFactory() = default;
 };
