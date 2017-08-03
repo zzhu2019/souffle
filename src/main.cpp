@@ -434,7 +434,7 @@ int main(int argc, char** argv) {
             explain(interface, false);
         }
         */
-        explain(interface);
+        // explain(interface);
     }
 
     return 0;

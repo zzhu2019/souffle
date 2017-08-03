@@ -1214,7 +1214,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
         });
     }
 
-    return prog;
+    return std::move(prog);
 }
 
 }  // end of namespace souffle

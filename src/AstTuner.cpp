@@ -91,8 +91,8 @@ bool AutoScheduleTransformer::autotune(AstTranslationUnit& translationUnit, std:
         std::cout << "[ Converting to RAM Program ...                           ]\n";
     }
 
-    const RamProgram& prog = *(RamTranslator().translateProgram(translationUnit));
-    const RamStatement* stmt = prog.getMain();
+    std::unique_ptr<RamProgram>  prog = RamTranslator().translateProgram(translationUnit);
+    const RamStatement* stmt = prog->getMain();
 
     // check whether there is something to tune
     if (!stmt) {
@@ -131,7 +131,7 @@ bool AutoScheduleTransformer::autotune(AstTranslationUnit& translationUnit, std:
     }
 
     // run interpreter
-    interpreter.execute(table, prog);
+    interpreter.execute(table, *prog);
 
     if (verbose) {
         std::cout << "[                                                    Done ]\n";

@@ -15,7 +15,7 @@ public:
     virtual ~RamProgram() = default;
 
     std::vector<const RamNode*> getChildNodes() const {
-        return toVector<const RamNode*>();
+        return toVector<const RamNode*>(main.get());
     }
 
     void print(std::ostream& out) const {

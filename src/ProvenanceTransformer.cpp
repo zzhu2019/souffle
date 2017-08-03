@@ -100,10 +100,14 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
     };
 
     for (auto relation : program->getRelations()) {
+        std::cout << "LOOP" << std::endl;
         relation->addAttribute(std::unique_ptr<AstAttribute>(
-                new AstAttribute(std::string("@rule_number"), *(new AstTypeIdentifier("number")))));
+                new AstAttribute(std::string("@rule_number"), AstTypeIdentifier("number"))));
         relation->addAttribute(std::unique_ptr<AstAttribute>(
-                new AstAttribute(std::string("@level_number"), *(new AstTypeIdentifier("number")))));
+                new AstAttribute(std::string("@level_number"), AstTypeIdentifier("number"))));
+
+        program->print(std::cout);
+        std::cout << std::endl;
 
         // record clause number
         size_t clauseNum = 0;
@@ -144,6 +148,9 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
             clauseNum++;
         }
     }
+
+    // program->print(std::cout);
+    // std::cout << std::endl;
 
     return true;
 }
