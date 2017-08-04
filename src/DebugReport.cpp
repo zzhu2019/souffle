@@ -230,22 +230,6 @@ void DebugReporter::generateDebugReport(
     DebugReportSection topsortSCCGraphSection =
             getCodeSection(id + "-topsort-scc-graph", "SCC Topological Sort Order", topsortSCCGraph.str());
 
-    // TODO (azreika): adornment output temporarily disabled; should only be computed just before MST
-    //                 - unnecessarily recomputed too often, causing hangs. see issue #411
-    //                 - unnecessarily computed too early, causing segfaults with nonexistent relations. see
-    //                 issue #413
-    /*
-    std::stringstream adornment;
-    translationUnit.getAnalysis<Adornment>()->outputAdornment(adornment);
-    DebugReportSection adornmentSection =
-            getCodeSection(id + "-adornment-display", "Adornment", adornment.str());
-
-    translationUnit.getDebugReport().addSection(
-            DebugReportSection(id, title, {datalogSection, precedenceGraphSection, sccGraphSection,
-                                                  topsortSCCGraphSection, adornment-section},
-                    ""));
-    */
-
     translationUnit.getDebugReport().addSection(DebugReportSection(id, title,
             {datalogSection, precedenceGraphSection, sccGraphSection, topsortSCCGraphSection}, ""));
 }
