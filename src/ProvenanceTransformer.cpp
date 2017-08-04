@@ -112,7 +112,7 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
                 new AstAttribute(std::string("@level_number"), AstTypeIdentifier("number"))));
 
         // record clause number
-        size_t clauseNum = 0;
+        size_t clauseNum = 1;
         for (auto clause : relation->getClauses()) {
             clause->setClauseNum(clauseNum);
 
@@ -142,8 +142,7 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
 
             // if fact, level number is 0
             if (clause->isFact()) {
-                clause->getHead()->addArgument(
-                        std::unique_ptr<AstArgument>(new AstNumberConstant(clauseNum)));
+                clause->getHead()->addArgument(std::unique_ptr<AstArgument>(new AstNumberConstant(0)));
                 clause->getHead()->addArgument(std::unique_ptr<AstArgument>(new AstNumberConstant(0)));
             } else {
                 std::vector<AstArgument*> bodyLevels;
@@ -173,12 +172,12 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
                 clause->getHead()->addArgument(
                         std::unique_ptr<AstArgument>(new AstNumberConstant(clauseNum)));
                 clause->getHead()->addArgument(std::unique_ptr<AstArgument>(getNextLevelNumber(bodyLevels)));
+
+                clauseNum++;
+
+                // add info relation
+                program->addRelation(makeInfoRelation(*clause, translationUnit));
             }
-
-            // add info relation
-            program->addRelation(makeInfoRelation(*clause, translationUnit));
-
-            clauseNum++;
         }
     }
 

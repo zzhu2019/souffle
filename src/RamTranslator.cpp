@@ -572,9 +572,17 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& cl
             auto uniquenessEnforcement = new RamNotExists(getRelation(&head));
             auto arity = head.getArity() - 2;
 
+            bool add = true;
             // add args for original tuple
             for (size_t i = 0; i < arity; i++) {
                 auto arg = head.getArgument(i);
+
+                // don't add counters
+                if (dynamic_cast<AstCounter*>(arg)) {
+                    add = false;
+                    break;
+                }
+
                 uniquenessEnforcement->addArg(translateValue(arg, valueIndex));
             }
 
@@ -582,7 +590,9 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& cl
             uniquenessEnforcement->addArg(nullptr);
             uniquenessEnforcement->addArg(nullptr);
 
-            project->addCondition(std::unique_ptr<RamCondition>(uniquenessEnforcement), project);
+            if (add) {
+                project->addCondition(std::unique_ptr<RamCondition>(uniquenessEnforcement), project);
+            }
         }
 
         // build up insertion call
