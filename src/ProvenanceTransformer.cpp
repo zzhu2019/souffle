@@ -82,9 +82,14 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
 
     // get next level number
     auto getNextLevelNumber = [&](std::vector<AstArgument*> levels) {
-        if (levels.size() < 2) {
-            return new AstBinaryFunctor(BinaryOp::ADD, std::unique_ptr<AstArgument>(levels[0]),
-                    std::unique_ptr<AstArgument>(new AstNumberConstant(1)));
+        if (levels.size() == 0) {
+            return static_cast<AstArgument*>(new AstNumberConstant(0));
+        }
+
+        if (levels.size() == 1) {
+            return static_cast<AstArgument*>(
+                    new AstBinaryFunctor(BinaryOp::ADD, std::unique_ptr<AstArgument>(levels[0]),
+                            std::unique_ptr<AstArgument>(new AstNumberConstant(1))));
         }
 
         auto currentMax = new AstBinaryFunctor(BinaryOp::MAX, std::unique_ptr<AstArgument>(levels[0]),
@@ -95,24 +100,45 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
                     std::unique_ptr<AstArgument>(levels[i]));
         }
 
-        return new AstBinaryFunctor(BinaryOp::ADD, std::unique_ptr<AstArgument>(currentMax),
-                std::unique_ptr<AstArgument>(new AstNumberConstant(1)));
+        return static_cast<AstArgument*>(
+                new AstBinaryFunctor(BinaryOp::ADD, std::unique_ptr<AstArgument>(currentMax),
+                        std::unique_ptr<AstArgument>(new AstNumberConstant(1))));
     };
 
     for (auto relation : program->getRelations()) {
-        std::cout << "LOOP" << std::endl;
         relation->addAttribute(std::unique_ptr<AstAttribute>(
                 new AstAttribute(std::string("@rule_number"), AstTypeIdentifier("number"))));
         relation->addAttribute(std::unique_ptr<AstAttribute>(
                 new AstAttribute(std::string("@level_number"), AstTypeIdentifier("number"))));
 
-        program->print(std::cout);
-        std::cout << std::endl;
-
         // record clause number
         size_t clauseNum = 0;
         for (auto clause : relation->getClauses()) {
             clause->setClauseNum(clauseNum);
+
+            // mapper to add two provenance columns to atoms
+            struct M : public AstNodeMapper {
+                using AstNodeMapper::operator();
+
+                std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+                    // add provenance columns
+                    if (auto atom = dynamic_cast<AstAtom*>(node.get())) {
+                        atom->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
+                        atom->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
+                    } else if (auto neg = dynamic_cast<AstNegation*>(node.get())) {
+                        auto atom = neg->getAtom();
+                        atom->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
+                        atom->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
+                    }
+
+                    // otherwise - apply mapper recursively
+                    node->apply(*this);
+                    return node;
+                }
+            };
+
+            // add unnamed vars to each atom nested in arguments of head
+            clause->getHead()->apply(M());
 
             // if fact, level number is 0
             if (clause->isFact()) {
@@ -125,6 +151,10 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
                 for (size_t i = 0; i < clause->getBodyLiterals().size(); i++) {
                     auto lit = clause->getBodyLiterals()[i];
 
+                    // add unnamed vars to each atom nested in arguments of lit
+                    lit->apply(M());
+
+                    // add two provenance columns to lit; first is rule num, second is level num
                     if (auto atom = dynamic_cast<AstAtom*>(lit)) {
                         atom->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
                         atom->addArgument(std::unique_ptr<AstArgument>(
@@ -137,6 +167,7 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
                     }
                 }
 
+                // add two provenance columns to head lit
                 clause->getHead()->addArgument(
                         std::unique_ptr<AstArgument>(new AstNumberConstant(clauseNum)));
                 clause->getHead()->addArgument(std::unique_ptr<AstArgument>(getNextLevelNumber(bodyLevels)));
