@@ -18,10 +18,12 @@
 #pragma once
 
 #include "RamCondition.h"
+#include "RamNode.h"
 #include "RamOperation.h"
 #include "RamStatement.h"
 #include "RamValue.h"
 
+#include <functional>
 #include <typeinfo>
 #include <vector>
 

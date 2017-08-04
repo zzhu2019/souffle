@@ -90,12 +90,11 @@ public:
  */
 class SouffleInterpreterInterface : public SouffleProgram {
 private:
-    RamEnvironment& env;
     SymbolTable& symTable;
     std::vector<RamRelationInterface*> interfaces;
 
 public:
-    SouffleInterpreterInterface(RamEnvironment& r, SymbolTable& s) : env(r), symTable(s) {
+    SouffleInterpreterInterface(RamEnvironment& r, SymbolTable& s) : symTable(s) {
         uint32_t id = 0;
         for (auto& rel_pair : r.getRelationMap()) {
             auto& rel = rel_pair.second;

@@ -1253,9 +1253,9 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                                 AstArgument* newArgument;
                                 if (res[res.size() - 1] == 's') {
                                     // string argument
-                                    const char* str = res.substr(0, res.size() - 2).c_str();
-                                    newArgument =
-                                            new AstStringConstant(translationUnit.getSymbolTable(), str);
+                                    std::string str = res.substr(0, res.size() - 2);
+                                    newArgument = new AstStringConstant(
+                                            translationUnit.getSymbolTable(), str.c_str());
                                 } else {
                                     // numeric argument
                                     size_t argEnd = argName.find('_', argStart + 1);
