@@ -57,6 +57,9 @@
 /* Relation uses a union relation */
 #define EQREL_RELATION (0x80)
 
+/* Relation is inlined */
+#define INLINE_RELATION (0x100)
+
 namespace souffle {
 
 /*!
@@ -177,6 +180,11 @@ public:
     /** Check whether relation is an overridable relation */
     bool isOverridable() const {
         return (qualifier & OVERRIDABLE_RELATION) != 0;
+    }
+
+    /** Check whether relation is an inlined relation */
+    bool isInline() const {
+        return (qualifier & INLINE_RELATION) != 0;
     }
 
     /** Operator overload, calls print if reference is given */

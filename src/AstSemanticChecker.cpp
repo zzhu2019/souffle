@@ -619,6 +619,17 @@ void AstSemanticChecker::checkRelation(ErrorReport& report, const TypeEnvironmen
         report.addWarning(
                 "No rules/facts defined for relation " + toString(relation.getName()), relation.getSrcLoc());
     }
+
+    // inlined relations cannot be computed or input relations
+    if (relation.isInline()) {
+      if (relation.isComputed()) {
+        report.addError("Computed relation " + toString(relation.getName()) + " cannot be inlined", relation.getSrcLoc());
+      }
+
+      if (relation.isInput()) {
+        report.addError("Input relation " + toString(relation.getName()) + " cannot be inlined.", relation.getSrcLoc());
+      }
+    }
 }
 
 void AstSemanticChecker::checkRules(ErrorReport& report, const TypeEnvironment& typeEnv,
