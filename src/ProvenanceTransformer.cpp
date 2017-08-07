@@ -77,6 +77,15 @@ std::unique_ptr<AstRelation> makeInfoRelation(
     return std::unique_ptr<AstRelation>(infoRelation);
 }
 
+void transformEqrelRelation(AstRelation& rel) {
+    rel.setQualifier(BTREE_RELATION);
+    assert(rel.getArity() == 2);
+
+    // symmetry
+    // reflexivity
+    // transitivity
+}
+
 bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) {
     auto program = translationUnit.getProgram();
 
