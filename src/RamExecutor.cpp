@@ -2375,7 +2375,7 @@ std::string RamCompiler::generateCode(
         for (auto& sub : prog.getSubroutines()) {
             os << "if (name == \"" << sub.first << "\") {\n"
                << "subproof_" << subroutineNum
-               << "(args, ret);\n"  // subproof_i to deal with special characters in relation names
+               << "(args, ret, err);\n"  // subproof_i to deal with special characters in relation names
                << "}\n";
             subroutineNum++;
         }
@@ -2386,8 +2386,8 @@ std::string RamCompiler::generateCode(
         for (auto& sub : prog.getSubroutines()) {
             // method header
             os << "void "
-               << "subproof_" << subroutineNum
-               << "(const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {\n";
+               << "subproof_" << subroutineNum << "(const std::vector<RamDomain>* args, "
+                                                  "std::vector<RamDomain>* ret, std::vector<bool>* err) {\n";
 
             // generate code for body
             genCode(os, sub.second, indices);
@@ -2451,8 +2451,8 @@ std::string RamCompiler::generateCode(
     os << "obj.loadAll(opt.getInputFileDir());\n";
     os << "obj.run();\n";
     os << "obj.printAll(opt.getOutputFileDir());\n";
-    if (Global::config().has("provenance")) {
-        // os << "explain(obj);\n";
+    if (Global::config().get("provenance") == "1") {
+        os << "explain(obj);\n";
     }
     /*
     if (Global::config().get("provenance") == "1") {
