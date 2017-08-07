@@ -656,8 +656,7 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
 
         // -- return from subroutine --
         void visitReturn(const RamReturn& ret) override {
-            auto vals = ret.getValues();
-            for (auto val : vals) {
+            for (auto val : ret.getValues()) {
                 if (val == nullptr) {
                     ctxt.addReturnValue(0, true);
                 } else {
@@ -2033,7 +2032,7 @@ std::string RamCompiler::generateCode(
 
     // collect all used indices
     IndexMap indices;
-    visitDepthFirst(*(prog.getMain()), [&](const RamNode& node) {
+    visitDepthFirst(prog, [&](const RamNode& node) {
         if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
             indices[scan->getRelation()].addSearch(scan->getRangeQueryColumns());
         }

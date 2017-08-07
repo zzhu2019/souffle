@@ -77,6 +77,78 @@ std::unique_ptr<AstRelation> makeInfoRelation(
     return std::unique_ptr<AstRelation>(infoRelation);
 }
 
+/** Transform eqrel relations to explicitly define equivalence relations */
+void transformEqrelRelation(AstRelation& rel) {
+    assert(rel.isEqRel() && "attempting to transform non-eqrel relation");
+    assert(rel.getArity() == 2 && "eqrel relation not binary");
+
+    rel.setQualifier(rel.getQualifier() - EQREL_RELATION + BTREE_RELATION);
+
+    // reflexivity
+    // first reflexive clause: A(x, x) :- A(x, _).
+    auto reflexiveClause = new AstClause();
+    auto reflexiveClauseHead = new AstAtom(rel.getName());
+    reflexiveClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+    reflexiveClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+
+    auto reflexiveClauseBody = new AstAtom(rel.getName());
+    reflexiveClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+    reflexiveClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
+
+    reflexiveClause->setHead(std::unique_ptr<AstAtom>(reflexiveClauseHead));
+    reflexiveClause->addToBody(std::unique_ptr<AstLiteral>(reflexiveClauseBody));
+    rel.addClause(std::unique_ptr<AstClause>(reflexiveClause));
+
+    // second reflexive clause: A(x, x) :- A(_, x).
+    auto reflexiveClause2 = new AstClause();
+    auto reflexiveClause2Head = new AstAtom(rel.getName());
+    reflexiveClause2Head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+    reflexiveClause2Head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+
+    auto reflexiveClause2Body = new AstAtom(rel.getName());
+    reflexiveClause2Body->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
+    reflexiveClause2Body->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+
+    reflexiveClause2->setHead(std::unique_ptr<AstAtom>(reflexiveClause2Head));
+    reflexiveClause2->addToBody(std::unique_ptr<AstLiteral>(reflexiveClause2Body));
+    rel.addClause(std::unique_ptr<AstClause>(reflexiveClause2));
+
+    // symmetric
+    // symmetric clause: A(x, y) :- A(y, x).
+    auto symClause = new AstClause();
+    auto symClauseHead = new AstAtom(rel.getName());
+    symClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+    symClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("y")));
+
+    auto symClauseBody = new AstAtom(rel.getName());
+    symClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("y")));
+    symClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+
+    symClause->setHead(std::unique_ptr<AstAtom>(symClauseHead));
+    symClause->addToBody(std::unique_ptr<AstLiteral>(symClauseBody));
+    rel.addClause(std::unique_ptr<AstClause>(symClause));
+
+    // transitivity
+    // transitive clause: A(x, z) :- A(x, y), A(y, z).
+    auto transitiveClause = new AstClause();
+    auto transitiveClauseHead = new AstAtom(rel.getName());
+    transitiveClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+    transitiveClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("z")));
+
+    auto transitiveClauseBody = new AstAtom(rel.getName());
+    transitiveClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+    transitiveClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("y")));
+
+    auto transitiveClauseBody2 = new AstAtom(rel.getName());
+    transitiveClauseBody2->addArgument(std::unique_ptr<AstArgument>(new AstVariable("y")));
+    transitiveClauseBody2->addArgument(std::unique_ptr<AstArgument>(new AstVariable("z")));
+
+    transitiveClause->setHead(std::unique_ptr<AstAtom>(transitiveClauseHead));
+    transitiveClause->addToBody(std::unique_ptr<AstLiteral>(transitiveClauseBody));
+    transitiveClause->addToBody(std::unique_ptr<AstLiteral>(transitiveClauseBody2));
+    rel.addClause(std::unique_ptr<AstClause>(transitiveClause));
+}
+
 bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) {
     auto program = translationUnit.getProgram();
 
@@ -106,6 +178,10 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
     };
 
     for (auto relation : program->getRelations()) {
+        if (relation->isEqRel()) {
+            transformEqrelRelation(*relation);
+        }
+
         relation->addAttribute(std::unique_ptr<AstAttribute>(
                 new AstAttribute(std::string("@rule_number"), AstTypeIdentifier("number"))));
         relation->addAttribute(std::unique_ptr<AstAttribute>(
