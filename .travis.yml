@@ -80,7 +80,6 @@ jobs:
   - stage: Style
     # Style check
     os: linux
-    env: TEST_FORMAT=1
     sudo: false
     addons:
       apt:
@@ -134,11 +133,8 @@ jobs:
   - <<: *linuxpackage
     env:
     - *gcc_environment
-    - MAKEPACKAGE=1
   # Make the OSX deb packages.
   - <<: *osxpackage
-    env:
-    - MAKEPACKAGE=1
 
 after_failure:
   - ".travis/after_failure.sh"
