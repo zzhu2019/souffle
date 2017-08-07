@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false,
                                     "Write debugging output to HTML report."},
-                            {"provenance", 't', "", "", false, "Enable provenance information."},
+                            {"provenance", 't', "EXPLAIN", "", false, "Enable provenance information."},
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
@@ -423,7 +423,8 @@ int main(int argc, char** argv) {
     }
 
     // only run explain interface if interpreted
-    if (Global::config().has("provenance") && dynamic_cast<RamInterpreter*>(executor.get()) && env != nullptr) {
+    if (Global::config().has("provenance") && dynamic_cast<RamInterpreter*>(executor.get()) &&
+            env != nullptr) {
         // construct SouffleProgram from env
         SouffleInterpreterInterface interface(*ramProg, *executor, *env, translationUnit->getSymbolTable());
         /*
@@ -434,7 +435,9 @@ int main(int argc, char** argv) {
             explain(interface, false);
         }
         */
-        // explain(interface);
+        if (Global::config().get("provenance") == "1") {
+            explain(interface);
+        }
     }
 
     return 0;

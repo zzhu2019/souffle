@@ -74,6 +74,7 @@ namespace {
 class EvalContext {
     std::vector<const RamDomain*> data;
     std::vector<RamDomain>* returnValues;
+    std::vector<bool>* returnErrors;
     const std::vector<RamDomain>* args;
 
 public:
@@ -96,8 +97,17 @@ public:
         returnValues = retVals;
     }
 
-    void addReturnValue(RamDomain val) {
+    void addReturnValue(RamDomain val, bool err = false) {
         returnValues->push_back(val);
+        returnErrors->push_back(err);
+    }
+
+    std::vector<bool>* getReturnErrors() const {
+        return returnErrors;
+    }
+
+    void setReturnErrors(std::vector<bool>* retErrs) {
+        returnErrors = retErrs;
     }
 
     const std::vector<RamDomain>* getArguments() const {
@@ -648,7 +658,11 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
         void visitReturn(const RamReturn& ret) override {
             auto vals = ret.getValues();
             for (auto val : vals) {
-                ctxt.addReturnValue(eval(val, env, ctxt));
+                if (val == nullptr) {
+                    ctxt.addReturnValue(0, true);
+                } else {
+                    ctxt.addReturnValue(eval(val, env, ctxt));
+                }
             }
         }
 
@@ -1968,7 +1982,13 @@ public:
 
     void visitReturn(const RamReturn& ret, std::ostream& out) override {
         for (auto val : ret.getValues()) {
-            out << "ret->push_back(" << print(val) << ");\n";
+            if (val == nullptr) {
+                out << "ret->push_back(0);\n";
+                out << "err->push_back(true);\n";
+            } else {
+                out << "ret->push_back(" << print(val) << ");\n";
+                out << "err->push_back(false);\n";
+            }
         }
     }
 
@@ -2348,13 +2368,14 @@ std::string RamCompiler::generateCode(
     if (Global::config().has("provenance")) {
         // generate subroutine adapter
         os << "void executeSubroutine(std::string name, const std::vector<RamDomain>* args, "
-              "std::vector<RamDomain>* ret) override {\n";
+              "std::vector<RamDomain>* ret, std::vector<bool>* err) override {\n";
 
         // subroutine number
         size_t subroutineNum = 0;
         for (auto& sub : prog.getSubroutines()) {
             os << "if (name == \"" << sub.first << "\") {\n"
-               << "subproof_" << subroutineNum << "(args, ret);\n" // subproof_i to deal with special characters in relation names
+               << "subproof_" << subroutineNum
+               << "(args, ret);\n"  // subproof_i to deal with special characters in relation names
                << "}\n";
             subroutineNum++;
         }
@@ -2364,7 +2385,8 @@ std::string RamCompiler::generateCode(
         subroutineNum = 0;
         for (auto& sub : prog.getSubroutines()) {
             // method header
-            os << "void " << "subproof_" << subroutineNum
+            os << "void "
+               << "subproof_" << subroutineNum
                << "(const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {\n";
 
             // generate code for body
@@ -2547,9 +2569,11 @@ std::ostream& os) const {
 */
 
 void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
-        const std::vector<RamDomain>* arguments, std::vector<RamDomain>* returnValues) {
+        const std::vector<RamDomain>* arguments, std::vector<RamDomain>* returnValues,
+        std::vector<bool>* returnErrors) {
     EvalContext ctxt;
     ctxt.setReturnValues(returnValues);
+    ctxt.setReturnErrors(returnErrors);
     ctxt.setArguments(arguments);
 
     // run subroutine

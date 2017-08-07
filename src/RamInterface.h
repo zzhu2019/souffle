@@ -137,9 +137,9 @@ public:
     void dumpOutputs(std::ostream&) {}
 
     // run subroutine
-    void executeSubroutine(
-            std::string name, const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {
-        exec.executeSubroutine(env, prog.getSubroutine(name), args, ret);
+    void executeSubroutine(std::string name, const std::vector<RamDomain>* args, std::vector<RamDomain>* ret,
+            std::vector<bool>* err) {
+        exec.executeSubroutine(env, prog.getSubroutine(name), args, ret, err);
     }
 
     const SymbolTable& getSymbolTable() const {

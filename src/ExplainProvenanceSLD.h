@@ -57,7 +57,7 @@ private:
         return std::make_pair(-1, -1);
     }
 
-    std::vector<RamDomain> argsToNums(std::string relName, std::vector<std::string> args) {
+    std::vector<RamDomain> argsToNums(std::string relName, std::vector<std::string>& args) {
         std::vector<RamDomain> nums;
 
         auto rel = prog.getRelation(relName);
@@ -73,16 +73,21 @@ private:
         return nums;
     }
 
-    std::vector<std::string> numsToArgs(std::string relName, std::vector<RamDomain> nums) {
+    std::vector<std::string> numsToArgs(
+            std::string relName, std::vector<RamDomain>& nums, std::vector<bool>* err = 0) {
         std::vector<std::string> args;
 
         auto rel = prog.getRelation(relName);
 
         for (size_t i = 0; i < nums.size(); i++) {
-            if (*rel->getAttrType(i) == 's') {
-                args.push_back(prog.getSymbolTable().resolve(nums[i]));
+            if (err && (*err)[i]) {
+                args.push_back("_");
             } else {
-                args.push_back(std::to_string(nums[i]));
+                if (*rel->getAttrType(i) == 's') {
+                    args.push_back(prog.getSymbolTable().resolve(nums[i]));
+                } else {
+                    args.push_back(std::to_string(nums[i]));
+                }
             }
         }
 
@@ -178,36 +183,42 @@ public:
 
         // make return vector pointer
         std::vector<RamDomain>* ret = new std::vector<RamDomain>();
+        std::vector<bool>* err = new std::vector<bool>();
 
         // add level number to tuple
         tuple.push_back(levelNum);
 
         // execute subroutine to get subproofs
-        prog.executeSubroutine(relName + "_" + std::to_string(ruleNum) + "_subproof", &tuple, ret);
+        prog.executeSubroutine(relName + "_" + std::to_string(ruleNum) + "_subproof", &tuple, ret, err);
 
         // recursively get nodes for subproofs
-        auto tupleStart = ret->begin();
+        size_t tupleCurInd = 0;
         for (std::string bodyRel : info[std::make_pair(relName, ruleNum)]) {
+            // handle negated atom names
             auto bodyRelAtomName = bodyRel;
             if (bodyRel[0] == '!') {
                 bodyRelAtomName = bodyRel.substr(1);
             }
 
+            // traverse subroutine return using pointers
             size_t arity = prog.getRelation(bodyRelAtomName)->getArity();
-            auto tupleEnd = tupleStart + arity;
+            auto tupleEnd = tupleCurInd + arity;
 
+            // store current tuple and error
             std::vector<RamDomain> subproofTuple;
+            std::vector<bool> subproofTupleError;
 
-            for (; tupleStart < tupleEnd - 2; tupleStart++) {
-                subproofTuple.push_back(*tupleStart);
+            for (; tupleCurInd < tupleEnd - 2; tupleCurInd++) {
+                subproofTuple.push_back((*ret)[tupleCurInd]);
+                subproofTupleError.push_back((*err)[tupleCurInd]);
             }
 
-            int subproofRuleNum = *(tupleStart);
-            int subproofLevelNum = *(tupleStart + 1);
+            int subproofRuleNum = (*ret)[tupleCurInd];
+            int subproofLevelNum = (*ret)[tupleCurInd + 1];
 
             if (bodyRel[0] == '!') {
                 std::stringstream joinedTuple;
-                joinedTuple << join(numsToArgs(bodyRelAtomName, subproofTuple), ", ");
+                joinedTuple << join(numsToArgs(bodyRelAtomName, subproofTuple, &subproofTupleError), ", ");
                 auto joinedTupleStr = joinedTuple.str();
                 internalNode->add_child(
                         std::unique_ptr<TreeNode>(new LeafNode(bodyRel + "(" + joinedTupleStr + ")")));
@@ -215,8 +226,11 @@ public:
                 internalNode->add_child(explain(bodyRel, subproofTuple, subproofRuleNum, subproofLevelNum));
             }
 
-            tupleStart = tupleEnd;
+            tupleCurInd = tupleEnd;
         }
+
+        delete ret;
+        delete err;
 
         return std::unique_ptr<TreeNode>(internalNode);
     }

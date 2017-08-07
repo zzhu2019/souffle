@@ -297,7 +297,7 @@ void RamReturn::print(std::ostream& os, int tabpos) const {
 
     for (auto val : getValues()) {
         if (val == nullptr) {
-            os << "NULL";
+            os << "_";
         } else {
             val->print(os);
         }
