@@ -65,6 +65,8 @@ aliases:
     install: ".travis/osx/install.sh"
     before_script: ".travis/init_test.sh"
     script: ".travis/run_test.sh"
+    cache:
+      directories: $HOME/Library/Caches/Homebrew
   - &osxpackage
     <<: *osxclang
     stage: Packaging
