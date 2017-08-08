@@ -61,6 +61,9 @@ private:
         std::vector<RamDomain> nums;
 
         auto rel = prog.getRelation(relName);
+        if (rel == nullptr) {
+            return std::vector<RamDomain>();
+        }
 
         for (size_t i = 0; i < args.size(); i++) {
             if (*rel->getAttrType(i) == 's') {
@@ -78,6 +81,9 @@ private:
         std::vector<std::string> args;
 
         auto rel = prog.getRelation(relName);
+        if (rel == nullptr) {
+            return std::vector<std::string>();
+        }
 
         for (size_t i = 0; i < nums.size(); i++) {
             if (err && (*err)[i]) {
@@ -237,6 +243,9 @@ public:
 
     std::unique_ptr<TreeNode> explain(std::string relName, std::vector<std::string> args) override {
         auto tuple = argsToNums(relName, args);
+        if (tuple == std::vector<RamDomain>()) {
+            return std::unique_ptr<TreeNode>(new LeafNode("Relation not found"));
+        }
 
         std::pair<int, int> tupleInfo = findTuple(relName, tuple);
         int ruleNum = tupleInfo.first;
