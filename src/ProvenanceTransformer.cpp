@@ -82,51 +82,7 @@ void transformEqrelRelation(AstRelation& rel) {
     assert(rel.isEqRel() && "attempting to transform non-eqrel relation");
     assert(rel.getArity() == 2 && "eqrel relation not binary");
 
-    rel.setQualifier(rel.getQualifier() - EQREL_RELATION + BTREE_RELATION);
-
-    // reflexivity
-    // first reflexive clause: A(x, x) :- A(x, _).
-    auto reflexiveClause = new AstClause();
-    auto reflexiveClauseHead = new AstAtom(rel.getName());
-    reflexiveClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
-    reflexiveClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
-
-    auto reflexiveClauseBody = new AstAtom(rel.getName());
-    reflexiveClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
-    reflexiveClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
-
-    reflexiveClause->setHead(std::unique_ptr<AstAtom>(reflexiveClauseHead));
-    reflexiveClause->addToBody(std::unique_ptr<AstLiteral>(reflexiveClauseBody));
-    rel.addClause(std::unique_ptr<AstClause>(reflexiveClause));
-
-    // second reflexive clause: A(x, x) :- A(_, x).
-    auto reflexiveClause2 = new AstClause();
-    auto reflexiveClause2Head = new AstAtom(rel.getName());
-    reflexiveClause2Head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
-    reflexiveClause2Head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
-
-    auto reflexiveClause2Body = new AstAtom(rel.getName());
-    reflexiveClause2Body->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
-    reflexiveClause2Body->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
-
-    reflexiveClause2->setHead(std::unique_ptr<AstAtom>(reflexiveClause2Head));
-    reflexiveClause2->addToBody(std::unique_ptr<AstLiteral>(reflexiveClause2Body));
-    rel.addClause(std::unique_ptr<AstClause>(reflexiveClause2));
-
-    // symmetric
-    // symmetric clause: A(x, y) :- A(y, x).
-    auto symClause = new AstClause();
-    auto symClauseHead = new AstAtom(rel.getName());
-    symClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
-    symClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("y")));
-
-    auto symClauseBody = new AstAtom(rel.getName());
-    symClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("y")));
-    symClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
-
-    symClause->setHead(std::unique_ptr<AstAtom>(symClauseHead));
-    symClause->addToBody(std::unique_ptr<AstLiteral>(symClauseBody));
-    rel.addClause(std::unique_ptr<AstClause>(symClause));
+    rel.setQualifier(rel.getQualifier() - EQREL_RELATION);
 
     // transitivity
     // transitive clause: A(x, z) :- A(x, y), A(y, z).
@@ -147,6 +103,36 @@ void transformEqrelRelation(AstRelation& rel) {
     transitiveClause->addToBody(std::unique_ptr<AstLiteral>(transitiveClauseBody));
     transitiveClause->addToBody(std::unique_ptr<AstLiteral>(transitiveClauseBody2));
     rel.addClause(std::unique_ptr<AstClause>(transitiveClause));
+
+    // symmetric
+    // symmetric clause: A(x, y) :- A(y, x).
+    auto symClause = new AstClause();
+    auto symClauseHead = new AstAtom(rel.getName());
+    symClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+    symClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("y")));
+
+    auto symClauseBody = new AstAtom(rel.getName());
+    symClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("y")));
+    symClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+
+    symClause->setHead(std::unique_ptr<AstAtom>(symClauseHead));
+    symClause->addToBody(std::unique_ptr<AstLiteral>(symClauseBody));
+    rel.addClause(std::unique_ptr<AstClause>(symClause));
+
+    // reflexivity
+    // reflexive clause: A(x, x) :- A(x, _).
+    auto reflexiveClause = new AstClause();
+    auto reflexiveClauseHead = new AstAtom(rel.getName());
+    reflexiveClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+    reflexiveClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+
+    auto reflexiveClauseBody = new AstAtom(rel.getName());
+    reflexiveClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstVariable("x")));
+    reflexiveClauseBody->addArgument(std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
+
+    reflexiveClause->setHead(std::unique_ptr<AstAtom>(reflexiveClauseHead));
+    reflexiveClause->addToBody(std::unique_ptr<AstLiteral>(reflexiveClauseBody));
+    rel.addClause(std::unique_ptr<AstClause>(reflexiveClause));
 }
 
 bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) {

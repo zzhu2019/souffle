@@ -1213,7 +1213,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
             std::stringstream relName;
             relName << clause.getHead()->getName();
 
-            if (relName.str().find("@info") != std::string::npos) {
+            if (relName.str().find("@info") != std::string::npos || clause.getBodyLiterals().size() == 0) {
                 return;
             }
 

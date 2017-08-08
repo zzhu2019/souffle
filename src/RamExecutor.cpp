@@ -633,6 +633,22 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
         void visitProject(const RamProject& project) override {
             // check constraints
             RamCondition* condition = project.getCondition();
+            /*
+            if (condition) {
+                condition->print(std::cout);
+                std::cout << " " << eval(*condition, env, ctxt);
+
+                if (auto ne = dynamic_cast<RamNotExists*>(condition)) {
+                    for (auto val : ne->getValues()) {
+                        if (val == nullptr) {
+                            std::cout << " _";
+                        } else {
+                            std::cout << " " << eval(*val, env, ctxt);
+                        }
+                    }
+                }
+            }
+            */
             if (condition && !eval(*condition, env, ctxt)) {
                 return;  // condition violated => skip insert
             }
@@ -644,6 +660,8 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
             for (size_t i = 0; i < arity; i++) {
                 tuple[i] = eval(values[i], env, ctxt);
             }
+
+            std::cout << std::endl;
 
             // check filter relation
             if (project.hasFilter() && env.getRelation(project.getFilter()).exists(tuple)) {
@@ -825,7 +843,8 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
                 try {
                     IOSystem::getInstance()
                             .getWriter(store.getRelation().getSymbolMask(), env.getSymbolTable(),
-                                    ioDirectives, Global::config().has("provenance"))
+                             //        ioDirectives, Global::config().has("provenance"))
+                             ioDirectives, false)
                             ->writeAll(rel);
                 } catch (std::exception& e) {
                     std::cerr << e.what();
