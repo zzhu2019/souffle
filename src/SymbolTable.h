@@ -133,6 +133,11 @@ public:
         return newSymbolOfIndex(symbol);
     }
 
+    /** Find the index of a symbol in the table, inserting a new symbol if it does not exist there already. */
+    const size_t unsafeLookup(const char* symbol) {
+        return newSymbolOfIndex(symbol);
+    }
+
     /** Find a symbol in the table by its index, note that this gives an error if the index is out of bounds.
      */
     const char* resolve(const size_t idx) const {
@@ -183,6 +188,10 @@ public:
             out << entry.first << "\t => " << entry.second;
         }) << "\n";
         out << "}\n";
+    }
+
+    Lock::Lease acquireLock() const {
+        return access.acquire();
     }
 
     /** Stream operator, used as a convenience for print. */
