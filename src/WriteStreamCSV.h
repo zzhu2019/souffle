@@ -73,8 +73,8 @@ protected:
 class WriteGZipFileCSV : public WriteStream {
 public:
     WriteGZipFileCSV(const std::string& filename, const SymbolMask& symbolMask,
-            const SymbolTable& symbolTable, std::string delimiter = "\t")
-            : WriteStream(symbolMask, symbolTable), delimiter(std::move(delimiter)), file(filename) {}
+            const SymbolTable& symbolTable, std::string delimiter = "\t", const bool provenance = false)
+            : WriteStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)), file(filename) {}
 
     ~WriteGZipFileCSV() override = default;
 
@@ -165,7 +165,7 @@ protected:
 class WriteFileCSVFactory : public WriteStreamFactory, public WriteCSVFactory {
 public:
     std::unique_ptr<WriteStream> getWriter(const SymbolMask& symbolMask, const SymbolTable& symbolTable,
-            const IODirectives& ioDirectives) override {
+            const IODirectives& ioDirectives, const bool provenance) override {
         std::string delimiter = getDelimiter(ioDirectives);
 #ifdef USE_LIBZ
         if (ioDirectives.has("compress")) {

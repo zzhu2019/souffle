@@ -22,9 +22,6 @@
 namespace souffle {
 
 class WriteStream {
-protected:
-    bool isProvenance;
-
 public:
     WriteStream(const SymbolMask& symbolMask, const SymbolTable& symbolTable, const bool prov)
             : symbolMask(symbolMask), symbolTable(symbolTable), isProvenance(prov) {}
@@ -46,6 +43,7 @@ protected:
     }
     const SymbolMask& symbolMask;
     const SymbolTable& symbolTable;
+    bool isProvenance;
 };
 
 class WriteStreamFactory {

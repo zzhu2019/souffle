@@ -24,18 +24,9 @@
 namespace souffle {
 
 class ReadStream {
-protected:
-    bool isProvenance = false;
-
 public:
-<<<<<<< HEAD
-    ReadStream() {}
-    ReadStream(const bool prov) : isProvenance(prov) {}
-
-=======
-    ReadStream(const SymbolMask& symbolMask, SymbolTable& symbolTable)
-            : symbolMask(symbolMask), symbolTable(symbolTable) {}
->>>>>>> 5fd84e72e8c97f18f5c71d9db6edfb3ae378c9e0
+    ReadStream(const SymbolMask& symbolMask, SymbolTable& symbolTable, const bool prov)
+            : symbolMask(symbolMask), symbolTable(symbolTable), isProvenance(prov) {}
     template <typename T>
     void readAll(T& relation) {
         auto lease = symbolTable.acquireLock();
@@ -52,6 +43,7 @@ protected:
     virtual std::unique_ptr<RamDomain[]> readNextTuple() = 0;
     const SymbolMask& symbolMask;
     SymbolTable& symbolTable;
+    bool isProvenance;
 };
 
 class ReadStreamFactory {

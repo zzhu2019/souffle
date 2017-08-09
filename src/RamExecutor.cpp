@@ -176,7 +176,7 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
                 case UnaryOp::COSH:
                     return cosh(visit(op.getValue()));
                 case UnaryOp::TANH:
-                    return tanh(visit(op.getValue()));
+                    return tanh(visit(op.getValue())>;
                 case UnaryOp::ASINH:
                     return asinh(visit(op.getValue()));
                 case UnaryOp::ACOSH:
@@ -661,7 +661,7 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
                 tuple[i] = eval(values[i], env, ctxt);
             }
 
-            std::cout << std::endl;
+            // std::cout << std::endl;
 
             // check filter relation
             if (project.hasFilter() && env.getRelation(project.getFilter()).exists(tuple)) {

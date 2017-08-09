@@ -133,7 +133,6 @@ public:
         return newSymbolOfIndex(symbol);
     }
 
-<<<<<<< HEAD
     /** Finds the index of a symbol in the table, giving an error if it's not found */
     const size_t lookupExisting(const std::string str) const {
         auto lease = access.acquire();
@@ -145,11 +144,11 @@ public:
         } else {
             return result->second;
         }
-=======
+    }
+
     /** Find the index of a symbol in the table, inserting a new symbol if it does not exist there already. */
     const size_t unsafeLookup(const char* symbol) {
         return newSymbolOfIndex(symbol);
->>>>>>> 5fd84e72e8c97f18f5c71d9db6edfb3ae378c9e0
     }
 
     /** Find a symbol in the table by its index, note that this gives an error if the index is out of bounds.
