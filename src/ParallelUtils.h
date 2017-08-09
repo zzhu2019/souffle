@@ -145,7 +145,6 @@ class Lock {
 
 public:
     struct Lease {
-        std::mutex* mux;
         Lease(std::mutex& mux) : mux(&mux) {
             mux.lock();
         }
@@ -154,8 +153,13 @@ public:
         }
         Lease(const Lease& other) = delete;
         ~Lease() {
-            if (mux) mux->unlock();
+            if (mux) {
+                mux->unlock();
+            }
         }
+
+    protected:
+        std::mutex* mux;
     };
 
     // acquired the lock for the live-cycle of the returned guard
@@ -490,9 +494,11 @@ namespace souffle {
  * A small utility class for implementing simple locks.
  */
 struct Lock {
+    class Lease {};
+
     // no locking if there is no parallel execution
-    int acquire() {
-        return 0;
+    Lease acquire() {
+        return Lease();
     }
 
     void lock() {}

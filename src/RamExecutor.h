@@ -68,8 +68,8 @@ public:
      * Runs the given RAM statement on an empty environment and returns
      * this environment after the completion of the execution.
      */
-    RamEnvironment* execute(SymbolTable& table, const RamProgram& prog) const {
-        RamEnvironment* env = new RamEnvironment(table);
+    std::unique_ptr<RamEnvironment> execute(SymbolTable& table, const RamProgram& prog) const {
+        auto env = std::make_unique<RamEnvironment>(table);
         applyOn(prog, *env, nullptr);
         return env;
     }
@@ -78,9 +78,10 @@ public:
      * Runs the given RAM statement on an empty environment and input data and returns
      * this environment after the completion of the execution.
      */
-    RamEnvironment* execute(SymbolTable& table, const RamProgram& prog, RamData* data) const {
+    std::unique_ptr<RamEnvironment> execute(
+            SymbolTable& table, const RamProgram& prog, RamData* data) const {
         // Ram env managed by the interface
-        RamEnvironment* env = new RamEnvironment(table);
+        auto env = std::make_unique<RamEnvironment>(table);
         applyOn(prog, *env, data);
         return env;
     }

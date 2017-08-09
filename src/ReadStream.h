@@ -28,19 +28,30 @@ protected:
     bool isProvenance = false;
 
 public:
+<<<<<<< HEAD
     ReadStream() {}
     ReadStream(const bool prov) : isProvenance(prov) {}
 
+=======
+    ReadStream(const SymbolMask& symbolMask, SymbolTable& symbolTable)
+            : symbolMask(symbolMask), symbolTable(symbolTable) {}
+>>>>>>> 5fd84e72e8c97f18f5c71d9db6edfb3ae378c9e0
     template <typename T>
     void readAll(T& relation) {
+        auto lease = symbolTable.acquireLock();
+        (void)lease;
         while (const auto next = readNextTuple()) {
             const RamDomain* ramDomain = next.get();
             relation.insert(ramDomain);
         }
     }
 
-    virtual std::unique_ptr<RamDomain[]> readNextTuple() = 0;
     virtual ~ReadStream() = default;
+
+protected:
+    virtual std::unique_ptr<RamDomain[]> readNextTuple() = 0;
+    const SymbolMask& symbolMask;
+    SymbolTable& symbolTable;
 };
 
 class ReadStreamFactory {

@@ -31,8 +31,7 @@ class WriteStreamSQLite : public WriteStream {
 public:
     WriteStreamSQLite(const std::string& dbFilename, const std::string& relationName,
             const SymbolMask& symbolMask, const SymbolTable& symbolTable, const bool provenance)
-            : WriteStream(provenance), dbFilename(dbFilename), relationName(relationName),
-              symbolMask(symbolMask), symbolTable(symbolTable) {
+            : WriteStream(symbolMask, symbolTable, provenance), dbFilename(dbFilename), relationName(relationName) {
         openDB();
         createTables();
         prepareStatements();
@@ -44,6 +43,14 @@ public:
         }
     }
 
+    ~WriteStreamSQLite() override {
+        sqlite3_finalize(insertStatement);
+        sqlite3_finalize(symbolInsertStatement);
+        sqlite3_finalize(symbolSelectStatement);
+        sqlite3_close(db);
+    }
+
+protected:
     void writeNextTuple(const RamDomain* tuple) override {
         if (arity == 0) {
             return;
@@ -65,13 +72,6 @@ public:
         }
         sqlite3_clear_bindings(insertStatement);
         sqlite3_reset(insertStatement);
-    }
-
-    ~WriteStreamSQLite() override {
-        sqlite3_finalize(insertStatement);
-        sqlite3_finalize(symbolInsertStatement);
-        sqlite3_finalize(symbolSelectStatement);
-        sqlite3_close(db);
     }
 
 private:
@@ -98,8 +98,8 @@ private:
     }
 
     uint64_t getSymbolTableIDFromDB(int index) {
-        if (sqlite3_bind_text(symbolSelectStatement, 1, symbolTable.resolve(index), -1, SQLITE_TRANSIENT) !=
-                SQLITE_OK) {
+        if (sqlite3_bind_text(symbolSelectStatement, 1, symbolTable.unsafeResolve(index), -1,
+                    SQLITE_TRANSIENT) != SQLITE_OK) {
             throwError("SQLite error in sqlite3_bind_text: ");
         }
         if (sqlite3_step(symbolSelectStatement) != SQLITE_ROW) {
@@ -115,8 +115,8 @@ private:
             return dbSymbolTable[index];
         }
 
-        if (sqlite3_bind_text(symbolInsertStatement, 1, symbolTable.resolve(index), -1, SQLITE_TRANSIENT) !=
-                SQLITE_OK) {
+        if (sqlite3_bind_text(symbolInsertStatement, 1, symbolTable.unsafeResolve(index), -1,
+                    SQLITE_TRANSIENT) != SQLITE_OK) {
             throwError("SQLite error in sqlite3_bind_text: ");
         }
         // Either the insert succeeds and we have a new row id or it already exists and a select is needed.
@@ -248,8 +248,6 @@ private:
     const std::string& dbFilename;
     const std::string& relationName;
     const std::string symbolTableName = "__SymbolTable";
-    const SymbolMask& symbolMask;
-    const SymbolTable& symbolTable;
     size_t arity;
 
     std::unordered_map<uint64_t, uint64_t> dbSymbolTable;

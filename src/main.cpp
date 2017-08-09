@@ -42,7 +42,7 @@
 #include <list>
 #include <string>
 
-#include <config.h>
+#include "config.h"
 #include <ctype.h>
 #include <errno.h>
 #include <getopt.h>
@@ -108,17 +108,21 @@ int main(int argc, char** argv) {
                             {"jobs", 'j', "N", "1", false,
                                     "Run interpreter/compiler in parallel using N threads, N=auto for system "
                                     "default."},
-                            {"compile", 'c', "", "", false, "Compile datalog (translating to C++)."},
+                            {"compile", 'c', "", "", false,
+                                    "Generate C++ source code, compile to binary executable, then run this "
+                                    "executable."},
                             {"auto-schedule", 'a', "", "", false,
                                     "Switch on automated clause scheduling for compiler."},
                             {"generate", 'g', "FILE", "", false,
-                                    "Only generate sources of compilable analysis and write it to <FILE>."},
+                                    "Generate C++ source code for the given Datalog program and write it to "
+                                    "<FILE>."},
                             {"no-warn", 'w', "", "", false, "Disable warnings."},
                             {"magic-transform", 'm', "RELATIONS", "", false,
                                     "Enable magic set transformation changes on the given relations, use '*' "
                                     "for all."},
                             {"dl-program", 'o', "FILE", "", false,
-                                    "Write executable program to <FILE> (without executing it)."},
+                                    "Generate C++ source code and compile this to a binary executable "
+                                    "written to <FILE>."},
                             {"profile", 'p', "FILE", "", false,
                                     "Enable profiling and write profile data to <FILE>."},
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
@@ -399,7 +403,7 @@ int main(int argc, char** argv) {
     }
 
     // check if this is code generation only
-    RamEnvironment* env = nullptr;
+    std::unique_ptr<RamEnvironment> env;
     if (Global::config().has("generate")) {
         // just generate, no compile, no execute
         static_cast<const RamCompiler*>(executor.get())

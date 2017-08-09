@@ -95,6 +95,7 @@ private:
     RamExecutor& exec;
     RamEnvironment& env;
     SymbolTable& symTable;
+    std::vector<RamRelationInterface*> interfaces;
 
 public:
     SouffleInterpreterInterface(RamProgram& p, RamExecutor& e, RamEnvironment& r, SymbolTable& s)
@@ -113,13 +114,18 @@ public:
                 std::string n = rel.getID().getArg(i);
                 attrNames.push_back(n);
             }
-            addRelation(rel.getID().getName(),
-                    new RamRelationInterface(rel, symTable, rel.getID().getName(), types, attrNames, id),
-                    rel.getID().isInput(), rel.getID().isOutput());
+            RamRelationInterface* interface =
+                    new RamRelationInterface(rel, symTable, rel.getID().getName(), types, attrNames, id);
+            interfaces.push_back(interface);
+            addRelation(rel.getID().getName(), interface, rel.getID().isInput(), rel.getID().isOutput());
             id++;
         }
     }
-    virtual ~SouffleInterpreterInterface() {}
+    virtual ~SouffleInterpreterInterface() {
+        for (auto* interface : interfaces) {
+            delete interface;
+        }
+    }
 
     // running an interpreter program doesn't make sense
     void run() {

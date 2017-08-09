@@ -6,7 +6,11 @@
 
 // This code tests the provenance explain interface for a simple path example.
 
+<<<<<<< HEAD
 .pragma "provenance" " "
+=======
+.pragma "provenance" "2"
+>>>>>>> 5fd84e72e8c97f18f5c71d9db6edfb3ae378c9e0
 
 .decl person(x:symbol)
 person("john").

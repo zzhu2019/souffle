@@ -33,13 +33,18 @@ class ReadStreamSQLite : public ReadStream {
 public:
     ReadStreamSQLite(const std::string& dbFilename, const std::string& relationName,
             const SymbolMask& symbolMask, SymbolTable& symbolTable, const bool provenance)
-            : ReadStream(provenance), dbFilename(dbFilename), relationName(relationName),
-              symbolMask(symbolMask), symbolTable(symbolTable) {
+            : ReadStream(symbolMask, symbolTable, provenance), dbFilename(dbFilename), relationName(relationName) {
         openDB();
         checkTableExists();
         prepareSelectStatement();
     }
 
+    ~ReadStreamSQLite() override {
+        sqlite3_finalize(selectStatement);
+        sqlite3_close(db);
+    }
+
+protected:
     /**
      * Read and return the next tuple.
      *
@@ -61,7 +66,7 @@ public:
                 element = "n/a";
             }
             if (symbolMask.isSymbol(column)) {
-                tuple[column] = symbolTable.lookup(element.c_str());
+                tuple[column] = symbolTable.unsafeLookup(element.c_str());
             } else {
                 try {
                     tuple[column] = std::stoi(element.c_str());
@@ -81,12 +86,6 @@ public:
         return tuple;
     }
 
-    ~ReadStreamSQLite() override {
-        sqlite3_finalize(selectStatement);
-        sqlite3_close(db);
-    }
-
-private:
     void executeSQL(const std::string& sql) {
         assert(db && "Database connection is closed");
 
@@ -150,8 +149,6 @@ private:
     }
     const std::string& dbFilename;
     const std::string& relationName;
-    const SymbolMask& symbolMask;
-    SymbolTable& symbolTable;
     sqlite3_stmt* selectStatement;
     sqlite3* db;
 };
