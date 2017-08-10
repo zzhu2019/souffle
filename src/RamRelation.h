@@ -442,6 +442,9 @@ public:
         std::vector<unsigned char> suffix;
         suffix.reserve(getArity());
 
+        id.print(std::cout);
+        std::cout << std::endl << "getIndex arity: " << getArity() << std::endl;
+
         // convert to order
         RamIndexOrder order;
         for (size_t k = 1, i = 0; i < getArity(); i++, k *= 2) {
