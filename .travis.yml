@@ -61,7 +61,7 @@ aliases:
     stage: Testing
     os: osx
     compiler: clang
-    osx_image: xcode8.2
+    osx_image: xcode8.3
     install: ".travis/osx/install.sh"
     before_script: ".travis/init_test.sh"
     script: ".travis/run_test.sh"
