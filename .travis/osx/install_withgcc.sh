@@ -6,7 +6,7 @@ set -e
 set -x
 
 # Install requirements of MAC OS X
-brew install md5sha1sum bison libtool
+rm /usr/local/include/c++
+brew install md5sha1sum bison libtool gcc
 brew link bison --force
-
-rm /Users/travis/Library/Logs/DiagnosticReports/*
+g++-7 --version
