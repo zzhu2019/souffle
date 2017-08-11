@@ -71,6 +71,7 @@ jobs:
     os: linux
     compiler: clang
     env: TEST_FORMAT=1
+    sudo: false
     addons:
       apt:
         sources:
