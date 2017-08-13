@@ -37,6 +37,9 @@ error() {
   fi
 }
 
+#Exit on error
+set -e
+
 ## set environment variables
 
 # set by autoconf
