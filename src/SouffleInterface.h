@@ -136,8 +136,13 @@ class tuple {
     size_t pos;
 
 public:
-    tuple(Relation* r) : relation(*r), array(r->getArity()), pos(0) {}
-    tuple(const tuple& t) : relation(t.relation), array(t.array), pos(t.pos) {}
+    tuple(Relation* r) : relation(*r), array(r->getArity()), pos(0), data(array.data()) {}
+    tuple(const tuple& t) : relation(t.relation), array(t.array), pos(t.pos), data(array.data()) {}
+
+    /**
+     * allows printing using WriteStream
+     */
+    const RamDomain* data;
 
     /**
      * return number of elements in the tuple

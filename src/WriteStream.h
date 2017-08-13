@@ -29,6 +29,12 @@ public:
             writeNext(current);
         }
     }
+    template <typename T>
+    void writeAllUnsafe(T& relation) {
+        for (auto& current : relation) {
+            writeNext(current);
+        }
+    }
     template <typename Tuple>
     void writeNext(Tuple tuple) {
         writeNextTuple(tuple.data);
