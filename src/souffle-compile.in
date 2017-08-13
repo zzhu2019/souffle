@@ -18,7 +18,7 @@ Usage:
   souffle-compile [options] <FILE>.cpp
 Options:
   -h           show usage
-  -s           compile a program with OpenMP support
+  -s           compile a program without OpenMP support
   -v           verbose output
   -w           enable warnings\n"
   exit 1;
