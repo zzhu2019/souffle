@@ -1454,29 +1454,29 @@ public:
 
 #ifdef __GNUC__
 #if __GNUC__ >= 7
-	// In GCC >= 7 the usage of fetch_or causes a bug that needs further investigation
-	// For now, this two-instruction based implementation provides a fix that does
-	// not sacrifice too much performance.
+        // In GCC >= 7 the usage of fetch_or causes a bug that needs further investigation
+        // For now, this two-instruction based implementation provides a fix that does
+        // not sacrifice too much performance.
 
-	while(true) {
-		auto order = std::memory_order::memory_order_relaxed;
+        while (true) {
+            auto order = std::memory_order::memory_order_relaxed;
 
-		// load current value
-		value_t old = val.load(order);
+            // load current value
+            value_t old = val.load(order);
 
-		// if bit is already set => we are done
-		if (old & bit) return false;
+            // if bit is already set => we are done
+            if (old & bit) return false;
 
-		// set the bit, if failed, repeat
-		if (!val.compare_exchange_strong(old,old | bit,order,order)) continue;
+            // set the bit, if failed, repeat
+            if (!val.compare_exchange_strong(old, old | bit, order, order)) continue;
 
-		// it worked, new bit added
-		return true;
-	}
+            // it worked, new bit added
+            return true;
+        }
 
 #endif
 #endif
-	
+
         value_t old = val.fetch_or(bit, std::memory_order::memory_order_relaxed);
         return !(old & bit);
     }
