@@ -569,7 +569,7 @@ public:
         out << "---------------\n"
             << relName << "\n"
             << "===============\n";
-        WriteStreamCSV(out, symMask, prog.getSymbolTable()).writeAllUnsafe(*rel);
+        WriteStreamCSV(out, symMask, prog.getSymbolTable()).writeAll(*rel);
         out << "---------------\n";
 
         return out.str();

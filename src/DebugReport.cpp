@@ -230,15 +230,8 @@ void DebugReporter::generateDebugReport(
     DebugReportSection topsortSCCGraphSection =
             getCodeSection(id + "-topsort-scc-graph", "SCC Topological Sort Order", topsortSCCGraph.str());
 
-    std::stringstream adornment;
-    translationUnit.getAnalysis<Adornment>()->outputAdornment(adornment);
-    DebugReportSection adornmentSection =
-            getCodeSection(id + "-adornment-display", "Adornment", adornment.str());
-
-    translationUnit.getDebugReport().addSection(
-            DebugReportSection(id, title, {datalogSection, precedenceGraphSection, sccGraphSection,
-                                                  topsortSCCGraphSection, adornmentSection},
-                    ""));
+    translationUnit.getDebugReport().addSection(DebugReportSection(id, title,
+            {datalogSection, precedenceGraphSection, sccGraphSection, topsortSCCGraphSection}, ""));
 }
 
 }  // end of namespace souffle

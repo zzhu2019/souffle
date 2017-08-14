@@ -84,10 +84,7 @@ TEST(Stats, Convergence) {
         if (!in.is_open()) return;
 
         std::unique_ptr<ReadStream> reader = IOSystem::getInstance().getReader(mask, symTable, ioDirectives);
-
-        while (auto next = reader->readNextTuple()) {
-            rel.insert(next.get());
-        }
+        reader->readAll(rel);
     }
 
     std::cout << rel.size() << "\n";
