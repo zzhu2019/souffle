@@ -225,6 +225,9 @@ public:
         if (isOverridable()) {
             os << "overridable ";
         }
+        if (isInline()) {
+          os << "inline ";
+        }
     }
 
     /** Creates a clone if this AST sub-structure */

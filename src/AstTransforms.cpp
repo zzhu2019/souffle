@@ -795,6 +795,229 @@ bool RemoveRedundantRelationsTransformer::transform(AstTranslationUnit& translat
     return changed;
 }
 
+bool isVariable(AstArgument* arg) {
+    return (dynamic_cast<AstVariable*>(arg));
+}
+
+bool isConstant(AstArgument* arg) {
+  return (dynamic_cast<AstConstant*>(arg));
+}
+
+// Reduces a vector of substitutions based on Martelli-Montanari algorithm
+bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub) {
+  bool done = false;
+
+  while (!done) {
+    done = true;
+    for(int i = 0; i < sub.size(); i++) {
+      auto currPair = sub[i];
+      AstArgument* firstTerm = currPair.first;
+      AstArgument* secondTerm = currPair.second;
+
+      // AstArgument Cases:
+      //  0 - AstVariable
+      //  1 - AstUnnamedVariable (_)
+      //  2 - AstCounter ($)
+      //  3 - AstConstant
+      //  4 - AstFunctor
+      //  5 - AstRecordInit
+      //  6 - AstTypeCast
+      //  7 - AstAggregator
+
+      // TODO: see doubles.dl file for what's left
+
+      if (*firstTerm == *secondTerm) {
+        // get rid of `x = x`
+        sub.erase(sub.begin() + i);
+        done = false;
+      } else if (isConstant(firstTerm) && isConstant(secondTerm)) {
+        // both are constants but non-equal (prev case => !=)
+        // failed to unify!
+        return false;
+      } else if (!isVariable(firstTerm) && isVariable(secondTerm)) {
+        // rewrite `t=x` as `x=t`
+        sub[i] = std::make_pair(secondTerm, firstTerm);
+        done = false;
+      } else if (isVariable(firstTerm) && (isVariable(secondTerm) || isConstant(secondTerm))) {
+        // variable elimination when repeated
+        for(int j = 0; j < sub.size(); j++) {
+          // TODO: functions here too!
+          if(j == i) {
+            continue;
+          }
+
+          if(isVariable(sub[j].first) && (*sub[j].first == *firstTerm)){
+            if(*sub[j].second == *secondTerm) {
+              sub.erase(sub.begin() + i);
+            } else {
+              sub[j].first = secondTerm;
+            }
+            done = false;
+          } else if(isVariable(sub[j].second) && (*sub[j].second == *firstTerm)) {
+            if(*sub[j].first == *secondTerm) {
+              sub.erase(sub.begin() + i);
+            } else {
+              sub[j].second = secondTerm;
+            }
+            done = false;
+          }
+        }
+      }
+
+      // if(!isVariable(firstTerm) && isVariable(secondTerm)) {
+      //   // rewrite `t = x` as `x = t`
+      //   sub[i] = std::make_pair(secondTerm, firstTerm);
+      //   done = false;
+      // } else if (*firstTerm == *secondTerm) {
+      //   // get rid of `x = x`
+      //   // TODO: check if equality correct
+      //   sub.erase(sub.begin() + i);
+      //   done = false;
+      // } else if (isConstant(firstTerm) && isConstant(secondTerm)) {
+      //   // both are constants but not equal (prev case => !=)
+      //   // failed to unify!
+      //   return false;
+      // } else if (!isVariable(firstTerm) && !isVariable(secondTerm)) {
+      //   // TODO: functions!
+      // } else if(isVariable(firstTerm)){
+      //   for(int j = 0; j < sub.size(); j++) {
+      //     // TODO: functions here too!
+      //     if(j == i) {
+      //       continue;
+      //     }
+      //
+      //     if(isVariable(sub[j].first) && (*sub[j].first == *firstTerm)){
+      //       if(*sub[j].second == *secondTerm) {
+      //         sub.erase(sub.begin() + i);
+      //       } else {
+      //         sub[j].first = secondTerm;
+      //       }
+      //       done = false;
+      //     } else if(isVariable(sub[j].second) && (*sub[j].second == *firstTerm)) {
+      //       if(*sub[j].first == *secondTerm) {
+      //         sub.erase(sub.begin() + i);
+      //       } else {
+      //         sub[j].second = secondTerm;
+      //       }
+      //       done = false;
+      //     }
+      //   }
+      // }
+    }
+  }
+
+  return true;
+}
+
+// Returns the pair (v, p), where p indicates whether the most general unifier
+// algorithm has failed, and v is the vector of substitutions to unify two
+// given atoms if successful.
+// Assumes that the atoms are both of the same relation.
+std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> unifyAtoms(AstAtom* first, AstAtom* second) {
+  std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> result;
+  std::vector<std::pair<AstArgument*, AstArgument*>> substitution;
+
+  std::vector<AstArgument*> firstArgs = first->getArguments();
+  std::vector<AstArgument*> secondArgs = second->getArguments();
+
+  for(int i = 0; i < firstArgs.size(); i++) {
+    substitution.push_back(std::make_pair(firstArgs[i], secondArgs[i]));
+  }
+
+  bool success = reduceSubstitution(substitution);
+
+  result = make_pair(substitution, success);
+  return result;
+}
+
+bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) {
+  bool changed = false;
+
+  AstProgram& program = *translationUnit.getProgram();
+  bool clausesChanged = true;
+  while(clausesChanged) {
+    std::vector<const AstClause*> clausesToDelete;
+    clausesChanged = false;
+    visitDepthFirst(program, [&](const AstClause& clause) {
+      bool deleteClause = false;
+      if(program.getRelation(clause.getHead()->getName())->isInline()) {
+        return;
+      }
+      for(AstAtom* atom : clause.getAtoms()) {
+        AstRelation* rel = program.getRelation(atom->getName());
+        if (rel->isInline()) {
+          deleteClause = true;
+          changed = true;
+          clausesChanged = true;
+          for (AstClause* inClause : rel->getClauses()) {
+            // TODO: what if variable names are non-unique across atoms being unified?
+            auto res = unifyAtoms(inClause->getHead(), atom);
+
+            // Could not unify
+            // TODO: how to proceed?
+            // TODO: INTUITIVELY this should never happen? need to think of extreme cases...
+            if(!res.second) {
+              std::cout << "BROKEN UNIFICATION" << std::endl;
+              for(auto argPair : res.first) {
+                std::cout << *argPair.first << " " << *argPair.second << std::endl;
+              }
+              continue;
+            }
+
+            // TODO: success story
+            std::cout << *inClause->getHead() << " " << *atom << std::endl;
+            for(auto argPair : res.first) {
+              std::cout << *argPair.first << " " << *argPair.second << std::endl;
+            }
+
+            // Create the replacement clause
+            AstClause* replacementClause = clause.cloneHead();
+            for(AstLiteral* lit : clause.getBodyLiterals()) {
+              if(atom != lit) {
+                replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+              }
+            }
+
+            // Add in the RHS of the inClause directly
+            for(AstLiteral* lit : inClause->getBodyLiterals()) {
+              replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+            }
+
+            // Add in the substitutions as constraints
+            for(auto pair : res.first) {
+              AstConstraint* subCons = new AstConstraint(BinaryConstraintOp::EQ,
+                      std::unique_ptr<AstArgument>(pair.first->clone()),
+                      std::unique_ptr<AstArgument>(pair.second->clone()));
+              replacementClause->addToBody(std::unique_ptr<AstLiteral>(subCons));
+            }
+
+            // Replace the clause
+            std::cout << "NEW CLAUSE:\n" << *replacementClause << std::endl;
+            std::cout << "OLD CLAUSE:\n" << clause << std::endl;
+            program.appendClause(std::unique_ptr<AstClause>(replacementClause));
+          }
+        }
+        // TODO: fix positioning of clause deletion
+        if (deleteClause) {
+          std::cout << "about to...\n" << std::endl;
+          clausesToDelete.push_back(&clause);
+          // program.removeClause(&clause);
+          std::cout << "he did it, the absolute mad man...\n" << std::endl;
+          break;
+        }
+      }
+    });
+    for(const AstClause* clause : clausesToDelete) {
+      program.removeClause(clause);
+    }
+  }
+
+
+  std::cout << program << std::endl;
+
+  return changed;
+}
+
 bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationUnit) {
     bool changed = false;
 

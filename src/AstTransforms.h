@@ -192,6 +192,19 @@ public:
 };
 
 /**
+ * Transformer that inlines appropriate relations.
+ */
+class InlineRelationsTransformer : public AstTransformer {
+private:
+    virtual bool transform(AstTranslationUnit& translationUnit);
+
+public:
+    virtual std::string getName() const {
+        return "InlineRelationsTransformer";
+    }
+};
+
+/**
  * Transformation pass to normalise constraints.
  * E.g.: a(x) :- b(x, 1). -> a(x) :- b(x, tmp0), tmp0=1.
  *
