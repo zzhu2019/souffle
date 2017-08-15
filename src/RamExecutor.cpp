@@ -859,8 +859,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
                 try {
                     IOSystem::getInstance()
                             .getWriter(store.getRelation().getSymbolMask(), env.getSymbolTable(),
-                                    //        ioDirectives, Global::config().has("provenance"))
-                                    ioDirectives, false)
+                                    ioDirectives, Global::config().has("provenance"))
                             ->writeAll(rel);
                 } catch (std::exception& e) {
                     std::cerr << e.what();

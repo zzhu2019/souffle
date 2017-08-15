@@ -128,6 +128,11 @@ public:
 protected:
     void writeNextTuple(const RamDomain* tuple) override {
         size_t arity = symbolMask.getArity();
+
+        if (isProvenance) {
+            arity -= 2;
+        }
+
         if (arity == 0) {
             std::cout << "()\n";
             return;
