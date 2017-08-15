@@ -795,12 +795,21 @@ bool RemoveRedundantRelationsTransformer::transform(AstTranslationUnit& translat
     return changed;
 }
 
-bool isVariable(AstArgument* arg) {
-    return (dynamic_cast<AstVariable*>(arg));
-}
-
+// TODO: Get rid of these
 bool isConstant(AstArgument* arg) {
   return (dynamic_cast<AstConstant*>(arg));
+}
+
+bool isRecord(AstArgument* arg) {
+  return (dynamic_cast<AstRecordInit*>(arg));
+}
+
+bool isFunctor(AstArgument* arg) {
+  return (dynamic_cast<AstFunctor*>(arg));
+}
+
+bool isVariable(AstArgument* arg) {
+  return ((dynamic_cast<AstVariable*>(arg)) || isFunctor(arg));
 }
 
 // Reduces a vector of substitutions based on Martelli-Montanari algorithm
@@ -814,22 +823,44 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
       AstArgument* firstTerm = currPair.first;
       AstArgument* secondTerm = currPair.second;
 
-      // AstArgument Cases:
-      //  0 - AstVariable
-      //  1 - AstUnnamedVariable (_)
-      //  2 - AstCounter ($)
-      //  3 - AstConstant
-      //  4 - AstFunctor
-      //  5 - AstRecordInit
-      //  6 - AstTypeCast
-      //  7 - AstAggregator
-
       // TODO: see doubles.dl file for what's left
+      // AstArgument Cases:
+      //  0 - AstVariable [x]
+      //  1 - AstUnnamedVariable (_) -> change all to variables to reduce this case -> need to rename everything
+      //  2 - AstCounter ($) -> find out what this does --> UHH??
+      //  3 - AstConstant -> as straightforward as variables [x]
+      //  4 - AstFunctor -> can this just be direct? or more thought into this? [x]
+      //  5 - AstRecordInit -> this should just be pairwise equality right? think about this... [x]
+      //  6 - AstTypeCast -> find out what this does [x] SIDE NOTE: no idea how this looks actually but should work immediately
+      //  7 - AstAggregator -> complicated! think about this - perhaps equate arguments on a lower level
 
+      // Unify the arguments
+      // If returnCode = -1, then failed to unify
+      // If return code = 0, then unified and theres no change
+      // If return code = 1, then unified and there was a change
+      // int returnCode = unifyArguments(firstTerm, secondTerm, sub);
+
+      // TODO: change to LHS and RHS
       if (*firstTerm == *secondTerm) {
         // get rid of `x = x`
         sub.erase(sub.begin() + i);
         done = false;
+      } else if (isRecord(firstTerm)) {
+        if (!isRecord(secondTerm)) {
+          return false;
+        }
+        std::vector<AstArgument*> firstRecArgs = static_cast<AstRecordInit*>(firstTerm)->getArguments();
+        std::vector<AstArgument*> secondRecArgs = static_cast<AstRecordInit*>(secondTerm)->getArguments();
+        if (firstRecArgs.size() != secondRecArgs.size()) {
+          return false;
+        }
+        for (int i = 0; i < firstRecArgs.size(); i++) {
+          sub.push_back(std::make_pair(firstRecArgs[i], secondRecArgs[i]));
+        }
+        sub.erase(sub.begin() + i);
+        done = false;
+      } else if (isRecord(secondTerm)) {
+        return false;
       } else if (isConstant(firstTerm) && isConstant(secondTerm)) {
         // both are constants but non-equal (prev case => !=)
         // failed to unify!
@@ -839,29 +870,29 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
         sub[i] = std::make_pair(secondTerm, firstTerm);
         done = false;
       } else if (isVariable(firstTerm) && (isVariable(secondTerm) || isConstant(secondTerm))) {
-        // variable elimination when repeated
-        for(int j = 0; j < sub.size(); j++) {
-          // TODO: functions here too!
-          if(j == i) {
-            continue;
-          }
-
-          if(isVariable(sub[j].first) && (*sub[j].first == *firstTerm)){
-            if(*sub[j].second == *secondTerm) {
-              sub.erase(sub.begin() + i);
-            } else {
-              sub[j].first = secondTerm;
-            }
-            done = false;
-          } else if(isVariable(sub[j].second) && (*sub[j].second == *firstTerm)) {
-            if(*sub[j].first == *secondTerm) {
-              sub.erase(sub.begin() + i);
-            } else {
-              sub[j].second = secondTerm;
-            }
-            done = false;
-          }
-        }
+        // // variable elimination when repeated
+        // for(int j = 0; j < sub.size(); j++) {
+        //   // TODO: functions here too!
+        //   if(j == i) {
+        //     continue;
+        //   }
+        //
+        //   if(isVariable(sub[j].first) && (*sub[j].first == *firstTerm)){
+        //     if(*sub[j].second == *secondTerm) {
+        //       sub.erase(sub.begin() + i);
+        //     } else {
+        //       sub[j].first = secondTerm;
+        //     }
+        //     done = false;
+        //   } else if(isVariable(sub[j].second) && (*sub[j].second == *firstTerm)) {
+        //     if(*sub[j].first == *secondTerm) {
+        //       sub.erase(sub.begin() + i);
+        //     } else {
+        //       sub[j].second = secondTerm;
+        //     }
+        //     done = false;
+        //   }
+        // }
       }
 
       // if(!isVariable(firstTerm) && isVariable(secondTerm)) {
