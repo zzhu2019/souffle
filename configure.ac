@@ -41,13 +41,21 @@ AS_IF([test "x$enable_jni" = "xyes"], [
 ])
 AM_CONDITIONAL([JAVAI], [test "x$enable_jni" = "xyes"])
 
-# Enable curses library
-AX_WITH_CURSES
-AS_VAR_APPEND(LIBS, ["$CURSES_LIB"])
-AS_IF([test "x$ax_cv_ncurses" != "xyes"],[AC_MSG_ERROR([required library ncurses missing])])
-
 dnl Do not set default CFLAGS and CXXFLAGS
 CXXFLAGS=" -Wall -std=c++11  $CXXFLAGS"
+
+# Disable provenance
+AC_ARG_ENABLE(
+  [provenance],
+  AS_HELP_STRING([--disable-provenance], [Disable provenance display])
+)
+AS_IF([test "x$enable_provenance" != "xno"], [
+  AX_WITH_CURSES
+  AS_IF([test "x$ax_cv_ncurses" != "xyes"],[AC_MSG_ERROR([required library ncurses missing])])
+  AS_VAR_APPEND(LIBS, ["$CURSES_LIB"])
+  AS_VAR_APPEND(CXXFLAGS, [" -DUSE_PROVENANCE "])
+])
+AM_CONDITIONAL([PROVENANCE], [test "x$enable_provenance" != "xno"])
 
 # Enable sanitise memory mode
 AC_ARG_ENABLE(

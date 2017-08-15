@@ -25,7 +25,9 @@
 #include "AstUtils.h"
 #include "BddbddbBackend.h"
 #include "ComponentModel.h"
+#ifdef USE_PROVENANCE
 #include "Explain.h"
+#endif
 #include "Global.h"
 #include "ParserDriver.h"
 #include "PrecedenceGraph.h"
@@ -127,9 +129,11 @@ int main(int argc, char** argv) {
                                     "Enable profiling and write profile data to <FILE>."},
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
+#ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information (<EXPLAIN> can be 0 for no explain, 1 for "
                                     "explain with ncurses, 2 for explain with stdout)."},
+#endif
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
@@ -291,11 +295,12 @@ int main(int argc, char** argv) {
     if (Global::config().has("auto-schedule")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));
     }
-
+#if USE_PROVENANCE
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new NaiveProvenanceTransformer()));
     }
+#endif
     if (!Global::config().get("debug-report").empty()) {
         auto parser_end = std::chrono::high_resolution_clock::now();
         std::string runtimeStr =
@@ -421,7 +426,7 @@ int main(int argc, char** argv) {
         std::cout << "Total Time: " << std::chrono::duration<double>(souffle_end - souffle_start).count()
                   << "sec\n";
     }
-
+#ifdef USE_PROVENANCE
     if (Global::config().has("provenance") && env != nullptr) {
         // construct SouffleProgram from env
         SouffleInterpreterInterface interface(*env, translationUnit->getSymbolTable());
@@ -432,7 +437,7 @@ int main(int argc, char** argv) {
             explain(interface, false);
         }
     }
-
+#endif
     return 0;
 }
 
