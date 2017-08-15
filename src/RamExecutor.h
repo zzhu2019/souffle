@@ -78,8 +78,7 @@ public:
      * Runs the given RAM statement on an empty environment and input data and returns
      * this environment after the completion of the execution.
      */
-    std::unique_ptr<RamEnvironment> execute(
-            SymbolTable& table, const RamProgram& prog, RamData* data) const {
+    std::unique_ptr<RamEnvironment> execute(SymbolTable& table, const RamProgram& prog, RamData* data) const {
         // Ram env managed by the interface
         auto env = std::make_unique<RamEnvironment>(table);
         applyOn(prog, *env, data);

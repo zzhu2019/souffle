@@ -330,9 +330,21 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
         }
 
         bool visitNotExists(const RamNotExists& ne) override {
+            /*
+            std::cout << "RELATION MAP: " << std::endl;
+            for (auto& r : env.getRelationMap()) {
+                std::cout << r.first << " ";
+                r.second.getID().print(std::cout);
+                std::cout << std::endl;
+            }
+            */
             const RamRelation& rel = env.getRelation(ne.getRelation());
+            /*
             ne.print(std::cout);
+            std::cout << ", relation in NotExists ";
+            rel.getID().print(std::cout);
             std::cout << std::endl;
+            */
 
             // construct the pattern tuple
             auto arity = rel.getArity();
@@ -354,20 +366,38 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
             for (size_t i = 0; i < arity; i++) {
                 low[i] = (values[i]) ? eval(values[i], env, ctxt) : MIN_RAM_DOMAIN;
                 high[i] = (values[i]) ? low[i] : MAX_RAM_DOMAIN;
-                std::cout << low[i] << " " << high[i] << std::endl;
+                // std::cout << low[i] << " " << high[i] << std::endl;
             }
 
             // obtain index
             auto idx = ne.getIndex();
-            if (!idx) {
+            auto idxRelationName = ne.getIndexRelationName();
+            if (idxRelationName != rel.getID().getName() || !idx) {
                 idx = rel.getIndex(ne.getKey());
                 ne.setIndex(idx);
+                ne.setIndexRelationName(rel.getID().getName());
             }
 
+            /*
+            idx->print(std::cout);
+            std::cout << std::endl;
+
+            for (auto tup : rel) {
+                std::cout << "TUPLE: ";
+                for (size_t j = 0; j < rel.getID().getArity(); j++) {
+                    std::cout << tup[j] << " ";
+                }
+                std::cout << std::endl;
+            }
+            */
+
             auto range = idx->lowerUpperBound(low, high);
+            /*
             std::cout << "lower bound == upper bound: " << (bool)(range.first == range.second) << std::endl;
             std::cout << "lower bound == end: " << (bool)(range.first == idx->indexEnd()) << std::endl;
             std::cout << "upper bound == end: " << (bool)(range.second == idx->indexEnd()) << std::endl;
+            std::cout << "END OF NOT EXISTS" << std::endl << std::endl;
+            */
             return range.first == range.second;  // if there are none => done
         }
 
@@ -829,8 +859,8 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
                 try {
                     IOSystem::getInstance()
                             .getWriter(store.getRelation().getSymbolMask(), env.getSymbolTable(),
-                             //        ioDirectives, Global::config().has("provenance"))
-                             ioDirectives, false)
+                                    //        ioDirectives, Global::config().has("provenance"))
+                                    ioDirectives, false)
                             ->writeAll(rel);
                 } catch (std::exception& e) {
                     std::cerr << e.what();

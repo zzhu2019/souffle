@@ -219,6 +219,14 @@ public:
         set.printStats(out);
         out << "\n";
         set.printTree(out);
+
+        // print the tuples in the index itself
+        for (auto t : set) {
+            for (size_t i = 0; i < theOrder.size(); i++) {
+                std::cout << t[i] << " ";
+            }
+            std::cout << std::endl;
+        }
     }
 
     /** return start and end iterator of an equal range */
@@ -231,6 +239,7 @@ public:
         return std::pair<iterator, iterator>(set.lower_bound(low), set.upper_bound(high));
     }
 
+    // TODO: remove this temporary method
     iterator indexEnd() const {
         return set.end();
     }
