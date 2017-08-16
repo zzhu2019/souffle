@@ -1171,7 +1171,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
         appendStmt(comp, std::move(stmt));
 
         /* Drop the tables of all expired relations to save memory */
-        if (!Global::config().has("provenance")) {
+        if (!Global::config().has("provenance") && !Global::config().has("record-provenance")) {
             for (const auto& rel : step.getExpiredRelations()) {
                 appendStmt(comp, std::unique_ptr<RamStatement>(new RamDrop(getRamRelationIdentifier(
                                          getRelationName(rel->getName()), rel->getArity(), rel, &typeEnv))));
@@ -1194,7 +1194,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
             appendStmt(res, std::unique_ptr<RamStatement>(new RamPrintSize(rrel)));
         }
         if (rel->isOutput()) {
-            if (!Global::config().has("provenance")) {
+            if (!Global::config().has("provenance") && !Global::config().has("record-provenance")) {
                 appendStmt(res, std::unique_ptr<RamStatement>(new RamDrop(rrel)));
             }
         }

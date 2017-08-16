@@ -14,23 +14,23 @@
  *
  ***********************************************************************/
 
+#include "ProvenanceRecordTransformer.h"
 #include "AstVisitor.h"
-#include "ProvenanceTransformer.h"
 
 namespace souffle {
 
 /**
  * Helper functions
  */
-const std::string identifierToString(const AstRelationIdentifier& name) {
+const std::string identifierToStringRecord(const AstRelationIdentifier& name) {
     std::stringstream ss;
     ss << name;
     return *(new std::string(ss.str()));
 }
 
-inline AstRelationIdentifier makeRelationName(
+inline AstRelationIdentifier makeRelationNameRecord(
         const AstRelationIdentifier& orig, const std::string& type, int num = -1) {
-    auto newName = new AstRelationIdentifier(identifierToString(orig));
+    auto newName = new AstRelationIdentifier(identifierToStringRecord(orig));
     newName->append(type);
     if (num != -1) {
         newName->append((const std::string&)std::to_string(num));
@@ -84,10 +84,10 @@ ProvenanceTransformedClause::ProvenanceTransformedClause(AstTranslationUnit& tra
           originalName(origName), clauseNumber(num) {}
 
 void ProvenanceTransformedClause::makeInfoRelation() {
-    AstRelationIdentifier name = makeRelationName(originalName, "info", clauseNumber);
+    AstRelationIdentifier name = makeRelationNameRecord(originalName, "info", clauseNumber);
 
     // initialise info relation
-    infoRelation = new AstRelation();
+    infoRelation = std::unique_ptr<AstRelation>(new AstRelation());
     infoRelation->setName(name);
 
     // create new clause containing a single fact
@@ -106,12 +106,12 @@ void ProvenanceTransformedClause::makeInfoRelation() {
                 return;
             }
 
-            const char* relName = identifierToString(atom->getName()).c_str();
+            const char* relName = identifierToStringRecord(atom->getName()).c_str();
 
-            infoRelation->addAttribute(std::unique_ptr<AstAttribute>(new AstAttribute(
-                    std::string("rel_") + std::to_string(nextNum), AstTypeIdentifier("symbol"))));
             infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
                     new AstStringConstant(translationUnit.getSymbolTable(), relName)));
+            infoRelation->addAttribute(std::unique_ptr<AstAttribute>(new AstAttribute(
+                    std::string("rel_") + std::to_string(nextNum), AstTypeIdentifier("symbol"))));
         }
     });
 
@@ -119,7 +119,7 @@ void ProvenanceTransformedClause::makeInfoRelation() {
     infoRelation->addAttribute(
             std::unique_ptr<AstAttribute>(new AstAttribute("orig_name", AstTypeIdentifier("symbol"))));
     infoClauseHead->addArgument(std::unique_ptr<AstArgument>(new AstStringConstant(
-            translationUnit.getSymbolTable(), identifierToString(originalName).c_str())));
+            translationUnit.getSymbolTable(), identifierToStringRecord(originalName).c_str())));
 
     // generate and add clause representation
     std::stringstream ss;
@@ -136,10 +136,10 @@ void ProvenanceTransformedClause::makeInfoRelation() {
 }
 
 void ProvenanceTransformedClause::makeProvenanceRelation(AstRelation* recordRelation) {
-    AstRelationIdentifier name = makeRelationName(originalName, "provenance", clauseNumber);
+    AstRelationIdentifier name = makeRelationNameRecord(originalName, "provenance", clauseNumber);
 
     // initialise provenance relation
-    provenanceRelation = new AstRelation();
+    provenanceRelation = std::unique_ptr<AstRelation>(new AstRelation());
     provenanceRelation->setName(name);
 
     // create new clause
@@ -158,7 +158,7 @@ void ProvenanceTransformedClause::makeProvenanceRelation(AstRelation* recordRela
     for (auto lit : originalClause.getBodyLiterals()) {
         const AstAtom* atom = lit->getAtom();
         if (atom != nullptr) {  // literal is atom or negation
-            std::string relName = identifierToString(atom->getName());
+            std::string relName = identifierToStringRecord(atom->getName());
             auto args = atom->getArguments();
 
             if (atom->getArity() == 0) {
@@ -166,7 +166,8 @@ void ProvenanceTransformedClause::makeProvenanceRelation(AstRelation* recordRela
             }
 
             // add atom converted to record to body
-            auto newBody = std::unique_ptr<AstAtom>(new AstAtom(makeRelationName(atom->getName(), "record")));
+            auto newBody =
+                    std::unique_ptr<AstAtom>(new AstAtom(makeRelationNameRecord(atom->getName(), "record")));
 
             if (dynamic_cast<const AstAtom*>(lit)) {
                 // add atom to head as a record
@@ -275,7 +276,7 @@ ProvenanceTransformedRelation::ProvenanceTransformedRelation(AstTranslationUnit&
  * Clauses are created afterwards, using provenance relations
  */
 void ProvenanceTransformedRelation::makeRecordRelation() {
-    AstRelationIdentifier name = makeRelationName(originalName, "record");
+    AstRelationIdentifier name = makeRelationNameRecord(originalName, "record");
 
     // initialise record relation
     recordRelation = new AstRelation();
@@ -311,7 +312,7 @@ void ProvenanceTransformedRelation::makeRecordRelation() {
 }
 
 void ProvenanceTransformedRelation::makeOutputRelation() {
-    AstRelationIdentifier name = makeRelationName(originalName, "output");
+    AstRelationIdentifier name = makeRelationNameRecord(originalName, "output");
 
     // initialise record relation
     outputRelation = new AstRelation();
@@ -349,7 +350,7 @@ void ProvenanceTransformedRelation::makeOutputRelation() {
 
     // make body literal
     auto outputClauseBody = new AstAtom();
-    outputClauseBody->setName(makeRelationName(originalName, "record"));
+    outputClauseBody->setName(makeRelationNameRecord(originalName, "record"));
     outputClauseBody->addArgument(std::unique_ptr<AstRecordInit>(makeNewRecordInit(args)));
 
     // add atoms to clause
@@ -370,7 +371,7 @@ bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) 
             continue;
         }
 
-        std::string relationName = identifierToString(relation->getName());
+        std::string relationName = identifierToStringRecord(relation->getName());
 
         // create new record type
         auto newRecordType = new AstRecordType();

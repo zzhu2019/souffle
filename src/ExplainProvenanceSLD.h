@@ -1,10 +1,7 @@
 #pragma once
 
 #include "ExplainProvenance.h"
-#include "SouffleInterface.h"
 #include "Util.h"
-
-#define DEFAULT_DEPTH_LIMIT 4
 
 namespace souffle {
 
@@ -57,49 +54,6 @@ private:
 
         // if no tuple exists
         return std::make_pair(-1, -1);
-    }
-
-    std::vector<RamDomain> argsToNums(std::string relName, std::vector<std::string>& args) {
-        std::vector<RamDomain> nums;
-
-        auto rel = prog.getRelation(relName);
-        if (rel == nullptr) {
-            return std::vector<RamDomain>();
-        }
-
-        for (size_t i = 0; i < args.size(); i++) {
-            if (*rel->getAttrType(i) == 's') {
-                nums.push_back(prog.getSymbolTable().lookupExisting(args[i]));
-            } else {
-                nums.push_back(std::atoi(args[i].c_str()));
-            }
-        }
-
-        return nums;
-    }
-
-    std::vector<std::string> numsToArgs(
-            std::string relName, std::vector<RamDomain>& nums, std::vector<bool>* err = 0) {
-        std::vector<std::string> args;
-
-        auto rel = prog.getRelation(relName);
-        if (rel == nullptr) {
-            return std::vector<std::string>();
-        }
-
-        for (size_t i = 0; i < nums.size(); i++) {
-            if (err && (*err)[i]) {
-                args.push_back("_");
-            } else {
-                if (*rel->getAttrType(i) == 's') {
-                    args.push_back(prog.getSymbolTable().resolve(nums[i]));
-                } else {
-                    args.push_back(std::to_string(nums[i]));
-                }
-            }
-        }
-
-        return args;
     }
 
 public:
@@ -171,7 +125,8 @@ public:
                     new LeafNode("subproof " + relName + "(" + std::to_string(idx) + ")"));
         }
 
-        auto internalNode = new InnerNode(relName + "(" + joinedArgsStr + ")");
+        auto internalNode =
+                new InnerNode(relName + "(" + joinedArgsStr + ")", "(R" + std::to_string(ruleNum) + ")");
 
         // make return vector pointer
         std::vector<RamDomain>* ret = new std::vector<RamDomain>();
@@ -246,8 +201,9 @@ public:
         return explain(relName, tuple, ruleNum, levelNum, depthLimit);
     }
 
-    std::unique_ptr<TreeNode> explainSubproof(std::string relName, size_t subproofNum, size_t depthLimit) {
-        if (subproofNum >= subproofs.size()) {
+    std::unique_ptr<TreeNode> explainSubproof(
+            std::string relName, RamDomain subproofNum, size_t depthLimit) override {
+        if (subproofNum >= (int)subproofs.size()) {
             return std::unique_ptr<TreeNode>(new LeafNode("Subproof not found"));
         }
 
@@ -258,6 +214,17 @@ public:
         tup.pop_back();
 
         return explain(relName, tup, ruleNum, levelNum, depthLimit);
+    }
+
+    std::string getRule(std::string relName, size_t ruleNum) override {
+        auto key = make_pair(relName, ruleNum);
+
+        auto rule = rules.find(key);
+        if (rule == rules.end()) {
+            return "Rule not found";
+        } else {
+            return rule->second;
+        }
     }
 };
 

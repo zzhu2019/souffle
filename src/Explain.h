@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ExplainProvenanceRecords.h"
 #include "ExplainProvenanceSLD.h"
 
 #include <csignal>
@@ -13,28 +14,9 @@
 
 namespace souffle {
 
-inline std::vector<std::string> split(std::string s, char delim, int times = -1) {
-    std::vector<std::string> v;
-    std::stringstream ss(s);
-    std::string item;
-
-    while ((times > 0 || times <= -1) && std::getline(ss, item, delim)) {
-        v.push_back(item);
-        times--;
-    }
-
-    if (ss.peek() != EOF) {
-        std::string remainder;
-        std::getline(ss, remainder);
-        v.push_back(remainder);
-    }
-
-    return v;
-}
-
 class Explain {
 private:
-    SouffleProgram& prog;
+    ExplainProvenance& prov;
 
     bool ncurses;
     WINDOW* treePad;
@@ -136,7 +118,7 @@ private:
     }
 
 public:
-    Explain(SouffleProgram& p, bool ncurses, int d = 4) : prog(p), ncurses(ncurses), depthLimit(d) {}
+    Explain(ExplainProvenance& p, bool ncurses, int d = 4) : prov(p), ncurses(ncurses), depthLimit(d) {}
 
     void explain() {
         if (ncurses) {
@@ -147,8 +129,6 @@ public:
         // process commands
         char buf[100];
         std::string line;
-
-        ExplainProvenanceSLD provTree(prog);
 
         while (1) {
             if (ncurses) {
@@ -175,6 +155,10 @@ public:
 
             std::vector<std::string> command = split(line, ' ', 1);
 
+            if (command.size() == 0) {
+                continue;
+            }
+
             if (command[0] == "setdepth") {
                 try {
                     depthLimit = atoi(command[1].c_str());
@@ -191,7 +175,7 @@ public:
                     printStr("Usage: explain relation_name(<element1>, <element2>, ...)\n");
                     continue;
                 }
-                std::unique_ptr<TreeNode> t = provTree.explain(query.first, query.second, depthLimit);
+                std::unique_ptr<TreeNode> t = prov.explain(query.first, query.second, depthLimit);
                 printTree(std::move(t));
             } else if (command[0] == "subproof") {
                 std::pair<std::string, std::vector<std::string>> query;
@@ -203,12 +187,12 @@ public:
                     printStr("Usage: subproof relation_name(<label>)\n");
                     continue;
                 }
-                std::unique_ptr<TreeNode> t = provTree.explainSubproof(query.first, label, depthLimit);
+                std::unique_ptr<TreeNode> t = prov.explainSubproof(query.first, label, depthLimit);
                 printTree(std::move(t));
             } else if (command[0] == "rule") {
                 try {
                     auto query = split(command[1], ' ');
-                    // printStr(provTree.getRule(query[0], atoi(query[1].c_str())));
+                    printStr(prov.getRule(query[0], atoi(query[1].c_str())) + "\n");
                 } catch (std::exception& e) {
                     printStr("Usage: rule <rule number>\n");
                     continue;
@@ -229,11 +213,22 @@ public:
     }
 };
 
-inline void explain(SouffleProgram& prog, bool ncurses = false) {
+inline void explain(SouffleProgram& prog, bool sld = true, bool ncurses = false) {
     std::cout << "Explain is invoked.\n";
 
-    Explain prov(prog, ncurses);
-    prov.explain();
+    ExplainProvenance* prov;
+    if (sld) {
+        prov = new ExplainProvenanceSLD(prog);
+    } else {
+        prov = new ExplainProvenanceRecords(prog);
+    }
+
+    Explain exp(*prov, ncurses);
+    exp.explain();
+
+    if (prov) {
+        delete prov;
+    }
 }
 
 }  // end of namespace souffle

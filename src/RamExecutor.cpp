@@ -2144,7 +2144,7 @@ std::string RamCompiler::generateCode(
 
     // generate C++ program
     os << "#include \"souffle/CompiledSouffle.h\"\n";
-    if (Global::config().has("provenance")) {
+    if (Global::config().has("provenance") || Global::config().has("record-provenance")) {
         os << "#include \"souffle/Explain.h\"\n";
         os << "#include <ncurses.h>\n";
     }
@@ -2489,16 +2489,19 @@ std::string RamCompiler::generateCode(
     os << "obj.loadAll(opt.getInputFileDir());\n";
     os << "obj.run();\n";
     os << "obj.printAll(opt.getOutputFileDir());\n";
+
     if (Global::config().get("provenance") == "1") {
-        os << "explain(obj);\n";
-    }
-    /*
-    if (Global::config().get("provenance") == "1") {
-        os << "explain(obj, true);\n";
+        os << "explain(obj, true, false);\n";
     } else if (Global::config().get("provenance") == "2") {
-        os << "explain(obj, false);\n";
+        os << "explain(obj, true, true);\n";
     }
-    */
+
+    if (Global::config().get("record-provenance") == "1") {
+        os << "explain(obj, false, false);\n";
+    } else if (Global::config().get("record-provenance") == "2") {
+        os << "explain(obj, false, true);\n";
+    }
+
     os << "return 0;\n";
     os << "} catch(std::exception &e) { souffle::SignalHandler::instance()->error(e.what());}\n";
     os << "}\n";
