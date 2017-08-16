@@ -38,7 +38,7 @@ public:
 protected:
     virtual void writeNextTuple(const RamDomain* tuple) = 0;
     template <typename Tuple>
-    void writeNext(Tuple tuple) {
+    void writeNext(const Tuple tuple) {
         writeNextTuple(tuple.data);
     }
     const SymbolMask& symbolMask;

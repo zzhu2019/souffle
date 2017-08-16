@@ -35,12 +35,12 @@ private:
 protected:
     class iterator_base : public Relation::iterator_base {
     private:
-        RamRelationInterface* ramRelationInterface;
+        const RamRelationInterface* ramRelationInterface;
         RamRelation::iterator it;
         tuple tup;
 
     public:
-        iterator_base(uint32_t arg_id, RamRelationInterface* r, RamRelation::iterator i)
+        iterator_base(uint32_t arg_id, const RamRelationInterface* r, RamRelation::iterator i)
                 : Relation::iterator_base(arg_id), ramRelationInterface(r), it(i), tup(r) {}
         virtual ~iterator_base() {}
 
@@ -63,26 +63,26 @@ public:
     virtual ~RamRelationInterface() {}
 
     // insert a new tuple into the relation
-    void insert(const tuple& t);
+    void insert(const tuple& t) override;
 
     // check whether a tuple exists in the relation
-    bool contains(const tuple& t) const;
+    bool contains(const tuple& t) const override;
 
     // begin and end iterator
-    iterator begin();
-    iterator end();
+    iterator begin() const override;
+    iterator end() const override;
 
     // number of tuples in relation
-    std::size_t size();
+    std::size_t size() override;
 
     // properties
-    bool isOutput() const;
-    bool isInput() const;
-    std::string getName() const;
-    const char* getAttrType(size_t) const;
-    const char* getAttrName(size_t) const;
-    size_t getArity() const;
-    SymbolTable& getSymbolTable() const;
+    bool isOutput() const override;
+    bool isInput() const override;
+    std::string getName() const override;
+    const char* getAttrType(size_t) const override;
+    const char* getAttrName(size_t) const override;
+    size_t getArity() const override;
+    SymbolTable& getSymbolTable() const override;
 };
 
 /**
