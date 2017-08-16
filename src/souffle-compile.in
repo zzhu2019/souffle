@@ -44,6 +44,7 @@ set -e
 
 # set by autoconf
 CXX=@CXX@
+CPPFLAGS="@CPPFLAGS@"
 CXXFLAGS="@CXXFLAGS@"
 LDFLAGS="@LDFLAGS@"
 LIBS="@LIBS@"
@@ -111,7 +112,7 @@ then
   rm $dir/$exe.$$.ccerr
 else
   echo "compiler error: cannot compile source file $1" 1>&2
-  echo "$CXX $CXXFLAGS -o$dir/$exe $1 $LIBS -I$HEADER_DIR $OMP_FLAG"
+  echo "$CXX $CXXFLAGS $CPPFLAGS -o$dir/$exe $1 $LIBS -I$HEADER_DIR $OMP_FLAG"
   cat $dir/$exe.$$.ccerr 1>&2
   rm -f $dir/$exe.$$.ccerr
   exit 1
