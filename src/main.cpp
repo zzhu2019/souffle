@@ -128,7 +128,10 @@ int main(int argc, char** argv) {
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false,
                                     "Write debugging output to HTML report."},
-                            {"provenance", 't', "EXPLAIN", "", false, "Enable provenance information."},
+                            {"provenance", 't', "EXPLAIN", "", false,
+                                    "Enable provenance information via guided SLD."},
+                            {"record-provenance", 'T', "EXPLAIN", "", false,
+                                    "Enable provenance information via records."},
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
@@ -293,7 +296,7 @@ int main(int argc, char** argv) {
 
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
-        transforms.push_back(std::unique_ptr<AstTransformer>(new NaiveProvenanceTransformer()));
+        transforms.push_back(std::unique_ptr<AstTransformer>(new ProvenanceTransformer()));
     }
     if (!Global::config().get("debug-report").empty()) {
         auto parser_end = std::chrono::high_resolution_clock::now();
@@ -441,6 +444,8 @@ int main(int argc, char** argv) {
         */
         if (Global::config().get("provenance") == "1") {
             explain(interface);
+        } else if (Global::config().get("provenance") == "2") {
+            explain(interface, true);
         }
     }
 

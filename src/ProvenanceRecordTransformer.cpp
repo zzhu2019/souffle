@@ -14,8 +14,8 @@
  *
  ***********************************************************************/
 
-#include "ProvenanceTransformer.h"
 #include "AstVisitor.h"
+#include "ProvenanceTransformer.h"
 
 namespace souffle {
 

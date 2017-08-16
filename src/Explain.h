@@ -191,9 +191,8 @@ public:
                     printStr("Usage: explain relation_name(<element1>, <element2>, ...)\n");
                     continue;
                 }
-                std::unique_ptr<TreeNode> t = provTree.explain(query.first, query.second);
+                std::unique_ptr<TreeNode> t = provTree.explain(query.first, query.second, depthLimit);
                 printTree(std::move(t));
-                /*
             } else if (command[0] == "subproof") {
                 std::pair<std::string, std::vector<std::string>> query;
                 int label = -1;
@@ -204,9 +203,8 @@ public:
                     printStr("Usage: subproof relation_name(<label>)\n");
                     continue;
                 }
-                std::unique_ptr<TreeNode> t = provTree.getTree(query.first, label);
+                std::unique_ptr<TreeNode> t = provTree.explainSubproof(query.first, label, depthLimit);
                 printTree(std::move(t));
-                */
             } else if (command[0] == "rule") {
                 try {
                     auto query = split(command[1], ' ');
@@ -233,12 +231,6 @@ public:
 
 inline void explain(SouffleProgram& prog, bool ncurses = false) {
     std::cout << "Explain is invoked.\n";
-
-    /*
-    const std::vector<RamDomain>* args = new std::vector<RamDomain>({2, 4, 2});
-    std::vector<RamDomain>* ret = new std::vector<RamDomain>();
-    prog.executeSubroutine("path_1_subproof", args, ret);
-    */
 
     Explain prov(prog, ncurses);
     prov.explain();

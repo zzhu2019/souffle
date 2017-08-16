@@ -4,13 +4,15 @@
 #include "SouffleInterface.h"
 #include "Util.h"
 
+#define DEFAULT_DEPTH_LIMIT 4
+
 namespace souffle {
 
 class ExplainProvenanceSLD : public ExplainProvenance {
 private:
-    // std::map<std::pair<std::string, std::vector<RamDomain>>, std::pair<RamDomain, RamDomain>> tuples;
     std::map<std::pair<std::string, size_t>, std::vector<std::string>> info;
     std::map<std::pair<std::string, size_t>, std::string> rules;
+    std::vector<std::vector<RamDomain>> subproofs;
 
     std::pair<int, int> findTuple(std::string relName, std::vector<RamDomain> tup) {
         auto rel = prog.getRelation(relName);
@@ -105,41 +107,6 @@ public:
         setup();
     }
 
-    /** Set up environment to run explain queries */
-    /*
-    void setup() {
-        // store each tuple in a map marking its rule number and level number
-        for (auto& rel : prog.getAllRelations()) {
-            std::string name = rel.getName();
-
-            // get each tuple
-            for (auto& tuple : *rel) {
-                std::vector<RamDomain> tupleElements;
-
-                for (size_t i = 0; i < tuple.size() - 2; i++) {
-                    if (*(rel->getAttrType(i)) == 'i' || *(rel->getAttrType(i)) == 'r') {
-                        RamDomain n;
-                        tuple >> n;
-                        tupleElements.push_back(n);
-                    } else if (*(rel->getAttrType(i)) == 's') {
-                        std::string s;
-                        tuple >> s;
-                        tupleElements.push_back(symTable.lookup(s.c_str()));
-                    }
-                }
-
-                RamDomain ruleNum;
-                tuple >> ruleNum;
-
-                RamDomain levelNum;
-                tuple >> levelNum;
-
-                tuples.insert({std::make_pair(name, tupleElements), std::make_pair(ruleNum, levelNum)});
-            }
-        }
-    }
-    */
-
     void setup() override {
         // for each clause, store a mapping from the head relation name to body relation names
         for (auto& rel : prog.getAllRelations()) {
@@ -173,7 +140,7 @@ public:
     }
 
     std::unique_ptr<TreeNode> explain(
-            std::string relName, std::vector<RamDomain> tuple, int ruleNum, int levelNum) {
+            std::string relName, std::vector<RamDomain> tuple, int ruleNum, int levelNum, size_t depthLimit) {
         std::stringstream joinedArgs;
         joinedArgs << join(numsToArgs(relName, tuple), ", ");
         auto joinedArgsStr = joinedArgs.str();
@@ -184,6 +151,25 @@ public:
         }
 
         assert(info.find(std::make_pair(relName, ruleNum)) != info.end() && "invalid rule for tuple");
+
+        // if depth limit exceeded
+        if (depthLimit <= 1) {
+            tuple.push_back(ruleNum);
+            tuple.push_back(levelNum);
+
+            // find if subproof exists already
+            size_t idx = 0;
+            auto it = std::find(subproofs.begin(), subproofs.end(), tuple);
+            if (it != subproofs.end()) {
+                idx = it - subproofs.begin();
+            } else {
+                subproofs.push_back(tuple);
+                idx = subproofs.size() - 1;
+            }
+
+            return std::unique_ptr<TreeNode>(
+                    new LeafNode("subproof " + relName + "(" + std::to_string(idx) + ")"));
+        }
 
         auto internalNode = new InnerNode(relName + "(" + joinedArgsStr + ")");
 
@@ -206,7 +192,7 @@ public:
                 bodyRelAtomName = bodyRel.substr(1);
             }
 
-            // traverse subroutine return using pointers
+            // traverse subroutine return
             size_t arity = prog.getRelation(bodyRelAtomName)->getArity();
             auto tupleEnd = tupleCurInd + arity;
 
@@ -229,7 +215,8 @@ public:
                 internalNode->add_child(
                         std::unique_ptr<TreeNode>(new LeafNode(bodyRel + "(" + joinedTupleStr + ")")));
             } else {
-                internalNode->add_child(explain(bodyRel, subproofTuple, subproofRuleNum, subproofLevelNum));
+                internalNode->add_child(
+                        explain(bodyRel, subproofTuple, subproofRuleNum, subproofLevelNum, depthLimit - 1));
             }
 
             tupleCurInd = tupleEnd;
@@ -241,7 +228,8 @@ public:
         return std::unique_ptr<TreeNode>(internalNode);
     }
 
-    std::unique_ptr<TreeNode> explain(std::string relName, std::vector<std::string> args) override {
+    std::unique_ptr<TreeNode> explain(
+            std::string relName, std::vector<std::string> args, size_t depthLimit) override {
         auto tuple = argsToNums(relName, args);
         if (tuple == std::vector<RamDomain>()) {
             return std::unique_ptr<TreeNode>(new LeafNode("Relation not found"));
@@ -255,7 +243,21 @@ public:
             return std::unique_ptr<TreeNode>(new LeafNode("Tuple not found"));
         }
 
-        return explain(relName, tuple, ruleNum, levelNum);
+        return explain(relName, tuple, ruleNum, levelNum, depthLimit);
+    }
+
+    std::unique_ptr<TreeNode> explainSubproof(std::string relName, size_t subproofNum, size_t depthLimit) {
+        if (subproofNum >= subproofs.size()) {
+            return std::unique_ptr<TreeNode>(new LeafNode("Subproof not found"));
+        }
+
+        auto tup = subproofs[subproofNum];
+        RamDomain levelNum = tup.back();
+        tup.pop_back();
+        RamDomain ruleNum = tup.back();
+        tup.pop_back();
+
+        return explain(relName, tup, ruleNum, levelNum, depthLimit);
     }
 };
 

@@ -135,7 +135,7 @@ void transformEqrelRelation(AstRelation& rel) {
     rel.addClause(std::unique_ptr<AstClause>(reflexiveClause));
 }
 
-bool NaiveProvenanceTransformer::transform(AstTranslationUnit& translationUnit) {
+bool ProvenanceTransformer::transform(AstTranslationUnit& translationUnit) {
     auto program = translationUnit.getProgram();
 
     // get next level number
