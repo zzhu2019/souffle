@@ -831,8 +831,7 @@ void RamGuidedInterpreter::applyOn(const RamStatement& stmt, RamEnvironment& env
         // open output stream
         std::ofstream os(fname);
         if (!os.is_open()) {
-            // TODO: use different error reporting here!!
-            std::cerr << "Cannot open fact file " << fname << " for profiling\n";
+            throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
         os << "@start-debug\n";
         run(queryStrategy, report, &os, stmt, env, data);
@@ -2402,7 +2401,7 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamS
 
     // run executable
     if (system(cmd.c_str()) != 0) {
-        std::cerr << "failed to compile C++ source " << binary << "\n";
+        throw std::invalid_argument("failed to compile C++ source <" + source + ">");
     }
 
     // done
@@ -2420,7 +2419,7 @@ void RamCompiler::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData
 
     // check whether the executable exists
     if (!isExecutable(binary)) {
-        std::cerr << "failed to run executable " << binary << "\n";
+        throw std::invalid_argument("Generated executable <" + binary + "> could not be found");
     }
 
     // run executable
