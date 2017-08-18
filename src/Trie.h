@@ -1985,7 +1985,7 @@ struct fix_binding<0, Dim, Dim> {
         return true;
     }
 };
-}
+}  // namespace detail
 
 /**
  * The most generic implementation of a Trie forming the top-level of any
@@ -2138,8 +2138,8 @@ public:
                   lastBoundaries(iterator(), iterator()) {}
     };
 
-    using base::insert;
     using base::contains;
+    using base::insert;
 
     /**
      * A simple destructore.
@@ -2501,8 +2501,8 @@ class Trie<0u> : public detail::TrieBase<0u, Trie<0u>> {
 public:
     struct op_context {};
 
-    using base::insert;
     using base::contains;
+    using base::insert;
 
     // a simple default constructor
     Trie() : present(false) {}
@@ -2728,8 +2728,8 @@ class Trie<1u> : public detail::TrieBase<1u, Trie<1u>> {
 public:
     typedef typename map_type::op_context op_context;
 
-    using base::insert;
     using base::contains;
+    using base::insert;
 
     /**
      * Determines whether this trie is empty or not.

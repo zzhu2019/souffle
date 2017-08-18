@@ -365,4 +365,4 @@ public:
         }
     }
 };
-}
+}  // namespace souffle

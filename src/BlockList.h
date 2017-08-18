@@ -447,4 +447,4 @@ inline void BlockList<std::atomic<block_t>>::add(const std::atomic<block_t>& val
 
     ++m_size;
 }
-}
+}  // namespace souffle
