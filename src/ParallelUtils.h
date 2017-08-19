@@ -210,7 +210,7 @@ public:
         }
     }
 };
-}
+}  // namespace detail
 
 /* compare: http://en.cppreference.com/w/cpp/atomic/atomic_flag */
 class SpinLock {

@@ -166,7 +166,7 @@ struct print<First, Second, Rest...> {
     }
 };
 
-}  // end namespace utils
+}  // namespace index_utils
 
 /**
  * The index class is utilized as a template-meta-programming structure
@@ -343,14 +343,14 @@ template <unsigned i, unsigned arity, typename Index>
 struct extend_to_full_index_aux {
     typedef typename extend_to_full_index_aux<i + 1, arity,
             typename std::conditional<(Index::template covers<i>::value), Index,
-                                                      typename extend<Index, i>::type>::type>::type type;
+                    typename extend<Index, i>::type>::type>::type type;
 };
 
 template <unsigned arity, typename Index>
 struct extend_to_full_index_aux<arity, arity, Index> {
     typedef Index type;
 };
-}
+}  // namespace detail
 
 template <unsigned arity, typename Index>
 struct extend_to_full_index : public detail::extend_to_full_index_aux<0, arity, Index> {};
@@ -393,7 +393,7 @@ template <>
 struct get_prefix_aux<0> {
     typedef index<> type;
 };
-}
+}  // namespace detail
 
 template <unsigned L, typename I>
 struct get_prefix;
@@ -455,7 +455,7 @@ template <unsigned... A, unsigned... B, unsigned... R>
 struct is_compatible_with_aux<index<A...>, index<>, index<B...>, index<R...>> {
     enum { value = is_permutation<index<A...>, index<B...>>::value };
 };
-}
+}  // namespace detail
 
 template <typename I1, typename I2>
 struct is_compatible_with {
@@ -1165,9 +1165,9 @@ struct index_factory<T, Index, true> {
     // pick direct or indirect indexing based on size of tuple
     typedef typename std::conditional<sizeof(T) <= 2 * sizeof(void*),  // if tuple is not bigger than a bound
             typename direct_index_factory<T, Index,
-                                              true>::type,  // use a direct index
+                    true>::type,  // use a direct index
             IndirectIndex<T,
-                                              Index>  // otherwise use an indirect, pointer based index
+                    Index>  // otherwise use an indirect, pointer based index
             >::type type;
 };
 
@@ -1396,7 +1396,7 @@ public:
         return out;
     }
 };
-}
+}  // namespace index_utils
 
 namespace iterator_utils {
 
@@ -1483,7 +1483,7 @@ private:
     }
 };
 
-}  // end namespace iterator utils
+}  // namespace iterator_utils
 
 }  // end namespace ram
 

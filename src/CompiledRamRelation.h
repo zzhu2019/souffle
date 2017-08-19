@@ -86,7 +86,7 @@ namespace detail {
  */
 template <unsigned arity, typename... Indices>
 class AutoRelation;
-}
+}  // namespace detail
 
 /**
  * A generic, tuned setup, using a combination of direct and indirect
@@ -112,7 +112,7 @@ namespace detail {
 template <template <typename Tuple, typename Index, bool direct> class IndexFactory, unsigned arity,
         typename... Indices>
 class SingleIndexTypeRelation;
-}
+}  // namespace detail
 
 /**
  * A setup utilizing direct b-trees for relations exclusively.
@@ -297,8 +297,8 @@ public:
     typedef typename indices_t::operation_context operation_context;
 
     // import generic signatures from the base class
-    using base::insert;
     using base::contains;
+    using base::insert;
 
     // --- most general implementation ---
 
@@ -459,8 +459,8 @@ public:
     typedef typename indices_t::operation_context operation_context;
 
     // import generic signatures from the base class
-    using base::insert;
     using base::contains;
+    using base::insert;
 
     // --- most general implementation ---
 
@@ -774,8 +774,8 @@ public:
     typedef typename table_t::iterator iterator;
 
     // import generic signatures from the base class
-    using base::insert;
     using base::contains;
+    using base::insert;
 
     typedef typename table_t::operation_hints operation_context;
 

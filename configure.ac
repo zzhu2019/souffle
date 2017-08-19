@@ -119,6 +119,7 @@ AS_IF([test -z "$FLEX"], [AC_MSG_ERROR([flex not found.])])
 # Check for bison
 AC_CHECK_PROG(BISON, bison, bison)
 AS_IF([test -z "$BISON"], [AC_MSG_ERROR([bison not found.])])
+AX_PROG_BISON_VERSION([3.0.2], [], [AC_MSG_ERROR([bison version 3.0.2 is required.])])
 
 # Enable packaging option
 AC_ARG_ENABLE(
