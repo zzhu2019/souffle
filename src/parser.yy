@@ -249,6 +249,12 @@ pragma
         $$->setSrcLoc(@$);
     }
 
+  | PRAGMA STRING {
+        $$ = new AstPragma($2, "");
+        $$->setSrcLoc(@$);
+    }
+
+
 
 /* Type Identifier */
 type_id

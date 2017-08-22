@@ -449,7 +449,7 @@ private:
             if (rel->getName().find(relName) != std::string::npos) {
                 found = true;
             }
-            std::regex provRelName(relName + "-provenance-[0-9]+");
+            std::regex provRelName(relName + "-provenance-[0-9]+", std::regex_constants::extended);
             if (std::regex_match(rel->getName(), provRelName)) {
                 isEDB = false;
                 break;
@@ -569,7 +569,7 @@ public:
         out << "---------------\n"
             << relName << "\n"
             << "===============\n";
-        WriteStreamCSV(out, symMask, prog.getSymbolTable()).writeAllUnsafe(*rel);
+        WriteCoutCSV(rel->getName(), symMask, prog.getSymbolTable()).writeAll(*rel);
         out << "---------------\n";
 
         return out.str();
