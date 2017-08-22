@@ -1082,7 +1082,9 @@ std::unique_ptr<RamStatement> RamTranslator::translateProgram(const AstTranslati
             appendStmt(res, std::unique_ptr<RamStatement>(new RamPrintSize(rrel)));
         }
         if (rel->isOutput()) {
-            appendStmt(res, std::unique_ptr<RamStatement>(new RamDrop(rrel)));
+            if (!Global::config().has("provenance")) {
+                appendStmt(res, std::unique_ptr<RamStatement>(new RamDrop(rrel)));
+            }
         }
     }
 

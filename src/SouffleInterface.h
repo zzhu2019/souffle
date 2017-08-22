@@ -102,8 +102,8 @@ public:
     virtual bool contains(const tuple& t) const = 0;
 
     // begin and end iterator
-    virtual iterator begin() = 0;
-    virtual iterator end() = 0;
+    virtual iterator begin() const = 0;
+    virtual iterator end() const = 0;
 
     // number of tuples in relation
     virtual std::size_t size() = 0;
@@ -131,13 +131,18 @@ public:
  * relations with varying columns can be accessed.
  */
 class tuple {
-    Relation& relation;
+    const Relation& relation;
     std::vector<RamDomain> array;
     size_t pos;
 
 public:
-    tuple(Relation* r) : relation(*r), array(r->getArity()), pos(0) {}
-    tuple(const tuple& t) : relation(t.relation), array(t.array), pos(t.pos) {}
+    tuple(const Relation* r) : relation(*r), array(r->getArity()), pos(0), data(array.data()) {}
+    tuple(const tuple& t) : relation(t.relation), array(t.array), pos(t.pos), data(array.data()) {}
+
+    /**
+     * allows printing using WriteStream
+     */
+    const RamDomain* data;
 
     /**
      * return number of elements in the tuple

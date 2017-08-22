@@ -23,6 +23,7 @@
 #include <ncurses.h>
 
 #include "SouffleInterface.h"
+#include "WriteStreamCSV.h"
 
 #define MAX_TREE_HEIGHT 500
 #define MAX_TREE_WIDTH 500
@@ -351,6 +352,8 @@ private:
                         } else if (*(rel->getAttrType(i)) == 's') {
                             std::string s;
                             tuple >> s;
+                            // insert placeholder to refs
+                            refs.push_back(-1);
                         }
                     }
 
@@ -443,13 +446,13 @@ private:
         bool isEDB = true;
         bool found = false;
         for (auto rel : prog.getAllRelations()) {
-            std::regex provRelName(relName + "-provenance-[0-9]+", std::regex_constants::basic);
+            if (rel->getName().find(relName) != std::string::npos) {
+                found = true;
+            }
+            std::regex provRelName(relName + "-provenance-[0-9]+", std::regex_constants::extended);
             if (std::regex_match(rel->getName(), provRelName)) {
                 isEDB = false;
                 break;
-            }
-            if (rel->getName().find(relName) != std::string::npos) {
-                found = true;
             }
         }
 
@@ -502,10 +505,11 @@ private:
                 // recursively add all provenance values for this value
                 for (size_t i = 0; i < provInfo.getInfo(infoKey).size(); i++) {
                     auto rel = provInfo.getInfo(infoKey)[i];
-                    auto newLab = provInfo.getSubproofs(internalRelName, label)[i];
                     if (std::regex_match(rel, std::regex("negated_.*"))) {
                         inner->add_child(std::unique_ptr<TreeNode>(new LeafNode(rel)));
                     } else {
+                        auto newLab = provInfo.getSubproofs(internalRelName, label)[i];
+                        assert(newLab != -1 && "subproof refers to negation");
                         inner->add_child(explainLabel(rel, newLab, depth - 1));
                     }
                 }
@@ -542,6 +546,33 @@ public:
 
     std::string getRule(std::string relName, int ruleNum) {
         return provInfo.getRule(relName, ruleNum);
+    }
+
+    std::string getRelationOutput(std::string relName) {
+        auto rel = prog.getRelation(relName);
+
+        if (rel == nullptr) {
+            return "no relation found: " + relName + "\n";
+        }
+
+        // create symbol mask
+        SymbolMask symMask(rel->getArity());
+
+        for (size_t i = 0; i < rel->getArity(); i++) {
+            if (*(rel->getAttrType(i)) == 's') {
+                symMask.setSymbol(i);
+            }
+        }
+
+        // create string stream
+        std::ostringstream out;
+        out << "---------------\n"
+            << relName << "\n"
+            << "===============\n";
+        WriteCoutCSV(rel->getName(), symMask, prog.getSymbolTable()).writeAll(*rel);
+        out << "---------------\n";
+
+        return out.str();
     }
 
     void setDepth(int d) {
@@ -695,6 +726,10 @@ public:
 
             std::vector<std::string> command = split(line, ' ', 1);
 
+            if (command.size() == 0) {
+                continue;
+            }
+
             if (command[0] == "setdepth") {
                 try {
                     depthLimit = atoi(command[1].c_str());
@@ -735,6 +770,25 @@ public:
                     printStr("Usage: rule <rule number>\n");
                     continue;
                 }
+            } else if (command[0] == "printrel") {
+                try {
+                    printStr(provTree.getRelationOutput(command[1]));
+                } catch (std::exception& e) {
+                    printStr("Usage: printrel <relation name>\n");
+                    continue;
+                }
+            } else if (command[0] == "help") {
+                printStr(
+                        "\n----------\n"
+                        "Commands:\n"
+                        "----------\n"
+                        "setdepth <depth>: Set a limit for printed derivation tree height\n"
+                        "explain <relation>(<element1>, <element2>, ...): Prints derivation tree\n"
+                        "subproof <relation>(<label>): Prints derivation tree for a subproof, label is "
+                        "generated if a derivation tree exceeds height limit\n"
+                        "rule <rule number>: Prints a rule\n"
+                        "printrel <relation name>: Prints the tuples of a relation\n"
+                        "exit: Exits this interface\n\n");
             } else if (command[0] == "exit") {
                 break;
             }

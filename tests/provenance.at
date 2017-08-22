@@ -6,5 +6,4 @@
 
 POSITIVE_PROVENANCE_TEST([path],[provenance])
 POSITIVE_PROVENANCE_TEST([negation],[provenance])
-
-dnl NEGATIVE_PROVENANCE_TEST([test2],[provenance])
+POSITIVE_PROVENANCE_TEST([cprog1],[provenance])
