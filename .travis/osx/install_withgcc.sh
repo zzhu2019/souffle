@@ -12,4 +12,3 @@ brew link bison --force
 g++-7 --version
 
 rm /Users/travis/Library/Logs/DiagnosticReports/*
-
