@@ -811,4 +811,4 @@ inline void explain(SouffleProgram& prog, bool ncurses = true) {
     ProvenanceDisplay prov(prog, ncurses);
     prov.explain();
 }
-}
+}  // namespace souffle
