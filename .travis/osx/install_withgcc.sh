@@ -10,3 +10,6 @@ rm /usr/local/include/c++
 brew install md5sha1sum bison libtool gcc
 brew link bison --force
 g++-7 --version
+
+rm /Users/travis/Library/Logs/DiagnosticReports/*
+
