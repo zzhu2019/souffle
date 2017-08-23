@@ -9,6 +9,9 @@
 #include <string>
 #include <ncurses.h>
 
+#include "SouffleInterface.h"
+#include "WriteStreamCSV.h"
+
 #define MAX_TREE_HEIGHT 500
 #define MAX_TREE_WIDTH 500
 
@@ -197,6 +200,25 @@ public:
                     printStr("Usage: rule <rule number>\n");
                     continue;
                 }
+            } else if (command[0] == "printrel") {
+                try {
+                    // printStr(prov.getRelationOutput(command[1]));
+                } catch (std::exception& e) {
+                    printStr("Usage: printrel <relation name>\n");
+                    continue;
+                }
+            } else if (command[0] == "help") {
+                printStr(
+                        "\n----------\n"
+                        "Commands:\n"
+                        "----------\n"
+                        "setdepth <depth>: Set a limit for printed derivation tree height\n"
+                        "explain <relation>(<element1>, <element2>, ...): Prints derivation tree\n"
+                        "subproof <relation>(<label>): Prints derivation tree for a subproof, label is "
+                        "generated if a derivation tree exceeds height limit\n"
+                        "rule <rule number>: Prints a rule\n"
+                        "printrel <relation name>: Prints the tuples of a relation\n"
+                        "exit: Exits this interface\n\n");
             } else if (command[0] == "exit") {
                 break;
             }

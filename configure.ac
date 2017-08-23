@@ -41,13 +41,21 @@ AS_IF([test "x$enable_jni" = "xyes"], [
 ])
 AM_CONDITIONAL([JAVAI], [test "x$enable_jni" = "xyes"])
 
-# Enable curses library
-AX_WITH_CURSES
-AS_VAR_APPEND(LIBS, ["$CURSES_LIB"])
-AS_IF([test "x$ax_cv_ncurses" != "xyes"],[AC_MSG_ERROR([required library ncurses missing])])
-
 dnl Do not set default CFLAGS and CXXFLAGS
 CXXFLAGS=" -g -Wall -std=c++11  $CXXFLAGS"
+
+# Disable provenance
+AC_ARG_ENABLE(
+  [provenance],
+  AS_HELP_STRING([--disable-provenance], [Disable provenance display])
+)
+AS_IF([test "x$enable_provenance" != "xno"], [
+  AX_WITH_CURSES
+  AS_IF([test "x$ax_cv_ncurses" != "xyes"],[AC_MSG_ERROR([required library ncurses missing])])
+  AS_VAR_APPEND(LIBS, ["$CURSES_LIB"])
+  AS_VAR_APPEND(CXXFLAGS, [" -DUSE_PROVENANCE "])
+])
+AM_CONDITIONAL([PROVENANCE], [test "x$enable_provenance" != "xno"])
 
 # Enable sanitise memory mode
 AC_ARG_ENABLE(
@@ -111,6 +119,7 @@ AS_IF([test -z "$FLEX"], [AC_MSG_ERROR([flex not found.])])
 # Check for bison
 AC_CHECK_PROG(BISON, bison, bison)
 AS_IF([test -z "$BISON"], [AC_MSG_ERROR([bison not found.])])
+AX_PROG_BISON_VERSION([3.0.2], [], [AC_MSG_ERROR([bison version 3.0.2 is required.])])
 
 # Enable packaging option
 AC_ARG_ENABLE(

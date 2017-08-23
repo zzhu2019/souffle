@@ -800,4 +800,4 @@ public:
         return ret;
     }
 };
-}
+}  // namespace souffle

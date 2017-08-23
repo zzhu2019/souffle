@@ -25,7 +25,9 @@
 #include "AstUtils.h"
 #include "BddbddbBackend.h"
 #include "ComponentModel.h"
+#ifdef USE_PROVENANCE
 #include "Explain.h"
+#endif
 #include "Global.h"
 #include "ParserDriver.h"
 #include "PrecedenceGraph.h"
@@ -126,12 +128,13 @@ int main(int argc, char** argv) {
                             {"profile", 'p', "FILE", "", false,
                                     "Enable profiling and write profile data to <FILE>."},
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
-                            {"debug-report", 'r', "FILE", "", false,
-                                    "Write debugging output to HTML report."},
+                            {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
+#ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information via guided SLD."},
                             {"record-provenance", 'T', "EXPLAIN", "", false,
                                     "Enable provenance information via records."},
+#endif
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
@@ -293,13 +296,14 @@ int main(int argc, char** argv) {
     if (Global::config().has("auto-schedule")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));
     }
-
+#if USE_PROVENANCE
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new ProvenanceTransformer()));
     } else if (Global::config().has("record-provenance")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new NaiveProvenanceTransformer()));
     }
+#endif
     if (!Global::config().get("debug-report").empty()) {
         auto parser_end = std::chrono::high_resolution_clock::now();
         std::string runtimeStr =
@@ -406,22 +410,26 @@ int main(int argc, char** argv) {
             executor = std::unique_ptr<RamExecutor>(new RamInterpreter());
         }
     }
-
-    // check if this is code generation only
     std::unique_ptr<RamEnvironment> env;
-    if (Global::config().has("generate")) {
-        // just generate, no compile, no execute
-        static_cast<const RamCompiler*>(executor.get())
-                ->generateCode(translationUnit->getSymbolTable(), *ramProg, Global::config().get("generate"));
+    try {
+        // check if this is code generation only
+        if (Global::config().has("generate")) {
+            // just generate, no compile, no execute
+            static_cast<const RamCompiler*>(executor.get())
+                    ->generateCode(
+                            translationUnit->getSymbolTable(), *ramProg, Global::config().get("generate"));
 
-        // check if this is a compile only
-    } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
-        // just compile, no execute
-        static_cast<const RamCompiler*>(executor.get())
-                ->compileToBinary(translationUnit->getSymbolTable(), *ramProg);
-    } else {
-        // run executor
-        env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
+            // check if this is a compile only
+        } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
+            // just compile, no execute
+            static_cast<const RamCompiler*>(executor.get())
+                    ->compileToBinary(translationUnit->getSymbolTable(), *ramProg);
+        } else {
+            // run executor
+            env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
+        }
+    } catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
     }
 
     /* Report overall run-time in verbose mode */
@@ -431,6 +439,7 @@ int main(int argc, char** argv) {
                   << "sec\n";
     }
 
+#ifdef USE_PROVENANCE
     // only run explain interface if interpreted
     if ((Global::config().has("provenance") || Global::config().has("record-provenance")) &&
             dynamic_cast<RamInterpreter*>(executor.get()) && env != nullptr) {
@@ -449,7 +458,7 @@ int main(int argc, char** argv) {
             explain(interface, false, true);
         }
     }
-
+#endif
     return 0;
 }
 

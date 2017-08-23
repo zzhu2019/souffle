@@ -148,13 +148,13 @@ public:
         bool isEDB = true;
         bool found = false;
         for (auto rel : prog.getAllRelations()) {
+            if (rel->getName().find(relName) != std::string::npos) {
+                found = true;
+            }
             std::regex provRelName(relName + "-provenance-[0-9]+");
             if (std::regex_match(rel->getName(), provRelName)) {
                 isEDB = false;
                 break;
-            }
-            if (rel->getName().find(relName) != std::string::npos) {
-                found = true;
             }
         }
 
@@ -190,8 +190,21 @@ public:
                     }
                 }
 
+                // either fact or relation doesn't exist
                 if (internalRelName == "") {
-                    return std::unique_ptr<TreeNode>(new LeafNode("Relation " + relName + " not found"));
+                    // if fact
+                    auto tup = provInfo.getTuple(relName + "-output", label);
+                    if (tup != std::vector<RamDomain>()) {
+                        // output leaf provenance node
+                        std::stringstream tupleText;
+                        tupleText << join(numsToArgs(relName, tup), ", ");
+                        std::string lab = relName + "(" + tupleText.str() + ")";
+
+                        // leaf node
+                        return std::unique_ptr<TreeNode>(new LeafNode(lab));
+                    } else {
+                        return std::unique_ptr<TreeNode>(new LeafNode("Relation " + relName + " not found"));
+                    }
                 }
 
                 // label and rule number for current node

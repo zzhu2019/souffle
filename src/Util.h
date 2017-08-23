@@ -607,8 +607,8 @@ ostream& operator<<(ostream& out, const set<K, C, A>& s) {
 template <typename K, typename T, typename C, typename A>
 ostream& operator<<(ostream& out, const map<K, T, C, A>& m) {
     return out << "{" << souffle::join(m, ",", [](ostream& out, const pair<K, T>& cur) {
-               out << cur.first << "->" << cur.second;
-           }) << "}";
+        out << cur.first << "->" << cur.second;
+    }) << "}";
 }
 
 }  // end namespace std
@@ -1148,6 +1148,6 @@ typename _Unique_if<T>::_Unknown_bound make_unique(size_t n) {
 
 template <class T, class... Args>
 typename _Unique_if<T>::_Known_bound make_unique(Args&&...) = delete;
-}
+}  // namespace std
 
 #endif
