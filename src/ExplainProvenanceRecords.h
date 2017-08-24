@@ -52,9 +52,16 @@ public:
 
                     // construct vector of proof references
                     for (size_t i = 1; i < tuple.size(); i++) {
-                        RamDomain l;
-                        tuple >> l;
-                        refs.push_back(l);
+                        if (*(rel->getAttrType(i)) == 'i' || *(rel->getAttrType(i)) == 'r') {
+                            RamDomain n;
+                            tuple >> n;
+                            refs.push_back(n);
+                        } else if (*(rel->getAttrType(i)) == 's') {
+                            std::string s;
+                            tuple >> s;
+                            // insert placeholder to refs for negated tuples
+                            refs.push_back(-1);
+                        }
                     }
 
                     labelToProof.insert({std::make_pair(rel->getName(), label), refs});
@@ -224,10 +231,17 @@ public:
                 std::string infoKey = relName + "-info-" + ruleNum;
 
                 // recursively add all provenance values for this value
-                for (size_t i = 0; i < provInfo.getInfo(infoKey).size(); i++) {
-                    auto rel = provInfo.getInfo(infoKey)[i];
-                    auto newLab = provInfo.getSubproofs(internalRelName, label)[i];
-                    inner->add_child(explainSubproof(rel, newLab, depth - 1));
+                auto subproofInfo = provInfo.getInfo(infoKey);
+                auto subproofLabels = provInfo.getSubproofs(internalRelName, label);
+                for (size_t i = 0; i < subproofInfo.size(); i++) {
+                    auto rel = subproofInfo[i];
+                    auto newLab = subproofLabels[i];
+
+                    if (newLab == -1) {
+                        inner->add_child(std::unique_ptr<TreeNode>(new LeafNode(rel)));
+                    } else {
+                        inner->add_child(explainSubproof(rel, newLab, depth - 1));
+                    }
                 }
                 return std::move(inner);
 

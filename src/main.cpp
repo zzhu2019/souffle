@@ -296,7 +296,7 @@ int main(int argc, char** argv) {
     if (Global::config().has("auto-schedule")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));
     }
-#if USE_PROVENANCE
+#ifdef USE_PROVENANCE
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new ProvenanceTransformer()));

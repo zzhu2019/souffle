@@ -42,7 +42,7 @@ AS_IF([test "x$enable_jni" = "xyes"], [
 AM_CONDITIONAL([JAVAI], [test "x$enable_jni" = "xyes"])
 
 dnl Do not set default CFLAGS and CXXFLAGS
-CXXFLAGS=" -g -Wall -std=c++11  $CXXFLAGS"
+CXXFLAGS=" -Wall -std=c++11  $CXXFLAGS"
 
 # Disable provenance
 AC_ARG_ENABLE(
