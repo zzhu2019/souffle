@@ -812,127 +812,139 @@ bool isVariable(AstArgument* arg) {
   return ((dynamic_cast<AstVariable*>(arg)) || isFunctor(arg));
 }
 
+bool isCounter(AstArgument* arg) {
+  return (dynamic_cast<AstCounter*>(arg));
+}
+
+// TODO LIST:
+/*
+1 - underscores -> variables
+2 - alpha reductions
+3 - get rid of inner arguments for aggregators
+*/
+
+// TODO: not really Martelli-Montanari algo anymore?
 // Reduces a vector of substitutions based on Martelli-Montanari algorithm
 bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub) {
+  // Keep trying to reduce the substitutions until we reach a fixed point
   bool done = false;
-
   while (!done) {
     done = true;
+
+    // Try reducing each pair
     for(int i = 0; i < sub.size(); i++) {
       auto currPair = sub[i];
-      AstArgument* firstTerm = currPair.first;
-      AstArgument* secondTerm = currPair.second;
+      AstArgument* lhs = currPair.first;
+      AstArgument* rhs = currPair.second;
 
-      // TODO: see doubles.dl file for what's left
+      // TODO: see doubles_new.dl file for what's left
       // AstArgument Cases:
-      //  0 - AstVariable [x]
+      //  0 - AstVariable
       //  1 - AstUnnamedVariable (_) -> change all to variables to reduce this case -> need to rename everything
       //  2 - AstCounter ($) -> find out what this does --> UHH??
-      //  3 - AstConstant -> as straightforward as variables [x]
-      //  4 - AstFunctor -> can this just be direct? or more thought into this? [x]
-      //  5 - AstRecordInit -> this should just be pairwise equality right? think about this... [x]
-      //  6 - AstTypeCast -> find out what this does [x] SIDE NOTE: no idea how this looks actually but should work immediately
+      //  3 - AstConstant -> as straightforward as variables
+      //  4 - AstFunctor -> can this just be direct? or more thought into this?
+      //  5 - AstRecordInit -> this should just be pairwise equality right? think about this...
+      //  6 - AstTypeCast -> find out what this does ;; SIDE NOTE: no idea how this looks actually but should work immediately
       //  7 - AstAggregator -> complicated! think about this - perhaps equate arguments on a lower level
 
-      // Unify the arguments
-      // If returnCode = -1, then failed to unify
-      // If return code = 0, then unified and theres no change
-      // If return code = 1, then unified and there was a change
-      // int returnCode = unifyArguments(firstTerm, secondTerm, sub);
+      // TODO: throw this error properly
+      assert(!isCounter(lhs) && !isCounter(rhs) && "ERROR: CONTAINS `$`");
 
-      // TODO: change to LHS and RHS
-      if (*firstTerm == *secondTerm) {
+      if (*lhs == *rhs) {
         // get rid of `x = x`
         sub.erase(sub.begin() + i);
         done = false;
-      } else if (isRecord(firstTerm)) {
-        if (!isRecord(secondTerm)) {
+      } else if (isConstant(lhs) && isConstant(rhs)) {
+        // both are constants but not equal (prev case => !=)
+        // failed to unify!
+        return false;
+      } else if (isRecord(lhs) && isRecord(rhs)) {
+        // handle equated records
+        // note: we will not deal with the case where only one side is
+        // a record and the other is a variable
+        // TODO: think about the case where record = constant, etc.
+        std::vector<AstArgument*> lhsArgs = static_cast<AstRecordInit*>(lhs)->getArguments();
+        std::vector<AstArgument*> rhsArgs = static_cast<AstRecordInit*>(rhs)->getArguments();
+        if (lhsArgs.size() != rhsArgs.size()) {
           return false;
         }
-        std::vector<AstArgument*> firstRecArgs = static_cast<AstRecordInit*>(firstTerm)->getArguments();
-        std::vector<AstArgument*> secondRecArgs = static_cast<AstRecordInit*>(secondTerm)->getArguments();
-        if (firstRecArgs.size() != secondRecArgs.size()) {
-          return false;
-        }
-        for (int i = 0; i < firstRecArgs.size(); i++) {
-          sub.push_back(std::make_pair(firstRecArgs[i], secondRecArgs[i]));
+        for (int i = 0; i < lhsArgs.size(); i++) {
+          sub.push_back(std::make_pair(lhsArgs[i], rhsArgs[i]));
         }
         sub.erase(sub.begin() + i);
         done = false;
-      } else if (isRecord(secondTerm)) {
+      } else if ((isRecord(lhs) && isConstant(rhs))||(isConstant(lhs) && isRecord(rhs))) {
+        // a record =/= a constant
+        // TODO: is this correct? is this even possible?
         return false;
-      } else if (isConstant(firstTerm) && isConstant(secondTerm)) {
-        // both are constants but non-equal (prev case => !=)
-        // failed to unify!
-        return false;
-      } else if (!isVariable(firstTerm) && isVariable(secondTerm)) {
-        // rewrite `t=x` as `x=t`
-        sub[i] = std::make_pair(secondTerm, firstTerm);
-        done = false;
-      } else if (isVariable(firstTerm) && (isVariable(secondTerm) || isConstant(secondTerm))) {
-        // // variable elimination when repeated
-        // for(int j = 0; j < sub.size(); j++) {
-        //   // TODO: functions here too!
-        //   if(j == i) {
-        //     continue;
-        //   }
-        //
-        //   if(isVariable(sub[j].first) && (*sub[j].first == *firstTerm)){
-        //     if(*sub[j].second == *secondTerm) {
-        //       sub.erase(sub.begin() + i);
-        //     } else {
-        //       sub[j].first = secondTerm;
-        //     }
-        //     done = false;
-        //   } else if(isVariable(sub[j].second) && (*sub[j].second == *firstTerm)) {
-        //     if(*sub[j].first == *secondTerm) {
-        //       sub.erase(sub.begin() + i);
-        //     } else {
-        //       sub[j].second = secondTerm;
-        //     }
-        //     done = false;
-        //   }
-        // }
       }
 
-      // if(!isVariable(firstTerm) && isVariable(secondTerm)) {
-      //   // rewrite `t = x` as `x = t`
-      //   sub[i] = std::make_pair(secondTerm, firstTerm);
-      //   done = false;
-      // } else if (*firstTerm == *secondTerm) {
+      // // TODO: see doubles.dl file for what's left
+      // // AstArgument Cases:
+      // //  0 - AstVariable [x]
+      // //  1 - AstUnnamedVariable (_) -> change all to variables to reduce this case -> need to rename everything
+      // //  2 - AstCounter ($) -> find out what this does --> UHH??
+      // //  3 - AstConstant -> as straightforward as variables [x]
+      // //  4 - AstFunctor -> can this just be direct? or more thought into this? [x]
+      // //  5 - AstRecordInit -> this should just be pairwise equality right? think about this... [x]
+      // //  6 - AstTypeCast -> find out what this does ;; SIDE NOTE: no idea how this looks actually but should work immediately [x]
+      // //  7 - AstAggregator -> complicated! think about this - perhaps equate arguments on a lower level
+      //
+      // // Unify the arguments
+      // // If returnCode = -1, then failed to unify
+      // // If return code = 0, then unified and theres no change
+      // // If return code = 1, then unified and there was a change
+      // // int returnCode = unifyArguments(firstTerm, secondTerm, sub);
+      //
+      // // TODO: change to LHS and RHS
+      // if (*firstTerm == *secondTerm) {
       //   // get rid of `x = x`
-      //   // TODO: check if equality correct
+      //   sub.erase(sub.begin() + i);
+      //   done = false;
+      // } else if (isRecord(firstTerm) && isRecord(secondTerm)) {
+      //   std::vector<AstArgument*> firstRecArgs = static_cast<AstRecordInit*>(firstTerm)->getArguments();
+      //   std::vector<AstArgument*> secondRecArgs = static_cast<AstRecordInit*>(secondTerm)->getArguments();
+      //   if (firstRecArgs.size() != secondRecArgs.size()) {
+      //     return false;
+      //   }
+      //   for (int i = 0; i < firstRecArgs.size(); i++) {
+      //     sub.push_back(std::make_pair(firstRecArgs[i], secondRecArgs[i]));
+      //   }
       //   sub.erase(sub.begin() + i);
       //   done = false;
       // } else if (isConstant(firstTerm) && isConstant(secondTerm)) {
-      //   // both are constants but not equal (prev case => !=)
-      //   // failed to unify!
-      //   return false;
-      // } else if (!isVariable(firstTerm) && !isVariable(secondTerm)) {
-      //   // TODO: functions!
-      // } else if(isVariable(firstTerm)){
-      //   for(int j = 0; j < sub.size(); j++) {
-      //     // TODO: functions here too!
-      //     if(j == i) {
-      //       continue;
-      //     }
-      //
-      //     if(isVariable(sub[j].first) && (*sub[j].first == *firstTerm)){
-      //       if(*sub[j].second == *secondTerm) {
-      //         sub.erase(sub.begin() + i);
-      //       } else {
-      //         sub[j].first = secondTerm;
-      //       }
-      //       done = false;
-      //     } else if(isVariable(sub[j].second) && (*sub[j].second == *firstTerm)) {
-      //       if(*sub[j].first == *secondTerm) {
-      //         sub.erase(sub.begin() + i);
-      //       } else {
-      //         sub[j].second = secondTerm;
-      //       }
-      //       done = false;
-      //     }
-      //   }
+        // // both are constants but non-equal (prev case => !=)
+        // // failed to unify!
+        // return false;
+      // } else if (!isVariable(firstTerm) && isVariable(secondTerm)) {
+      //   // rewrite `t=x` as `x=t`
+      //   sub[i] = std::make_pair(secondTerm, firstTerm);
+      //   done = false;
+      // } else if (isVariable(firstTerm) && (isVariable(secondTerm) || isConstant(secondTerm))) {
+      //   // // variable elimination when repeated
+      //   // for(int j = 0; j < sub.size(); j++) {
+      //   //   // TODO: functions here too!
+      //   //   if(j == i) {
+      //   //     continue;
+      //   //   }
+      //   //
+      //   //   if(isVariable(sub[j].first) && (*sub[j].first == *firstTerm)){
+      //   //     if(*sub[j].second == *secondTerm) {
+      //   //       sub.erase(sub.begin() + i);
+      //   //     } else {
+      //   //       sub[j].first = secondTerm;
+      //   //     }
+      //   //     done = false;
+      //   //   } else if(isVariable(sub[j].second) && (*sub[j].second == *firstTerm)) {
+      //   //     if(*sub[j].first == *secondTerm) {
+      //   //       sub.erase(sub.begin() + i);
+      //   //     } else {
+      //   //       sub[j].second = secondTerm;
+      //   //     }
+      //   //     done = false;
+      //   //   }
+      //   // }
       // }
     }
   }
@@ -940,9 +952,8 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
   return true;
 }
 
-// Returns the pair (v, p), where p indicates whether the most general unifier
-// algorithm has failed, and v is the vector of substitutions to unify two
-// given atoms if successful.
+// Returns the pair (v, p), where p indicates whether unification has failed,
+// and v is the vector of substitutions to unify the two given atoms if successful.
 // Assumes that the atoms are both of the same relation.
 std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> unifyAtoms(AstAtom* first, AstAtom* second) {
   std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> result;
@@ -951,101 +962,249 @@ std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> unifyAtoms(A
   std::vector<AstArgument*> firstArgs = first->getArguments();
   std::vector<AstArgument*> secondArgs = second->getArguments();
 
+  // Create the initial unification equalities
   for(int i = 0; i < firstArgs.size(); i++) {
     substitution.push_back(std::make_pair(firstArgs[i], secondArgs[i]));
   }
 
+  // Reduce the substitutions
   bool success = reduceSubstitution(substitution);
 
   result = make_pair(substitution, success);
   return result;
 }
 
+// Returns an equivalent clause after inlining the given atom in the clause wrt atomClause
+// TODO: fix up
+AstClause* inlineClause(const AstClause& clause, AstAtom* atom, AstClause* atomClause) {
+  // TODO: what if variable names are non-unique across atoms being unified? - \alpha reduction time later!
+  //      -- see apply function?
+
+  // Get the constraints needed to unify the two atoms
+  std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> res = unifyAtoms(atomClause->getHead(), atom);
+
+  // NOTE: DEBUGGING
+  std::cout << "NEW UNIFICATION: " << *atomClause->getHead() << " " << *atom << std::endl;
+  for(auto argPair : res.first) {
+    std::cout << *argPair.first << " " << *argPair.second << "\t";
+  }
+  std::cout << std::endl;
+
+  if(!res.second) {
+    // Could not unify!
+    // TODO: how to proceed? means an error has occurred and this formed clause is b a d
+    std::cout << "BROKEN UNIFICATION ^ ^ ^" << std::endl;
+    return nullptr;
+  }
+
+  // Start creating the replacement clause
+  AstClause* replacementClause = clause.cloneHead();
+
+  // Add in all the literals except the atom to be inlined
+  for(AstLiteral* lit : clause.getBodyLiterals()) {
+    if(atom != lit) {
+      replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+    }
+  }
+
+  // Add in the body of the current clause of the inlined atom
+  for(AstLiteral* lit : atomClause->getBodyLiterals()) {
+    replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+  }
+
+  // Add in the substitutions as constraints to unify
+  // TODO: need alpha reduction to make sure everything doesn't break
+  for(auto pair : res.first) {
+    AstConstraint* subCons = new AstConstraint(BinaryConstraintOp::EQ,
+            std::unique_ptr<AstArgument>(pair.first->clone()),
+            std::unique_ptr<AstArgument>(pair.second->clone()));
+
+    replacementClause->addToBody(std::unique_ptr<AstLiteral>(subCons));
+  }
+
+  return replacementClause;
+}
+
+// Renames all arguments contained in inlined relations to prevent conflict
+void renameInlinedArguments(AstProgram& program) {
+  // construct mapping to rename arguments
+  struct VariableRenamer : public AstNodeMapper {
+      VariableRenamer() {}
+      std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+          if (dynamic_cast<AstLiteral*>(node.get())){
+            // Apply to the literal's arguments
+            node->apply(*this);
+            return node;
+          } else if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())){
+            // Rename the variable
+            AstVariable* newVar = var->clone();
+            newVar->setName("<inlined_" + var->getName() + ">");
+            return std::unique_ptr<AstNode>(newVar);
+          }
+          return node;
+      }
+  };
+
+  // TODO: fix this so that it fits the proper style?
+  VariableRenamer renameVar;
+  for(AstRelation* rel : program.getRelations()) {
+    if(rel->isInline()) {
+      for(AstClause* clause : rel->getClauses()) {
+        clause->apply(renameVar);
+      }
+    }
+  }
+}
+
+// Removes all underscores in inlined relations
+void removeInlinedUnderscores(AstProgram& program) {
+  // construct mapping to name underscores
+  struct UnderscoreNamer : public AstNodeMapper {
+      AstProgram& program;
+
+      UnderscoreNamer(AstProgram& program) : program(program) {}
+      std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+          static int underscoreCount = 0;
+          if (AstLiteral* lit = dynamic_cast<AstLiteral*>(node.get())){
+            // Apply to the literal's arguments if and only if it is associated
+            // with an inlined relation
+            if(lit->getAtom() != nullptr && program.getRelation(lit->getAtom()->getName())->isInline()){
+              node->apply(*this);
+            }
+            return node;
+          } else if(AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())){
+            // Give a name to the underscord variable
+            std::stringstream newVarName;
+            newVarName << "<underscore_" << underscoreCount << ">";
+            AstVariable* newVar = new AstVariable(newVarName.str());
+            return std::unique_ptr<AstNode>(newVar);
+          }
+          return node;
+      }
+  };
+
+  // TODO: fix this so that it fits the proper style?
+  UnderscoreNamer underscoreNamer(program);
+  for(AstRelation* rel : program.getRelations()) {
+    for(AstClause* clause : rel->getClauses()) {
+        clause->apply(underscoreNamer);
+    }
+  }
+}
+
+// TODO: handle negation -> maybe create a new relation <negated_a> :- !a(x,y).
+// TODO: won't be grounded though! so should be careful using it!
+// TODO: handle constraints
 bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) {
   bool changed = false;
-
   AstProgram& program = *translationUnit.getProgram();
+
+  renameInlinedArguments(program);
+
+  removeInlinedUnderscores(program);
+
+  // Keep trying to inline until we reach a fixed point
+  // TODO: why is this important?
   bool clausesChanged = true;
   while(clausesChanged) {
     std::vector<const AstClause*> clausesToDelete;
     clausesChanged = false;
+
+    // Go through each clause in the program and check if we need to inline anything
     visitDepthFirst(program, [&](const AstClause& clause) {
       bool deleteClause = false;
+
+      // Skip if the clause is meant to be inlined
+      // TODO: should this really be done? is it more efficient if kept?
       if(program.getRelation(clause.getHead()->getName())->isInline()) {
         return;
       }
+
+      // Go through the atoms in the clause and inline the necessary atoms
+      // TODO: this only does atoms... fix this up
       for(AstAtom* atom : clause.getAtoms()) {
         AstRelation* rel = program.getRelation(atom->getName());
         if (rel->isInline()) {
+          // We found an atom in the clause that needs to be inlined!
+
+          // The clause needs to be replaced
           deleteClause = true;
           changed = true;
           clausesChanged = true;
-          for (AstClause* inClause : rel->getClauses()) {
-            // TODO: what if variable names are non-unique across atoms being unified?
-            auto res = unifyAtoms(inClause->getHead(), atom);
 
-            // Could not unify
-            // TODO: how to proceed?
-            // TODO: INTUITIVELY this should never happen? need to think of extreme cases...
-            if(!res.second) {
-              std::cout << "BROKEN UNIFICATION" << std::endl;
-              for(auto argPair : res.first) {
-                std::cout << *argPair.first << " " << *argPair.second << std::endl;
-              }
+          // N new clauses should be formed, where N is the number of clauses
+          // associated with the inlined relation
+          for (AstClause* inClause : rel->getClauses()) {
+            // Form the replacement clause
+            AstClause* replacementClause = inlineClause(clause, atom, inClause);
+            if (replacementClause == nullptr) {
+              // Failed to unify
               continue;
             }
 
-            // TODO: success story
-            std::cout << *inClause->getHead() << " " << *atom << std::endl;
-            for(auto argPair : res.first) {
-              std::cout << *argPair.first << " " << *argPair.second << std::endl;
-            }
-
-            // Create the replacement clause
-            AstClause* replacementClause = clause.cloneHead();
-            for(AstLiteral* lit : clause.getBodyLiterals()) {
-              if(atom != lit) {
-                replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
-              }
-            }
-
-            // Add in the RHS of the inClause directly
-            for(AstLiteral* lit : inClause->getBodyLiterals()) {
-              replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
-            }
-
-            // Add in the substitutions as constraints
-            for(auto pair : res.first) {
-              AstConstraint* subCons = new AstConstraint(BinaryConstraintOp::EQ,
-                      std::unique_ptr<AstArgument>(pair.first->clone()),
-                      std::unique_ptr<AstArgument>(pair.second->clone()));
-              replacementClause->addToBody(std::unique_ptr<AstLiteral>(subCons));
-            }
-
-            // Replace the clause
+            // Add in the new clause
             std::cout << "NEW CLAUSE:\n" << *replacementClause << std::endl;
             std::cout << "OLD CLAUSE:\n" << clause << std::endl;
             program.appendClause(std::unique_ptr<AstClause>(replacementClause));
           }
         }
-        // TODO: fix positioning of clause deletion
+
         if (deleteClause) {
-          std::cout << "about to...\n" << std::endl;
+          // Clause was replaced with equivalent versions, so delete it!
           clausesToDelete.push_back(&clause);
-          // program.removeClause(&clause);
-          std::cout << "he did it, the absolute mad man...\n" << std::endl;
+
+          // To avoid confusion, only replace one atom per iteration
+          // TODO: change this up later to make Smarter (tm)
           break;
         }
       }
     });
+
+    // Delete all clauses that were replaced
+    // TODO: double check positioning of clause deletion
     for(const AstClause* clause : clausesToDelete) {
       program.removeClause(clause);
     }
   }
 
+  // // handle aggregators
+  // clausesChanged = true;
+  // visitDepthFirst(program, [&](AstAggregator& agg) {
+  //
+  // });
+  //
+  // struct AggregateInliner : public AstNodeMapper {
+  //   AstProgram& program;
+  //
+  //   AggregateInliner(AstProgram& program) : program(program) {}
+  //   std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+  //     // apply down to the base case first
+  //     node->apply(*this);
+  //
+  //     if(AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
+  //       AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
+  //       if(aggr->getTargetExpression() != nullptr) {
+  //         newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
+  //       }
+  //
+  //       for(AstLiteral* lit : aggr->getBodyLiterals()) {
+  //         if(auto atom = dynamic_cast<AstAtom*>(lit)) {
+  //           if(program.getRelation(atom->getName())->isInline()) {
+  //
+  //           } else {
+  //             newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(atom->clone()));
+  //           }
+  //         } else {
+  //           newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(lit->clone()));
+  //         }
+  //       }
+  //     }
+  //     return node;
+  //   }
+  // };
+
 
   std::cout << program << std::endl;
-
   return changed;
 }
 
