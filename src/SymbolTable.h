@@ -134,7 +134,7 @@ public:
     }
 
     /** Finds the index of a symbol in the table, giving an error if it's not found */
-    const size_t lookupExisting(const std::string str) const {
+    const size_t lookupExisting(const char* str) const {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
         auto result = strToNum.find(str);

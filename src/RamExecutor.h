@@ -89,13 +89,8 @@ public:
      * Runs a subroutine of a RamProgram
      */
     void executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
-            const std::vector<RamDomain>* arguments, std::vector<RamDomain>* returnValues,
-            std::vector<bool>* returnErrors);
-
-    /**
-     * Runs a subroutine
-     */
-    // virtual RamReturn* runSubroutine(std::string name, std::vector<RamValue> args) const;
+            const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
+            std::vector<bool>& returnErrors);
 
     /**
      * Runs the given statement on the given environment.

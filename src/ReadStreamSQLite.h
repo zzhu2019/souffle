@@ -33,7 +33,8 @@ class ReadStreamSQLite : public ReadStream {
 public:
     ReadStreamSQLite(const std::string& dbFilename, const std::string& relationName,
             const SymbolMask& symbolMask, SymbolTable& symbolTable, const bool provenance)
-            : ReadStream(symbolMask, symbolTable, provenance), dbFilename(dbFilename), relationName(relationName) {
+            : ReadStream(symbolMask, symbolTable, provenance), dbFilename(dbFilename),
+              relationName(relationName) {
         openDB();
         checkTableExists();
         prepareSelectStatement();

@@ -1,8 +1,26 @@
+/*
+ * Souffle - A Datalog Compiler
+ * Copyright (c) 2017, The Souffle Developers. All rights reserved
+ * Licensed under the Universal Permissive License v 1.0 as shown at:
+ * - https://opensource.org/licenses/UPL
+ * - <souffle root>/licenses/SOUFFLE-UPL.txt
+ */
+
+/************************************************************************
+ *
+ * @file ExplainProvenance.h
+ *
+ * Abstract class for implementing an instance of the explain interface for provenance
+ *
+ ***********************************************************************/
+
 #pragma once
 
 #include "ExplainTree.h"
+#include "RamTypes.h"
 #include "SouffleInterface.h"
 
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -42,22 +60,22 @@ protected:
 
         for (size_t i = 0; i < args.size(); i++) {
             if (*rel->getAttrType(i) == 's') {
-                nums.push_back(prog.getSymbolTable().lookupExisting(args[i]));
+                nums.push_back(prog.getSymbolTable().lookupExisting(args[i].c_str()));
             } else {
-                nums.push_back(std::atoi(args[i].c_str()));
+                nums.push_back(std::stoi(args[i]));
             }
         }
 
         return nums;
     }
 
-    std::vector<std::string> numsToArgs(
-            std::string relName, std::vector<RamDomain>& nums, std::vector<bool>* err = 0) const {
+    std::vector<std::string> numsToArgs(const std::string relName, const std::vector<RamDomain>& nums,
+            std::vector<bool>* err = nullptr) const {
         std::vector<std::string> args;
 
         auto rel = prog.getRelation(relName);
         if (rel == nullptr) {
-            return std::vector<std::string>();
+            return args;
         }
 
         for (size_t i = 0; i < nums.size(); i++) {

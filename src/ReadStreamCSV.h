@@ -36,9 +36,10 @@ namespace souffle {
 class ReadStreamCSV : public ReadStream {
 public:
     ReadStreamCSV(std::istream& file, const SymbolMask& symbolMask, SymbolTable& symbolTable,
-            std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t", const bool provenance = false)
-            : ReadStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)), file(file), lineNumber(0),
-              inputMap(inputMap) {
+            std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t",
+            const bool provenance = false)
+            : ReadStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)), file(file),
+              lineNumber(0), inputMap(inputMap) {
         while (this->inputMap.size() < symbolMask.getArity()) {
             int size = this->inputMap.size();
             this->inputMap[size] = size;
@@ -144,8 +145,10 @@ protected:
 class ReadFileCSV : public ReadStreamCSV {
 public:
     ReadFileCSV(const std::string& filename, const SymbolMask& symbolMask, SymbolTable& symbolTable,
-            std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t", const bool provenance = false)
-            : ReadStreamCSV(fileHandle, symbolMask, symbolTable, inputMap, delimiter, provenance), fileHandle(filename) {
+            std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t",
+            const bool provenance = false)
+            : ReadStreamCSV(fileHandle, symbolMask, symbolTable, inputMap, delimiter, provenance),
+              fileHandle(filename) {
         baseName = souffle::baseName(filename);
         if (!fileHandle.is_open()) {
             throw std::invalid_argument("Cannot open fact file " + baseName + "\n");

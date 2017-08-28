@@ -363,13 +363,6 @@ int main(int argc, char** argv) {
             auto ram_end = std::chrono::high_resolution_clock::now();
             std::string runtimeStr =
                     "(" + std::to_string(std::chrono::duration<double>(ram_end - ram_start).count()) + "s)";
-            /*
-            std::stringstream ramMainStmtStr;
-            ramMainStmtStr << *ramMainStmt;
-            translationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
-                    "ram-program", "RAM Program " + runtimeStr, ramMainStmtStr.str()));
-                    */
-
             std::stringstream ramProgStr;
             ramProgStr << *ramProg;
             translationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(

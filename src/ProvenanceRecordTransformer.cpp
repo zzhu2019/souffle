@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file ProvenanceTransformer.cpp
+ * @file ProvenanceRecordTransformer.cpp
  *
  * Defines classes which store relations transformed for provenance
  *
@@ -66,7 +66,7 @@ AstRecordInit* makeNewRecordInit(
         }
     };
 
-    for (auto arg : args) {
+    for (const auto& arg : args) {
         if (negation) {
             newRecordInit->add(std::unique_ptr<AstArgument>(arg->clone()));
         } else {
@@ -87,7 +87,7 @@ ProvenanceTransformedClause::ProvenanceTransformedClause(AstTranslationUnit& tra
           originalName(origName), clauseNumber(num) {}
 
 void ProvenanceTransformedClause::makeInfoRelation() {
-    AstRelationIdentifier name = makeRelationNameRecord(originalName, "info", clauseNumber);
+    AstRelationIdentifier name = makeRelationNameRecord(originalName, "@info", clauseNumber);
 
     // initialise info relation
     infoRelation.reset(new AstRelation());
@@ -144,7 +144,7 @@ void ProvenanceTransformedClause::makeInfoRelation() {
 }
 
 void ProvenanceTransformedClause::makeProvenanceRelation(AstRelation* recordRelation) {
-    AstRelationIdentifier name = makeRelationNameRecord(originalName, "provenance", clauseNumber);
+    AstRelationIdentifier name = makeRelationNameRecord(originalName, "@provenance", clauseNumber);
 
     // initialise provenance relation
     provenanceRelation.reset(new AstRelation());
@@ -175,7 +175,8 @@ void ProvenanceTransformedClause::makeProvenanceRelation(AstRelation* recordRela
             }
 
             // add atom converted to record to body
-            auto newBody = std::unique_ptr<AstAtom>(new AstAtom(makeRelationNameRecord(atom->getName(), "record")));
+            auto newBody =
+                    std::unique_ptr<AstAtom>(new AstAtom(makeRelationNameRecord(atom->getName(), "record")));
 
             if (dynamic_cast<const AstAtom*>(lit)) {
                 // add atom to head as a record
@@ -266,7 +267,7 @@ ProvenanceTransformedRelation::ProvenanceTransformedRelation(AstTranslationUnit&
     makeRecordRelation();
     makeOutputRelation();
 
-    int count = 0;
+    int count = 1;
     for (auto clause : originalRelation.getClauses()) {
         auto transformedClause =
                 new ProvenanceTransformedClause(transUnit, relTypeMap, *clause, origName, count);
@@ -320,7 +321,7 @@ void ProvenanceTransformedRelation::makeRecordRelation() {
 }
 
 void ProvenanceTransformedRelation::makeOutputRelation() {
-    AstRelationIdentifier name = makeRelationNameRecord(originalName, "output");
+    AstRelationIdentifier name = makeRelationNameRecord(originalName, "@output");
 
     // initialise record relation
     outputRelation = new AstRelation();

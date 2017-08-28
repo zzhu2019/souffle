@@ -89,12 +89,12 @@ public:
         return data[index];
     }
 
-    std::vector<RamDomain>* getReturnValues() const {
-        return returnValues;
+    std::vector<RamDomain>& getReturnValues() const {
+        return *returnValues;
     }
 
-    void setReturnValues(std::vector<RamDomain>* retVals) {
-        returnValues = retVals;
+    void setReturnValues(std::vector<RamDomain>& retVals) {
+        returnValues = &retVals;
     }
 
     void addReturnValue(RamDomain val, bool err = false) {
@@ -102,20 +102,20 @@ public:
         returnErrors->push_back(err);
     }
 
-    std::vector<bool>* getReturnErrors() const {
-        return returnErrors;
+    std::vector<bool>& getReturnErrors() const {
+        return *returnErrors;
     }
 
-    void setReturnErrors(std::vector<bool>* retErrs) {
-        returnErrors = retErrs;
+    void setReturnErrors(std::vector<bool>& retErrs) {
+        returnErrors = &retErrs;
     }
 
-    const std::vector<RamDomain>* getArguments() const {
-        return args;
+    const std::vector<RamDomain>& getArguments() const {
+        return *args;
     }
 
-    void setArguments(const std::vector<RamDomain>* a) {
-        args = a;
+    void setArguments(const std::vector<RamDomain>& a) {
+        args = &a;
     }
 
     RamDomain getArgument(size_t i) const {
@@ -236,13 +236,16 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
                 case BinaryOp::MAX: {
                     return std::max(visit(op.getLHS()), visit(op.getRHS()));
                 }
+                case BinaryOp::MIN: {
+                    return std::min(visit(op.getLHS()), visit(op.getRHS()));
+                }
 
                 // strings
                 case BinaryOp::CAT: {
-                    return env.getSymbolTable().lookup((
-                            std::string(env.getSymbolTable().resolve(visit(op.getLHS()))) +
-                            std::string(env.getSymbolTable().resolve(
-                                    visit(op.getRHS())))).c_str());
+                    return env.getSymbolTable().lookup(
+                            (std::string(env.getSymbolTable().resolve(visit(op.getLHS()))) +
+                                    std::string(env.getSymbolTable().resolve(visit(op.getRHS()))))
+                                    .c_str());
                 }
                 default:
                     assert(0 && "unsupported operator");
@@ -330,21 +333,7 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
         }
 
         bool visitNotExists(const RamNotExists& ne) override {
-            /*
-            std::cout << "RELATION MAP: " << std::endl;
-            for (auto& r : env.getRelationMap()) {
-                std::cout << r.first << " ";
-                r.second.getID().print(std::cout);
-                std::cout << std::endl;
-            }
-            */
             const RamRelation& rel = env.getRelation(ne.getRelation());
-            /*
-            ne.print(std::cout);
-            std::cout << ", relation in NotExists ";
-            rel.getID().print(std::cout);
-            std::cout << std::endl;
-            */
 
             // construct the pattern tuple
             auto arity = rel.getArity();
@@ -378,26 +367,7 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
                 ne.setIndexRelationName(rel.getID().getName());
             }
 
-            /*
-            idx->print(std::cout);
-            std::cout << std::endl;
-
-            for (auto tup : rel) {
-                std::cout << "TUPLE: ";
-                for (size_t j = 0; j < rel.getID().getArity(); j++) {
-                    std::cout << tup[j] << " ";
-                }
-                std::cout << std::endl;
-            }
-            */
-
             auto range = idx->lowerUpperBound(low, high);
-            /*
-            std::cout << "lower bound == upper bound: " << (bool)(range.first == range.second) << std::endl;
-            std::cout << "lower bound == end: " << (bool)(range.first == idx->indexEnd()) << std::endl;
-            std::cout << "upper bound == end: " << (bool)(range.second == idx->indexEnd()) << std::endl;
-            std::cout << "END OF NOT EXISTS" << std::endl << std::endl;
-            */
             return range.first == range.second;  // if there are none => done
         }
 
@@ -1966,6 +1936,11 @@ public:
                     << "(AstDomain)" << print(op.getRHS()) << "))";
                 break;
             }
+            case BinaryOp::MIN: {
+                out << "(AstDomain)(std::min((AstDomain)" << print(op.getLHS()) << ","
+                    << "(AstDomain)" << print(op.getRHS()) << "))";
+                break;
+            }
 
             // strings
             case BinaryOp::CAT: {
@@ -2019,11 +1994,11 @@ public:
     void visitReturn(const RamReturn& ret, std::ostream& out) override {
         for (auto val : ret.getValues()) {
             if (val == nullptr) {
-                out << "ret->push_back(0);\n";
-                out << "err->push_back(true);\n";
+                out << "ret.push_back(0);\n";
+                out << "err.push_back(true);\n";
             } else {
-                out << "ret->push_back(" << print(val) << ");\n";
-                out << "err->push_back(false);\n";
+                out << "ret.push_back(" << print(val) << ");\n";
+                out << "err.push_back(false);\n";
             }
         }
     }
@@ -2597,20 +2572,10 @@ void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* 
         exit(result);
     }
 }
-/*
-void RamCompiler::compileSubroutine(std::string name, const RamStatement& stmt, IndexMap& indices,
-std::ostream& os) const {
-    // method header
-    os << "void " << name << "(const std::vector<RamDomain>* args, std::vector<RamDomain>* ret) {\n";
-
-    // generate code for body
-    genCode(os, stmt, indices);
-}
-*/
 
 void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
-        const std::vector<RamDomain>* arguments, std::vector<RamDomain>* returnValues,
-        std::vector<bool>* returnErrors) {
+        const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
+        std::vector<bool>& returnErrors) {
     EvalContext ctxt;
     ctxt.setReturnValues(returnValues);
     ctxt.setReturnErrors(returnErrors);

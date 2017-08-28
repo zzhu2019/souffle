@@ -275,8 +275,6 @@ dnl Defines all possible Souffle flag configurations for testing.
 dnl NOTE: This is the default configuration that can be overridden
 dnl using SOUFFLE_CONFS environment variable.
 m4_define([DEFAULT_CONFS], [[], dnl interpreter
- [-t0],                 dnl provenance
- [-t0 -c],              dnl provenance compiler
  [-c],                  dnl compilation
  [-j8],                 dnl interpreter / parallel execution
  [-c -j8],              dnl compilation & parallel execution

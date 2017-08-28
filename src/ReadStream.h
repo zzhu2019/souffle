@@ -43,7 +43,7 @@ protected:
     virtual std::unique_ptr<RamDomain[]> readNextTuple() = 0;
     const SymbolMask& symbolMask;
     SymbolTable& symbolTable;
-    bool isProvenance;
+    const bool isProvenance;
 };
 
 class ReadStreamFactory {

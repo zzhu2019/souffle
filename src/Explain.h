@@ -1,3 +1,19 @@
+/*
+ * Souffle - A Datalog Compiler
+ * Copyright (c) 2017, The Souffle Developers. All rights reserved
+ * Licensed under the Universal Permissive License v 1.0 as shown at:
+ * - https://opensource.org/licenses/UPL
+ * - <souffle root>/licenses/SOUFFLE-UPL.txt
+ */
+
+/************************************************************************
+ *
+ * @file Explain.h
+ *
+ * Provenance interface for Souffle; works for compiler and interpreter
+ *
+ ***********************************************************************/
+
 #pragma once
 
 #include "ExplainProvenanceRecords.h"
@@ -60,15 +76,15 @@ private:
     }
 
     // print provenance tree
-    void printTree(std::unique_ptr<TreeNode> t) {
-        if (t) {
-            t->place(0, 0);
-            ScreenBuffer* s = new ScreenBuffer(t->getWidth(), t->getHeight());
-            t->render(*s);
+    void printTree(std::unique_ptr<TreeNode> tree) {
+        if (tree) {
+            tree->place(0, 0);
+            ScreenBuffer screenBuffer(tree->getWidth(), tree->getHeight());
+            tree->render(screenBuffer);
             if (ncurses) {
-                wprintw(treePad, s->getString().c_str());
+                wprintw(treePad, screenBuffer.getString().c_str());
             } else {
-                std::cout << s->getString();
+                std::cout << screenBuffer.getString();
             }
         }
     }
@@ -164,7 +180,7 @@ public:
 
             if (command[0] == "setdepth") {
                 try {
-                    depthLimit = atoi(command[1].c_str());
+                    depthLimit = std::stoi(command[1]);
                 } catch (std::exception& e) {
                     printStr("Usage: setdepth <depth>\n");
                     continue;
@@ -185,7 +201,7 @@ public:
                 int label = -1;
                 if (command.size() > 1) {
                     query = parseRel(command[1]);
-                    label = atoi(query.second[0].c_str());
+                    label = std::stoi(query.second[0]);
                 } else {
                     printStr("Usage: subproof relation_name(<label>)\n");
                     continue;
@@ -195,7 +211,7 @@ public:
             } else if (command[0] == "rule") {
                 try {
                     auto query = split(command[1], ' ');
-                    printStr(prov.getRule(query[0], atoi(query[1].c_str())) + "\n");
+                    printStr(prov.getRule(query[0], std::stoi(query[1])) + "\n");
                 } catch (std::exception& e) {
                     printStr("Usage: rule <rule number>\n");
                     continue;

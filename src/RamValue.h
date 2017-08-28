@@ -108,7 +108,7 @@ public:
     ~RamBinaryOperator() override = default;
 
     void print(std::ostream& os) const override {
-        if (isNumericBinaryOp(op)) {
+        if (op < BinaryOp::MAX) {
             os << "(";
             lhs->print(os);
             os << getSymbolForBinaryOp(op);
@@ -269,7 +269,7 @@ public:
     RamPack(std::vector<std::unique_ptr<RamValue>> values)
             : RamValue(RN_Pack,
                       all_of(values,
-                              [](const std::unique_ptr<RamValue>& v) { return v && v->isConstant(); })),
+                               [](const std::unique_ptr<RamValue>& v) { return v && v->isConstant(); })),
               values(std::move(values)) {}
 
     ~RamPack() override = default;
@@ -312,7 +312,6 @@ public:
 
 /** Argument for ram subroutine */
 class RamArgument : public RamValue {
-    // std::unique_ptr<RamValue> value;
     size_t number;
 
 public:
@@ -326,16 +325,6 @@ public:
         number = n;
     }
 
-    /*
-    RamValue* getValue() const {
-        return value.get();
-    }
-
-    void setValue(std::unique_ptr<RamValue> val) {
-        value.swap(val);
-    }
-    */
-
     void print(std::ostream& os) const override {
         os << "argument(" << number << ")";
     }
@@ -345,8 +334,6 @@ public:
     }
 
     std::vector<const RamNode*> getChildNodes() const override {
-        // std::vector<const RamNode*> children = {value.get()};
-        // return children;
         return std::vector<const RamNode*>();
     }
 };

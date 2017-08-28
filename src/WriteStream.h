@@ -43,7 +43,7 @@ protected:
     }
     const SymbolMask& symbolMask;
     const SymbolTable& symbolTable;
-    bool isProvenance;
+    const bool isProvenance;
 };
 
 class WriteStreamFactory {

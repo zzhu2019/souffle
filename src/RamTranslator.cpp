@@ -367,7 +367,6 @@ std::unique_ptr<RamValue> translateValue(const AstArgument* arg, const ValueInde
         auto loc = index.getAggregatorLocation(*agg);
         val = std::unique_ptr<RamValue>(new RamElementAccess(loc.level, loc.component, loc.name));
     } else if (const AstSubroutineArgument* subArg = dynamic_cast<const AstSubroutineArgument*>(arg)) {
-        // TODO: RamNumber(0) temporary
         val = std::unique_ptr<RamValue>(new RamArgument(subArg->getNumber()));
     } else {
         std::cout << "Unsupported node type of " << arg << ": " << typeid(*arg).name() << "\n";
@@ -596,8 +595,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& cl
         }
 
         // build up insertion call
-        op = std::unique_ptr<RamOperation>(project);
-        // std::unique_ptr<RamOperation> op(project);  // start with innermost
+        op = std::unique_ptr<RamOperation>(project);  // start with innermost
     }
 
     // add aggregator levels
@@ -638,8 +636,8 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& cl
         for (size_t pos = 0; pos < atom->argSize(); ++pos) {
             if (AstConstant* c = dynamic_cast<AstConstant*>(atom->getArgument(pos))) {
                 op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(BinaryConstraintOp::EQ,
-                        std::unique_ptr<RamValue>(
-                                new RamElementAccess(level, pos, getRelation(atom).getArg(pos))),
+                        std::unique_ptr<RamValue>(new RamElementAccess(
+                                level, pos, getRelation(atom).getArg(pos))),
                         std::unique_ptr<RamValue>(new RamNumber(c->getIndex())))));
             }
         }
@@ -712,9 +710,9 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& cl
         // all other appearances
         for (const Location& loc : cur.second) {
             if (first != loc) {
-                op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(BinaryConstraintOp::EQ,
-                        std::unique_ptr<RamValue>(
-                                new RamElementAccess(first.level, first.component, first.name)),
+                op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(
+                        BinaryConstraintOp::EQ, std::unique_ptr<RamValue>(new RamElementAccess(
+                                                        first.level, first.component, first.name)),
                         std::unique_ptr<RamValue>(
                                 new RamElementAccess(loc.level, loc.component, loc.name)))));
             }
@@ -918,10 +916,10 @@ std::unique_ptr<RamStatement> RamTranslator::translateRecursiveRelation(
 
         /* create update statements for fixpoint (even iteration) */
         appendStmt(updateRelTable,
-                std::unique_ptr<RamStatement>(
-                        new RamSequence(std::unique_ptr<RamStatement>(new RamMerge(rrel[rel], relNew[rel])),
-                                std::unique_ptr<RamStatement>(new RamSwap(relDelta[rel], relNew[rel])),
-                                std::unique_ptr<RamStatement>(new RamClear(relNew[rel])))));
+                std::unique_ptr<RamStatement>(new RamSequence(
+                        std::unique_ptr<RamStatement>(new RamMerge(rrel[rel], relNew[rel])),
+                        std::unique_ptr<RamStatement>(new RamSwap(relDelta[rel], relNew[rel])),
+                        std::unique_ptr<RamStatement>(new RamClear(relNew[rel])))));
 
         /* measure update time for each relation */
         if (logging) {

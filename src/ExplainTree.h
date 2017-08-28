@@ -1,6 +1,24 @@
+/*
+ * Souffle - A Datalog Compiler
+ * Copyright (c) 2017, The Souffle Developers. All rights reserved
+ * Licensed under the Universal Permissive License v 1.0 as shown at:
+ * - https://opensource.org/licenses/UPL
+ * - <souffle root>/licenses/SOUFFLE-UPL.txt
+ */
+
+/************************************************************************
+ *
+ * @file ExplainTree.h
+ *
+ * Classes for storing a derivation tree
+ *
+ ***********************************************************************/
+
 #pragma once
 
+#include <sstream>
 #include <string>
+#include <vector>
 
 namespace souffle {
 
@@ -93,7 +111,8 @@ private:
     std::string label;
 
 public:
-    InnerNode(const std::string& t = "", const std::string& l = "") : TreeNode(t), label(l) {}
+    InnerNode(const std::string& nodeText = "", const std::string& label = "")
+            : TreeNode(nodeText), label(label) {}
 
     // add child to node
     void add_child(std::unique_ptr<TreeNode> child) {
@@ -118,7 +137,6 @@ public:
             width += k->getWidth() + 1;
             height = std::max(height, k->getHeight());
         }
-        width += label.length();
         height += 2;
 
         // text of inner node is longer than all its sub-trees

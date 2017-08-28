@@ -260,15 +260,14 @@ void RamAggregate::print(std::ostream& os, int tabpos) const {
 void RamProject::print(std::ostream& os, int tabpos) const {
     const std::string tabs(tabpos, '\t');
 
-    // support table-less options
-    if (auto condition = getCondition()) {
-        os << "IF ";
-        condition->print(os);
-        os << " THEN ";
-    }
-
     os << tabs << "PROJECT (" << join(values, ", ", print_deref<std::unique_ptr<RamValue>>()) << ") INTO "
        << relation.getName();
+
+    // support table-less options
+    if (auto condition = getCondition()) {
+        os << " IF ";
+        condition->print(os);
+    }
 
     if (hasFilter()) {
         os << " UNLESS IN " << getFilter().getName();
@@ -293,7 +292,7 @@ void RamReturn::print(std::ostream& os, int tabpos) const {
     const std::string tabs(tabpos, '\t');
 
     // return
-    os << tabs << "RETURN (";  //<< join(values, ", ", print_deref<std::unique_ptr<RamValue>>()) << ")";
+    os << tabs << "RETURN (";
 
     for (auto val : getValues()) {
         if (val == nullptr) {

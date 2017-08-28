@@ -143,8 +143,8 @@ public:
     void dumpOutputs(std::ostream&) {}
 
     // run subroutine
-    void executeSubroutine(std::string name, const std::vector<RamDomain>* args, std::vector<RamDomain>* ret,
-            std::vector<bool>* err) {
+    void executeSubroutine(std::string name, const std::vector<RamDomain>& args, std::vector<RamDomain>& ret,
+            std::vector<bool>& err) {
         exec.executeSubroutine(env, prog.getSubroutine(name), args, ret, err);
     }
 

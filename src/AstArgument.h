@@ -398,7 +398,7 @@ public:
 
     /** Print argument to the given output stream */
     void print(std::ostream& os) const override {
-        if (isNumericBinaryOp(fun)) {
+        if (fun < BinaryOp::MAX) {
             os << "(";
             lhs->print(os);
             os << getSymbolForBinaryOp(fun);

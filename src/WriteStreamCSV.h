@@ -32,7 +32,8 @@ class WriteFileCSV : public WriteStream {
 public:
     WriteFileCSV(const std::string& filename, const SymbolMask& symbolMask, const SymbolTable& symbolTable,
             std::string delimiter = "\t", const bool provenance = false)
-            : WriteStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)), file(filename) {}
+            : WriteStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)),
+              file(filename) {}
 
     ~WriteFileCSV() override = default;
 
@@ -74,7 +75,8 @@ class WriteGZipFileCSV : public WriteStream {
 public:
     WriteGZipFileCSV(const std::string& filename, const SymbolMask& symbolMask,
             const SymbolTable& symbolTable, std::string delimiter = "\t", const bool provenance = false)
-            : WriteStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)), file(filename) {}
+            : WriteStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)),
+              file(filename) {}
 
     ~WriteGZipFileCSV() override = default;
 
@@ -193,8 +195,8 @@ public:
     std::unique_ptr<WriteStream> getWriter(const SymbolMask& symbolMask, const SymbolTable& symbolTable,
             const IODirectives& ioDirectives, const bool provenance) override {
         std::string delimiter = getDelimiter(ioDirectives);
-        return std::unique_ptr<WriteCoutCSV>(
-                new WriteCoutCSV(ioDirectives.getRelationName(), symbolMask, symbolTable, delimiter, provenance));
+        return std::unique_ptr<WriteCoutCSV>(new WriteCoutCSV(
+                ioDirectives.getRelationName(), symbolMask, symbolTable, delimiter, provenance));
     }
     const std::string& getName() const override {
         static const std::string name = "stdout";

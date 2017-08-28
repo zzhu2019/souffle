@@ -1,7 +1,28 @@
+/*
+ * Souffle - A Datalog Compiler
+ * Copyright (c) 2017, The Souffle Developers. All rights reserved
+ * Licensed under the Universal Permissive License v 1.0 as shown at:
+ * - https://opensource.org/licenses/UPL
+ * - <souffle root>/licenses/SOUFFLE-UPL.txt
+ */
+
+/************************************************************************
+ *
+ * @file ExplainProvenanceSLD.h
+ *
+ * Implementation of abstract class in ExplainProvenance.h for guided SLD provenance
+ *
+ ***********************************************************************/
+
 #pragma once
 
 #include "ExplainProvenance.h"
 #include "Util.h"
+
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace souffle {
 
@@ -28,7 +49,7 @@ private:
                 if (*rel->getAttrType(i) == 's') {
                     std::string s;
                     tuple >> s;
-                    n = prog.getSymbolTable().lookupExisting(s);
+                    n = prog.getSymbolTable().lookupExisting(s.c_str());
                 } else {
                     tuple >> n;
                 }
@@ -101,7 +122,7 @@ public:
 
         // if fact
         if (levelNum == 0) {
-            return std::unique_ptr<TreeNode>(new LeafNode(relName + "(" + joinedArgsStr + ")"));
+            return std::make_unique<LeafNode>(relName + "(" + joinedArgsStr + ")");
         }
 
         assert(info.find(std::make_pair(relName, ruleNum)) != info.end() && "invalid rule for tuple");
@@ -121,22 +142,21 @@ public:
                 idx = subproofs.size() - 1;
             }
 
-            return std::unique_ptr<TreeNode>(
-                    new LeafNode("subproof " + relName + "(" + std::to_string(idx) + ")"));
+            return std::make_unique<LeafNode>("subproof " + relName + "(" + std::to_string(idx) + ")");
         }
 
-        auto internalNode =
-                new InnerNode(relName + "(" + joinedArgsStr + ")", "(R" + std::to_string(ruleNum) + ")");
+        auto internalNode = std::make_unique<InnerNode>(
+                relName + "(" + joinedArgsStr + ")", "(R" + std::to_string(ruleNum) + ")");
 
         // make return vector pointer
-        std::vector<RamDomain>* ret = new std::vector<RamDomain>();
-        std::vector<bool>* err = new std::vector<bool>();
+        std::vector<RamDomain> ret;
+        std::vector<bool> err;
 
         // add level number to tuple
         tuple.push_back(levelNum);
 
         // execute subroutine to get subproofs
-        prog.executeSubroutine(relName + "_" + std::to_string(ruleNum) + "_subproof", &tuple, ret, err);
+        prog.executeSubroutine(relName + "_" + std::to_string(ruleNum) + "_subproof", tuple, ret, err);
 
         // recursively get nodes for subproofs
         size_t tupleCurInd = 0;
@@ -156,12 +176,12 @@ public:
             std::vector<bool> subproofTupleError;
 
             for (; tupleCurInd < tupleEnd - 2; tupleCurInd++) {
-                subproofTuple.push_back((*ret)[tupleCurInd]);
-                subproofTupleError.push_back((*err)[tupleCurInd]);
+                subproofTuple.push_back(ret[tupleCurInd]);
+                subproofTupleError.push_back(err[tupleCurInd]);
             }
 
-            int subproofRuleNum = (*ret)[tupleCurInd];
-            int subproofLevelNum = (*ret)[tupleCurInd + 1];
+            int subproofRuleNum = ret[tupleCurInd];
+            int subproofLevelNum = ret[tupleCurInd + 1];
 
             if (bodyRel[0] == '!') {
                 std::stringstream joinedTuple;
@@ -177,17 +197,14 @@ public:
             tupleCurInd = tupleEnd;
         }
 
-        delete ret;
-        delete err;
-
-        return std::unique_ptr<TreeNode>(internalNode);
+        return std::move(internalNode);
     }
 
     std::unique_ptr<TreeNode> explain(
             std::string relName, std::vector<std::string> args, size_t depthLimit) override {
         auto tuple = argsToNums(relName, args);
         if (tuple == std::vector<RamDomain>()) {
-            return std::unique_ptr<TreeNode>(new LeafNode("Relation not found"));
+            return std::make_unique<LeafNode>("Relation not found");
         }
 
         std::pair<int, int> tupleInfo = findTuple(relName, tuple);
@@ -195,7 +212,7 @@ public:
         int levelNum = tupleInfo.second;
 
         if (ruleNum < 0 || levelNum == -1) {
-            return std::unique_ptr<TreeNode>(new LeafNode("Tuple not found"));
+            return std::make_unique<LeafNode>("Tuple not found");
         }
 
         return explain(relName, tuple, ruleNum, levelNum, depthLimit);
@@ -204,7 +221,7 @@ public:
     std::unique_ptr<TreeNode> explainSubproof(
             std::string relName, RamDomain subproofNum, size_t depthLimit) override {
         if (subproofNum >= (int)subproofs.size()) {
-            return std::unique_ptr<TreeNode>(new LeafNode("Subproof not found"));
+            return std::make_unique<LeafNode>("Subproof not found");
         }
 
         auto tup = subproofs[subproofNum];

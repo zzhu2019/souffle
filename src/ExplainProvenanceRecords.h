@@ -1,7 +1,28 @@
+/*
+ * Souffle - A Datalog Compiler
+ * Copyright (c) 2017, The Souffle Developers. All rights reserved
+ * Licensed under the Universal Permissive License v 1.0 as shown at:
+ * - https://opensource.org/licenses/UPL
+ * - <souffle root>/licenses/SOUFFLE-UPL.txt
+ */
+
+/************************************************************************
+ *
+ * @file ExplainProvenanceRecords.h
+ *
+ * Implementation of abstract class in ExplainProvenance.h for provenance using records
+ *
+ ***********************************************************************/
+
 #pragma once
 
 #include "ExplainProvenance.h"
+
+#include <map>
 #include <regex>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace souffle {
 
@@ -25,7 +46,7 @@ public:
             for (auto& tuple : *rel) {
                 RamDomain label;
 
-                if (relName.find("-output") != std::string::npos) {
+                if (relName.find("-@output") != std::string::npos) {
                     std::vector<RamDomain> tuple_elements;
                     tuple >> label;
 
@@ -38,7 +59,7 @@ public:
                         } else if (*(rel->getAttrType(i)) == 's') {
                             std::string s;
                             tuple >> s;
-                            auto n = prog.getSymbolTable().lookupExisting(s);
+                            auto n = prog.getSymbolTable().lookupExisting(s.c_str());
                             tuple_elements.push_back(n);
                         }
                     }
@@ -46,7 +67,7 @@ public:
                     // insert into maps
                     valuesToLabel.insert({std::make_pair(rel->getName(), tuple_elements), label});
                     labelToValue.insert({std::make_pair(rel->getName(), label), tuple_elements});
-                } else if (relName.find("-provenance-") != std::string::npos) {
+                } else if (relName.find("-@provenance-") != std::string::npos) {
                     std::vector<RamDomain> refs;
                     tuple >> label;
 
@@ -65,7 +86,7 @@ public:
                     }
 
                     labelToProof.insert({std::make_pair(rel->getName(), label), refs});
-                } else if (relName.find("-info") != std::string::npos) {
+                } else if (relName.find("-@info") != std::string::npos) {
                     std::vector<std::string> rels;
                     for (size_t i = 0; i < tuple.size() - 2; i++) {
                         std::string s;
@@ -82,7 +103,7 @@ public:
                     tuple >> clauseRepr;
 
                     // extract rule number from relation name
-                    int ruleNum = atoi((*(split(rel->getName(), '-').rbegin() + 1)).c_str());
+                    int ruleNum = std::stoi(split(rel->getName(), '-').back());
 
                     info.insert({rel->getName(), rels});
                     rule.insert({std::make_pair(relName, ruleNum), clauseRepr});
@@ -158,7 +179,7 @@ public:
             if (rel->getName().find(relName) != std::string::npos) {
                 found = true;
             }
-            std::regex provRelName(relName + "-provenance-[0-9]+");
+            std::regex provRelName(relName + "-@provenance-[0-9]+", std::regex_constants::extended);
             if (std::regex_match(rel->getName(), provRelName)) {
                 isEDB = false;
                 break;
@@ -167,12 +188,12 @@ public:
 
         // check that relation is in the program
         if (!found) {
-            return std::unique_ptr<TreeNode>(new LeafNode("Relation " + relName + " not found"));
+            return std::make_unique<LeafNode>("Relation " + relName + " not found");
         }
 
         // if EDB relation, make a leaf node in the tree
         if (prog.getRelation(relName) != nullptr && isEDB) {
-            auto subproof = provInfo.getTuple(relName + "-output", label);
+            auto subproof = provInfo.getTuple(relName + "-@output", label);
 
             // construct label
             std::stringstream tup;
@@ -180,14 +201,14 @@ public:
             std::string lab = relName + "(" + tup.str() + ")";
 
             // leaf node
-            return std::unique_ptr<TreeNode>(new LeafNode(lab));
+            return std::make_unique<LeafNode>(lab);
         } else {
             if (depth > 1) {
                 std::string internalRelName;
 
                 // find correct relation
                 for (auto rel : prog.getAllRelations()) {
-                    if (rel->getName().find(relName + "-provenance-") != std::string::npos) {
+                    if (rel->getName().find(relName + "-@provenance-") != std::string::npos) {
                         // if relation contains the correct tuple label
                         if (provInfo.getSubproofs(rel->getName(), label) != std::vector<RamDomain>()) {
                             // found the correct relation
@@ -200,7 +221,7 @@ public:
                 // either fact or relation doesn't exist
                 if (internalRelName == "") {
                     // if fact
-                    auto tup = provInfo.getTuple(relName + "-output", label);
+                    auto tup = provInfo.getTuple(relName + "-@output", label);
                     if (tup != std::vector<RamDomain>()) {
                         // output leaf provenance node
                         std::stringstream tupleText;
@@ -208,14 +229,14 @@ public:
                         std::string lab = relName + "(" + tupleText.str() + ")";
 
                         // leaf node
-                        return std::unique_ptr<TreeNode>(new LeafNode(lab));
+                        return std::make_unique<LeafNode>(lab);
                     } else {
-                        return std::unique_ptr<TreeNode>(new LeafNode("Relation " + relName + " not found"));
+                        return std::make_unique<LeafNode>("Relation " + relName + " not found");
                     }
                 }
 
                 // label and rule number for current node
-                auto subproof = provInfo.getTuple(relName + "-output", label);
+                auto subproof = provInfo.getTuple(relName + "-@output", label);
 
                 // construct label
                 std::stringstream tup;
@@ -228,7 +249,7 @@ public:
                         std::unique_ptr<InnerNode>(new InnerNode(lab, std::string("(R" + ruleNum + ")")));
 
                 // key for info map
-                std::string infoKey = relName + "-info-" + ruleNum;
+                std::string infoKey = relName + "-@info-" + ruleNum;
 
                 // recursively add all provenance values for this value
                 auto subproofInfo = provInfo.getInfo(infoKey);
@@ -248,16 +269,16 @@ public:
                 // add subproof label if depth limit is exceeded
             } else {
                 std::string lab = "subproof " + relName + "(" + std::to_string(label) + ")";
-                return std::unique_ptr<TreeNode>(new LeafNode(lab));
+                return std::make_unique<LeafNode>(lab);
             }
         }
     }
 
     std::unique_ptr<TreeNode> explain(
             std::string relName, std::vector<std::string> tuple, size_t depthLimit) override {
-        auto lab = provInfo.getLabel(relName + "-output", argsToNums(relName, tuple));
+        auto lab = provInfo.getLabel(relName + "-@output", argsToNums(relName, tuple));
         if (lab == -1) {
-            return std::unique_ptr<TreeNode>(new LeafNode("Tuple not found"));
+            return std::make_unique<LeafNode>("Tuple not found");
         }
 
         return explainSubproof(relName, lab, depthLimit);

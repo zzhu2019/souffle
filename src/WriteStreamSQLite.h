@@ -31,7 +31,8 @@ class WriteStreamSQLite : public WriteStream {
 public:
     WriteStreamSQLite(const std::string& dbFilename, const std::string& relationName,
             const SymbolMask& symbolMask, const SymbolTable& symbolTable, const bool provenance)
-            : WriteStream(symbolMask, symbolTable, provenance), dbFilename(dbFilename), relationName(relationName) {
+            : WriteStream(symbolMask, symbolTable, provenance), dbFilename(dbFilename),
+              relationName(relationName) {
         openDB();
         createTables();
         prepareStatements();
