@@ -5,6 +5,7 @@
 set -e
 set -x
 
+ulimit -c unlimited -S
 # Run from the test directory if we don't need the unit tests
 if [[ "$SOUFFLE_CATEGORY" != *"Unit"* ]]
 then
