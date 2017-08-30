@@ -351,12 +351,33 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
                     }
                     return result;
                 }
+                case BinaryConstraintOp::NOT_MATCH: {
+                    RamDomain l = eval(relOp.getLHS(), env, ctxt);
+                    RamDomain r = eval(relOp.getRHS(), env, ctxt);
+                    const std::string& pattern = env.getSymbolTable().resolve(l);
+                    const std::string& text = env.getSymbolTable().resolve(r);
+                    bool result = false;
+                    try {
+                        result = !std::regex_match(text, std::regex(pattern));
+                    } catch (...) {
+                        std::cerr << "warning: wrong pattern provided for !match(\"" << pattern << "\",\""
+                                  << text << "\")\n";
+                    }
+                    return result;
+                }
                 case BinaryConstraintOp::CONTAINS: {
                     RamDomain l = eval(relOp.getLHS(), env, ctxt);
                     RamDomain r = eval(relOp.getRHS(), env, ctxt);
                     const std::string& pattern = env.getSymbolTable().resolve(l);
                     const std::string& text = env.getSymbolTable().resolve(r);
                     return text.find(pattern) != std::string::npos;
+                }
+                case BinaryConstraintOp::NOT_CONTAINS: {
+                    RamDomain l = eval(relOp.getLHS(), env, ctxt);
+                    RamDomain r = eval(relOp.getRHS(), env, ctxt);
+                    const std::string& pattern = env.getSymbolTable().resolve(l);
+                    const std::string& text = env.getSymbolTable().resolve(r);
+                    return text.find(pattern) == std::string::npos;
                 }
                 default:
                     assert(0 && "unsupported operator");
