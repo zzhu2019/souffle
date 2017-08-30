@@ -130,7 +130,7 @@ souffle_sources = \
               WriteStreamCSV.h                          \
               IOSystem.h                                \
               RamInterface.cpp      RamInterface.h      \
-              ProvenanceTransformer.cpp ProvenanceTransformer.h \
+              ProvenanceTransformer.cpp                 \
 			  ProvenanceRecordTransformer.cpp ProvenanceRecordTransformer.h \
               Global.cpp            Global.h
 
