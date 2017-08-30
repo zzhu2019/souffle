@@ -112,6 +112,7 @@ souffle_sources = \
               RamData.h                                 \
               RamAutoIndex.cpp      RamAutoIndex.h      \
               RamOperation.cpp      RamOperation.h      \
+			  RamProgram.h                              \
               RamRecords.cpp        RamRecords.h        \
               RamRelation.cpp       RamRelation.h       \
               RamRelationStats.cpp  RamRelationStats.h  \
