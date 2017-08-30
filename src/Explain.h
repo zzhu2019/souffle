@@ -236,6 +236,7 @@ public:
                         "printrel <relation name>: Prints the tuples of a relation\n"
                         "exit: Exits this interface\n\n");
             } else if (command[0] == "exit") {
+                printStr("Exiting explain\n");
                 break;
             }
 
