@@ -127,9 +127,11 @@ souffle_sources = \
               $(sqlite_sources)     $(libz_sources)     \
               ReadStream.h                              \
               ReadStreamCSV.h                           \
+              ReadStreamSDF.h                           \
               WriteStream.h                             \
               IODirectives.h                            \
               WriteStreamCSV.h                          \
+              WriteStreamSDF.h                          \
               IOSystem.h                                \
               RamInterface.cpp      RamInterface.h      \
               ProvenanceTransformer.cpp                 \
