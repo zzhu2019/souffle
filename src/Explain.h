@@ -218,7 +218,7 @@ public:
                 }
             } else if (command[0] == "printrel") {
                 try {
-                    // printStr(prov.getRelationOutput(command[1]));
+                    printStr(prov.getRelationOutput(command[1]));
                 } catch (std::exception& e) {
                     printStr("Usage: printrel <relation name>\n");
                     continue;
