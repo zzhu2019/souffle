@@ -208,7 +208,7 @@ jobs:
     - *gcc_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
 
-# TODO (lyndonhenry): these tests currently time out with travis, due to the significant increase in compilation time incurred by the -s option
+# TODO (#468): these tests currently time out with travis, due to the significant increase in compilation time incurred by the -s option
 #  - <<: *linuxgcc
 #    env:
 #    - *gcc_environment

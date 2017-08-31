@@ -1260,7 +1260,7 @@ public:
 
         // create operation contexts for this operation
         for (const RamRelationIdentifier& rel : getReferencedRelations(insert.getOperation())) {
-            // TODO (lyndonhenry): this causes bugs for subprogram compilation for record types if artificial
+            // TODO (#467): this causes bugs for subprogram compilation for record types if artificial
             // dependencies are introduces in the precedence graph
             out << "CREATE_OP_CONTEXT(" << getOpContextName(rel) << "," << getRelationName(rel) << "->"
                 << "createContext());\n";

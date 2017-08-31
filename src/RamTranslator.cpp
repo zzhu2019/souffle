@@ -866,7 +866,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateRecursiveRelation(
             appendStmt(updateRelTable,
                     std::unique_ptr<RamStatement>(new RamSequence(
                             std::unique_ptr<RamStatement>(new RamMerge(rrel[rel], relNew[rel])),
-                            // TODO (lyndonhenry): uncomment the following line to store new recursive
+                            // TODO (#466): uncomment the following line to store new recursive
                             // relations immediately upon discovery
                             // std::unique_ptr<RamStatement>(new RamStore(relNew[rel])),
                             std::unique_ptr<RamStatement>(new RamSwap(relDelta[rel], relNew[rel])),
@@ -1159,7 +1159,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateProgram(const AstTranslati
         /* store all relations with fault tolerance, and output relations without */
         if (Global::config().has("fault-tolerance")) {
             for (const AstRelation* rel : step.computed())
-                // TODO (lyndonhenry): if storing new recursive relations immediately, uncomment the following
+                // TODO (#466): if storing new recursive relations immediately, uncomment the following
                 // line to avoid duplicates
                 // if (!sccGraph.isRecursive(rel))
                 printSizeStore(current, rel, typeEnv, rel->hasRecordInHead());
