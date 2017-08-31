@@ -31,7 +31,7 @@ case $1 in
     ## - sync: Sync with upstream, origin master, and the current branch.
     sync)
         # - format with clang
-        clang-format-3.8 \
+        clang-format-4.0 \
             -i \
             -style=file \
             $SOUFFLE/src/*.cpp \
