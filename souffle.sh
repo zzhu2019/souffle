@@ -26,7 +26,8 @@ case $1 in
             grep "apt-get install" | \
             sed 's/^.*apt-get install//g' \
         ) \
-        );
+        ) \
+        sudo apt-get install -y clang libomp-dev;
     ;;
     ## - sync: Sync with upstream, origin master, and the current branch.
     sync)
@@ -58,6 +59,18 @@ case $1 in
     ;;
     ## - build: Build Souffle from scratch.
     build)
+		case $2 in
+			clang)
+				export CC=clang;
+				export CXX=clang++;
+			;;
+			gcc)
+				export CC=gcc-7;
+				export CXX=g++-7
+			;;
+			*)
+			;;
+		esac;
         # run boostrap and configure
         chmod 775 bootstrap && \
         ./bootstrap && \
