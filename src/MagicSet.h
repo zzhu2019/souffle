@@ -134,7 +134,7 @@ public:
 
     virtual void run(const AstTranslationUnit& translationUnit);
 
-    void outputAdornment(std::ostream& os);
+    void print(std::ostream& os);
 
     const std::vector<std::vector<AdornedClause>> getAdornedClauses() {
         return adornmentClauses;

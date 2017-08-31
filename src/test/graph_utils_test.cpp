@@ -25,13 +25,13 @@ namespace test {
 TEST(Graph, Basic) {
     Graph<int> g;
 
-    EXPECT_FALSE(g.contains(1));
-    EXPECT_FALSE(g.contains(2));
-    EXPECT_FALSE(g.contains(3));
+    EXPECT_FALSE(g.exists(1));
+    EXPECT_FALSE(g.exists(2));
+    EXPECT_FALSE(g.exists(3));
 
-    EXPECT_FALSE(g.contains(1, 2));
-    EXPECT_FALSE(g.contains(1, 3));
-    EXPECT_FALSE(g.contains(2, 3));
+    EXPECT_FALSE(g.exists(1, 2));
+    EXPECT_FALSE(g.exists(1, 3));
+    EXPECT_FALSE(g.exists(2, 3));
 
     EXPECT_FALSE(g.reaches(1, 1));
     EXPECT_FALSE(g.reaches(1, 2));
@@ -43,15 +43,15 @@ TEST(Graph, Basic) {
     EXPECT_FALSE(g.reaches(3, 2));
     EXPECT_FALSE(g.reaches(3, 3));
 
-    g.addEdge(1, 2);
+    g.insert(1, 2);
 
-    EXPECT_TRUE(g.contains(1));
-    EXPECT_TRUE(g.contains(2));
-    EXPECT_FALSE(g.contains(3));
+    EXPECT_TRUE(g.exists(1));
+    EXPECT_TRUE(g.exists(2));
+    EXPECT_FALSE(g.exists(3));
 
-    EXPECT_TRUE(g.contains(1, 2));
-    EXPECT_FALSE(g.contains(1, 3));
-    EXPECT_FALSE(g.contains(2, 3));
+    EXPECT_TRUE(g.exists(1, 2));
+    EXPECT_FALSE(g.exists(1, 3));
+    EXPECT_FALSE(g.exists(2, 3));
 
     EXPECT_FALSE(g.reaches(1, 1));
     EXPECT_TRUE(g.reaches(1, 2));
@@ -63,15 +63,15 @@ TEST(Graph, Basic) {
     EXPECT_FALSE(g.reaches(3, 2));
     EXPECT_FALSE(g.reaches(3, 3));
 
-    g.addEdge(2, 3);
+    g.insert(2, 3);
 
-    EXPECT_TRUE(g.contains(1));
-    EXPECT_TRUE(g.contains(2));
-    EXPECT_TRUE(g.contains(3));
+    EXPECT_TRUE(g.exists(1));
+    EXPECT_TRUE(g.exists(2));
+    EXPECT_TRUE(g.exists(3));
 
-    EXPECT_TRUE(g.contains(1, 2));
-    EXPECT_FALSE(g.contains(1, 3));
-    EXPECT_TRUE(g.contains(2, 3));
+    EXPECT_TRUE(g.exists(1, 2));
+    EXPECT_FALSE(g.exists(1, 3));
+    EXPECT_TRUE(g.exists(2, 3));
 
     EXPECT_FALSE(g.reaches(1, 1));
     EXPECT_TRUE(g.reaches(1, 2));
@@ -83,15 +83,15 @@ TEST(Graph, Basic) {
     EXPECT_FALSE(g.reaches(3, 2));
     EXPECT_FALSE(g.reaches(3, 3));
 
-    g.addEdge(3, 1);
+    g.insert(3, 1);
 
-    EXPECT_TRUE(g.contains(1));
-    EXPECT_TRUE(g.contains(2));
-    EXPECT_TRUE(g.contains(3));
+    EXPECT_TRUE(g.exists(1));
+    EXPECT_TRUE(g.exists(2));
+    EXPECT_TRUE(g.exists(3));
 
-    EXPECT_TRUE(g.contains(1, 2));
-    EXPECT_FALSE(g.contains(1, 3));
-    EXPECT_TRUE(g.contains(2, 3));
+    EXPECT_TRUE(g.exists(1, 2));
+    EXPECT_FALSE(g.exists(1, 3));
+    EXPECT_TRUE(g.exists(2, 3));
 
     EXPECT_TRUE(g.reaches(1, 1));
     EXPECT_TRUE(g.reaches(1, 2));

@@ -607,8 +607,8 @@ ostream& operator<<(ostream& out, const set<K, C, A>& s) {
 template <typename K, typename T, typename C, typename A>
 ostream& operator<<(ostream& out, const map<K, T, C, A>& m) {
     return out << "{" << souffle::join(m, ",", [](ostream& out, const pair<K, T>& cur) {
-        out << cur.first << "->" << cur.second;
-    }) << "}";
+               out << cur.first << "->" << cur.second;
+           }) << "}";
 }
 
 }  // end namespace std
@@ -962,6 +962,17 @@ inline std::string absPath(const std::string& path) {
     return (res == nullptr) ? "" : std::string(buf);
 }
 
+/**
+ *  Join two paths together; note that this does not resolve overlaps or relative paths.
+ */
+inline std::string pathJoin(const std::string& first, const std::string& second) {
+    unsigned firstPos = first.size() - 1;
+    while (first.at(firstPos) == '/') firstPos--;
+    unsigned secondPos = 0;
+    while (second.at(secondPos) == '/') secondPos++;
+    return first.substr(0, firstPos + 1) + '/' + second.substr(secondPos);
+}
+
 /*
  * Find out if an executable given by @p tool exists in the path given @p path
  * relative to the directory given by @ base. A path here refers a
@@ -1002,6 +1013,45 @@ inline std::string baseName(const std::string& filename) {
 }
 
 /**
+ * File name, with extension removed.
+ */
+inline std::string simpleName(const std::string& path) {
+    std::string name = path;
+    const size_t lastDot = name.find_last_of('.');
+    // file has no extension
+    if (lastDot == std::string::npos) return name;
+    const size_t lastSlash = name.find_last_of('/');
+    // last slash occurs after last dot, so no extension
+    if (lastSlash != std::string::npos && lastSlash > lastDot) return name;
+    // last dot after last slash, or no slash
+    return name.substr(0, lastDot);
+}
+
+/**
+ * File extension, with all else removed.
+ */
+inline std::string fileExt(const std::string& path) {
+    std::string name = path;
+    const size_t lastDot = name.find_last_of('.');
+    // file has no extension
+    if (lastDot == std::string::npos) return std::string();
+    const size_t lastSlash = name.find_last_of('/');
+    // last slash occurs after last dot, so no extension
+    if (lastSlash != std::string::npos && lastSlash > lastDot) return std::string();
+    // last dot after last slash, or no slash
+    return name.substr(lastDot + 1);
+}
+
+/**
+ * Generate temporary file.
+ */
+inline std::string tempFile() {
+    char templ[40] = "./souffleXXXXXX";
+    close(mkstemp(templ));
+    return std::string(templ);
+}
+
+/**
  * Stringify a string using escapes for newline, tab, double-quotes and semicolons
  */
 inline std::string stringify(const std::string& input) {
@@ -1032,6 +1082,17 @@ inline std::string stringify(const std::string& input) {
         start_pos += 2;
     }
     return str;
+}
+
+/** Valid C++ identifier. */
+inline std::string identifier(const std::string& seed) {
+    std::string id = seed;
+    for (size_t i = 0; i < id.length(); i++) {
+        if ((!isalpha(id[i]) && i == 0) || (!isalnum(id[i]) && id[i] != '_')) {
+            id[i] = '_';
+        }
+    }
+    return id;
 }
 
 /* begin reference implementation

@@ -79,7 +79,7 @@ private:
         registerWriteStreamFactory(std::make_shared<WriteFileCSVFactory>());
         registerWriteStreamFactory(std::make_shared<WriteCoutCSVFactory>());
 #ifdef USE_SQLITE
-        registerReadStreamFactory(std::make_shared<ReadStreamSQLiteFactory>());
+        registerReadStreamFactory(std::make_shared<ReadSQLiteFactory>());
         registerWriteStreamFactory(std::make_shared<WriteSQLiteFactory>());
 #endif
     };

@@ -105,13 +105,12 @@ int main(int argc, char** argv) {
                             {"fact-dir", 'F', "DIR", ".", false, "Specify directory for fact files."},
                             {"include-dir", 'I', "DIR", ".", true, "Specify directory for include files."},
                             {"output-dir", 'D', "DIR", ".", false,
-                                    "Specify directory for output relations (if <DIR> is -, output is "
-                                    "written to stdout)."},
+                                    "Specify directory for output files (if <DIR> is -, stdout is used)."},
                             {"jobs", 'j', "N", "1", false,
                                     "Run interpreter/compiler in parallel using N threads, N=auto for system "
                                     "default."},
                             {"compile", 'c', "", "", false,
-                                    "Generate C++ source code, compile to binary executable, then run this "
+                                    "Generate C++ source code, compile to a binary executable, then run this "
                                     "executable."},
                             {"auto-schedule", 'a', "", "", false,
                                     "Switch on automated clause scheduling for compiler."},
@@ -123,12 +122,17 @@ int main(int argc, char** argv) {
                                     "Enable magic set transformation changes on the given relations, use '*' "
                                     "for all."},
                             {"dl-program", 'o', "FILE", "", false,
-                                    "Generate C++ source code and compile this to a binary executable "
-                                    "written to <FILE>."},
+                                    "Generate C++ source code, written to <FILE>, and compile this to a "
+                                    "binary executable (without executing it)."},
                             {"profile", 'p', "FILE", "", false,
-                                    "Enable profiling and write profile data to <FILE>."},
+                                    "Enable profiling, and write profile data to <FILE>."},
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
+                            {"fault-tolerance", 'f', "", "", false,
+                                    "Enable fault tolerance to recover from failure on program restart."},
+                            {"stratify", 's', "FILE", "", false,
+                                    "Generate/compile to multiple subprograms, and write an execution graph "
+                                    "to FILE (valid extensions are '.dot' or '.json')."},
 #ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information (<EXPLAIN> can be 0 for no explain, 1 for "
@@ -211,16 +215,26 @@ int main(int argc, char** argv) {
         }
     }
 
+    /* ensure that code generation and/or compilation is enabled if stratification is for non-none options*/
+    if (Global::config().has("stratify")) {
+        if (Global::config().get("stratify") == "-" && Global::config().has("generate")) {
+            ERROR("stratification cannot be enabled with format 'auto' and option 'generate'.");
+        } else if (!(Global::config().has("compile") || Global::config().has("dl-program") ||
+                           Global::config().has("generate"))) {
+            ERROR("one of 'compile', 'dl-program', or 'generate' options must be present for stratification");
+        }
+    }
+
     // ------ start souffle -------------
 
-    std::string programName = which(argv[0]);
+    std::string souffleExecutable = which(argv[0]);
 
-    if (programName.empty()) {
+    if (souffleExecutable.empty()) {
         ERROR("failed to determine souffle executable path");
     }
 
     /* Create the pipe to establish a communication between cpp and souffle */
-    std::string cmd = ::findTool("souffle-mcpp", programName, ".");
+    std::string cmd = ::findTool("souffle-mcpp", souffleExecutable, ".");
 
     if (!isExecutable(cmd)) {
         ERROR("failed to locate souffle preprocessor");
@@ -375,50 +389,79 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    // pick executor
-    std::unique_ptr<RamExecutor> executor;
-    if (Global::config().has("generate") || Global::config().has("compile")) {
-        /* Locate souffle-compile script */
-        std::string compileCmd = ::findTool("souffle-compile", programName, ".");
-        /* Fail if a souffle-compile executable is not found */
-        if (!isExecutable(compileCmd)) {
-            ERROR("failed to locate souffle-compile");
+    std::vector<RamStatement*> stratum;
+    if (Global::config().has("stratify")) {
+        if (const RamSequence* sequence = dynamic_cast<const RamSequence*>(ramProg.get())) {
+            stratum = sequence->getStatements();
         }
-        compileCmd += " ";
-        // configure compiler
-        executor = std::unique_ptr<RamExecutor>(new RamCompiler(compileCmd));
-        if (Global::config().has("verbose")) {
-            executor->setReportTarget(std::cout);
+        if (Global::config().get("stratify") != "-") {
+            const std::string filePath = Global::config().get("stratify");
+            std::ofstream os(filePath);
+            if (!os.is_open()) ERROR("could not open '" + filePath + "' for writing.");
+            translationUnit->getAnalysis<SCCGraph>()->print(os, fileExt(Global::config().get("stratify")));
         }
     } else {
-        // configure interpreter
-        if (Global::config().has("auto-schedule")) {
-            executor = std::unique_ptr<RamExecutor>(new RamGuidedInterpreter());
-        } else {
-            executor = std::unique_ptr<RamExecutor>(new RamInterpreter());
-        }
+        stratum.push_back(ramProg.get());
     }
-    std::unique_ptr<RamEnvironment> env;
-    try {
-        // check if this is code generation only
-        if (Global::config().has("generate")) {
-            // just generate, no compile, no execute
-            static_cast<const RamCompiler*>(executor.get())
-                    ->generateCode(
-                            translationUnit->getSymbolTable(), *ramProg, Global::config().get("generate"));
 
-            // check if this is a compile only
-        } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
-            // just compile, no execute
-            static_cast<const RamCompiler*>(executor.get())
-                    ->compileToBinary(translationUnit->getSymbolTable(), *ramProg);
+    int index = -1;
+    std::unique_ptr<RamEnvironment> env;
+    std::vector<std::string> sources;
+    for (const RamStatement* strata : stratum) {
+        if (Global::config().has("stratify")) index++;
+        // pick executor
+        std::unique_ptr<RamExecutor> executor;
+        if (Global::config().has("generate") || Global::config().has("compile")) {
+            /* Locate souffle-compile script */
+            std::string compileCmd = ::findTool("souffle-compile", souffleExecutable, ".");
+            /* Fail if a souffle-compile executable is not found */
+            if (!isExecutable(compileCmd)) {
+                ERROR("failed to locate souffle-compile");
+            }
+            compileCmd += " ";
+            // configure compiler
+            executor = std::unique_ptr<RamExecutor>(new RamCompiler(compileCmd));
+            if (Global::config().has("verbose")) {
+                executor->setReportTarget(std::cout);
+            }
         } else {
-            // run executor
-            env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
+            // configure interpreter
+            if (Global::config().has("auto-schedule")) {
+                executor = std::unique_ptr<RamExecutor>(new RamGuidedInterpreter());
+            } else {
+                executor = std::unique_ptr<RamExecutor>(new RamInterpreter());
+            }
         }
-    } catch (std::exception& e) {
-        std::cerr << e.what() << std::endl;
+
+        std::string source = "";
+        try {
+            // check if this is code generation only
+            if (Global::config().has("generate")) {
+                // just generate, no compile, no execute
+                source = static_cast<const RamCompiler*>(executor.get())
+                                 ->generateCode(translationUnit->getSymbolTable(), *strata,
+                                         Global::config().get("generate"), index);
+
+                // check if this is a compile only
+            } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
+                // just compile, no execute
+                source = static_cast<const RamCompiler*>(executor.get())
+                                 ->compileToBinary(translationUnit->getSymbolTable(), *strata,
+                                         Global::config().get("dl-program"), index);
+            } else {
+                // run executor
+                env = executor->execute(translationUnit->getSymbolTable(), *strata);
+            }
+
+            if (!source.empty()) sources.push_back(source);
+        } catch (std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
     }
+
+    if (Global::config().has("stratify") && Global::config().get("stratify") == "-")
+        for (const std::string source : sources)
+            system((simpleName(absPath(source)) + " -j" + Global::config().get("jobs")).c_str());
 
     /* Report overall run-time in verbose mode */
     if (Global::config().has("verbose")) {

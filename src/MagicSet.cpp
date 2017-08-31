@@ -844,7 +844,7 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
 // output the adornment analysis computed
 // format: 'Output <outputNumber>: <outputName>' followed by a list of the
 // related clause adornments, each on a new line
-void Adornment::outputAdornment(std::ostream& os) {
+void Adornment::print(std::ostream& os) {
     for (size_t i = 0; i < adornmentClauses.size(); i++) {
         std::vector<AdornedClause> clauses = adornmentClauses[i];
         os << "Output " << i + 1 << ": " << adornmentRelations[i] << std::endl;

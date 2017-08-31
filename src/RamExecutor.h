@@ -208,8 +208,8 @@ public:
      * name is either set by the corresponding member field or will
      * be determined randomly. The chosen file-name will be returned.
      */
-    std::string generateCode(
-            const SymbolTable& symTable, const RamStatement& stmt, const std::string& filename = "") const;
+    std::string generateCode(const SymbolTable& symTable, const RamStatement& stmt,
+            const std::string& filename = "", const int index = -1) const;
 
     /**
      * Generates the code for the given ram statement.The target file
@@ -217,14 +217,15 @@ public:
      * be determined randomly. The chosen file-name will be returned.
      */
     std::string compileToLibrary(const SymbolTable& symTable, const RamStatement& stmt,
-            const std::string& filename = "default") const;
+            const std::string& filename = "default", const int index = -1) const;
 
     /**
      * Compiles the given statement to a binary file. The target file
      * name is either set by the corresponding member field or will
      * be determined randomly. The chosen file-name will be returned.
      */
-    std::string compileToBinary(const SymbolTable& symTable, const RamStatement& stmt) const;
+    std::string compileToBinary(const SymbolTable& symTable, const RamStatement& stmt,
+            const std::string& filename = "", const int index = -1) const;
 
     /**
      * The actual implementation of this executor encoding the given

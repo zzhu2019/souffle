@@ -273,15 +273,21 @@ m4_define([NEGATIVE_PROVENANCE_TEST],[
 
 ##########################################################################
 
-dnl Defines all possible Souffle flag configurations for testing.
+dnl Defines most relevant Souffle flag configurations for testing.
 dnl NOTE: This is the default configuration that can be overridden
 dnl using SOUFFLE_CONFS environment variable.
-m4_define([DEFAULT_CONFS], [[], dnl interpreter
- [-c],                  dnl compilation
- [-j8],                 dnl interpreter / parallel execution
- [-c -j8],              dnl compilation & parallel execution
- [-p profile.log],      dnl interpreter & profiling
- [-c -p profile.log]    dnl compiler & profiling
+m4_define([DEFAULT_CONFS], [[],     dnl run interpreter
+ [-c],                              dnl compile, then execute
+ [-j8],                             dnl run interpreter in parallel
+ [-j8 -p profile.log],              dnl run interpreter in parallel, with profiling enabled
+ [-c -j8],                          dnl compile, then execute in parallel
+ [-c -j8 -p profile.log],           dnl compile, then execute in parallel, with profiling enabled
+ [-f -j8],                          dnl run interpreter with fault-tolerance in parallel
+ [-f -j8 -p profile.log],           dnl run interpreter with fault-tolerance in parallel, with profiling enabled
+ [-c -f -j8],                       dnl compile with fault tolerance enabled, then execute in parallel
+ [-c -f -j8 -p profile.log],        dnl compile with fault tolerance enabled, then execute in parallel, with profiling enabled
+ [-c -j8 -s-],                      dnl compile to subprograms, then execute each in parallel
+ [-c -f -j8 -s-],                   dnl compile to subprograms with fault tolerance enabled, then execute each in parallel
 ])
 
 dnl Store user-defined souffle flag configuration given by the SOUFFLE_CONFS env (if any)

@@ -147,7 +147,7 @@ protected:
     sqlite3* db;
 };
 
-class ReadStreamSQLiteFactory : public ReadStreamFactory {
+class ReadSQLiteFactory : public ReadStreamFactory {
 public:
     std::unique_ptr<ReadStream> getReader(const SymbolMask& symbolMask, SymbolTable& symbolTable,
             const IODirectives& ioDirectives) override {
@@ -160,7 +160,7 @@ public:
         static const std::string name = "sqlite";
         return name;
     }
-    ~ReadStreamSQLiteFactory() override = default;
+    ~ReadSQLiteFactory() override = default;
 };
 
 } /* namespace souffle */

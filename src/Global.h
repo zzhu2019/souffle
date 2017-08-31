@@ -52,7 +52,8 @@ public:
     const V& get(const K& key, const V& value) const {
         return (has(key)) ? _data.at(key) : value;
     }
-    /* Check the table has the specified key. */
+    /* Check the table has the specified key and that it is not equal to an object of the value class called
+     * with an empty constructor. */
     const bool has(const K& key) const {
         return _data.find(key) != _data.end();
     }
@@ -68,6 +69,10 @@ public:
     /* Set the entry in the table for the specified key to the specified value. */
     void set(const K& key, const V& value) {
         _data[key] = value;
+    }
+    /* Erase the entry in the table for the specified key. */
+    void unset(const K& key) {
+        _data.erase(key);
     }
     /* Print the raw backing data to the specified stream. */
     void print(std::ostream& os) {

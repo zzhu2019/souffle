@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file Graph.h
+ * @file GraphUtils.h
  *
  * A simple utility graph for conducting simple, graph-based operations.
  *
@@ -36,9 +36,9 @@ public:
     /**
      * Adds a new edge from the given node to the target node.
      */
-    void addEdge(const Node& from, const Node& to) {
-        addNode(from);
-        addNode(to);
+    void insert(const Node& from, const Node& to) {
+        insert(from);
+        insert(to);
         forward[from].insert(to);
         backward[to].insert(from);
     }
@@ -46,7 +46,7 @@ public:
     /**
      * Adds a node.
      */
-    void addNode(const Node& node) {
+    void insert(const Node& node) {
         auto iter = nodes.insert(node);
         if (iter.second) {
             forward.insert(std::make_pair(node, std::set<Node, Compare>()));
@@ -55,29 +55,29 @@ public:
     }
 
     /** Obtains a reference to the set of all nodes */
-    const std::set<Node, Compare>& getNodes() const {
+    const std::set<Node, Compare>& vertices() const {
         return nodes;
     }
 
     /** Returns the set of nodes the given node has edges to */
-    const std::set<Node, Compare>& getEdges(const Node& from) const {
-        assert(contains(from));
+    const std::set<Node, Compare>& successors(const Node& from) const {
+        assert(exists(from));
         return forward.find(from)->second;
     }
 
     /** Returns the set of nodes the given node has edges from */
-    const std::set<Node, Compare>& getReverseEdges(const Node& to) const {
-        assert(contains(to));
+    const std::set<Node, Compare>& predecessors(const Node& to) const {
+        assert(exists(to));
         return backward.find(to)->second;
     }
 
     /** Determines whether the given node is present */
-    bool contains(const Node& node) const {
+    bool exists(const Node& node) const {
         return nodes.find(node) != nodes.end();
     }
 
     /** Determines whether the given edge is present */
-    bool contains(const Node& from, const Node& to) const {
+    bool exists(const Node& from, const Node& to) const {
         auto pos = forward.find(from);
         if (pos == forward.end()) {
             return false;
@@ -89,7 +89,7 @@ public:
     /** Determines whether there is a directed path between the two nodes */
     bool reaches(const Node& from, const Node& to) const {
         // quick check
-        if (!contains(from) || !contains(to)) {
+        if (!exists(from) || !exists(to)) {
             return false;
         }
 
@@ -104,10 +104,10 @@ public:
     }
 
     /** Obtains the set of all nodes in the same clique than the given node */
-    const std::set<Node, Compare> getClique(const Node& node) const {
+    const std::set<Node, Compare> clique(const Node& node) const {
         std::set<Node, Compare> res;
         res.insert(node);
-        for (const auto& cur : getNodes()) {
+        for (const auto& cur : vertices()) {
             if (reaches(node, cur) && reaches(cur, node)) {
                 res.insert(cur);
             }

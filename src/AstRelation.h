@@ -179,6 +179,18 @@ public:
         return (qualifier & OVERRIDABLE_RELATION) != 0;
     }
 
+    /** Check whether relation has a record in its head */
+    bool hasRecordInHead() const {
+        for (auto& cur : clauses) {
+            for (auto* arg : cur->getHead()->getArguments()) {
+                if (dynamic_cast<AstRecordInit*>(arg)) {
+                    return true;
+                }
+            };
+        }
+        return false;
+    }
+
     /** Operator overload, calls print if reference is given */
     friend std::ostream& operator<<(std::ostream& os, const AstRelation& rel) {
         rel.print(os);
