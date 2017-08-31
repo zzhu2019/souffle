@@ -98,6 +98,7 @@ public:
     }
 
     void addReturnValue(RamDomain val, bool err = false) {
+        assert(returnValues != nullptr && returnErrors != nullptr);
         returnValues->push_back(val);
         returnErrors->push_back(err);
     }
@@ -355,7 +356,6 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
             for (size_t i = 0; i < arity; i++) {
                 low[i] = (values[i]) ? eval(values[i], env, ctxt) : MIN_RAM_DOMAIN;
                 high[i] = (values[i]) ? low[i] : MAX_RAM_DOMAIN;
-                // std::cout << low[i] << " " << high[i] << std::endl;
             }
 
             // obtain index
@@ -702,6 +702,7 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
     // create and run interpreter
     EvalContext ctxt(op.getDepth());
     ctxt.setReturnValues(args.getReturnValues());
+    ctxt.setReturnErrors(args.getReturnErrors());
     ctxt.setArguments(args.getArguments());
     Interpreter(env, ctxt).visit(op);
 }
