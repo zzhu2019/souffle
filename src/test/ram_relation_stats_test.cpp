@@ -83,7 +83,8 @@ TEST(Stats, Convergence) {
         // if file not found => be done
         if (!in.is_open()) return;
 
-        std::unique_ptr<ReadStream> reader = IOSystem::getInstance().getReader(mask, symTable, ioDirectives);
+        std::unique_ptr<ReadStream> reader =
+                IOSystem::getInstance().getReader(mask, symTable, ioDirectives, false);
         reader->readAll(rel);
     }
 

@@ -226,7 +226,7 @@ dnl $1 -- test name
 dnl $2 -- category
 m4_define([POSITIVE_PROVENANCE_TEST],[
   AT_SETUP([$1])
-  m4_define([FLAGS],[-t2])
+  m4_define([FLAGS],[])
   TEST_EVAL_IN([$1],[$2], facts)
   AT_CLEANUP([])
 ])
@@ -266,7 +266,7 @@ dnl $1 -- test name
 dnl $2 -- category
 m4_define([NEGATIVE_PROVENANCE_TEST],[
   AT_SETUP([$1])
-  m4_define([FLAGS],[-t2])
+  m4_define([FLAGS],[])
   TEST_EVAL_ERROR_IN([$1],[$2])
   AT_CLEANUP([])
 ])

@@ -26,6 +26,7 @@
 #include "Global.h"
 #include "PrecedenceGraph.h"
 #include "RamStatement.h"
+#include "RamVisitor.h"
 
 namespace souffle {
 
@@ -365,6 +366,8 @@ std::unique_ptr<RamValue> translateValue(const AstArgument* arg, const ValueInde
         // here we look up the location the aggregation result gets bound
         auto loc = index.getAggregatorLocation(*agg);
         val = std::unique_ptr<RamValue>(new RamElementAccess(loc.level, loc.component, loc.name));
+    } else if (const AstSubroutineArgument* subArg = dynamic_cast<const AstSubroutineArgument*>(arg)) {
+        val = std::unique_ptr<RamValue>(new RamArgument(subArg->getNumber()));
     } else {
         std::cout << "Unsupported node type of " << arg << ": " << typeid(*arg).name() << "\n";
         ASSERT(false && "unknown AST node type not permissible");
@@ -379,8 +382,8 @@ std::unique_ptr<RamValue> translateValue(const AstArgument& arg, const ValueInde
 }  // namespace
 
 /** generate RAM code for a clause */
-std::unique_ptr<RamStatement> RamTranslator::translateClause(
-        const AstClause& clause, const AstProgram* program, const TypeEnvironment* typeEnv, int version) {
+std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& clause,
+        const AstProgram* program, const TypeEnvironment* typeEnv, int version, bool ret) {
     // check whether there is an imposed order constraint
     if (clause.getExecutionPlan() && clause.getExecutionPlan()->hasOrderFor(version)) {
         // get the imposed order
@@ -535,14 +538,65 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(
     // -- create RAM statement --
 
     // begin with projection
-    RamProject* project = new RamProject(getRelation(&head), level);
+    std::unique_ptr<RamOperation> op;
+    if (ret) {
+        RamReturn* returnValue = new RamReturn(level);
 
-    for (AstArgument* arg : head.getArguments()) {
-        project->addArg(translateValue(arg, valueIndex));
+        // get all values in the body
+        for (AstLiteral* lit : clause.getBodyLiterals()) {
+            if (auto atom = dynamic_cast<AstAtom*>(lit)) {
+                for (AstArgument* arg : atom->getArguments()) {
+                    returnValue->addValue(translateValue(arg, valueIndex));
+                }
+            } else if (auto neg = dynamic_cast<AstNegation*>(lit)) {
+                for (size_t i = 0; i < neg->getAtom()->getArguments().size() - 2; i++) {
+                    auto arg = neg->getAtom()->getArguments()[i];
+                    returnValue->addValue(translateValue(arg, valueIndex));
+                }
+                returnValue->addValue(std::unique_ptr<RamValue>(new RamNumber(-1)));
+                returnValue->addValue(std::unique_ptr<RamValue>(new RamNumber(-1)));
+            }
+        }
+
+        op = std::unique_ptr<RamOperation>(returnValue);
+    } else {
+        RamProject* project = new RamProject(getRelation(&head), level);
+
+        for (AstArgument* arg : head.getArguments()) {
+            project->addArg(translateValue(arg, valueIndex));
+        }
+
+        // check existence for original tuple if we have provenance
+        if (Global::config().has("provenance")) {
+            auto uniquenessEnforcement = new RamNotExists(getRelation(&head));
+            auto arity = head.getArity() - 2;
+
+            bool add = true;
+            // add args for original tuple
+            for (size_t i = 0; i < arity; i++) {
+                auto arg = head.getArgument(i);
+
+                // don't add counters
+                if (dynamic_cast<AstCounter*>(arg)) {
+                    add = false;
+                    break;
+                }
+
+                uniquenessEnforcement->addArg(translateValue(arg, valueIndex));
+            }
+
+            // add two unnamed args for provenance columns
+            uniquenessEnforcement->addArg(nullptr);
+            uniquenessEnforcement->addArg(nullptr);
+
+            if (add) {
+                project->addCondition(std::unique_ptr<RamCondition>(uniquenessEnforcement), project);
+            }
+        }
+
+        // build up insertion call
+        op = std::unique_ptr<RamOperation>(project);  // start with innermost
     }
-
-    // build up insertion call
-    std::unique_ptr<RamOperation> op(project);  // start with innermost
 
     // add aggregator levels
     for (auto it = aggregators.rbegin(); it != aggregators.rend(); ++it) {
@@ -687,8 +741,23 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(
             // create constraint
             RamNotExists* notExists = new RamNotExists(getRelation(atom));
 
-            for (const auto& arg : atom->getArguments()) {
+            auto arity = atom->getArity();
+
+            // account for two extra provenance columns
+            if (Global::config().has("provenance")) {
+                arity -= 2;
+            }
+
+            for (size_t i = 0; i < arity; i++) {
+                const auto& arg = atom->getArgument(i);
+                // for (const auto& arg : atom->getArguments()) {
                 notExists->addArg(translateValue(*arg, valueIndex));
+            }
+
+            // we don't care about the provenance columns when doing the existence check
+            if (Global::config().has("provenance")) {
+                notExists->addArg(nullptr);
+                notExists->addArg(nullptr);
             }
 
             // add constraint
@@ -999,8 +1068,57 @@ std::unique_ptr<RamStatement> RamTranslator::translateRecursiveRelation(
     return nullptr;
 }
 
+/** make a subroutine to search for subproofs */
+std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
+        const AstClause& clause, const AstProgram* program, const TypeEnvironment& typeEnv) {
+    // make intermediate clause with constraints
+    AstClause* intermediateClause = clause.clone();
+
+    // name unnamed variables
+    nameUnnamedVariables(intermediateClause);
+
+    // add constraint for each argument in head of atom
+    AstAtom* head = intermediateClause->getHead();
+    for (size_t i = 0; i < head->getArguments().size() - 2; i++) {
+        auto arg = head->getArgument(i);
+
+        if (auto var = dynamic_cast<AstVariable*>(arg)) {
+            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
+                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(var),
+                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+        } else if (auto func = dynamic_cast<AstFunctor*>(arg)) {
+            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
+                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(func),
+                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+        } else if (auto rec = dynamic_cast<AstRecordInit*>(arg)) {
+            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
+                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(rec),
+                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+        }
+    }
+
+    // index of level argument in argument list
+    size_t levelIndex = head->getArguments().size() - 2;
+
+    // add level constraints
+    for (size_t i = 0; i < intermediateClause->getBodyLiterals().size(); i++) {
+        auto lit = intermediateClause->getBodyLiteral(i);
+        if (auto atom = dynamic_cast<AstAtom*>(lit)) {
+            auto arity = atom->getArity();
+
+            // arity - 1 is the level number in body atoms
+            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(
+                    BinaryConstraintOp::LT, std::unique_ptr<AstArgument>(atom->getArgument(arity - 1)),
+                    std::unique_ptr<AstArgument>(new AstSubroutineArgument(levelIndex)))));
+        }
+    }
+
+    auto result = translateClause(*intermediateClause, program, &typeEnv, 0, true);
+    return result;
+}
+
 /** translates the given datalog program into an equivalent RAM program  */
-std::unique_ptr<RamStatement> RamTranslator::translateProgram(const AstTranslationUnit& translationUnit) {
+std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslationUnit& translationUnit) {
     const TypeEnvironment& typeEnv =
             translationUnit.getAnalysis<TypeEnvironmentAnalysis>()->getTypeEnvironment();
 
@@ -1059,7 +1177,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateProgram(const AstTranslati
         appendStmt(comp, std::move(stmt));
 
         /* Drop the tables of all expired relations to save memory */
-        if (!Global::config().has("provenance")) {
+        if (!Global::config().has("provenance") && !Global::config().has("record-provenance")) {
             for (const auto& rel : step.getExpiredRelations()) {
                 appendStmt(comp, std::unique_ptr<RamStatement>(new RamDrop(getRamRelationIdentifier(
                                          getRelationName(rel->getName()), rel->getArity(), rel, &typeEnv))));
@@ -1082,7 +1200,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateProgram(const AstTranslati
             appendStmt(res, std::unique_ptr<RamStatement>(new RamPrintSize(rrel)));
         }
         if (rel->isOutput()) {
-            if (!Global::config().has("provenance")) {
+            if (!Global::config().has("provenance") && !Global::config().has("record-provenance")) {
                 appendStmt(res, std::unique_ptr<RamStatement>(new RamDrop(rrel)));
             }
         }
@@ -1092,8 +1210,27 @@ std::unique_ptr<RamStatement> RamTranslator::translateProgram(const AstTranslati
         res = std::unique_ptr<RamStatement>(new RamLogTimer(std::move(res), "@runtime;"));
     }
 
-    // done
-    return res;
+    // done for main prog
+    std::unique_ptr<RamProgram> prog(new RamProgram(std::move(res)));
+
+    // add subroutines for each clause
+    if (Global::config().has("provenance")) {
+        visitDepthFirst(rels, [&](const AstClause& clause) {
+            std::stringstream relName;
+            relName << clause.getHead()->getName();
+
+            if (relName.str().find("@info") != std::string::npos || clause.getBodyLiterals().size() == 0) {
+                return;
+            }
+
+            std::string subroutineLabel =
+                    relName.str() + "_" + std::to_string(clause.getClauseNum()) + "_subproof";
+            prog->addSubroutine(
+                    subroutineLabel, makeSubproofSubroutine(clause, translationUnit.getProgram(), typeEnv));
+        });
+    }
+
+    return prog;
 }
 
 }  // end of namespace souffle

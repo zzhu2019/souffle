@@ -73,9 +73,13 @@ namespace {
 
 class EvalContext {
     std::vector<const RamDomain*> data;
+    std::vector<RamDomain>* returnValues;
+    std::vector<bool>* returnErrors;
+    const std::vector<RamDomain>* args;
 
 public:
-    EvalContext(size_t size = 0) : data(size) {}
+    EvalContext(size_t size = 0, const std::vector<RamDomain>* args = new std::vector<RamDomain>())
+            : data(size), args(args) {}
 
     const RamDomain*& operator[](size_t index) {
         return data[index];
@@ -83,6 +87,41 @@ public:
 
     const RamDomain* const& operator[](size_t index) const {
         return data[index];
+    }
+
+    std::vector<RamDomain>& getReturnValues() const {
+        return *returnValues;
+    }
+
+    void setReturnValues(std::vector<RamDomain>& retVals) {
+        returnValues = &retVals;
+    }
+
+    void addReturnValue(RamDomain val, bool err = false) {
+        assert(returnValues != nullptr && returnErrors != nullptr);
+        returnValues->push_back(val);
+        returnErrors->push_back(err);
+    }
+
+    std::vector<bool>& getReturnErrors() const {
+        return *returnErrors;
+    }
+
+    void setReturnErrors(std::vector<bool>& retErrs) {
+        returnErrors = &retErrs;
+    }
+
+    const std::vector<RamDomain>& getArguments() const {
+        return *args;
+    }
+
+    void setArguments(const std::vector<RamDomain>& a) {
+        args = &a;
+    }
+
+    RamDomain getArgument(size_t i) const {
+        assert(i < args->size() && "argument out of range");
+        return (*args)[i];
     }
 };
 
@@ -195,6 +234,12 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
                 case BinaryOp::LOR: {
                     return visit(op.getLHS()) || visit(op.getRHS());
                 }
+                case BinaryOp::MAX: {
+                    return std::max(visit(op.getLHS()), visit(op.getRHS()));
+                }
+                case BinaryOp::MIN: {
+                    return std::min(visit(op.getLHS()), visit(op.getRHS()));
+                }
 
                 // strings
                 case BinaryOp::CAT: {
@@ -243,6 +288,12 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
                 data[i] = visit(values[i]);
             }
             return pack(data, arity);
+        }
+
+        // -- subroutine argument
+
+        RamDomain visitArgument(const RamArgument& arg) override {
+            return ctxt.getArgument(arg.getNumber());
         }
 
         // -- safety net --
@@ -309,9 +360,11 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
 
             // obtain index
             auto idx = ne.getIndex();
-            if (!idx) {
+            auto idxRelationName = ne.getIndexRelationName();
+            if (idxRelationName != rel.getID().getName() || !idx) {
                 idx = rel.getIndex(ne.getKey());
                 ne.setIndex(idx);
+                ne.setIndexRelationName(rel.getID().getName());
             }
 
             auto range = idx->lowerUpperBound(low, high);
@@ -398,7 +451,7 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
     return Evaluator(env, ctxt)(cond);
 }
 
-void apply(const RamOperation& op, RamEnvironment& env) {
+void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args = EvalContext()) {
     class Interpreter : public RamVisitor<void> {
         RamEnvironment& env;
         EvalContext& ctxt;
@@ -628,6 +681,17 @@ void apply(const RamOperation& op, RamEnvironment& env) {
             env.getRelation(project.getRelation()).insert(tuple);
         }
 
+        // -- return from subroutine --
+        void visitReturn(const RamReturn& ret) override {
+            for (auto val : ret.getValues()) {
+                if (val == nullptr) {
+                    ctxt.addReturnValue(0, true);
+                } else {
+                    ctxt.addReturnValue(eval(val, env, ctxt));
+                }
+            }
+        }
+
         // -- safety net --
         void visitNode(const RamNode& node) override {
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
@@ -637,6 +701,9 @@ void apply(const RamOperation& op, RamEnvironment& env) {
 
     // create and run interpreter
     EvalContext ctxt(op.getDepth());
+    ctxt.setReturnValues(args.getReturnValues());
+    ctxt.setReturnErrors(args.getReturnErrors());
+    ctxt.setArguments(args.getArguments());
     Interpreter(env, ctxt).visit(op);
 }
 
@@ -762,9 +829,9 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 #endif
             try {
                 RamRelation& relation = env.getRelation(load.getRelation());
-                std::unique_ptr<ReadStream> reader =
-                        IOSystem::getInstance().getReader(load.getRelation().getSymbolMask(),
-                                env.getSymbolTable(), load.getRelation().getInputDirectives());
+                std::unique_ptr<ReadStream> reader = IOSystem::getInstance().getReader(
+                        load.getRelation().getSymbolMask(), env.getSymbolTable(),
+                        load.getRelation().getInputDirectives(), Global::config().has("provenance"));
                 reader->readAll(relation);
             } catch (std::exception& e) {
                 std::cerr << e.what();
@@ -783,8 +850,8 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
             for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
                 try {
                     IOSystem::getInstance()
-                            .getWriter(
-                                    store.getRelation().getSymbolMask(), env.getSymbolTable(), ioDirectives)
+                            .getWriter(store.getRelation().getSymbolMask(), env.getSymbolTable(),
+                                    ioDirectives, Global::config().has("provenance"))
                             ->writeAll(rel);
                 } catch (std::exception& e) {
                     std::cerr << e.what();
@@ -846,7 +913,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 }
 }  // namespace
 
-void RamGuidedInterpreter::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData* data) const {
+void RamGuidedInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* data) const {
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
         // open output stream
@@ -855,9 +922,9 @@ void RamGuidedInterpreter::applyOn(const RamStatement& stmt, RamEnvironment& env
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
         os << "@start-debug\n";
-        run(queryStrategy, report, &os, stmt, env, data);
+        run(queryStrategy, report, &os, *(prog.getMain()), env, data);
     } else {
-        run(queryStrategy, report, nullptr, stmt, env, data);
+        run(queryStrategy, report, nullptr, *(prog.getMain()), env, data);
     }
 }
 
@@ -1886,6 +1953,16 @@ public:
                 out << "(" << print(op.getLHS()) << ") || (" << print(op.getRHS()) << ")";
                 break;
             }
+            case BinaryOp::MAX: {
+                out << "(AstDomain)(std::max((AstDomain)" << print(op.getLHS()) << ","
+                    << "(AstDomain)" << print(op.getRHS()) << "))";
+                break;
+            }
+            case BinaryOp::MIN: {
+                out << "(AstDomain)(std::min((AstDomain)" << print(op.getLHS()) << ","
+                    << "(AstDomain)" << print(op.getRHS()) << "))";
+                break;
+            }
 
             // strings
             case BinaryOp::CAT: {
@@ -1928,6 +2005,26 @@ public:
             << ")";
     }
 
+    // -- subroutine argument --
+
+    void visitArgument(const RamArgument& arg, std::ostream& out) override {
+        out << "(*args)[" << arg.getNumber() << "]";
+    }
+
+    // -- subroutine return --
+
+    void visitReturn(const RamReturn& ret, std::ostream& out) override {
+        for (auto val : ret.getValues()) {
+            if (val == nullptr) {
+                out << "ret.push_back(0);\n";
+                out << "err.push_back(true);\n";
+            } else {
+                out << "ret.push_back(" << print(val) << ");\n";
+                out << "err.push_back(false);\n";
+            }
+        }
+    }
+
     // -- safety net --
 
     void visitNode(const RamNode& node, std::ostream& /*out*/) override {
@@ -1962,14 +2059,14 @@ std::string RamCompiler::resolveFileName() const {
 }
 
 std::string RamCompiler::generateCode(
-        const SymbolTable& symTable, const RamStatement& stmt, const std::string& filename) const {
+        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
     // ---------------------------------------------------------------
 
     // collect all used indices
     IndexMap indices;
-    visitDepthFirst(stmt, [&](const RamNode& node) {
+    visitDepthFirst(prog, [&](const RamNode& node) {
         if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
             indices[scan->getRelation()].addSearch(scan->getRangeQueryColumns());
         }
@@ -2043,7 +2140,7 @@ std::string RamCompiler::generateCode(
 
     // generate C++ program
     os << "#include \"souffle/CompiledSouffle.h\"\n";
-    if (Global::config().has("provenance")) {
+    if (Global::config().has("provenance") || Global::config().has("record-provenance")) {
         os << "#include \"souffle/Explain.h\"\n";
         os << "#include <ncurses.h>\n";
     }
@@ -2083,7 +2180,7 @@ std::string RamCompiler::generateCode(
     std::string registerRel;   // registration of relations
     int relCtr = 0;
     std::string tempType;  // string to hold the type of the temporary relations
-    visitDepthFirst(stmt, [&](const RamCreate& create) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamCreate& create) {
 
         // get some table details
         const auto& rel = create.getRelation();
@@ -2106,7 +2203,7 @@ std::string RamCompiler::generateCode(
         }
         initCons += name + "(new " + type + "())";
         deleteForNew += "delete " + name + ";\n";
-        if ((rel.isInput() || rel.isComputed()) && !rel.isTemp()) {
+        if ((rel.isInput() || rel.isComputed() || Global::config().has("provenance")) && !rel.isTemp()) {
             os << "souffle::RelationWrapper<";
             os << relCtr++ << ",";
             os << type << ",";
@@ -2197,16 +2294,16 @@ std::string RamCompiler::generateCode(
     if (Global::config().has("profile")) {
         os << "std::ofstream profile(profiling_fname);\n";
         os << "profile << \"@start-debug\\n\";\n";
-        genCode(os, stmt, indices);
+        genCode(os, *(prog.getMain()), indices);
     } else {
-        genCode(os, stmt, indices);
+        genCode(os, *(prog.getMain()), indices);
     }
     os << "}\n";  // end of run() method
 
     // issue printAll method
     os << "public:\n";
     os << "void printAll(std::string dirname) {\n";
-    visitDepthFirst(stmt, [&](const RamStatement& node) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) {
         if (auto store = dynamic_cast<const RamStore*>(&node)) {
             for (IODirectives ioDirectives : store->getRelation().getOutputDirectives()) {
                 os << "try {";
@@ -2218,7 +2315,7 @@ std::string RamCompiler::generateCode(
                 os << "IODirectives ioDirectives(directiveMap);\n";
                 os << "IOSystem::getInstance().getWriter(";
                 os << "SymbolMask({" << store->getRelation().getSymbolMask() << "})";
-                os << ", symTable, ioDirectives";
+                os << ", symTable, ioDirectives, " << Global::config().has("provenance");
                 os << ")->writeAll(*" << getRelationName(store->getRelation()) << ");\n";
 
                 os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
@@ -2237,7 +2334,7 @@ std::string RamCompiler::generateCode(
     // issue loadAll method
     os << "public:\n";
     os << "void loadAll(std::string dirname) {\n";
-    visitDepthFirst(stmt, [&](const RamLoad& load) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamLoad& load) {
         IODirectives ioDirectives = load.getRelation().getInputDirectives();
 
         // get some table details
@@ -2251,7 +2348,9 @@ std::string RamCompiler::generateCode(
         os << "IODirectives ioDirectives(directiveMap);\n";
         os << "IOSystem::getInstance().getReader(";
         os << "SymbolMask({" << load.getRelation().getSymbolMask() << "})";
-        os << ", symTable, ioDirectives)->readAll(*" << getRelationName(load.getRelation());
+        os << ", symTable, ioDirectives";
+        os << ", " << Global::config().has("provenance");
+        os << ")->readAll(*" << getRelationName(load.getRelation());
         os << ");\n";
         os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
     });
@@ -2267,7 +2366,7 @@ std::string RamCompiler::generateCode(
         os << "ioDirectives.setRelationName(\"" << name << "\");\n";
         os << "IOSystem::getInstance().getWriter(";
         os << "SymbolMask({" << mask << "})";
-        os << ", symTable, ioDirectives";
+        os << ", symTable, ioDirectives, " << Global::config().has("provenance");
         os << ")->writeAll(*" << relName << ");\n";
         os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
     };
@@ -2275,7 +2374,7 @@ std::string RamCompiler::generateCode(
     // dump inputs
     os << "public:\n";
     os << "void dumpInputs(std::ostream& out = std::cout) {\n";
-    visitDepthFirst(stmt, [&](const RamLoad& load) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamLoad& load) {
         auto& name = getRelationName(load.getRelation());
         auto& mask = load.getRelation().getSymbolMask();
         size_t arity = load.getRelation().getArity();
@@ -2286,7 +2385,7 @@ std::string RamCompiler::generateCode(
     // dump outputs
     os << "public:\n";
     os << "void dumpOutputs(std::ostream& out = std::cout) {\n";
-    visitDepthFirst(stmt, [&](const RamStore& store) {
+    visitDepthFirst(*(prog.getMain()), [&](const RamStore& store) {
         auto& name = getRelationName(store.getRelation());
         auto& mask = store.getRelation().getSymbolMask();
         size_t arity = store.getRelation().getArity();
@@ -2298,6 +2397,40 @@ std::string RamCompiler::generateCode(
     os << "const SymbolTable &getSymbolTable() const {\n";
     os << "return symTable;\n";
     os << "}\n";  // end of getSymbolTable() method
+
+    // TODO: generate code for subroutines
+    if (Global::config().has("provenance")) {
+        // generate subroutine adapter
+        os << "void executeSubroutine(std::string name, const std::vector<RamDomain>* args, "
+              "std::vector<RamDomain>* ret, std::vector<bool>* err) override {\n";
+
+        // subroutine number
+        size_t subroutineNum = 0;
+        for (auto& sub : prog.getSubroutines()) {
+            os << "if (name == \"" << sub.first << "\") {\n"
+               << "subproof_" << subroutineNum
+               << "(args, ret, err);\n"  // subproof_i to deal with special characters in relation names
+               << "}\n";
+            subroutineNum++;
+        }
+        os << "}\n";  // end of executeSubroutine
+
+        // generate method for each subroutine
+        subroutineNum = 0;
+        for (auto& sub : prog.getSubroutines()) {
+            // method header
+            os << "void "
+               << "subproof_" << subroutineNum << "(const std::vector<RamDomain>* args, "
+                                                  "std::vector<RamDomain>* ret, std::vector<bool>* err) {\n";
+
+            // generate code for body
+            genCode(os, sub.second, indices);
+
+            os << "return;\n";
+            os << "}\n";  // end of subroutine
+            subroutineNum++;
+        }
+    }
 
     os << "};\n";  // end of class declaration
 
@@ -2352,11 +2485,19 @@ std::string RamCompiler::generateCode(
     os << "obj.loadAll(opt.getInputFileDir());\n";
     os << "obj.run();\n";
     os << "obj.printAll(opt.getOutputFileDir());\n";
+
     if (Global::config().get("provenance") == "1") {
-        os << "explain(obj, true);\n";
+        os << "explain(obj, true, false);\n";
     } else if (Global::config().get("provenance") == "2") {
-        os << "explain(obj, false);\n";
+        os << "explain(obj, true, true);\n";
     }
+
+    if (Global::config().get("record-provenance") == "1") {
+        os << "explain(obj, false, false);\n";
+    } else if (Global::config().get("record-provenance") == "2") {
+        os << "explain(obj, false, true);\n";
+    }
+
     os << "return 0;\n";
     os << "} catch(std::exception &e) { souffle::SignalHandler::instance()->error(e.what());}\n";
     os << "}\n";
@@ -2370,8 +2511,8 @@ std::string RamCompiler::generateCode(
 }
 
 std::string RamCompiler::compileToLibrary(
-        const SymbolTable& symTable, const RamStatement& stmt, const std::string& filename) const {
-    std::string source = generateCode(symTable, stmt, filename + ".cpp");
+        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
+    std::string source = generateCode(symTable, prog, filename + ".cpp");
 
     // execute shell script that compiles the generated C++ program
     std::string libCmd = "souffle-compilelib " + filename;
@@ -2392,13 +2533,13 @@ std::string RamCompiler::compileToLibrary(
     return filename;
 }
 
-std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamStatement& stmt) const {
+std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog) const {
     // ---------------------------------------------------------------
     //                       Code Generation
     // ---------------------------------------------------------------
 
     std::string binary = resolveFileName();
-    std::string source = generateCode(symTable, stmt, binary + ".cpp");
+    std::string source = generateCode(symTable, prog, binary + ".cpp");
 
     // ---------------------------------------------------------------
     //                    Compilation & Execution
@@ -2429,9 +2570,9 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamS
     return binary;
 }
 
-void RamCompiler::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData* /*data*/) const {
+void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
     // compile statement
-    std::string binary = compileToBinary(env.getSymbolTable(), stmt);
+    std::string binary = compileToBinary(env.getSymbolTable(), prog);
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2452,6 +2593,19 @@ void RamCompiler::applyOn(const RamStatement& stmt, RamEnvironment& env, RamData
     if (result != 0) {
         exit(result);
     }
+}
+
+void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
+        const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
+        std::vector<bool>& returnErrors) {
+    EvalContext ctxt;
+    ctxt.setReturnValues(returnValues);
+    ctxt.setReturnErrors(returnErrors);
+    ctxt.setArguments(arguments);
+
+    // run subroutine
+    const RamOperation& op = static_cast<const RamInsert&>(stmt).getOperation();
+    apply(op, env, ctxt);
 }
 
 }  // end of namespace souffle

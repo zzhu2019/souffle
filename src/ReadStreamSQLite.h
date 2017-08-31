@@ -32,8 +32,9 @@ namespace souffle {
 class ReadStreamSQLite : public ReadStream {
 public:
     ReadStreamSQLite(const std::string& dbFilename, const std::string& relationName,
-            const SymbolMask& symbolMask, SymbolTable& symbolTable)
-            : ReadStream(symbolMask, symbolTable), dbFilename(dbFilename), relationName(relationName) {
+            const SymbolMask& symbolMask, SymbolTable& symbolTable, const bool provenance)
+            : ReadStream(symbolMask, symbolTable, provenance), dbFilename(dbFilename),
+              relationName(relationName) {
         openDB();
         checkTableExists();
         prepareSelectStatement();
@@ -58,7 +59,8 @@ protected:
 
         std::unique_ptr<RamDomain[]> tuple(new RamDomain[symbolMask.getArity()]);
 
-        for (uint32_t column = 0; column < symbolMask.getArity(); column++) {
+        uint32_t column;
+        for (column = 0; column < symbolMask.getArity(); column++) {
             std::string element(reinterpret_cast<const char*>(sqlite3_column_text(selectStatement, column)));
 
             if (element == "") {
@@ -75,6 +77,11 @@ protected:
                     throw std::invalid_argument(errorMessage.str());
                 }
             }
+        }
+
+        if (isProvenance) {
+            tuple[symbolMask.getArity() - 2] = 0;
+            tuple[symbolMask.getArity() - 1] = 0;
         }
 
         return tuple;
@@ -150,11 +157,11 @@ protected:
 class ReadStreamSQLiteFactory : public ReadStreamFactory {
 public:
     std::unique_ptr<ReadStream> getReader(const SymbolMask& symbolMask, SymbolTable& symbolTable,
-            const IODirectives& ioDirectives) override {
+            const IODirectives& ioDirectives, const bool provenance) override {
         std::string dbName = ioDirectives.get("dbname");
         std::string relationName = ioDirectives.getRelationName();
         return std::unique_ptr<ReadStreamSQLite>(
-                new ReadStreamSQLite(dbName, relationName, symbolMask, symbolTable));
+                new ReadStreamSQLite(dbName, relationName, symbolMask, symbolTable, provenance));
     }
     const std::string& getName() const override {
         static const std::string name = "sqlite";

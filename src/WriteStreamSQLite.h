@@ -30,12 +30,18 @@ namespace souffle {
 class WriteStreamSQLite : public WriteStream {
 public:
     WriteStreamSQLite(const std::string& dbFilename, const std::string& relationName,
-            const SymbolMask& symbolMask, const SymbolTable& symbolTable)
-            : WriteStream(symbolMask, symbolTable), dbFilename(dbFilename), relationName(relationName) {
+            const SymbolMask& symbolMask, const SymbolTable& symbolTable, const bool provenance)
+            : WriteStream(symbolMask, symbolTable, provenance), dbFilename(dbFilename),
+              relationName(relationName) {
         openDB();
         createTables();
         prepareStatements();
         //        executeSQL("BEGIN TRANSACTION", db);
+        if (provenance) {
+            arity = symbolMask.getArity() - 2;
+        } else {
+            arity = symbolMask.getArity();
+        }
     }
 
     ~WriteStreamSQLite() override {
@@ -47,11 +53,11 @@ public:
 
 protected:
     void writeNextTuple(const RamDomain* tuple) override {
-        if (symbolMask.getArity() == 0) {
+        if (arity == 0) {
             return;
         }
 
-        for (size_t i = 0; i < symbolMask.getArity(); i++) {
+        for (size_t i = 0; i < arity; i++) {
             int32_t value;
             if (symbolMask.isSymbol(i)) {
                 value = getSymbolTableID(tuple[i]);
@@ -167,7 +173,7 @@ private:
         std::stringstream insertSQL;
         insertSQL << "INSERT INTO _" << relationName << " VALUES ";
         insertSQL << "(@V0";
-        for (unsigned int i = 1; i < symbolMask.getArity(); i++) {
+        for (unsigned int i = 1; i < arity; i++) {
             insertSQL << ",@V" << i;
         }
         insertSQL << ");";
@@ -186,9 +192,9 @@ private:
     void createRelationTable() {
         std::stringstream createTableText;
         createTableText << "CREATE TABLE IF NOT EXISTS '_" << relationName << "' (";
-        if (symbolMask.getArity() > 0) {
+        if (arity > 0) {
             createTableText << "'0' INTEGER";
-            for (unsigned int i = 1; i < symbolMask.getArity(); i++) {
+            for (unsigned int i = 1; i < arity; i++) {
                 createTableText << ",'" << std::to_string(i) << "' ";
                 createTableText << "INTEGER";
             }
@@ -207,7 +213,7 @@ private:
         fromClause << "'_" << relationName << "'";
         std::stringstream whereClause;
         bool firstWhere = true;
-        for (unsigned int i = 0; i < symbolMask.getArity(); i++) {
+        for (unsigned int i = 0; i < arity; i++) {
             std::string columnName = std::to_string(i);
             if (i != 0) {
                 projectionClause << ",";
@@ -243,6 +249,7 @@ private:
     const std::string& dbFilename;
     const std::string& relationName;
     const std::string symbolTableName = "__SymbolTable";
+    size_t arity;
 
     std::unordered_map<uint64_t, uint64_t> dbSymbolTable;
     sqlite3_stmt* insertStatement;
@@ -254,11 +261,11 @@ private:
 class WriteSQLiteFactory : public WriteStreamFactory {
 public:
     std::unique_ptr<WriteStream> getWriter(const SymbolMask& symbolMask, const SymbolTable& symbolTable,
-            const IODirectives& ioDirectives) override {
+            const IODirectives& ioDirectives, const bool provenance) override {
         std::string dbName = ioDirectives.get("dbname");
         std::string relationName = ioDirectives.getRelationName();
         return std::unique_ptr<WriteStreamSQLite>(
-                new WriteStreamSQLite(dbName, relationName, symbolMask, symbolTable));
+                new WriteStreamSQLite(dbName, relationName, symbolMask, symbolTable, provenance));
     }
     const std::string& getName() const override {
         static const std::string name = "sqlite";
