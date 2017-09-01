@@ -91,7 +91,7 @@ case $1 in
         args="${@}"
         case ${cmd} in
             valgrind)
-                cmd="valgrind -v"
+                cmd="valgrind"
             ;;
             *)
                 args="${cmd} ${args}"

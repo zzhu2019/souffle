@@ -416,7 +416,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<RamEnvironment> env;
     std::vector<std::string> sources;
     std::unique_ptr<RamExecutor> executor;
-    for (auto&& stratum : strata) {
+    for (const std::unique_ptr<RamProgram>&& stratum : strata) {
         if (Global::config().has("stratify")) index++;
         // pick executor
         if (Global::config().has("generate") || Global::config().has("compile")) {
@@ -458,7 +458,9 @@ int main(int argc, char** argv) {
                                          Global::config().get("dl-program"), index);
             } else {
                 // run executor
-                env = executor->execute(translationUnit->getSymbolTable(), *stratum);
+                source = static_cast<const RamCompiler*>(executor.get())
+                 ->executeBinary(translationUnit->getSymbolTable(), *stratum,
+                         "", index);
             }
 
             if (!source.empty()) sources.push_back(source);
