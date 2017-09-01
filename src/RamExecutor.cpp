@@ -2298,6 +2298,18 @@ std::string RamCompiler::generateCode(
     } else {
         genCode(os, *(prog.getMain()), indices);
     }
+
+    // add code printing hint statistics
+    os << "\n// -- relation hint statistics --\n";
+    os << "if(isHintsProfilingEnabled()) {\n";
+    os << "std::cout << \" -- Operation Hint Statistics --\\n\";\n";
+    visitDepthFirst(*(prog.getMain()), [&](const RamCreate& create) {
+        auto name = getRelationName(create.getRelation());
+        os << "std::cout << \"Relation " << name << ":\\n\";\n";
+        os << name << "->printHintStatistics(std::cout,\"  \");\n";
+        os << "std::cout << \"\\n\";\n";
+    });
+    os << "}\n";
     os << "}\n";  // end of run() method
 
     // issue printAll method

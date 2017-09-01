@@ -225,6 +225,13 @@ struct RelationBase {
         return out.str();
     }
 
+    // -- Hint Profiling --
+
+    /* Prints a summary of the hint statistic of this relation */
+    void printHintStatistics(std::ostream& out, const std::string& prefix = "") const {
+        static_cast<const Derived*>(this)->printHintStatistics(out, prefix);
+    }
+
 private:
     /* Provides type-save access to the members of the derived class. */
     Derived& asDerived() {
@@ -410,6 +417,11 @@ public:
         out << " ] where " << primary_index() << " is the primary index";
         return out;
     }
+
+    /* Prints a summary of the hint statistic of this relation */
+    void printHintStatistics(std::ostream& out, const std::string& prefix = "") const {
+        indices.printHintStatistics(out,prefix);
+    }
 };
 
 /**
@@ -556,6 +568,11 @@ public:
         indices.printDescription(out);
         out << " ] where " << primary_index() << " is the primary index";
         return out;
+    }
+
+    /* Prints a summary of the hint statistic of this relation */
+    void printHintStatistics(std::ostream& out, const std::string& prefix = "") const {
+        indices.printHintStatistics(out,prefix);
     }
 };
 
@@ -744,6 +761,11 @@ public:
     std::ostream& printDescription(std::ostream& out = std::cout) const {
         return out << "Nullary Relation";
     }
+
+    /* Prints a summary of the hint statistic of this relation */
+    void printHintStatistics(std::ostream& out, const std::string& prefix = "") const {
+        out << prefix << " -- no hints used in nullary relation --\n";
+    }
 };
 
 /**
@@ -881,6 +903,11 @@ public:
         out << "Index-Organized Relation of arity=" << arity << " based on a ";
         table_t::printDescription(out);
         return out;
+    }
+
+    /* Prints a summary of the hint statistic of this relation */
+    void printHintStatistics(std::ostream& out, const std::string& prefix = "") const {
+        data.printHintStatistics(out,prefix);
     }
 };
 

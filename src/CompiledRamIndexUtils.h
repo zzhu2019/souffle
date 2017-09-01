@@ -652,6 +652,30 @@ public:
     static void printDescription(std::ostream& out) {
         out << "direct-btree-index(" << Index() << ")";
     }
+
+    void printHintStatistics(std::ostream& out, const std::string& prefix) const {
+        const auto& stats = index.getHintStatistics();
+        out << prefix << "Direct B-Tree Index: (Hits/Misses/Total)\n";
+        out << prefix << "       Insert: "
+                << stats.inserts.getHits()   << "/"
+                << stats.inserts.getMisses() << "/"
+                << stats.inserts.getAccesses() << "\n";
+
+        out << prefix << "     Contains: "
+                << stats.contains.getHits()   << "/"
+                << stats.contains.getMisses() << "/"
+                << stats.contains.getAccesses() << "\n";
+
+        out << prefix << "  lower bound: "
+                << stats.lower_bound.getHits() << "/"
+                << stats.lower_bound.getMisses() << "/"
+                << stats.lower_bound.getAccesses() << "\n";
+
+        out << prefix << "  upper bound: "
+                << stats.upper_bound.getHits() << "/"
+                << stats.upper_bound.getMisses() << "/"
+                << stats.upper_bound.getAccesses() << "\n";
+    }
 };
 
 /**
@@ -758,6 +782,30 @@ public:
 
     static void printDescription(std::ostream& out) {
         out << "indirect-btree-index(" << Index() << ")";
+    }
+
+    void printHintStatistics(std::ostream& out, const std::string& prefix) const {
+        const auto& stats = index.getHintStatistics();
+        out << prefix << "Indirect B-Tree Index: (Hits/Misses/Total)\n";
+        out << prefix << "       Insert: "
+                << stats.inserts.getHits()   << "/"
+                << stats.inserts.getMisses() << "/"
+                << stats.inserts.getAccesses() << "\n";
+
+        out << prefix << "     Contains: "
+                << stats.contains.getHits()   << "/"
+                << stats.contains.getMisses() << "/"
+                << stats.contains.getAccesses() << "\n";
+
+        out << prefix << "  lower bound: "
+                << stats.lower_bound.getHits() << "/"
+                << stats.lower_bound.getMisses() << "/"
+                << stats.lower_bound.getAccesses() << "\n";
+
+        out << prefix << "  upper bound: "
+                << stats.upper_bound.getHits() << "/"
+                << stats.upper_bound.getMisses() << "/"
+                << stats.upper_bound.getAccesses() << "\n";
     }
 };
 
@@ -931,6 +979,26 @@ public:
 
     static void printDescription(std::ostream& out) {
         out << "trie-index(" << Index() << ")";
+    }
+
+    void printHintStatistics(std::ostream& out, const std::string& prefix) const {
+        const auto& stats = data.getHintStatistics();
+        out << prefix << "Trie-Index: (Hits/Misses/Total)\n";
+        out << prefix << "      Insert: "
+                << stats.inserts.getHits()   << "/"
+                << stats.inserts.getMisses() << "/"
+                << stats.inserts.getAccesses() << "\n";
+
+        out << prefix << "    Contains: "
+                << stats.contains.getHits()   << "/"
+                << stats.contains.getMisses() << "/"
+                << stats.contains.getAccesses() << "\n";
+
+        out << prefix << "  RangeQuery: "
+                << stats.get_boundaries.getHits() << "/"
+                << stats.get_boundaries.getMisses() << "/"
+                << stats.get_boundaries.getAccesses() << "\n";
+
     }
 
 private:
@@ -1113,6 +1181,10 @@ public:
 
     static void printDescription(std::ostream& out) {
         out << "disjoint-set-index(" << Index() << ")";
+    }
+
+    void printHintStatistics(std::ostream& out, const std::string& prefix) const {
+        out << prefix << "Disjoint Set Index: no hint statistics supported\n";
     }
 
 private:
@@ -1329,6 +1401,17 @@ public:
         nested.printDescription(out);
         return out;
     }
+
+
+    void printHintStatistics(std::ostream& out, const std::string& prefix) const {
+        out << prefix << "Multi-Index Relation:\n";
+        printHintStatisticsInternal(out, prefix + "  ");
+    }
+
+    void printHintStatisticsInternal(std::ostream& out, const std::string& prefix) const {
+        index.printHintStatistics(out,prefix);
+        nested.printHintStatisticsInternal(out,prefix);
+    }
 };
 
 /* The based-case of indices containing no more nested indices. */
@@ -1394,6 +1477,10 @@ public:
 
     std::ostream& printDescription(std::ostream& out = std::cout) const {
         return out;
+    }
+
+    void printHintStatisticsInternal(std::ostream&, const std::string&) const {
+        // nothing to do here
     }
 };
 }  // namespace index_utils

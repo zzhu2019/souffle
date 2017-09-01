@@ -1840,6 +1840,35 @@ public:
             return out;
         }
     };
+
+    /* -------------- operator hint statistics ----------------- */
+
+    // an aggregation of statistical values of the hint utilization
+    struct hint_statistics {
+
+        // the counter for insertion operations
+        CacheAccessCounter inserts;
+
+        // the counter for contains operations
+        CacheAccessCounter contains;
+
+        // the counter for get_boundaries operations
+        CacheAccessCounter get_boundaries;
+
+    };
+
+protected:
+
+    // the hint statistic of this b-tree instance
+    mutable hint_statistics hint_stats;
+
+public:
+
+    // Obtains a reference to the internally maintained hint statistics
+    const hint_statistics& getHintStatistics() const {
+        return hint_stats;
+    }
+
 };
 
 /**
@@ -2320,9 +2349,13 @@ public:
 
             // if it fits => take it
             if (fit) {
+                base::hint_stats.get_boundaries.addHit();
                 return ctxt.lastBoundaries;
             }
         }
+
+        // the hint has not been a hit
+        base::hint_stats.get_boundaries.addMiss();
 
         // start with two end iterators
         iterator begin, end;
@@ -2409,7 +2442,10 @@ private:
 
         // check context
         if (ctxt.lastNested && ctxt.lastQuery == tuple[I]) {
+            base::hint_stats.inserts.addHit();
             return ctxt.lastNested->template insert_internal<I + 1>(tuple, ctxt.nestedCtxt);
+        } else {
+            base::hint_stats.inserts.addMiss();
         }
 
         // lookup nested
@@ -2459,7 +2495,10 @@ private:
     bool contains_internal(const Tuple& tuple, op_context& ctxt) const {
         // check context
         if (ctxt.lastNested && ctxt.lastQuery == tuple[I]) {
+            base::hint_stats.contains.addHit();
             return ctxt.lastNested->template contains_internal<I + 1>(tuple, ctxt.nestedCtxt);
+        } else {
+            base::hint_stats.contains.addMiss();
         }
 
         // lookup next step
