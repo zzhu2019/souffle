@@ -1250,7 +1250,9 @@ public:
         out << "IODirectives ioDirectives(directiveMap);\n";
         out << "IOSystem::getInstance().getReader(";
         out << "SymbolMask({" << load.getRelation().getSymbolMask() << "})";
-        out << ", symTable, ioDirectives)->readAll(*" << getRelationName(load.getRelation());
+        out << ", symTable, ioDirectives";
+        out << ", " << Global::config().has("provenance");
+        out << ")->readAll(*" << getRelationName(load.getRelation());
         out << ");\n";
         out << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
         out << "}\n";
@@ -1271,6 +1273,7 @@ public:
             out << "IOSystem::getInstance().getWriter(";
             out << "SymbolMask({" << store.getRelation().getSymbolMask() << "})";
             out << ", symTable, ioDirectives";
+            out << ", " << Global::config().has("provenance");
             out << ")->writeAll(*" << getRelationName(store.getRelation()) << ");\n";
             out << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
         }
@@ -2234,13 +2237,15 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
     // ---------------------------------------------------------------
 
     // generate class name
-    const std::string nameNoExtension = simpleName(filename);
+
+    const std::string nameNoExtension = simpleName((filename != "") ? filename : tempFile());
+    const std::string indexStr = ((index != -1) ? "_" + std::to_string(index) : "");
     const std::string id = identifier(baseName(nameNoExtension));
 
-    std::string classname = "Sf_" + id;
+    std::string classname = "Sf_" + id + indexStr;
 
     // add filename extension
-    std::string source = nameNoExtension + ((index != -1) ? "_" + std::to_string(index) : "") + ".cpp";
+    std::string source = nameNoExtension + indexStr + ".cpp";
 
     // open output stream for header file
     std::ofstream os(source);
@@ -2353,12 +2358,12 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
     if (Global::config().has("profile")) {
         os << "(std::string pf=\"profile.log\") : profiling_fname(pf)";
         if (initCons.size() > 0) {
-            os << ",\n";
+            os << ",\n" << initCons;
         }
     } else {
-        os << "() : \n";
+        os << "()";
+        if (initCons.size() > 0) os << " : " << initCons;
     }
-    os << initCons;
     os << "{\n";
     os << registerRel;
 
@@ -2621,7 +2626,7 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
 
 std::string RamCompiler::compileToLibrary(
         const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index) const {
-    std::string source = generateCode(symTable, prog, filename);
+    std::string source = generateCode(symTable, prog, filename, index);
 
     // execute shell script that compiles the generated C++ program
     std::string libCmd = "souffle-compilelib " + source;
@@ -2647,9 +2652,7 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamP
     //                       Code Generation
     // ---------------------------------------------------------------
 
-    std::string binary = filename;
-    if (binary == "") binary = tempFile();
-    std::string source = generateCode(symTable, prog, binary, index);
+    std::string source = generateCode(symTable, prog, filename, index);
 
     // ---------------------------------------------------------------
     //                    Compilation & Execution
@@ -2680,9 +2683,11 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamP
     return source;
 }
 
-void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
+
+std::string RamCompiler::executeBinary(const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index) const {
     // compile statement
-    std::string binary = "./" + simpleName(compileToBinary(env.getSymbolTable(), prog));
+    std::string source = compileToBinary(symTable, prog, filename, index);
+    std::string binary = "./" + simpleName(source);
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2703,6 +2708,11 @@ void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* 
     if (result != 0) {
         exit(result);
     }
+    return source;
+}
+
+void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
+    executeBinary(env.getSymbolTable(), prog);
 }
 
 void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,

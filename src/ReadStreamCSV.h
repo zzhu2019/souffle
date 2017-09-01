@@ -244,7 +244,7 @@ public:
         std::string filename = ioDirectives.has("filename") ? ioDirectives.get("filename")
                                                             : (ioDirectives.getRelationName() + ".facts");
         return std::unique_ptr<ReadFileCSV>(new ReadFileCSV(
-                filename, symbolMask, symbolTable, inputMap, delimiter, ioDirectives.has("intermediate"), provenance));
+                filename, symbolMask, symbolTable, inputMap, delimiter, provenance, ioDirectives.has("intermediate")));
     }
     const std::string& getName() const override {
         static const std::string name = "file";

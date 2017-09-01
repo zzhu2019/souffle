@@ -232,9 +232,18 @@ public:
      * Compiles the given statement to a binary file. The target file
      * name is either set by the corresponding member field or will
      * be determined randomly. The chosen file-name will be returned.
+     * Note that this uses the generateCode method for code generation.
      */
     std::string compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
             const std::string& filename = "", const int index = -1) const;
+
+    /**
+     * Compiles the given statement to a binary file. The target file
+     * name is either set by the corresponding member field or will
+     * be determined randomly. The environment after execution will be returned.
+     * Note that this uses the compileToBinary method for code compilation.
+     */
+    std::string executeBinary(const SymbolTable& symTable, const RamProgram& prog, const std::string& filename = "", const int index = -1) const;
 
     /**
      * The actual implementation of this executor encoding the given
@@ -248,11 +257,7 @@ public:
      */
     // void compileSubroutine(std::string name, const RamStatement& stmt, IndexMap& indices, std::ostream& os)
     // const;
-private:
-    /**
-     * Obtains a file name for the resulting source and executable file.
-     */
-    std::string resolveFileName() const;
+
 };
 
 /**

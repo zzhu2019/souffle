@@ -75,7 +75,7 @@ case $1 in
         chmod 775 bootstrap && \
         ./bootstrap && \
         chmod 775 configure && \
-        ./configure && \
+        ./configure --enable-debug && \
         # run make
         make -j8;
     ;;
@@ -86,16 +86,28 @@ case $1 in
         in_path=${PWD}/tests/$1
         out_path=${PWD}/tests/testsuite.dir/$1/id
         shift
+        cmd=$1
+        shift
+        args="${@}"
+        case ${cmd} in
+            valgrind)
+                cmd="valgrind -v"
+            ;;
+            *)
+                args="${cmd} ${args}"
+                cmd=""
+            ;;
+        esac;
         [[ ! -e ${in_path} ]] && echo "Error!" && exit 1
         rm -rf ${out_path}
         mkdir -p ${out_path}
-        valgrind \
+        ${cmd} \
             ${PWD}/src/souffle \
             -F${in_path}/facts \
             -D${out_path} \
             -r${out_path}/`basename ${in_path}`.html \
             ${in_path}/`basename ${in_path}`.dl \
-            $@;
+            ${args};
     ;;
     ## - help: Display the help text.
     *)

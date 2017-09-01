@@ -1232,7 +1232,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
     const auto& schedule = translationUnit.getAnalysis<RelationSchedule>()->schedule();
 
     /** Do nothing for empty schedules */
-    if (schedule.empty()) return nullptr;
+    if (schedule.empty()) return std::unique_ptr<RamProgram>(new RamProgram(std::move(res)));
 
     /* proceed over each step, in stratification these become subprograms */
     unsigned index = 0;

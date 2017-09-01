@@ -367,10 +367,10 @@ int main(int argc, char** argv) {
     auto ram_start = std::chrono::high_resolution_clock::now();
 
     /* translate AST to RAM */
-    std::unique_ptr<RamProgram> ramProg =
+    auto&& ramProg =
             RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
 
-    RamStatement* ramMainStmt = ramProg->getMain();
+    const RamStatement* ramMainStmt = ramProg->getMain();
 
     if (!Global::config().get("debug-report").empty()) {
         if (ramProg) {
@@ -394,6 +394,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
+
     std::vector<std::unique_ptr<RamProgram>> strata;
     if (Global::config().has("stratify")) {
         if (const RamSequence* sequence = dynamic_cast<const RamSequence*>(ramMainStmt)) {
@@ -415,7 +416,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<RamEnvironment> env;
     std::vector<std::string> sources;
     std::unique_ptr<RamExecutor> executor;
-    for (const std::unique_ptr<RamProgram>& stratum : strata) {
+    for (auto&& stratum : strata) {
         if (Global::config().has("stratify")) index++;
         // pick executor
         if (Global::config().has("generate") || Global::config().has("compile")) {
