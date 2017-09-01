@@ -416,7 +416,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<RamEnvironment> env;
     std::vector<std::string> sources;
     std::unique_ptr<RamExecutor> executor;
-    for (const std::unique_ptr<RamProgram>&& stratum : strata) {
+    for (auto&& stratum : strata) {
         if (Global::config().has("stratify")) index++;
         // pick executor
         if (Global::config().has("generate") || Global::config().has("compile")) {
@@ -458,7 +458,7 @@ int main(int argc, char** argv) {
                                          Global::config().get("dl-program"), index);
             } else {
                 // run executor
-                source = static_cast<const RamCompiler*>(executor.get())
+                static_cast<const RamCompiler*>(executor.get())
                  ->executeBinary(translationUnit->getSymbolTable(), *stratum,
                          "", index);
             }
@@ -468,10 +468,6 @@ int main(int argc, char** argv) {
             std::cerr << e.what() << std::endl;
         }
     }
-
-    if (Global::config().has("stratify") && Global::config().get("stratify") == "-")
-        for (const std::string source : sources)
-            system((simpleName(absPath(source)) + " -j" + Global::config().get("jobs")).c_str());
 
     /* Report overall run-time in verbose mode */
     if (Global::config().has("verbose")) {
