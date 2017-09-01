@@ -1109,7 +1109,6 @@ std::unique_ptr<RamStatement> RamTranslator::translateRecursiveRelation(
     return nullptr;
 }
 
-<<<<<<< HEAD
 void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* rel,
         const TypeEnvironment& typeEnv, const bool isComputed, const bool isRecursive,
         const bool loadInputOnly) {
@@ -1147,23 +1146,27 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
         const TypeEnvironment& typeEnv, const bool storeOutputOnly) {
     const auto dir = Global::config().get("output-dir");
     const auto ext = (!rel->isOutput()) ? ".facts" : ".csv";
-    AstRelation* mrel = const_cast<AstRelation*>(rel)->clone();
+    AstRelation *mrel = const_cast<AstRelation *>(rel)->clone();
     if (!rel->isOutput() && !storeOutputOnly) {
-        std::unique_ptr<AstIODirective> directive = std::unique_ptr<AstIODirective>(new AstIODirective());
+        std::unique_ptr<AstIODirective> directive = std::unique_ptr<AstIODirective>(
+                new AstIODirective());
         directive->setAsOutput();
         mrel->addIODirectives(std::move(directive));
     }
     RamRelationIdentifier rrel = getRamRelationIdentifier(
-            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
+            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(),
+            false, dir, ext);
 
     if (rel->isPrintSize()) {
-        appendStmt(current, std::unique_ptr<RamStatement>(new RamPrintSize(rrel)));
+        appendStmt(current,
+                   std::unique_ptr<RamStatement>(new RamPrintSize(rrel)));
     }
 
     if (rel->isOutput() || !storeOutputOnly) {
         appendStmt(current, std::unique_ptr<RamStatement>(new RamStore(rrel)));
     }
-=======
+}
+
 /** make a subroutine to search for subproofs */
 std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
         const AstClause& clause, const AstProgram* program, const TypeEnvironment& typeEnv) {
@@ -1211,7 +1214,6 @@ std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
 
     auto result = translateClause(*intermediateClause, program, &typeEnv, 0, true);
     return result;
->>>>>>> 151c1818ecbaa226577e185fef2f668f77cf6214
 }
 
 /** translates the given datalog program into an equivalent RAM program  */
@@ -1289,9 +1291,8 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
             for (const AstRelation* rel : step.computed()) printSizeStore(current, rel, typeEnv, true);
         }
 
-<<<<<<< HEAD
         /* drop expired relations, or all relations for stratification */
-        if (!Global::config().has("provenance")) {
+        if (!Global::config().has("provenance") && !Global::config().has("record-provenance")) {
             if (Global::config().has("stratify")) {
                 for (const AstRelation* rel : step.computed())
                     appendStmt(current, std::unique_ptr<RamStatement>(
@@ -1305,49 +1306,20 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
                         appendStmt(current, std::unique_ptr<RamStatement>(
                                                     new RamDrop(getRamRelationIdentifier(rel, &typeEnv))));
                 }
-=======
-        /* Drop the tables of all expired relations to save memory */
-        if (!Global::config().has("provenance") && !Global::config().has("record-provenance")) {
-            for (const auto& rel : step.getExpiredRelations()) {
-                appendStmt(comp, std::unique_ptr<RamStatement>(new RamDrop(getRamRelationIdentifier(
-                                         getRelationName(rel->getName()), rel->getArity(), rel, &typeEnv))));
->>>>>>> 151c1818ecbaa226577e185fef2f668f77cf6214
             }
         }
 
-<<<<<<< HEAD
         // append the current step to the result
         if (current) {
             appendStmt(res, std::move(current));
             // increment the index
             index++;
-=======
-    // --- output ---
-    /* add store operations for output relations */
-    for (AstRelation* rel : rels) {
-        RamRelationIdentifier rrel =
-                getRamRelationIdentifier(getRelationName(rel->getName()), rel->getArity(), rel, &typeEnv);
-        if (rel->isOutput()) {
-            appendStmt(res, std::unique_ptr<RamStatement>(new RamStore(rrel)));
-        }
-        if (rel->isPrintSize()) {
-            appendStmt(res, std::unique_ptr<RamStatement>(new RamPrintSize(rrel)));
-        }
-        if (rel->isOutput()) {
-            if (!Global::config().has("provenance") && !Global::config().has("record-provenance")) {
-                appendStmt(res, std::unique_ptr<RamStatement>(new RamDrop(rrel)));
-            }
->>>>>>> 151c1818ecbaa226577e185fef2f668f77cf6214
         }
     }
 
     if (res && logging) {
-        return std::unique_ptr<RamStatement>(new RamLogTimer(std::move(res), "@runtime;"));
-    } else {
-        return std::unique_ptr<RamStatement>(std::move(res));
+        res = std::unique_ptr<RamStatement>(new RamLogTimer(std::move(res), "@runtime;"));
     }
-<<<<<<< HEAD
-=======
 
     // done for main prog
     std::unique_ptr<RamProgram> prog(new RamProgram(std::move(res)));
@@ -1370,7 +1342,6 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
     }
 
     return prog;
->>>>>>> 151c1818ecbaa226577e185fef2f668f77cf6214
 }
 
 }  // end of namespace souffle
