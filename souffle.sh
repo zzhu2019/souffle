@@ -65,8 +65,8 @@ case $1 in
 				export CXX=clang++;
 			;;
 			gcc)
-				export CC=gcc-7;
-				export CXX=g++-7
+				export CC=gcc;
+				export CXX=g++;
 			;;
 			*)
 			;;
