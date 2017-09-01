@@ -108,7 +108,7 @@ public:
     ~RamBinaryOperator() override = default;
 
     void print(std::ostream& os) const override {
-        if (isNumericBinaryOp(op)) {
+        if (op < BinaryOp::MAX) {
             os << "(";
             lhs->print(os);
             os << getSymbolForBinaryOp(op);
@@ -307,6 +307,34 @@ public:
             }
         }
         return res;
+    }
+};
+
+/** Argument for ram subroutine */
+class RamArgument : public RamValue {
+    size_t number;
+
+public:
+    RamArgument(size_t number) : RamValue(RN_Argument, false), number(number) {}
+
+    size_t getNumber() const {
+        return number;
+    }
+
+    void setNumber(size_t n) {
+        number = n;
+    }
+
+    void print(std::ostream& os) const override {
+        os << "argument(" << number << ")";
+    }
+
+    size_t getLevel() const override {
+        return 0;
+    }
+
+    std::vector<const RamNode*> getChildNodes() const override {
+        return std::vector<const RamNode*>();
     }
 };
 

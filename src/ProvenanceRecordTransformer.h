@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file ProvenanceTransformer.h
+ * @file ProvenanceRecordTransformer.h
  *
  * Defines classes which store relations transformed for provenance
  *

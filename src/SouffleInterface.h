@@ -306,6 +306,8 @@ public:
         return allRelations;
     }
 
+    virtual void executeSubroutine(std::string name, const std::vector<RamDomain>& args,
+            std::vector<RamDomain>& ret, std::vector<bool>& retErr) {}
     virtual const SymbolTable& getSymbolTable() const = 0;
 };
 

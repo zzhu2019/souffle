@@ -135,8 +135,9 @@ int main(int argc, char** argv) {
                                     "to FILE (valid extensions are '.dot' or '.json')."},
 #ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
-                                    "Enable provenance information (<EXPLAIN> can be 0 for no explain, 1 for "
-                                    "explain with ncurses, 2 for explain with stdout)."},
+                                    "Enable provenance information via guided SLD."},
+                            {"record-provenance", 'T', "EXPLAIN", "", false,
+                                    "Enable provenance information via records."},
 #endif
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
@@ -309,9 +310,11 @@ int main(int argc, char** argv) {
     if (Global::config().has("auto-schedule")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));
     }
-#if USE_PROVENANCE
+#ifdef USE_PROVENANCE
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
+        transforms.push_back(std::unique_ptr<AstTransformer>(new ProvenanceTransformer()));
+    } else if (Global::config().has("record-provenance")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new NaiveProvenanceTransformer()));
     }
 #endif
@@ -364,8 +367,10 @@ int main(int argc, char** argv) {
     auto ram_start = std::chrono::high_resolution_clock::now();
 
     /* translate AST to RAM */
-    std::unique_ptr<RamStatement> ramProg =
+    std::unique_ptr<RamProgram> ramProg =
             RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
+
+    const RamStatement* ramMainStmt = ramProg->getMain();
 
     if (!Global::config().get("debug-report").empty()) {
         if (ramProg) {
@@ -385,7 +390,7 @@ int main(int argc, char** argv) {
     }
 
     /* run RAM program */
-    if (!ramProg) {
+    if (!ramMainStmt) {
         return 0;
     }
 
@@ -469,15 +474,24 @@ int main(int argc, char** argv) {
         std::cout << "Total Time: " << std::chrono::duration<double>(souffle_end - souffle_start).count()
                   << "sec\n";
     }
+
 #ifdef USE_PROVENANCE
-    if (Global::config().has("provenance") && env != nullptr) {
+    // only run explain interface if interpreted
+    if ((Global::config().has("provenance") || Global::config().has("record-provenance")) &&
+            dynamic_cast<RamInterpreter*>(executor.get()) && env != nullptr) {
         // construct SouffleProgram from env
-        SouffleInterpreterInterface interface(*env, translationUnit->getSymbolTable());
-        // invoke explain
+        SouffleInterpreterInterface interface(*ramProg, *executor, *env, translationUnit->getSymbolTable());
+
         if (Global::config().get("provenance") == "1") {
-            explain(interface, true);
+            explain(interface, true, false);
         } else if (Global::config().get("provenance") == "2") {
-            explain(interface, false);
+            explain(interface, true, true);
+        }
+
+        if (Global::config().get("record-provenance") == "1") {
+            explain(interface, false, false);
+        } else if (Global::config().get("record-provenance") == "2") {
+            explain(interface, false, true);
         }
     }
 #endif

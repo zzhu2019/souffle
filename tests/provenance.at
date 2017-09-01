@@ -5,5 +5,7 @@
 # - <souffle root>/licenses/SOUFFLE-UPL.txt
 
 POSITIVE_PROVENANCE_TEST([path],[provenance])
+POSITIVE_PROVENANCE_TEST([path-records],[provenance])
 POSITIVE_PROVENANCE_TEST([negation],[provenance])
+POSITIVE_PROVENANCE_TEST([negation-records],[provenance])
 POSITIVE_PROVENANCE_TEST([cprog1],[provenance])

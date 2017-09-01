@@ -37,9 +37,10 @@ namespace souffle {
 class ReadStreamCSV : public ReadStream {
 public:
     ReadStreamCSV(std::istream& file, const SymbolMask& symbolMask, SymbolTable& symbolTable,
-            std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t")
-            : ReadStream(symbolMask, symbolTable), delimiter(std::move(delimiter)), file(file), lineNumber(0),
-              inputMap(inputMap) {
+            std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t",
+            const bool provenance = false)
+            : ReadStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)), file(file),
+              lineNumber(0), inputMap(inputMap) {
         while (this->inputMap.size() < symbolMask.getArity()) {
             int size = this->inputMap.size();
             this->inputMap[size] = size;
@@ -109,6 +110,14 @@ protected:
                 }
             }
         }
+
+        // add two provenance columns
+        if (isProvenance) {
+            tuple[symbolMask.getArity() - 2] = 0;
+            tuple[symbolMask.getArity() - 1] = 0;
+            columnsFilled += 2;
+        }
+
         if (columnsFilled != symbolMask.getArity()) {
             std::stringstream errorMessage;
             errorMessage << "Values missing in line " << lineNumber << "; ";
@@ -138,8 +147,9 @@ class ReadFileCSV : public ReadStreamCSV {
 public:
     ReadFileCSV(const std::string& filename, const SymbolMask& symbolMask, SymbolTable& symbolTable,
             std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t",
+            const bool provenance = false,
             const bool isIntermediate = false)
-            : ReadStreamCSV(fileHandle, symbolMask, symbolTable, inputMap, delimiter),
+            : ReadStreamCSV(fileHandle, symbolMask, symbolTable, inputMap, delimiter, provenance),
               baseName(souffle::baseName(filename)), fileHandle(filename) {
         if (!fileHandle.is_open() && !isIntermediate) {
             throw std::invalid_argument("Cannot open fact file " + baseName + "\n");
@@ -212,11 +222,11 @@ protected:
 class ReadCinCSVFactory : public ReadStreamFactory, public ReadCSVFactory {
 public:
     std::unique_ptr<ReadStream> getReader(const SymbolMask& symbolMask, SymbolTable& symbolTable,
-            const IODirectives& ioDirectives) override {
+            const IODirectives& ioDirectives, const bool provenance) override {
         std::map<int, int> inputMap = getInputColumnMap(ioDirectives, symbolMask.getArity());
         std::string delimiter = getDelimiter(ioDirectives);
         return std::unique_ptr<ReadStreamCSV>(
-                new ReadStreamCSV(std::cin, symbolMask, symbolTable, inputMap, delimiter));
+                new ReadStreamCSV(std::cin, symbolMask, symbolTable, inputMap, delimiter, provenance));
     }
     const std::string& getName() const override {
         static const std::string name = "stdin";
@@ -228,13 +238,13 @@ public:
 class ReadFileCSVFactory : public ReadStreamFactory, public ReadCSVFactory {
 public:
     std::unique_ptr<ReadStream> getReader(const SymbolMask& symbolMask, SymbolTable& symbolTable,
-            const IODirectives& ioDirectives) override {
+            const IODirectives& ioDirectives, const bool provenance) override {
         std::map<int, int> inputMap = getInputColumnMap(ioDirectives, symbolMask.getArity());
         std::string delimiter = getDelimiter(ioDirectives);
         std::string filename = ioDirectives.has("filename") ? ioDirectives.get("filename")
                                                             : (ioDirectives.getRelationName() + ".facts");
         return std::unique_ptr<ReadFileCSV>(new ReadFileCSV(
-                filename, symbolMask, symbolTable, inputMap, delimiter, ioDirectives.has("intermediate")));
+                filename, symbolMask, symbolTable, inputMap, delimiter, ioDirectives.has("intermediate"), provenance));
     }
     const std::string& getName() const override {
         static const std::string name = "file";
