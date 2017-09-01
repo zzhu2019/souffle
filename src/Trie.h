@@ -1845,7 +1845,6 @@ public:
 
     // an aggregation of statistical values of the hint utilization
     struct hint_statistics {
-
         // the counter for insertion operations
         CacheAccessCounter inserts;
 
@@ -1854,21 +1853,17 @@ public:
 
         // the counter for get_boundaries operations
         CacheAccessCounter get_boundaries;
-
     };
 
 protected:
-
     // the hint statistic of this b-tree instance
     mutable hint_statistics hint_stats;
 
 public:
-
     // Obtains a reference to the internally maintained hint statistics
     const hint_statistics& getHintStatistics() const {
         return hint_stats;
     }
-
 };
 
 /**
