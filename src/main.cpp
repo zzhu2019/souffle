@@ -394,10 +394,12 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    std::vector<RamStatement*> strata;
+    std::vector<std::unique_ptr<RamProgram>> strata;
     if (Global::config().has("stratify")) {
         if (const RamSequence* sequence = dynamic_cast<const RamSequence*>(ramMainStmt)) {
-            strata = sequence->getStatements();
+            for (RamStatement* stmt: sequence->getStatements())
+                strata.push_back(std::move(std::unique_ptr<RamProgram>(new RamProgram(std::move(std::unique_ptr<RamStatement>(stmt))))));
+
         }
         if (Global::config().get("stratify") != "-") {
             const std::string filePath = Global::config().get("stratify");
@@ -406,14 +408,14 @@ int main(int argc, char** argv) {
             translationUnit->getAnalysis<SCCGraph>()->print(os, fileExt(Global::config().get("stratify")));
         }
     } else {
-        strata.push_back(ramMainStmt);
+        strata.push_back(std::move(ramProg));
     }
 
     int index = -1;
     std::unique_ptr<RamEnvironment> env;
     std::vector<std::string> sources;
     std::unique_ptr<RamExecutor> executor;
-    for (const RamStatement* stratum : strata) {
+    for (const std::unique_ptr<RamProgram>& stratum : strata) {
         if (Global::config().has("stratify")) index++;
         // pick executor
         if (Global::config().has("generate") || Global::config().has("compile")) {
@@ -439,7 +441,6 @@ int main(int argc, char** argv) {
         }
 
         std::string source = "";
-        const RamProgram
         try {
             // check if this is code generation only
             if (Global::config().has("generate")) {
