@@ -1151,7 +1151,6 @@ private:
 
     // an aggregation of statistical values of the hint utilization
     struct hint_statistics {
-
         // the counter for insertion operations
         CacheAccessCounter inserts;
 
@@ -1163,7 +1162,6 @@ private:
 
         // the counter for upper_bound operations
         CacheAccessCounter upper_bound;
-
     };
 
     // the hint statistic of this b-tree instance

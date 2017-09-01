@@ -18,11 +18,11 @@
 
 #include "Macro.h"
 
-#include <atomic>
 #include <algorithm>
+#include <atomic>
 #include <chrono>
-#include <cstdlib>
 #include <condition_variable>
+#include <cstdlib>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -609,8 +609,8 @@ ostream& operator<<(ostream& out, const set<K, C, A>& s) {
 template <typename K, typename T, typename C, typename A>
 ostream& operator<<(ostream& out, const map<K, T, C, A>& m) {
     return out << "{" << souffle::join(m, ",", [](ostream& out, const pair<K, T>& cur) {
-        out << cur.first << "->" << cur.second;
-    }) << "}";
+               out << cur.first << "->" << cur.second;
+           }) << "}";
 }
 
 }  // end namespace std
@@ -1116,7 +1116,6 @@ public:
 
 /* end http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2406.html#shared_mutex */
 
-
 // -------------------------------------------------------------------------------
 //                           Hint / Cache Profiling
 // -------------------------------------------------------------------------------
@@ -1133,18 +1132,16 @@ inline bool isHintsProfilingEnabled() {
  * A utility class to keep track of cache hits/misses.
  */
 class CacheAccessCounter {
-
     bool active;
     std::atomic<std::size_t> hits;
     std::atomic<std::size_t> misses;
 
 public:
-
-    CacheAccessCounter(bool active = isHintsProfilingEnabled())
-        : active(active), hits(0), misses(0) {}
+    CacheAccessCounter(bool active = isHintsProfilingEnabled()) : active(active), hits(0), misses(0) {}
 
     CacheAccessCounter(const CacheAccessCounter& other)
-        : active(other.active), hits((active)?other.getHits():0), misses((active)?other.getMisses():0) {}
+            : active(other.active), hits((active) ? other.getHits() : 0),
+              misses((active) ? other.getMisses() : 0) {}
 
     void addHit() {
         if (active) hits.fetch_add(1, std::memory_order_relaxed);
@@ -1174,8 +1171,6 @@ public:
         misses = 0;
     }
 };
-
-
 
 }  // end namespace souffle
 

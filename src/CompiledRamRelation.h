@@ -420,7 +420,7 @@ public:
 
     /* Prints a summary of the hint statistic of this relation */
     void printHintStatistics(std::ostream& out, const std::string& prefix = "") const {
-        indices.printHintStatistics(out,prefix);
+        indices.printHintStatistics(out, prefix);
     }
 };
 
@@ -572,7 +572,7 @@ public:
 
     /* Prints a summary of the hint statistic of this relation */
     void printHintStatistics(std::ostream& out, const std::string& prefix = "") const {
-        indices.printHintStatistics(out,prefix);
+        indices.printHintStatistics(out, prefix);
     }
 };
 
@@ -907,7 +907,7 @@ public:
 
     /* Prints a summary of the hint statistic of this relation */
     void printHintStatistics(std::ostream& out, const std::string& prefix = "") const {
-        data.printHintStatistics(out,prefix);
+        data.printHintStatistics(out, prefix);
     }
 };
 

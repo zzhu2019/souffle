@@ -343,7 +343,7 @@ template <unsigned i, unsigned arity, typename Index>
 struct extend_to_full_index_aux {
     typedef typename extend_to_full_index_aux<i + 1, arity,
             typename std::conditional<(Index::template covers<i>::value), Index,
-                    typename extend<Index, i>::type>::type>::type type;
+                                                      typename extend<Index, i>::type>::type>::type type;
 };
 
 template <unsigned arity, typename Index>
@@ -656,25 +656,17 @@ public:
     void printHintStatistics(std::ostream& out, const std::string& prefix) const {
         const auto& stats = index.getHintStatistics();
         out << prefix << "Direct B-Tree Index: (Hits/Misses/Total)\n";
-        out << prefix << "       Insert: "
-                << stats.inserts.getHits()   << "/"
-                << stats.inserts.getMisses() << "/"
-                << stats.inserts.getAccesses() << "\n";
+        out << prefix << "       Insert: " << stats.inserts.getHits() << "/" << stats.inserts.getMisses()
+            << "/" << stats.inserts.getAccesses() << "\n";
 
-        out << prefix << "     Contains: "
-                << stats.contains.getHits()   << "/"
-                << stats.contains.getMisses() << "/"
-                << stats.contains.getAccesses() << "\n";
+        out << prefix << "     Contains: " << stats.contains.getHits() << "/" << stats.contains.getMisses()
+            << "/" << stats.contains.getAccesses() << "\n";
 
-        out << prefix << "  lower bound: "
-                << stats.lower_bound.getHits() << "/"
-                << stats.lower_bound.getMisses() << "/"
-                << stats.lower_bound.getAccesses() << "\n";
+        out << prefix << "  lower bound: " << stats.lower_bound.getHits() << "/"
+            << stats.lower_bound.getMisses() << "/" << stats.lower_bound.getAccesses() << "\n";
 
-        out << prefix << "  upper bound: "
-                << stats.upper_bound.getHits() << "/"
-                << stats.upper_bound.getMisses() << "/"
-                << stats.upper_bound.getAccesses() << "\n";
+        out << prefix << "  upper bound: " << stats.upper_bound.getHits() << "/"
+            << stats.upper_bound.getMisses() << "/" << stats.upper_bound.getAccesses() << "\n";
     }
 };
 
@@ -787,25 +779,17 @@ public:
     void printHintStatistics(std::ostream& out, const std::string& prefix) const {
         const auto& stats = index.getHintStatistics();
         out << prefix << "Indirect B-Tree Index: (Hits/Misses/Total)\n";
-        out << prefix << "       Insert: "
-                << stats.inserts.getHits()   << "/"
-                << stats.inserts.getMisses() << "/"
-                << stats.inserts.getAccesses() << "\n";
+        out << prefix << "       Insert: " << stats.inserts.getHits() << "/" << stats.inserts.getMisses()
+            << "/" << stats.inserts.getAccesses() << "\n";
 
-        out << prefix << "     Contains: "
-                << stats.contains.getHits()   << "/"
-                << stats.contains.getMisses() << "/"
-                << stats.contains.getAccesses() << "\n";
+        out << prefix << "     Contains: " << stats.contains.getHits() << "/" << stats.contains.getMisses()
+            << "/" << stats.contains.getAccesses() << "\n";
 
-        out << prefix << "  lower bound: "
-                << stats.lower_bound.getHits() << "/"
-                << stats.lower_bound.getMisses() << "/"
-                << stats.lower_bound.getAccesses() << "\n";
+        out << prefix << "  lower bound: " << stats.lower_bound.getHits() << "/"
+            << stats.lower_bound.getMisses() << "/" << stats.lower_bound.getAccesses() << "\n";
 
-        out << prefix << "  upper bound: "
-                << stats.upper_bound.getHits() << "/"
-                << stats.upper_bound.getMisses() << "/"
-                << stats.upper_bound.getAccesses() << "\n";
+        out << prefix << "  upper bound: " << stats.upper_bound.getHits() << "/"
+            << stats.upper_bound.getMisses() << "/" << stats.upper_bound.getAccesses() << "\n";
     }
 };
 
@@ -984,21 +968,14 @@ public:
     void printHintStatistics(std::ostream& out, const std::string& prefix) const {
         const auto& stats = data.getHintStatistics();
         out << prefix << "Trie-Index: (Hits/Misses/Total)\n";
-        out << prefix << "      Insert: "
-                << stats.inserts.getHits()   << "/"
-                << stats.inserts.getMisses() << "/"
-                << stats.inserts.getAccesses() << "\n";
+        out << prefix << "      Insert: " << stats.inserts.getHits() << "/" << stats.inserts.getMisses()
+            << "/" << stats.inserts.getAccesses() << "\n";
 
-        out << prefix << "    Contains: "
-                << stats.contains.getHits()   << "/"
-                << stats.contains.getMisses() << "/"
-                << stats.contains.getAccesses() << "\n";
+        out << prefix << "    Contains: " << stats.contains.getHits() << "/" << stats.contains.getMisses()
+            << "/" << stats.contains.getAccesses() << "\n";
 
-        out << prefix << "  RangeQuery: "
-                << stats.get_boundaries.getHits() << "/"
-                << stats.get_boundaries.getMisses() << "/"
-                << stats.get_boundaries.getAccesses() << "\n";
-
+        out << prefix << "  RangeQuery: " << stats.get_boundaries.getHits() << "/"
+            << stats.get_boundaries.getMisses() << "/" << stats.get_boundaries.getAccesses() << "\n";
     }
 
 private:
@@ -1237,9 +1214,9 @@ struct index_factory<T, Index, true> {
     // pick direct or indirect indexing based on size of tuple
     typedef typename std::conditional<sizeof(T) <= 2 * sizeof(void*),  // if tuple is not bigger than a bound
             typename direct_index_factory<T, Index,
-                    true>::type,  // use a direct index
+                                              true>::type,  // use a direct index
             IndirectIndex<T,
-                    Index>  // otherwise use an indirect, pointer based index
+                                              Index>  // otherwise use an indirect, pointer based index
             >::type type;
 };
 
@@ -1402,15 +1379,14 @@ public:
         return out;
     }
 
-
     void printHintStatistics(std::ostream& out, const std::string& prefix) const {
         out << prefix << "Multi-Index Relation:\n";
         printHintStatisticsInternal(out, prefix + "  ");
     }
 
     void printHintStatisticsInternal(std::ostream& out, const std::string& prefix) const {
-        index.printHintStatistics(out,prefix);
-        nested.printHintStatisticsInternal(out,prefix);
+        index.printHintStatistics(out, prefix);
+        nested.printHintStatisticsInternal(out, prefix);
     }
 };
 
