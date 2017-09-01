@@ -370,7 +370,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<RamProgram> ramProg =
             RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
 
-    const RamStatement* ramMainStmt = ramProg->getMain();
+    RamStatement* ramMainStmt = ramProg->getMain();
 
     if (!Global::config().get("debug-report").empty()) {
         if (ramProg) {
@@ -394,10 +394,10 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    std::vector<RamStatement*> stratum;
+    std::vector<RamStatement*> strata;
     if (Global::config().has("stratify")) {
-        if (const RamSequence* sequence = dynamic_cast<const RamSequence*>(ramProg.get())) {
-            stratum = sequence->getStatements();
+        if (const RamSequence* sequence = dynamic_cast<const RamSequence*>(ramMainStmt)) {
+            strata = sequence->getStatements();
         }
         if (Global::config().get("stratify") != "-") {
             const std::string filePath = Global::config().get("stratify");
@@ -406,16 +406,16 @@ int main(int argc, char** argv) {
             translationUnit->getAnalysis<SCCGraph>()->print(os, fileExt(Global::config().get("stratify")));
         }
     } else {
-        stratum.push_back(ramProg.get());
+        strata.push_back(ramMainStmt);
     }
 
     int index = -1;
     std::unique_ptr<RamEnvironment> env;
     std::vector<std::string> sources;
-    for (const RamStatement* strata : stratum) {
+    std::unique_ptr<RamExecutor> executor;
+    for (const RamStatement* stratum : strata) {
         if (Global::config().has("stratify")) index++;
         // pick executor
-        std::unique_ptr<RamExecutor> executor;
         if (Global::config().has("generate") || Global::config().has("compile")) {
             /* Locate souffle-compile script */
             std::string compileCmd = ::findTool("souffle-compile", souffleExecutable, ".");
@@ -439,23 +439,24 @@ int main(int argc, char** argv) {
         }
 
         std::string source = "";
+        const RamProgram
         try {
             // check if this is code generation only
             if (Global::config().has("generate")) {
                 // just generate, no compile, no execute
                 source = static_cast<const RamCompiler*>(executor.get())
-                                 ->generateCode(translationUnit->getSymbolTable(), *strata,
+                                 ->generateCode(translationUnit->getSymbolTable(), *stratum,
                                          Global::config().get("generate"), index);
 
                 // check if this is a compile only
             } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
                 // just compile, no execute
                 source = static_cast<const RamCompiler*>(executor.get())
-                                 ->compileToBinary(translationUnit->getSymbolTable(), *strata,
+                                 ->compileToBinary(translationUnit->getSymbolTable(), *stratum,
                                          Global::config().get("dl-program"), index);
             } else {
                 // run executor
-                env = executor->execute(translationUnit->getSymbolTable(), *strata);
+                env = executor->execute(translationUnit->getSymbolTable(), *stratum);
             }
 
             if (!source.empty()) sources.push_back(source);

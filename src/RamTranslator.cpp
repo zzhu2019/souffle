@@ -1326,7 +1326,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
 
     // add subroutines for each clause
     if (Global::config().has("provenance")) {
-        visitDepthFirst(rels, [&](const AstClause& clause) {
+        visitDepthFirst(translationUnit.getProgram()->getRelations(), [&](const AstClause& clause) {
             std::stringstream relName;
             relName << clause.getHead()->getName();
 

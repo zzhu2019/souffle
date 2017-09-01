@@ -2642,7 +2642,7 @@ std::string RamCompiler::compileToLibrary(
     return source;
 }
 
-std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index = -1) const {
+std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                       Code Generation
     // ---------------------------------------------------------------
