@@ -464,7 +464,7 @@ int main(int argc, char** argv) {
                                          Global::config().get("dl-program"), index);
             } else {
                 // run executor
-                env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
+                env = executor->execute(translationUnit->getSymbolTable(), *stratum);
             }
 
             if (!source.empty()) sources.push_back(source);
