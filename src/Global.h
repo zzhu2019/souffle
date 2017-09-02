@@ -52,8 +52,7 @@ public:
     const V& get(const K& key, const V& value) const {
         return (has(key)) ? _data.at(key) : value;
     }
-    /* Check the table has the specified key and that it is not equal to an object of the value class called
-     * with an empty constructor. */
+    /* Check the table has the specified key. */
     const bool has(const K& key) const {
         return _data.find(key) != _data.end();
     }

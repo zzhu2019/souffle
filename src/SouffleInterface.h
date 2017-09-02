@@ -262,13 +262,13 @@ public:
     virtual void run() {}
 
     // execute program, loading inputs and storing outputs as requires
-    virtual void runAll(std::string = ".", std::string = ".") = 0;
+    virtual void runAll(std::string inputDirectory = ".", std::string outputDirectory = ".") = 0;
 
     // load all input relations
-    virtual void loadAll(std::string = ".") = 0;
+    virtual void loadAll(std::string inputDirectory = ".") = 0;
 
     // store all output relations
-    virtual void printAll(std::string = ".") = 0;
+    virtual void printAll(std::string outputDirectory = ".") = 0;
 
     // dump input relations (for debug purposes)
     virtual void dumpInputs(std::ostream& out = std::cout) = 0;

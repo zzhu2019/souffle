@@ -52,11 +52,3 @@ prof
 *.deb
 #macosx
 .DS_Store
-
-tests/atconfig
-tests/atlocal
-tests/testsuite
-tests/testsuite.dir
-tests/package.m4
-tests/testsuite.log
-

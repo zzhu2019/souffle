@@ -406,7 +406,8 @@ int main(int argc, char** argv) {
             const std::string filePath = Global::config().get("stratify");
             std::ofstream os(filePath);
             if (!os.is_open()) ERROR("could not open '" + filePath + "' for writing.");
-            translationUnit->getAnalysis<SCCGraph>()->print(os, fileExt(Global::config().get("stratify")));
+            translationUnit->getAnalysis<SCCGraph>()->print(os, fileExtension(
+                    Global::config().get("stratify")));
         }
     } else {
         strata.push_back(std::move(ramProg));

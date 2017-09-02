@@ -1032,7 +1032,7 @@ inline std::string simpleName(const std::string& path) {
 /**
  * File extension, with all else removed.
  */
-inline std::string fileExt(const std::string& path) {
+inline std::string fileExtension(const std::string &path) {
     std::string name = path;
     const size_t lastDot = name.find_last_of('.');
     // file has no extension
@@ -1086,9 +1086,8 @@ inline std::string stringify(const std::string& input) {
     return str;
 }
 
-/** Valid C++ identifier. */
-inline std::string identifier(const std::string& seed) {
-    std::string id = seed;
+/** Valid C++ identifier, note that this does not ensure the uniqueness of identifiers returned. */
+inline std::string identifier(std::string id) {
     for (size_t i = 0; i < id.length(); i++) {
         if ((!isalpha(id[i]) && i == 0) || (!isalnum(id[i]) && id[i] != '_')) {
             id[i] = '_';

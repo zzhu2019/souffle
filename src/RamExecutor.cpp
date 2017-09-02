@@ -1654,8 +1654,8 @@ public:
             out << "env" << level << "[0] = " << relName << "->"
                 << "size();\n";
             visitSearch(aggregate, out);
-            return;
             PRINT_END_COMMENT(out);
+            return;
         }
 
         // init result
@@ -2245,10 +2245,10 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
     std::string classname = "Sf_" + id + indexStr;
 
     // add filename extension
-    std::string source = nameNoExtension + indexStr + ".cpp";
+    std::string sourceFilename = nameNoExtension + indexStr + ".cpp";
 
     // open output stream for header file
-    std::ofstream os(source);
+    std::ofstream os(sourceFilename);
 
     // generate C++ program
     os << "#include \"souffle/CompiledSouffle.h\"\n";
@@ -2632,15 +2632,15 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
     os.close();
 
     // return the filename
-    return source;
+    return sourceFilename;
 }
 
 std::string RamCompiler::compileToLibrary(
         const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index) const {
-    std::string source = generateCode(symTable, prog, filename, index);
+    std::string sourceFilename = generateCode(symTable, prog, filename, index);
 
     // execute shell script that compiles the generated C++ program
-    std::string libCmd = "souffle-compilelib " + source;
+    std::string libCmd = "souffle-compilelib " + sourceFilename;
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2649,13 +2649,13 @@ std::string RamCompiler::compileToLibrary(
 
     // run executable
     if (system(libCmd.c_str()) != 0) {
-        std::cerr << "failed to compile C++ source " << source << "\n";
+        std::cerr << "failed to compile C++ source " << sourceFilename << "\n";
         std::cerr << "Have you installed souffle with java?\n";
         return "";
     }
 
     // done
-    return source;
+    return sourceFilename;
 }
 
 std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index) const {
@@ -2663,7 +2663,7 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamP
     //                       Code Generation
     // ---------------------------------------------------------------
 
-    std::string source = generateCode(symTable, prog, filename, index);
+    std::string sourceFilename = generateCode(symTable, prog, filename, index);
 
     // ---------------------------------------------------------------
     //                    Compilation & Execution
@@ -2678,7 +2678,7 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamP
     }
 
     // add source code
-    cmd += source;
+    cmd += sourceFilename;
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2687,18 +2687,18 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamP
 
     // run executable
     if (system(cmd.c_str()) != 0) {
-        throw std::invalid_argument("failed to compile C++ source <" + source + ">");
+        throw std::invalid_argument("failed to compile C++ source <" + sourceFilename + ">");
     }
 
     // done
-    return source;
+    return sourceFilename;
 }
 
 
 std::string RamCompiler::executeBinary(const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index) const {
     // compile statement
-    std::string source = compileToBinary(symTable, prog, filename, index);
-    std::string binary = "./" + simpleName(source);
+    std::string sourceFilename = compileToBinary(symTable, prog, filename, index);
+    std::string binaryFilename = "./" + simpleName(sourceFilename);
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2706,20 +2706,20 @@ std::string RamCompiler::executeBinary(const SymbolTable& symTable, const RamPro
     }
 
     // check whether the executable exists
-    if (!isExecutable(binary)) {
-        throw std::invalid_argument("Generated executable <" + binary + "> could not be found");
+    if (!isExecutable(binaryFilename)) {
+        throw std::invalid_argument("Generated executable <" + binaryFilename + "> could not be found");
     }
 
     // run executable
-    int result = system(binary.c_str());
+    int result = system(binaryFilename.c_str());
     if (Global::config().get("dl-program").empty()) {
-        remove(binary.c_str());
-        remove((binary + ".cpp").c_str());
+        remove(binaryFilename.c_str());
+        remove((binaryFilename + ".cpp").c_str());
     }
     if (result != 0) {
         exit(result);
     }
-    return source;
+    return sourceFilename;
 }
 
 void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
