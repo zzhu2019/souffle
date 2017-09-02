@@ -28,9 +28,9 @@ namespace souffle {
 template <typename Vertex, typename Compare = std::less<Vertex>>
 class Graph {
     // not a very efficient but simple graph representation
-    std::set<Vertex, Compare> vertices;                     // all the vertices in the graph
-    std::map<Vertex, std::set<Vertex, Compare>> forward;   // all edges forward directed
-    std::map<Vertex, std::set<Vertex, Compare>> backward;  // all edges backward
+    std::set<Vertex, Compare> _vertices;                     // all the vertices in the graph
+    std::map<Vertex, std::set<Vertex, Compare>> _successors;   // all edges forward directed
+    std::map<Vertex, std::set<Vertex, Compare>> _predecessors;  // all edges backward
 
 public:
     /**
@@ -39,47 +39,47 @@ public:
     void insert(const Vertex& from, const Vertex& to) {
         insert(from);
         insert(to);
-        forward[from].insert(to);
-        backward[to].insert(from);
+        _successors[from].insert(to);
+        _predecessors[to].insert(from);
     }
 
     /**
      * Adds a vertex.
      */
     void insert(const Vertex& vertex) {
-        auto iter = vertices.insert(vertex);
+        auto iter = _vertices.insert(vertex);
         if (iter.second) {
-            forward.insert(std::make_pair(vertex, std::set<Vertex, Compare>()));
-            backward.insert(std::make_pair(vertex, std::set<Vertex, Compare>()));
+            _successors.insert(std::make_pair(vertex, std::set<Vertex, Compare>()));
+            _predecessors.insert(std::make_pair(vertex, std::set<Vertex, Compare>()));
         }
     }
 
     /** Obtains a reference to the set of all vertices */
     const std::set<Vertex, Compare>& vertices() const {
-        return vertices;
+        return _vertices;
     }
 
     /** Returns the set of vertices the given vertex has edges to */
     const std::set<Vertex, Compare>& successors(const Vertex& from) const {
         assert(contains(from));
-        return forward.find(from)->second;
+        return _successors.find(from)->second;
     }
 
     /** Returns the set of vertices the given vertex has edges from */
     const std::set<Vertex, Compare>& predecessors(const Vertex& to) const {
         assert(contains(to));
-        return backward.find(to)->second;
+        return _predecessors.find(to)->second;
     }
 
     /** Determines whether the given vertex is present */
     bool contains(const Vertex &vertex) const {
-        return vertices.find(vertex) != vertices.end();
+        return _vertices.find(vertex) != _vertices.end();
     }
 
     /** Determines whether the given edge is present */
     bool contains(const Vertex &from, const Vertex &to) const {
-        auto pos = forward.find(from);
-        if (pos == forward.end()) {
+        auto pos = _successors.find(from);
+        if (pos == _successors.end()) {
             return false;
         }
         auto p2 = pos->second.find(to);
@@ -126,7 +126,7 @@ public:
     void print(std::ostream& out) const {
         bool first = true;
         out << "{";
-        for (const auto& cur : forward) {
+        for (const auto& cur : _successors) {
             for (const auto& trg : cur.second) {
                 if (!first) {
                     out << ",";
@@ -148,8 +148,8 @@ private:
     template <typename Lambda>
     void visitDepthFirst(const Vertex& vertex, const Lambda& lambda, std::set<Vertex, Compare>& visited) const {
         lambda(vertex);
-        auto pos = forward.find(vertex);
-        if (pos == forward.end()) {
+        auto pos = _successors.find(vertex);
+        if (pos == _successors.end()) {
             return;
         }
         for (const auto& cur : pos->second) {
