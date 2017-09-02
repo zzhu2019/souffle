@@ -217,8 +217,8 @@ public:
      * name is either set by the corresponding member field or will
      * be determined randomly. The chosen file-name will be returned.
      */
-    std::string generateCode(
-            const SymbolTable& symTable, const RamProgram& prog, const std::string& filename = "", const int index = -1) const;
+    std::string generateCode(const SymbolTable& symTable, const RamProgram& prog,
+            const std::string& filename = "", const int index = -1) const;
 
     /**
      * Generates the code for the given ram statement.The target file
@@ -243,7 +243,8 @@ public:
      * be determined randomly. The environment after execution will be returned.
      * Note that this uses the compileToBinary method for code compilation.
      */
-    std::string executeBinary(const SymbolTable& symTable, const RamProgram& prog, const std::string& filename = "", const int index = -1) const;
+    std::string executeBinary(const SymbolTable& symTable, const RamProgram& prog,
+            const std::string& filename = "", const int index = -1) const;
 
     /**
      * The actual implementation of this executor encoding the given
@@ -257,7 +258,6 @@ public:
      */
     // void compileSubroutine(std::string name, const RamStatement& stmt, IndexMap& indices, std::ostream& os)
     // const;
-
 };
 
 /**

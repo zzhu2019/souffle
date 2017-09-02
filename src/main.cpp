@@ -367,8 +367,7 @@ int main(int argc, char** argv) {
     auto ram_start = std::chrono::high_resolution_clock::now();
 
     /* translate AST to RAM */
-    auto&& ramProg =
-            RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
+    auto&& ramProg = RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
 
     const RamStatement* ramMainStmt = ramProg->getMain();
 
@@ -394,16 +393,13 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-
     std::vector<std::unique_ptr<RamProgram>> strata;
     if (Global::config().has("stratify")) {
         if (const RamSequence* sequence = dynamic_cast<const RamSequence*>(ramMainStmt)) {
-            for (RamStatement* stmt: sequence->getStatements()) {
+            for (RamStatement* stmt : sequence->getStatements()) {
                 strata.push_back(std::move(std::unique_ptr<RamProgram>(
-                        new RamProgram(std::move(
-                                std::unique_ptr<RamStatement>(stmt))))));
+                        new RamProgram(std::move(std::unique_ptr<RamStatement>(stmt))))));
             }
-
         }
         if (Global::config().get("stratify") != "-") {
             const std::string filePath = Global::config().get("stratify");
@@ -411,8 +407,8 @@ int main(int argc, char** argv) {
             if (!os.is_open()) {
                 ERROR("could not open '" + filePath + "' for writing.");
             }
-            translationUnit->getAnalysis<SCCGraph>()->print(os, fileExtension(
-                    Global::config().get("stratify")));
+            translationUnit->getAnalysis<SCCGraph>()->print(
+                    os, fileExtension(Global::config().get("stratify")));
         }
     } else {
         strata.push_back(std::move(ramProg));

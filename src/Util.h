@@ -1032,7 +1032,7 @@ inline std::string simpleName(const std::string& path) {
 /**
  * File extension, with all else removed.
  */
-inline std::string fileExtension(const std::string &path) {
+inline std::string fileExtension(const std::string& path) {
     std::string name = path;
     const size_t lastDot = name.find_last_of('.');
     // file has no extension

@@ -28,8 +28,8 @@ namespace souffle {
 template <typename Vertex, typename Compare = std::less<Vertex>>
 class Graph {
     // not a very efficient but simple graph representation
-    std::set<Vertex, Compare> _vertices;                     // all the vertices in the graph
-    std::map<Vertex, std::set<Vertex, Compare>> _successors;   // all edges forward directed
+    std::set<Vertex, Compare> _vertices;                        // all the vertices in the graph
+    std::map<Vertex, std::set<Vertex, Compare>> _successors;    // all edges forward directed
     std::map<Vertex, std::set<Vertex, Compare>> _predecessors;  // all edges backward
 
 public:
@@ -72,12 +72,12 @@ public:
     }
 
     /** Determines whether the given vertex is present */
-    bool contains(const Vertex &vertex) const {
+    bool contains(const Vertex& vertex) const {
         return _vertices.find(vertex) != _vertices.end();
     }
 
     /** Determines whether the given edge is present */
-    bool contains(const Vertex &from, const Vertex &to) const {
+    bool contains(const Vertex& from, const Vertex& to) const {
         auto pos = _successors.find(from);
         if (pos == _successors.end()) {
             return false;
@@ -146,7 +146,8 @@ public:
 private:
     /** The internal implementation of depth-first visits */
     template <typename Lambda>
-    void visitDepthFirst(const Vertex& vertex, const Lambda& lambda, std::set<Vertex, Compare>& visited) const {
+    void visitDepthFirst(
+            const Vertex& vertex, const Lambda& lambda, std::set<Vertex, Compare>& visited) const {
         lambda(vertex);
         auto pos = _successors.find(vertex);
         if (pos == _successors.end()) {

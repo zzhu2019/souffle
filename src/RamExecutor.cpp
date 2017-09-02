@@ -852,8 +852,8 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
             for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
                 try {
                     IOSystem::getInstance()
-                            .getWriter(
-                                    store.getRelation().getSymbolMask(), env.getSymbolTable(), ioDirectives, Global::config().has("provenance"))
+                            .getWriter(store.getRelation().getSymbolMask(), env.getSymbolTable(),
+                                    ioDirectives, Global::config().has("provenance"))
                             ->writeAll(env.getRelation(store.getRelation()));
                 } catch (std::exception& e) {
                     std::cerr << e.what();
@@ -2639,8 +2639,8 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
     return sourceFilename;
 }
 
-std::string RamCompiler::compileToLibrary(
-        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index) const {
+std::string RamCompiler::compileToLibrary(const SymbolTable& symTable, const RamProgram& prog,
+        const std::string& filename, const int index) const {
     std::string sourceFilename = generateCode(symTable, prog, filename, index);
 
     // execute shell script that compiles the generated C++ program
@@ -2662,7 +2662,8 @@ std::string RamCompiler::compileToLibrary(
     return sourceFilename;
 }
 
-std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index) const {
+std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
+        const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                       Code Generation
     // ---------------------------------------------------------------
@@ -2698,8 +2699,8 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamP
     return sourceFilename;
 }
 
-
-std::string RamCompiler::executeBinary(const SymbolTable& symTable, const RamProgram& prog, const std::string& filename, const int index) const {
+std::string RamCompiler::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
+        const std::string& filename, const int index) const {
     // compile statement
     std::string sourceFilename = compileToBinary(symTable, prog, filename, index);
     std::string binaryFilename = "./" + simpleName(sourceFilename);

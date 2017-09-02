@@ -791,8 +791,7 @@ static void appendStmt(std::unique_ptr<RamStatement>& stmtList, std::unique_ptr<
             if ((stmtSeq = dynamic_cast<RamSequence*>(stmtList.get()))) {
                 stmtSeq->add(std::move(stmt));
             } else {
-                stmtList =
-                        std::make_unique<RamSequence>(std::move(stmtList), std::move(stmt));
+                stmtList = std::make_unique<RamSequence>(std::move(stmtList), std::move(stmt));
             }
         } else {
             stmtList = std::move(stmt);
@@ -952,8 +951,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateRecursiveRelation(
         if (logging) {
             std::ostringstream ost, osn;
             ost << "@c-recursive-relation;" << rel->getName() << ";" << rel->getSrcLoc() << ";";
-            updateRelTable =
-                    std::make_unique<RamLogTimer>(std::move(updateRelTable), ost.str());
+            updateRelTable = std::make_unique<RamLogTimer>(std::move(updateRelTable), ost.str());
         }
 
         /* drop temporary tables after recursion */
@@ -1134,10 +1132,10 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
 
     // create delta and new relations for recursive relations at the start
     if (isRecursive) {
-        appendStmt(
-                current, std::make_unique<RamCreate>(getRamRelationIdentifier(rel, &typeEnv, "delta_" + getRelationName(rel->getName()), rel->getArity(), true)));
-        appendStmt(
-                current, std::make_unique<RamCreate>(getRamRelationIdentifier(rel, &typeEnv, "new_" + getRelationName(rel->getName()), rel->getArity(), true)));
+        appendStmt(current, std::make_unique<RamCreate>(getRamRelationIdentifier(rel, &typeEnv,
+                                    "delta_" + getRelationName(rel->getName()), rel->getArity(), true)));
+        appendStmt(current, std::make_unique<RamCreate>(getRamRelationIdentifier(rel, &typeEnv,
+                                    "new_" + getRelationName(rel->getName()), rel->getArity(), true)));
     }
 }
 
@@ -1145,19 +1143,17 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
         const TypeEnvironment& typeEnv, const bool storeOutputOnly) {
     const auto dir = Global::config().get("output-dir");
     const auto ext = (!rel->isOutput()) ? ".facts" : ".csv";
-    AstRelation *mrel = const_cast<AstRelation *>(rel)->clone();
+    AstRelation* mrel = const_cast<AstRelation*>(rel)->clone();
     if (!rel->isOutput() && !storeOutputOnly) {
         std::unique_ptr<AstIODirective> directive = std::unique_ptr<AstIODirective>(new AstIODirective());
         directive->setAsOutput();
         mrel->addIODirectives(std::move(directive));
     }
     RamRelationIdentifier rrel = getRamRelationIdentifier(
-            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(),
-            false, dir, ext);
+            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
 
     if (rel->isPrintSize()) {
-        appendStmt(current,
-                   std::make_unique<RamPrintSize>(rrel));
+        appendStmt(current, std::make_unique<RamPrintSize>(rrel));
     }
 
     if (rel->isOutput() || !storeOutputOnly) {
@@ -1242,8 +1238,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
         /* during stratification, create and load all predecessor relations in another scc */
         if (Global::config().has("stratify")) {
             // for each inbound relation (i.e. a predecessor in another scc)...
-            for (const AstRelation *rel : sccGraph.getInbound(
-                    sortedSCCGraph.order().at(index))) {
+            for (const AstRelation* rel : sccGraph.getInbound(sortedSCCGraph.order().at(index))) {
                 createAndLoad(current, rel, typeEnv, false, false, false);
             }
         }
@@ -1255,8 +1250,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
             }
         } else {
             for (const AstRelation* rel : step.computed()) {
-                createAndLoad(current, rel, typeEnv, true,
-                              sccGraph.isRecursive(rel), true);
+                createAndLoad(current, rel, typeEnv, true, sccGraph.isRecursive(rel), true);
             }
         }
 
@@ -1279,8 +1273,7 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
             // for each inbound relation (i.e. a predecessor in another scc)...
             for (const AstRelation* rel : sccGraph.getInbound(sortedSCCGraph.order().at(index))) {
                 // don't worry about file paths as this is a drop only
-                appendStmt(current,
-                           std::make_unique<RamDrop>(getRamRelationIdentifier(rel, &typeEnv)));
+                appendStmt(current, std::make_unique<RamDrop>(getRamRelationIdentifier(rel, &typeEnv)));
             }
         }
 
@@ -1315,7 +1308,8 @@ std::unique_ptr<RamProgram> RamTranslator::translateProgram(const AstTranslation
                 }
                 if (index == schedule.size() - 1) {
                     for (const AstRelation* rel : step.computed()) {
-                        appendStmt(current, std::make_unique<RamDrop>(getRamRelationIdentifier(rel, &typeEnv)));
+                        appendStmt(
+                                current, std::make_unique<RamDrop>(getRamRelationIdentifier(rel, &typeEnv)));
                     }
                 }
             }
