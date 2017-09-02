@@ -19,8 +19,10 @@
 #include "Macro.h"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstdlib>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -1113,6 +1115,62 @@ public:
 };
 
 /* end http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2406.html#shared_mutex */
+
+// -------------------------------------------------------------------------------
+//                           Hint / Cache Profiling
+// -------------------------------------------------------------------------------
+
+/**
+ * A utility function to determine whether hints-profiling is enabled or
+ * disabled;
+ */
+inline bool isHintsProfilingEnabled() {
+    return std::getenv("SOUFFLE_PROFILE_HINTS");
+}
+
+/**
+ * A utility class to keep track of cache hits/misses.
+ */
+class CacheAccessCounter {
+    bool active;
+    std::atomic<std::size_t> hits;
+    std::atomic<std::size_t> misses;
+
+public:
+    CacheAccessCounter(bool active = isHintsProfilingEnabled()) : active(active), hits(0), misses(0) {}
+
+    CacheAccessCounter(const CacheAccessCounter& other)
+            : active(other.active), hits((active) ? other.getHits() : 0),
+              misses((active) ? other.getMisses() : 0) {}
+
+    void addHit() {
+        if (active) hits.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void addMiss() {
+        if (active) misses.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    std::size_t getHits() const {
+        ASSERT(active);
+        return hits;
+    }
+
+    std::size_t getMisses() const {
+        ASSERT(active);
+        return misses;
+    }
+
+    std::size_t getAccesses() const {
+        ASSERT(active);
+        return getHits() + getMisses();
+    }
+
+    void reset() {
+        hits = 0;
+        misses = 0;
+    }
+};
 
 }  // end namespace souffle
 
