@@ -464,9 +464,7 @@ int main(int argc, char** argv) {
                                          Global::config().get("dl-program"), index);
             } else {
                 // run executor
-                static_cast<const RamCompiler*>(executor.get())
-                 ->executeBinary(translationUnit->getSymbolTable(), *stratum,
-                         "", index);
+                env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
             }
 
             if (!source.empty()) sources.push_back(source);
