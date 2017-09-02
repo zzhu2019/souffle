@@ -398,14 +398,19 @@ int main(int argc, char** argv) {
     std::vector<std::unique_ptr<RamProgram>> strata;
     if (Global::config().has("stratify")) {
         if (const RamSequence* sequence = dynamic_cast<const RamSequence*>(ramMainStmt)) {
-            for (RamStatement* stmt: sequence->getStatements())
-                strata.push_back(std::move(std::unique_ptr<RamProgram>(new RamProgram(std::move(std::unique_ptr<RamStatement>(stmt))))));
+            for (RamStatement* stmt: sequence->getStatements()) {
+                strata.push_back(std::move(std::unique_ptr<RamProgram>(
+                        new RamProgram(std::move(
+                                std::unique_ptr<RamStatement>(stmt))))));
+            }
 
         }
         if (Global::config().get("stratify") != "-") {
             const std::string filePath = Global::config().get("stratify");
             std::ofstream os(filePath);
-            if (!os.is_open()) ERROR("could not open '" + filePath + "' for writing.");
+            if (!os.is_open()) {
+                ERROR("could not open '" + filePath + "' for writing.");
+            }
             translationUnit->getAnalysis<SCCGraph>()->print(os, fileExtension(
                     Global::config().get("stratify")));
         }

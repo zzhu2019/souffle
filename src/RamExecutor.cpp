@@ -1179,7 +1179,9 @@ std::set<RamRelationIdentifier> getReferencedRelations(const RamOperation& op) {
             res.insert(notExist->getRelation());
         } else if (auto project = dynamic_cast<const RamProject*>(&node)) {
             res.insert(project->getRelation());
-            if (project->hasFilter()) res.insert(project->getFilter());
+            if (project->hasFilter()) {
+                res.insert(project->getFilter());
+            }
         }
     });
     return res;
@@ -2362,7 +2364,9 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
         }
     } else {
         os << "()";
-        if (initCons.size() > 0) os << " : " << initCons;
+        if (initCons.size() > 0) {
+            os << " : " << initCons;
+        }
     }
     os << "{\n";
     os << registerRel;
