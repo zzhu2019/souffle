@@ -27,7 +27,7 @@ case $1 in
             sed 's/^.*apt-get install//g' \
         ) \
         ) \
-        sudo apt-get install -y clang libomp-dev;
+        sudo apt-get install -y clang-4.0 libomp-dev;
     ;;
     ## - sync: Sync with upstream, origin master, and the current branch.
     sync)
@@ -61,8 +61,8 @@ case $1 in
     build)
 		case $2 in
 			clang)
-				export CC=clang;
-				export CXX=clang++;
+				export CC=clang-4.0;
+				export CXX=clang++-4.0;
 			;;
 			gcc)
 				export CC=gcc;
