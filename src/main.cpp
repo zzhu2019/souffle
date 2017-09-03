@@ -367,9 +367,8 @@ int main(int argc, char** argv) {
     auto ram_start = std::chrono::high_resolution_clock::now();
 
     /* translate AST to RAM */
-    auto&& ramProg = RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
+    std::unique_ptr<RamProgram> ramProg = RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
 
-    const RamStatement* ramMainStmt = ramProg->getMain();
 
     if (!Global::config().get("debug-report").empty()) {
         if (ramProg) {
@@ -388,93 +387,20 @@ int main(int argc, char** argv) {
         }
     }
 
-    /* run RAM program */
-    if (!ramMainStmt) {
+
+    if (!ramProg->getMain()) {
         return 0;
-    }
+    };
 
-    std::vector<std::unique_ptr<RamProgram>> strata;
-    if (Global::config().has("stratify")) {
-        if (const RamSequence* sequence = dynamic_cast<const RamSequence*>(ramMainStmt)) {
-            for (RamStatement* stmt : sequence->getStatements()) {
-                strata.push_back(std::move(std::unique_ptr<RamProgram>(
-                        new RamProgram(std::move(std::unique_ptr<RamStatement>(stmt))))));
-            }
-        }
-        if (Global::config().get("stratify") != "-") {
-            const std::string filePath = Global::config().get("stratify");
-            std::ofstream os(filePath);
-            if (!os.is_open()) {
-                ERROR("could not open '" + filePath + "' for writing.");
-            }
-            translationUnit->getAnalysis<SCCGraph>()->print(
-                    os, fileExtension(Global::config().get("stratify")));
-        }
-    } else {
-        strata.push_back(std::move(ramProg));
-    }
+    if (!Global::config().has("compile") && !Global::config().has("dl-program") && !Global::config().has("generate")) {
 
-    int index = -1;
-    std::unique_ptr<RamEnvironment> env;
-    std::vector<std::string> sources;
-    std::unique_ptr<RamExecutor> executor;
-    for (auto&& stratum : strata) {
-        if (Global::config().has("stratify")) index++;
-        // pick executor
-        if (Global::config().has("generate") || Global::config().has("compile")) {
-            /* Locate souffle-compile script */
-            std::string compileCmd = ::findTool("souffle-compile", souffleExecutable, ".");
-            /* Fail if a souffle-compile executable is not found */
-            if (!isExecutable(compileCmd)) {
-                ERROR("failed to locate souffle-compile");
-            }
-            compileCmd += " ";
-            // configure compiler
-            executor = std::unique_ptr<RamExecutor>(new RamCompiler(compileCmd));
-            if (Global::config().has("verbose")) {
-                executor->setReportTarget(std::cout);
-            }
-        } else {
-            // configure interpreter
-            if (Global::config().has("auto-schedule")) {
-                executor = std::unique_ptr<RamExecutor>(new RamGuidedInterpreter());
-            } else {
-                executor = std::unique_ptr<RamExecutor>(new RamInterpreter());
-            }
-        }
+        // ------- interpreter -------------
 
-        std::string source = "";
-        try {
-            // check if this is code generation only
-            if (Global::config().has("generate")) {
-                // just generate, no compile, no execute
-                source = static_cast<const RamCompiler*>(executor.get())
-                                 ->generateCode(translationUnit->getSymbolTable(), *stratum,
-                                         Global::config().get("generate"), index);
-
-                // check if this is a compile only
-            } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
-                // just compile, no execute
-                source = static_cast<const RamCompiler*>(executor.get())
-                                 ->compileToBinary(translationUnit->getSymbolTable(), *stratum,
-                                         Global::config().get("dl-program"), index);
-            } else {
-                // run executor
-                env = executor->execute(translationUnit->getSymbolTable(), *stratum);
-            }
-
-            if (!source.empty()) sources.push_back(source);
-        } catch (std::exception& e) {
-            std::cerr << e.what() << std::endl;
-        }
-    }
-
-    /* Report overall run-time in verbose mode */
-    if (Global::config().has("verbose")) {
-        auto souffle_end = std::chrono::high_resolution_clock::now();
-        std::cout << "Total Time: " << std::chrono::duration<double>(souffle_end - souffle_start).count()
-                  << "sec\n";
-    }
+        // configure interpreter
+        std::unique_ptr<RamExecutor> executor = (Global::config().has("auto-schedule"))
+                                                ? std::unique_ptr<RamExecutor>(new RamGuidedInterpreter())
+                                                : std::unique_ptr<RamExecutor>(new RamInterpreter());
+        std::unique_ptr<RamEnvironment> env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
 
 #ifdef USE_PROVENANCE
     // only run explain interface if interpreted
@@ -496,6 +422,94 @@ int main(int argc, char** argv) {
         }
     }
 #endif
+
+    } else {
+
+        // ------- compiler -------------
+
+
+
+        std::vector<std::unique_ptr<RamProgram>> strata;
+        if (Global::config().has("stratify"))  {
+            if (RamSequence *sequence = dynamic_cast<RamSequence *>(ramProg->getMain())) {
+                sequence->moveSubprograms(strata);
+            } else {
+                strata.push_back(std::move(ramProg));
+            }
+        } else {
+            strata.push_back(std::move(ramProg));
+        }
+
+        if (Global::config().has("stratify") && Global::config().get("stratify") != "-") {
+            const std::string filePath = Global::config().get("stratify");
+            std::ofstream os(filePath);
+            if (!os.is_open()) {
+                ERROR("could not open '" + filePath + "' for writing.");
+            }
+            translationUnit->getAnalysis<SCCGraph>()->print(
+                    os, fileExtension(Global::config().get("stratify")));
+        }
+
+        // pick executor
+        /* Locate souffle-compile script */
+        std::string compileCmd = ::findTool("souffle-compile",
+                                            souffleExecutable, ".");
+        /* Fail if a souffle-compile executable is not found */
+        if (!isExecutable(compileCmd)) {
+            ERROR("failed to locate souffle-compile");
+        }
+        compileCmd += " ";
+
+        int index = -1;
+        std::unique_ptr<RamExecutor> executor;
+        for (auto&& stratum : strata) {
+            if (Global::config().has("stratify")) index++;
+
+            // configure compiler
+            executor = std::unique_ptr<RamExecutor>(
+                    new RamCompiler(compileCmd));
+            if (Global::config().has("verbose")) {
+                executor->setReportTarget(std::cout);
+            }
+            try {
+                // check if this is code generation only
+                if (Global::config().has("generate")) {
+                    // just generate, no compile, no execute
+                    static_cast<const RamCompiler *>(executor.get())
+                            ->generateCode(translationUnit->getSymbolTable(),
+                                           *stratum,
+                                           Global::config().get("generate"),
+                                           index);
+
+                    // check if this is a compile only
+                } else if (Global::config().has("compile") &&
+                           Global::config().has("dl-program")) {
+                    // just compile, no execute
+                    static_cast<const RamCompiler *>(executor.get())
+                            ->compileToBinary(translationUnit->getSymbolTable(),
+                                              *stratum,
+                                              Global::config().get(
+                                                      "dl-program"), index);
+                } else {
+                    // run executor
+                    executor->execute(translationUnit->getSymbolTable(),
+                                      *stratum);
+                }
+
+            } catch (std::exception &e) {
+                std::cerr << e.what() << std::endl;
+            }
+        }
+    }
+
+    /* Report overall run-time in verbose mode */
+    if (Global::config().has("verbose")) {
+        auto souffle_end = std::chrono::high_resolution_clock::now();
+        std::cout << "Total Time: " << std::chrono::duration<double>(souffle_end - souffle_start).count()
+                  << "sec\n";
+    }
+
+
     return 0;
 }
 

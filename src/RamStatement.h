@@ -335,6 +335,12 @@ public:
         return toPtrVector(stmts);
     }
 
+    template <typename T>
+    void moveSubprograms(std::vector<std::unique_ptr<T>>& destination) {
+        movePtrVector(stmts, destination);
+    }
+
+
     void print(std::ostream& os, int tabpos) const override {
         os << join(stmts, ";\n", [&](std::ostream& os, const std::unique_ptr<RamStatement>& stmt) {
             stmt->print(os, tabpos);

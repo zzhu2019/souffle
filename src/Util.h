@@ -121,6 +121,19 @@ std::vector<T*> toPtrVector(const std::vector<std::shared_ptr<T>>& v) {
 }
 
 /**
+ * A utility function that moves a vector of unique pointers from a source to a destination.
+ */
+template <typename X, typename Y>
+void movePtrVector(std::vector<std::unique_ptr<X>>& source, std::vector<std::unique_ptr<Y>>& destination) {
+    while (!source.empty()) {
+        auto it = source.end() - 1;
+        destination.push_back(
+                std::move(std::make_unique<Y>(std::move(*it))));
+        source.erase(it);
+    }
+}
+
+/**
  * A utility function enabling the creation of a set with a fixed set of
  * elements within a single expression. This is the base case covering empty
  * sets.
