@@ -44,7 +44,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-
 #if __cplusplus == 201103L
 // make_unique implementation for C++11
 // https://isocpp.org/files/papers/N3656.txt
@@ -164,8 +163,7 @@ template <typename X, typename Y>
 void movePtrVector(std::vector<std::unique_ptr<X>>& source, std::vector<std::unique_ptr<Y>>& destination) {
     while (!source.empty()) {
         auto it = source.end() - 1;
-        destination.push_back(
-                std::move(std::make_unique<Y>(std::move(*it))));
+        destination.push_back(std::move(std::make_unique<Y>(std::move(*it))));
         source.erase(it);
     }
 }

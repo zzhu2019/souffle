@@ -367,8 +367,8 @@ int main(int argc, char** argv) {
     auto ram_start = std::chrono::high_resolution_clock::now();
 
     /* translate AST to RAM */
-    std::unique_ptr<RamProgram> ramProg = RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
-
+    std::unique_ptr<RamProgram> ramProg =
+            RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
 
     if (!Global::config().get("debug-report").empty()) {
         if (ramProg) {
@@ -387,51 +387,49 @@ int main(int argc, char** argv) {
         }
     }
 
-
     if (!ramProg->getMain()) {
         return 0;
     };
 
-    if (!Global::config().has("compile") && !Global::config().has("dl-program") && !Global::config().has("generate")) {
-
+    if (!Global::config().has("compile") && !Global::config().has("dl-program") &&
+            !Global::config().has("generate")) {
         // ------- interpreter -------------
 
         // configure interpreter
-        std::unique_ptr<RamExecutor> executor = (Global::config().has("auto-schedule"))
-                                                ? std::unique_ptr<RamExecutor>(new RamGuidedInterpreter())
-                                                : std::unique_ptr<RamExecutor>(new RamInterpreter());
+        std::unique_ptr<RamExecutor> executor =
+                (Global::config().has("auto-schedule"))
+                        ? std::unique_ptr<RamExecutor>(new RamGuidedInterpreter())
+                        : std::unique_ptr<RamExecutor>(new RamInterpreter());
         std::unique_ptr<RamEnvironment> env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
 
 #ifdef USE_PROVENANCE
-    // only run explain interface if interpreted
-    if ((Global::config().has("provenance") || Global::config().has("record-provenance")) &&
-            dynamic_cast<RamInterpreter*>(executor.get()) && env != nullptr) {
-        // construct SouffleProgram from env
-        SouffleInterpreterInterface interface(*ramProg, *executor, *env, translationUnit->getSymbolTable());
+        // only run explain interface if interpreted
+        if ((Global::config().has("provenance") || Global::config().has("record-provenance")) &&
+                dynamic_cast<RamInterpreter*>(executor.get()) && env != nullptr) {
+            // construct SouffleProgram from env
+            SouffleInterpreterInterface interface(
+                    *ramProg, *executor, *env, translationUnit->getSymbolTable());
 
-        if (Global::config().get("provenance") == "1") {
-            explain(interface, true, false);
-        } else if (Global::config().get("provenance") == "2") {
-            explain(interface, true, true);
-        }
+            if (Global::config().get("provenance") == "1") {
+                explain(interface, true, false);
+            } else if (Global::config().get("provenance") == "2") {
+                explain(interface, true, true);
+            }
 
-        if (Global::config().get("record-provenance") == "1") {
-            explain(interface, false, false);
-        } else if (Global::config().get("record-provenance") == "2") {
-            explain(interface, false, true);
+            if (Global::config().get("record-provenance") == "1") {
+                explain(interface, false, false);
+            } else if (Global::config().get("record-provenance") == "2") {
+                explain(interface, false, true);
+            }
         }
-    }
 #endif
 
     } else {
-
         // ------- compiler -------------
 
-
-
         std::vector<std::unique_ptr<RamProgram>> strata;
-        if (Global::config().has("stratify"))  {
-            if (RamSequence *sequence = dynamic_cast<RamSequence *>(ramProg->getMain())) {
+        if (Global::config().has("stratify")) {
+            if (RamSequence* sequence = dynamic_cast<RamSequence*>(ramProg->getMain())) {
                 sequence->moveSubprograms(strata);
             } else {
                 strata.push_back(std::move(ramProg));
@@ -452,8 +450,7 @@ int main(int argc, char** argv) {
 
         // pick executor
         /* Locate souffle-compile script */
-        std::string compileCmd = ::findTool("souffle-compile",
-                                            souffleExecutable, ".");
+        std::string compileCmd = ::findTool("souffle-compile", souffleExecutable, ".");
         /* Fail if a souffle-compile executable is not found */
         if (!isExecutable(compileCmd)) {
             ERROR("failed to locate souffle-compile");
@@ -466,8 +463,7 @@ int main(int argc, char** argv) {
             if (Global::config().has("stratify")) index++;
 
             // configure compiler
-            executor = std::unique_ptr<RamExecutor>(
-                    new RamCompiler(compileCmd));
+            executor = std::unique_ptr<RamExecutor>(new RamCompiler(compileCmd));
             if (Global::config().has("verbose")) {
                 executor->setReportTarget(std::cout);
             }
@@ -475,28 +471,22 @@ int main(int argc, char** argv) {
                 // check if this is code generation only
                 if (Global::config().has("generate")) {
                     // just generate, no compile, no execute
-                    static_cast<const RamCompiler *>(executor.get())
-                            ->generateCode(translationUnit->getSymbolTable(),
-                                           *stratum,
-                                           Global::config().get("generate"),
-                                           index);
+                    static_cast<const RamCompiler*>(executor.get())
+                            ->generateCode(translationUnit->getSymbolTable(), *stratum,
+                                    Global::config().get("generate"), index);
 
                     // check if this is a compile only
-                } else if (Global::config().has("compile") &&
-                           Global::config().has("dl-program")) {
+                } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
                     // just compile, no execute
-                    static_cast<const RamCompiler *>(executor.get())
-                            ->compileToBinary(translationUnit->getSymbolTable(),
-                                              *stratum,
-                                              Global::config().get(
-                                                      "dl-program"), index);
+                    static_cast<const RamCompiler*>(executor.get())
+                            ->compileToBinary(translationUnit->getSymbolTable(), *stratum,
+                                    Global::config().get("dl-program"), index);
                 } else {
                     // run executor
-                    executor->execute(translationUnit->getSymbolTable(),
-                                      *stratum);
+                    executor->execute(translationUnit->getSymbolTable(), *stratum);
                 }
 
-            } catch (std::exception &e) {
+            } catch (std::exception& e) {
                 std::cerr << e.what() << std::endl;
             }
         }
@@ -508,7 +498,6 @@ int main(int argc, char** argv) {
         std::cout << "Total Time: " << std::chrono::duration<double>(souffle_end - souffle_start).count()
                   << "sec\n";
     }
-
 
     return 0;
 }
