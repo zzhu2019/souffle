@@ -38,7 +38,7 @@ case $1 in
             $SOUFFLE/src/*.cpp \
             $SOUFFLE/src/*.h \
             $SOUFFLE/src/test/*.cpp \
-            $SOUFFLE/src/test/*.h;
+            $SOUFFLE/src/test/*.h &&
             # ensure imported library files and permissions are intact
             git checkout upstream/master -- src/mcpp*.[chCH];
             chmod 775 bootstrap .travis/* debian/rules osx/preinstall;
