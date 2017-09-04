@@ -107,17 +107,12 @@ case $1 in
     ;;
     ## - test: Run testsuite under multiple configurations.
     test)
-        ./souffle.sh sync;
         for cc in clang gcc; do
-            echo '${TERM} -e "
-            ccdir=tests/testsuite.dir/${cc};
+            ccdir=./tests/testsuite.dir/${cc}
             mkdir -p ${ccdir};
-            git clone ../../.. ${ccdir}/souffle;
-            cd ${ccdir}/souffle;
-            ./souffle.sh build ${cc};
-            make check -j2;
-            cd -;
-            " & echo ${cc}...;'
+            git clone . ${ccdir};
+            xterm -e "cd ${ccdir}; ./souffle.sh build ${cc} && make check -j2; cd -;" & \
+            echo "Running for ${cc}..";
         done;
     ;;
     ## - help: Display the help text.
