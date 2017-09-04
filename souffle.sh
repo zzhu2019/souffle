@@ -29,7 +29,7 @@ case $1 in
         ) \
         sudo apt-get install -y clang-4.0 clang-format-4.0 libomp-dev;
     ;;
-    ## - sync: Sync with upstream, origin master, and the current branch.
+    ## - Sync: Sync upstream and origin master, and format with clang.
     sync)
         # - format with clang
         clang-format-4.0 \
@@ -52,10 +52,6 @@ case $1 in
             git fetch upstream --tags;
             # pull upstream and origin master to current branch
             git pull upstream master;
-            git pull origin master;
-            # pull and push current branch to origin
-            git pull origin $(git branch | grep \* | sed 's/^\*\s//g');
-            git push origin $(git branch | grep \* | sed 's/^\*\s//g');
     ;;
     ## - build: Build Souffle from scratch.
     build)
@@ -108,6 +104,21 @@ case $1 in
             -r${out_path}/`basename ${in_path}`.html \
             ${in_path}/`basename ${in_path}`.dl \
             ${args};
+    ;;
+    ## - test: Run testsuite under multiple configurations.
+    test)
+        ./souffle.sh sync;
+        for cc in clang gcc; do
+            echo '${TERM} -e "
+            ccdir=tests/testsuite.dir/${cc};
+            mkdir -p ${ccdir};
+            git clone ../../.. ${ccdir}/souffle;
+            cd ${ccdir}/souffle;
+            ./souffle.sh build ${cc};
+            make check -j2;
+            cd -;
+            " & echo ${cc}...;'
+        done;
     ;;
     ## - help: Display the help text.
     *)
