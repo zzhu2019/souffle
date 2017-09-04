@@ -33,15 +33,12 @@ public:
     WriteFileCSV(const std::string& filename, const SymbolMask& symbolMask, const SymbolTable& symbolTable,
             std::string delimiter = "\t", const bool provenance = false)
             : WriteStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)),
-              filename(filename) {}
+              file(filename) {}
 
     ~WriteFileCSV() override = default;
 
 protected:
     void writeNextTuple(const RamDomain* tuple) override {
-        if (!file.is_open()) {
-            file = std::ofstream(filename);
-        }
         size_t arity = symbolMask.getArity();
         if (isProvenance) {
             arity -= 2;
@@ -70,7 +67,6 @@ protected:
 
 protected:
     const std::string delimiter;
-    const std::string filename;
     std::ofstream file;
 };
 
