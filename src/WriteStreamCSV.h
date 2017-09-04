@@ -32,7 +32,8 @@ class WriteFileCSV : public WriteStream {
 public:
     WriteFileCSV(const std::string& filename, const SymbolMask& symbolMask, const SymbolTable& symbolTable,
             std::string delimiter = "\t", const bool provenance = false)
-            : WriteStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)), filename(filename) {}
+            : WriteStream(symbolMask, symbolTable, provenance), delimiter(std::move(delimiter)),
+              filename(filename) {}
 
     ~WriteFileCSV() override = default;
 
