@@ -21,12 +21,12 @@ case $1 in
         # install package dependencies
         sudo apt-get update -y;
         sudo apt-get install -y $(
-        echo $( \
-            cat README.md | \
-            grep "apt-get install" | \
-            sed 's/^.*apt-get install//g' \
-        ) \
-        ) \
+			echo $( \
+				cat README.md | \
+				grep "apt-get install" | \
+				sed 's/^.*apt-get install//g' \
+			) \
+        );
         sudo apt-get install -y clang-4.0 clang-format-4.0 libomp-dev;
     ;;
     ## - Sync: Sync upstream and origin master, and format with clang.
