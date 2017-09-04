@@ -1395,12 +1395,9 @@ public:
 
     void visitDrop(const RamDrop& drop, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
-        if (drop.getRelation().isTemp()) {
-            // TODO (lyndonhenry): out << "if (!isHintsProfilingEnabled() && (performIO || " <<
-            // drop.getRelation().isTemp() << ")) ";
-            out << getRelationName(drop.getRelation()) << "->"
-                << "purge();\n";
-        }
+        out << "if (!isHintsProfilingEnabled() && (performIO || " << drop.getRelation().isTemp() << ")) ";
+        out << getRelationName(drop.getRelation()) << "->"
+            << "purge();\n";
         PRINT_END_COMMENT(out);
     }
 
