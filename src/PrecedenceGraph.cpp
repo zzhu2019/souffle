@@ -281,7 +281,13 @@ void SCCGraph::printDot(std::ostream& os) const {
 }
 
 void SCCGraph::printJson(std::ostream& os) const {
-    const std::string& name = Global::config().get("name");
+
+    // prefix the vertices by the 'name' of the program
+    std::string name;
+    if (Global::config().has("dl-program")) name = Global::config().get("dl-program");
+    else if (Global::config().has("generate")) name = Global::config().get("generate");
+    else name = Global::config().get("");
+    name = simpleName(baseName(name));
 
     /*
      * {
