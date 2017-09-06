@@ -281,12 +281,14 @@ void SCCGraph::printDot(std::ostream& os) const {
 }
 
 void SCCGraph::printJson(std::ostream& os) const {
-
     // prefix the vertices by the 'name' of the program
     std::string name;
-    if (Global::config().has("dl-program")) name = Global::config().get("dl-program");
-    else if (Global::config().has("generate")) name = Global::config().get("generate");
-    else name = Global::config().get("");
+    if (Global::config().has("dl-program"))
+        name = Global::config().get("dl-program");
+    else if (Global::config().has("generate"))
+        name = Global::config().get("generate");
+    else
+        name = Global::config().get("");
     name = simpleName(baseName(name));
 
     /*
@@ -306,7 +308,7 @@ void SCCGraph::printJson(std::ostream& os) const {
     for (unsigned scc = 0; scc < size(); scc++) {
         os << "\t\t\"" << name << "_" << scc << "\": {\n";
 
-        std::map<std::string, std::set<const AstRelation *>> relSets;
+        std::map<std::string, std::set<const AstRelation*>> relSets;
         relSets["on"] = relations(scc);
         relSets["in"] = getInbound(scc);
         relSets["out"] = getOutbound(scc);
@@ -317,7 +319,7 @@ void SCCGraph::printJson(std::ostream& os) const {
             if (!rels.second.empty()) {
                 os << "\n\t\t\t\t\"";
                 os << join(rels.second, "\",\n\t\t\t\t\"",
-                           [](std::ostream &out, const AstRelation *rel) { out << rel->getName(); });
+                        [](std::ostream& out, const AstRelation* rel) { out << rel->getName(); });
                 os << "\"\n";
                 os << "\t\t\t]";
             } else {
