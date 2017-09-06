@@ -674,6 +674,9 @@ bool MaterializeAggregationQueriesTransformer::needsMaterializedRelation(const A
 
     // inspect remaining atom more closely
     const AstAtom* atom = dynamic_cast<const AstAtom*>(agg.getBodyLiterals()[0]);
+    if(!atom) {
+      return false;
+    }
     assert(atom && "Body of aggregate is not containing an atom!");
 
     // if the same variable occurs several times => materialize
@@ -974,6 +977,29 @@ std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> unifyAtoms(A
   return result;
 }
 
+std::pair<std::vector<AstLiteral*>, bool> inlineBodyLiterals(AstAtom* atom, AstClause* atomClause) {
+  bool changed = false;
+  std::vector<AstLiteral*> addedLits;
+
+  // Get the constraints needed to unify the two atoms
+  std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> res = unifyAtoms(atomClause->getHead(), atom);
+  if(res.second) {
+    changed = true;
+    for(auto pair : res.first) {
+      addedLits.push_back(new AstConstraint(BinaryConstraintOp::EQ,
+              std::unique_ptr<AstArgument>(pair.first->clone()),
+              std::unique_ptr<AstArgument>(pair.second->clone())));
+    }
+
+    // Add in the body of the current clause of the inlined atom
+    for(AstLiteral* lit : atomClause->getBodyLiterals()) {
+      addedLits.push_back(lit->clone());
+    }
+  }
+
+  return std::make_pair(addedLits, changed);
+}
+
 // Returns an equivalent clause after inlining the given atom in the clause wrt atomClause
 // TODO: fix up
 AstClause* inlineClause(const AstClause& clause, AstAtom* atom, AstClause* atomClause) {
@@ -984,16 +1010,16 @@ AstClause* inlineClause(const AstClause& clause, AstAtom* atom, AstClause* atomC
   std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> res = unifyAtoms(atomClause->getHead(), atom);
 
   // NOTE: DEBUGGING
-  std::cout << "NEW UNIFICATION: " << *atomClause->getHead() << " " << *atom << std::endl;
-  for(auto argPair : res.first) {
-    std::cout << *argPair.first << " " << *argPair.second << "\t";
-  }
-  std::cout << std::endl;
+  //std::cout << "NEW UNIFICATION: " << *atomClause->getHead() << " " << *atom << std::endl;
+  //for(auto argPair : res.first) {
+  //  std::cout << *argPair.first << " " << *argPair.second << "\t";
+  //}
+  //std::cout << std::endl;
 
   if(!res.second) {
     // Could not unify!
     // TODO: how to proceed? means an error has occurred and this formed clause is b a d
-    std::cout << "BROKEN UNIFICATION ^ ^ ^" << std::endl;
+    //std::cout << "BROKEN UNIFICATION ^ ^ ^" << std::endl;
     return nullptr;
   }
 
@@ -1056,9 +1082,50 @@ void renameInlinedArguments(AstProgram& program) {
   }
 }
 
+int underscoreCount = 0;
+
 // Removes all underscores in inlined relations
 void removeInlinedUnderscores(AstProgram& program) {
-  // construct mapping to name underscores
+  struct UnderscoreNamer;
+  // struct UpdateUnderscores : public AstNodeMapper;
+  //
+  // // construct mapping to name underscores
+  // struct UnderscoreNamer : public AstNodeMapper {
+  //     AstProgram& program;
+  //     UpdateUnderscores* updater;
+  //     UnderscoreNamer(AstProgram& program, UpdateUnderscores* updater) : program(program), updater(updater) {}
+  //     std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+  //         if(AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())){
+  //           // Give a name to the underscord variable
+  //           std::stringstream newVarName;
+  //           newVarName << "<underscore_" << underscoreCount++ << ">";
+  //           AstVariable* newVar = new AstVariable(newVarName.str());
+  //           return std::unique_ptr<AstNode>(newVar);
+  //         }
+  //         return node->apply(*updater);
+  //     }
+  // };
+
+  // // TODO: fix this so that it fits the proper style?
+  // struct UpdateUnderscores : public AstNodeMapper {
+  //   AstProgram& program;
+  //   UpdateUnderscores(AstProgram& program) : program(program) {}
+  //   std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+  //     if(AstLiteral* lit = dynamic_cast<AstLiteral*>(node.get())) {
+  //       if(lit->getAtom() != nullptr) {
+  //         if(program.getRelation(lit->getAtom()->getName())->isInline()){
+  //           UnderscoreNamer m(program);
+  //           node->apply(m);
+  //           return node;
+  //         }
+  //       }
+  //     }
+  //
+  //     node->apply(*this);
+  //     return node;
+  //   }
+  // };
+
   struct UnderscoreNamer : public AstNodeMapper {
       AstProgram& program;
 
@@ -1083,13 +1150,414 @@ void removeInlinedUnderscores(AstProgram& program) {
       }
   };
 
-  // TODO: fix this so that it fits the proper style?
-  UnderscoreNamer underscoreNamer(program);
+  UnderscoreNamer update(program);
   for(AstRelation* rel : program.getRelations()) {
     for(AstClause* clause : rel->getClauses()) {
-        clause->apply(underscoreNamer);
+        clause->apply(update);
     }
   }
+}
+
+AstClause* replaceClauseLiteral(const AstClause& clause, int index, AstLiteral* lit) {
+  AstClause* newClause = clause.clone();
+  auto bodyLiterals = clause.getBodyLiterals();
+  for(int i = 0; i < bodyLiterals.size(); i++) {
+    if(i == index) {
+      newClause->addToBody(std::unique_ptr<AstLiteral>(lit));
+    } else {
+      newClause->addToBody(std::unique_ptr<AstLiteral>(bodyLiterals[i]->clone()));
+    }
+  }
+  return newClause;
+}
+
+std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& program, const AstArgument* arg);
+std::pair<std::vector<AstAtom*>, bool> getInlinedVersions(AstProgram& program, AstAtom& atom);
+std::pair<std::vector<AstLiteral*>, bool> getInlinedVersions(AstProgram& program, AstLiteral& literal);
+
+std::pair<std::pair<std::vector<std::vector<AstLiteral*>>, bool>, std::pair<std::vector<AstLiteral*>, bool>> getInlinedVersions(AstProgram& program, AstLiteral* lit);
+
+// ARGUMENTS: <<<inline body literals versions to add>, <inlined?>> <<replacement literal versions> <replacements exist?>>>
+std::pair<std::pair<std::vector<std::vector<AstLiteral*>>, bool>, std::pair<std::vector<AstLiteral*>, bool>> getInlinedVersions(AstProgram& program, AstLiteral* lit) {
+  bool inlined = false;
+  bool changed = false;
+  std::vector<std::vector<AstLiteral*>> addedBodyLiterals;
+  std::vector<AstLiteral*> versions;
+
+  if(AstAtom* atom = dynamic_cast<AstAtom*>(lit)) {
+    // atom
+
+    // Check if this atom is meant to be inlined
+    AstRelation* rel = program.getRelation(atom->getName());
+    if (rel->isInline()) {
+      // We found an atom in the clause that needs to be inlined!
+      // The clause needs to be replaced
+      inlined = true;
+
+      // N new clauses should be formed, where N is the number of clauses
+      // associated with the inlined relation
+      for (AstClause* inClause : rel->getClauses()) {
+        // Form the replacement clause
+        std::pair<std::vector<AstLiteral*>, bool> replacementBodyLiterals = inlineBodyLiterals(atom, inClause);
+        if(!replacementBodyLiterals.second) {
+          // Failed to unify
+          continue;
+        }
+        addedBodyLiterals.push_back(replacementBodyLiterals.first);
+      }
+    } else {
+      // check if its arguments need to be changed
+      std::pair<std::vector<AstAtom*>, bool> atomVersions = getInlinedVersions(program, *atom);
+      if(atomVersions.second) {
+        changed = true;
+        for(AstAtom* newAtom : atomVersions.first) {
+          versions.push_back(newAtom);
+        }
+      }
+    }
+  } else if (AstNegation* neg = dynamic_cast<AstNegation*>(lit)) {
+    // negation
+
+    // negated atoms that are supposed to be inlined are dealt with earlier
+    // TODO: DO THAT HANDLING
+
+    // check if its arguments need to be changed
+    AstAtom* atom = neg->getAtom();
+    std::pair<std::vector<AstAtom*>, bool> atomVersions = getInlinedVersions(program, *atom);
+    if(atomVersions.second) {
+      changed = true;
+      for(AstAtom* newAtom : atomVersions.first) {
+        AstLiteral* newLit = new AstNegation(std::unique_ptr<AstAtom>(newAtom));
+        versions.push_back(newLit);
+      }
+    }
+  } else {
+    // constraint
+    AstConstraint* constraint = dynamic_cast<AstConstraint*>(lit);
+    std::pair<std::vector<AstArgument*>, bool> lhsVersions = getInlinedVersions(program, constraint->getLHS());
+    if(lhsVersions.second) {
+      changed = true;
+      for(AstArgument* newLhs : lhsVersions.first) {
+        AstLiteral* newLit = new AstConstraint(constraint->getOperator(), std::unique_ptr<AstArgument>(newLhs), std::unique_ptr<AstArgument>(constraint->getRHS()->clone()));
+        versions.push_back(newLit);
+      }
+    } else {
+      std::pair<std::vector<AstArgument*>, bool> rhsVersions = getInlinedVersions(program, constraint->getRHS());
+      if(rhsVersions.second) {
+        changed = true;
+        for(AstArgument* newRhs : rhsVersions.first) {
+          AstLiteral* newLit = new AstConstraint(constraint->getOperator(), std::unique_ptr<AstArgument>(constraint->getLHS()->clone()), std::unique_ptr<AstArgument>(newRhs));
+          versions.push_back(newLit);
+        }
+      }
+    }
+  }
+
+  return std::make_pair(std::make_pair(addedBodyLiterals, inlined), std::make_pair(versions, changed));
+}
+
+// TODO: this function
+// Handle aggregators
+std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& program, const AstArgument* arg) {
+  bool changed = false;
+  std::vector<AstArgument*> versions;
+
+  if(const AstAggregator* aggr = dynamic_cast<const AstAggregator*>(arg)){
+    // first check the argument
+    if(aggr->getTargetExpression() != nullptr) {
+      std::pair<std::vector<AstArgument*>, bool> argumentVersions = getInlinedVersions(program, aggr->getTargetExpression());
+      if(argumentVersions.second) {
+        changed = true;
+        for(AstArgument* newArg : argumentVersions.first) {
+          AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
+          newAggr->setTargetExpression(std::unique_ptr<AstArgument>(newArg));
+          for(AstLiteral* lit : aggr->getBodyLiterals()) {
+            newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(lit->clone()));
+          }
+          versions.push_back(newAggr);
+        }
+      }
+    }
+
+    // TODO: only handle one change at a time for now?
+    if(!changed) {
+      std::vector<AstLiteral*> bodyLiterals = aggr->getBodyLiterals();
+      for(int i = 0; i < bodyLiterals.size(); i++) {
+        AstLiteral* currLit = bodyLiterals[i];
+        auto literalVersions = getInlinedVersions(program, currLit);
+        if(literalVersions.first.second) {
+          changed = true;
+          for(std::vector<AstLiteral*> inlineVersions : literalVersions.first.first) {
+            AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
+            newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
+
+            // Add in everything except the current literal
+            for(int j = 0; j < bodyLiterals.size(); j++) {
+              if(i != j) {
+                newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(bodyLiterals[j]->clone()));
+              }
+            }
+
+            // Add in everything new
+            for(AstLiteral* addedLit : inlineVersions) {
+              newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(addedLit));
+            }
+
+            versions.push_back(newAggr);
+          }
+        } else if (literalVersions.second.second) {
+          changed = true;
+          for(AstLiteral* newLit : literalVersions.second.first) {
+            AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
+            newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
+            for(int j = 0; j < bodyLiterals.size(); j++) {
+              if(i == j) {
+                newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(newLit));
+              } else {
+                newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(bodyLiterals[j]->clone()));
+              }
+            }
+            versions.push_back(newAggr);
+          }
+        }
+
+        // TODO: one at a time for now?
+        if(changed) {
+          break;
+        }
+      }
+    }
+  } else if (dynamic_cast<const AstFunctor*>(arg)) {
+    if(const AstUnaryFunctor* functor = dynamic_cast<const AstUnaryFunctor*>(arg)) {
+      std::pair<std::vector<AstArgument*>, bool> argumentVersions = getInlinedVersions(program, functor->getOperand());
+      if (argumentVersions.second) {
+        changed = true;
+        for(AstArgument* newArg : argumentVersions.first) {
+          AstArgument* newFunctor = new AstUnaryFunctor(functor->getFunction(), std::unique_ptr<AstArgument>(newArg));
+          versions.push_back(newFunctor);
+        }
+      }
+    } else if (const AstBinaryFunctor* functor = dynamic_cast<const AstBinaryFunctor*>(arg)) {
+      std::pair<std::vector<AstArgument*>, bool> lhsVersions = getInlinedVersions(program, functor->getLHS());
+      if(lhsVersions.second) {
+        changed = true;
+        for(AstArgument* newLhs : lhsVersions.first) {
+          AstArgument* newFunctor = new AstBinaryFunctor(functor->getFunction(), std::unique_ptr<AstArgument>(newLhs), std::unique_ptr<AstArgument>(functor->getRHS()));
+          versions.push_back(newFunctor);
+        }
+      } else {
+        std::pair<std::vector<AstArgument*>, bool> rhsVersions = getInlinedVersions(program, functor->getRHS());
+        if(rhsVersions.second) {
+          changed = true;
+          for(AstArgument* newRhs : rhsVersions.first) {
+            AstArgument* newFunctor = new AstBinaryFunctor(functor->getFunction(), std::unique_ptr<AstArgument>(functor->getLHS()), std::unique_ptr<AstArgument>(newRhs));
+            versions.push_back(newFunctor);
+          }
+        }
+      }
+    } else if (const AstTernaryFunctor* functor = dynamic_cast<const AstTernaryFunctor*>(arg)) {
+      std::pair<std::vector<AstArgument*>, bool> leftVersions = getInlinedVersions(program, functor->getArg(0));
+      if(leftVersions.second) {
+        changed = true;
+        for(AstArgument* newLeft : leftVersions.first) {
+          AstArgument* newFunctor = new AstTernaryFunctor(functor->getFunction(), std::unique_ptr<AstArgument>(newLeft), std::unique_ptr<AstArgument>(functor->getArg(1)->clone()), std::unique_ptr<AstArgument>(functor->getArg(2)->clone()));
+          versions.push_back(newFunctor);
+        }
+      } else {
+        std::pair<std::vector<AstArgument*>, bool> middleVersions = getInlinedVersions(program, functor->getArg(1));
+        if(middleVersions.second) {
+          changed = true;
+          for(AstArgument* newMiddle : middleVersions.first) {
+            AstArgument* newFunctor = new AstTernaryFunctor(functor->getFunction(), std::unique_ptr<AstArgument>(functor->getArg(0)->clone()), std::unique_ptr<AstArgument>(newMiddle), std::unique_ptr<AstArgument>(functor->getArg(2)->clone()));
+            versions.push_back(newFunctor);
+          }
+        } else {
+          std::pair<std::vector<AstArgument*>, bool> rightVersions = getInlinedVersions(program, functor->getArg(1));
+          if(rightVersions.second) {
+            changed = true;
+            for(AstArgument* newRight : rightVersions.first) {
+              AstArgument* newFunctor = new AstTernaryFunctor(functor->getFunction(), std::unique_ptr<AstArgument>(functor->getArg(0)->clone()), std::unique_ptr<AstArgument>(functor->getArg(1)->clone()), std::unique_ptr<AstArgument>(newRight));
+              versions.push_back(newFunctor);
+            }
+          }
+        }
+      }
+    }
+  } else if (const AstTypeCast* cast = dynamic_cast<const AstTypeCast*>(arg)) {
+    std::pair<std::vector<AstArgument*>, bool> argumentVersions = getInlinedVersions(program, cast->getValue());
+    if(argumentVersions.second) {
+      changed = true;
+      for(AstArgument* newArg : argumentVersions.first) {
+        AstArgument* newTypeCast = new AstTypeCast(std::unique_ptr<AstArgument>(newArg), cast->getType());
+        versions.push_back(newTypeCast);
+      }
+    }
+  } else if (const AstRecordInit* record = dynamic_cast<const AstRecordInit*>(arg)) {
+    std::vector<AstArgument*> recordArguments = record->getArguments();
+    for(int i = 0; i < recordArguments.size(); i++) {
+      AstArgument* currentRecArg = recordArguments[i];
+      std::pair<std::vector<AstArgument*>, bool> argumentVersions = getInlinedVersions(program, currentRecArg);
+      if(argumentVersions.second) {
+        changed = true;
+        for(AstArgument* newArgumentVersion : argumentVersions.first) {
+          AstRecordInit* newRecordArg = new AstRecordInit();
+          for(int j = 0; j < recordArguments.size(); j++) {
+            if (i == j) {
+              newRecordArg->add(std::unique_ptr<AstArgument>(newArgumentVersion));
+            } else {
+              newRecordArg->add(std::unique_ptr<AstArgument>(recordArguments[j]->clone()));
+            }
+          }
+          versions.push_back(newRecordArg);
+        }
+      }
+
+      // TODO: for now, only one change at a time
+      if(changed) {
+        break;
+      }
+    }
+  }
+
+  return std::make_pair(versions, changed);
+}
+
+std::pair<std::vector<AstAtom*>, bool> getInlinedVersions(AstProgram& program, AstAtom& atom) {
+  bool changed = false;
+  std::vector<AstAtom*> versions;
+
+  std::vector<AstArgument*> arguments = atom.getArguments();
+  for(int i = 0; i < arguments.size(); i++) {
+    AstArgument* arg = arguments[i];
+    std::pair<std::vector<AstArgument*>, bool> argumentVersions = getInlinedVersions(program, arg);
+    if(argumentVersions.second) {
+      changed = true;
+      for(AstArgument* newArgument : argumentVersions.first) {
+        AstAtom* newAtom = atom.clone();
+        newAtom->setArgument(i, std::unique_ptr<AstArgument>(newArgument));
+        versions.push_back(newAtom);
+      }
+    }
+
+    // TODO: for now, only one change at a time
+    if(changed) {
+      break;
+    }
+  }
+
+  return std::make_pair(versions, changed);
+}
+
+std::pair<std::vector<AstClause*>, bool> getInlinedVersions(AstProgram& program, const AstClause& clause) {
+  bool changed = false;
+  std::vector<AstClause*> versions;
+
+  // Fix arguments in the head
+  AstAtom* head = clause.getHead();
+  auto headVersions = getInlinedVersions(program, *head);
+  if(headVersions.second) {
+    changed = true;
+    for(AstAtom* newHead : headVersions.first) {
+      AstClause* newClause = new AstClause();
+      newClause->setSrcLoc(clause.getSrcLoc());
+      newClause->setHead(std::unique_ptr<AstAtom>(newHead));
+      for(AstLiteral* lit : clause.getBodyLiterals()) {
+        newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+      }
+      versions.push_back(newClause);
+    }
+  }
+
+
+  // Go through the atoms in the clause and inline the necessary atoms
+  // TODO: this only does atoms... fix this up
+  if(!changed) {
+    auto bodyLiterals = clause.getBodyLiterals();
+  for(int i = 0; i < bodyLiterals.size(); i++) {
+    AstLiteral* lit = bodyLiterals[i];
+    if(AstAtom* atom = dynamic_cast<AstAtom*>(lit)) {
+      // atom
+
+      // Check if this atom is meant to be inlined
+      AstRelation* rel = program.getRelation(atom->getName());
+      if (rel->isInline()) {
+        // We found an atom in the clause that needs to be inlined!
+        // The clause needs to be replaced
+        changed = true;
+
+        // N new clauses should be formed, where N is the number of clauses
+        // associated with the inlined relation
+        for (AstClause* inClause : rel->getClauses()) {
+          // Form the replacement clause
+          AstClause* replacementClause = inlineClause(clause, atom, inClause);
+          if (replacementClause == nullptr) {
+            // Failed to unify
+            continue;
+          }
+
+          versions.push_back(replacementClause);
+        }
+      } else {
+        // check if its arguments need to be changed
+        std::pair<std::vector<AstAtom*>, bool> atomVersions = getInlinedVersions(program, *atom);
+        if(atomVersions.second) {
+          changed = true;
+          for(AstAtom* newAtom : atomVersions.first) {
+            AstClause* replacementClause = replaceClauseLiteral(clause, i, newAtom);
+            versions.push_back(replacementClause);
+          }
+        }
+      }
+    } else if (AstNegation* neg = dynamic_cast<AstNegation*>(lit)) {
+      // negation
+
+      // negated atoms that are supposed to be inlined are dealt with earlier
+      // TODO: DO THAT HANDLING
+
+      // check if its arguments need to be changed
+      AstAtom* atom = neg->getAtom();
+      std::pair<std::vector<AstAtom*>, bool> atomVersions = getInlinedVersions(program, *atom);
+      if(atomVersions.second) {
+        changed = true;
+        for(AstAtom* newAtom : atomVersions.first) {
+          AstLiteral* newLit = new AstNegation(std::unique_ptr<AstAtom>(newAtom));
+          AstClause* replacementClause = replaceClauseLiteral(clause, i, newLit);
+          versions.push_back(replacementClause);
+        }
+      }
+
+    } else {
+      // constraint
+      AstConstraint* constraint = dynamic_cast<AstConstraint*>(lit);
+      std::pair<std::vector<AstArgument*>, bool> lhsVersions = getInlinedVersions(program, constraint->getLHS());
+      if(lhsVersions.second) {
+        changed = true;
+        for(AstArgument* newLhs : lhsVersions.first) {
+          AstLiteral* newLit = new AstConstraint(constraint->getOperator(), std::unique_ptr<AstArgument>(newLhs), std::unique_ptr<AstArgument>(constraint->getRHS()->clone()));
+          AstClause* replacementClause = replaceClauseLiteral(clause, i, newLit);
+          versions.push_back(replacementClause);
+        }
+      } else {
+        std::pair<std::vector<AstArgument*>, bool> rhsVersions = getInlinedVersions(program, constraint->getRHS());
+        if(rhsVersions.second) {
+          changed = true;
+          for(AstArgument* newRhs : rhsVersions.first) {
+            AstLiteral* newLit = new AstConstraint(constraint->getOperator(), std::unique_ptr<AstArgument>(constraint->getLHS()->clone()), std::unique_ptr<AstArgument>(newRhs));
+            AstClause* replacementClause = replaceClauseLiteral(clause, i, newLit);
+            versions.push_back(replacementClause);
+          }
+        }
+      }
+    }
+
+    if(changed) {
+      // To avoid confusion, only replace one atom per iteration
+      // TODO: change this up later to make Smarter (tm)
+      break;
+    }
+  }}
+
+  return std::make_pair(versions, changed);
 }
 
 // TODO: handle negation -> maybe create a new relation <negated_a> :- !a(x,y).
@@ -1112,51 +1580,28 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
 
     // Go through each clause in the program and check if we need to inline anything
     visitDepthFirst(program, [&](const AstClause& clause) {
-      bool deleteClause = false;
-
       // Skip if the clause is meant to be inlined
       // TODO: should this really be done? is it more efficient if kept?
       if(program.getRelation(clause.getHead()->getName())->isInline()) {
         return;
       }
 
-      // Go through the atoms in the clause and inline the necessary atoms
-      // TODO: this only does atoms... fix this up
-      for(AstAtom* atom : clause.getAtoms()) {
-        AstRelation* rel = program.getRelation(atom->getName());
-        if (rel->isInline()) {
-          // We found an atom in the clause that needs to be inlined!
+      // Get the inlined versions of this clause
+      std::pair<std::vector<AstClause*>, bool> newClauses = getInlinedVersions(program, clause);
 
-          // The clause needs to be replaced
-          deleteClause = true;
-          changed = true;
-          clausesChanged = true;
+      if(newClauses.second) {
+        // Clause was replaced with equivalent versions, so delete it!
+        clausesToDelete.push_back(&clause);
 
-          // N new clauses should be formed, where N is the number of clauses
-          // associated with the inlined relation
-          for (AstClause* inClause : rel->getClauses()) {
-            // Form the replacement clause
-            AstClause* replacementClause = inlineClause(clause, atom, inClause);
-            if (replacementClause == nullptr) {
-              // Failed to unify
-              continue;
-            }
-
-            // Add in the new clause
-            std::cout << "NEW CLAUSE:\n" << *replacementClause << std::endl;
-            std::cout << "OLD CLAUSE:\n" << clause << std::endl;
-            program.appendClause(std::unique_ptr<AstClause>(replacementClause));
-          }
+        // Add in the new clauses
+        for(AstClause* replacementClause : newClauses.first) {
+          //std::cout << "NEW CLAUSE:\n" << *replacementClause << std::endl;
+          //std::cout << "OLD CLAUSE:\n" << clause << std::endl;
+          program.appendClause(std::unique_ptr<AstClause>(replacementClause));
         }
 
-        if (deleteClause) {
-          // Clause was replaced with equivalent versions, so delete it!
-          clausesToDelete.push_back(&clause);
-
-          // To avoid confusion, only replace one atom per iteration
-          // TODO: change this up later to make Smarter (tm)
-          break;
-        }
+        clausesChanged = true;
+        changed = true;
       }
     });
 
@@ -1204,7 +1649,7 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
   // };
 
 
-  std::cout << program << std::endl;
+  //std::cout << program << std::endl;
   return changed;
 }
 
