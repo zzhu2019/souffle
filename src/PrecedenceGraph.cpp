@@ -306,12 +306,17 @@ void SCCGraph::printJson(std::ostream& os) const {
      */
     os << "\t\"vertices\": {\n";
     for (unsigned scc = 0; scc < size(); scc++) {
+
         os << "\t\t\"" << name << "_" << scc << "\": {\n";
 
         std::map<std::string, std::set<const AstRelation*>> relSets;
+
+        // "on" is all relations for this scc
         relSets["on"] = relations(scc);
-        relSets["in"] = getInbound(scc);
-        relSets["out"] = getOutbound(scc);
+        // "in" is all inbound relations + all input relations
+        relSets["in"] = getIns(scc);
+        // "out" is all outbound relations + all output relations
+        relSets["out"] = getOuts(scc);
 
         size_t relCount = relSets.size();
         for (const auto& rels : relSets) {

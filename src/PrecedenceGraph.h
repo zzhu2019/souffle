@@ -154,19 +154,68 @@ public:
         return relationToScc.at(relation);
     }
 
-    std::set<const AstRelation*> getInbound(const unsigned scc) const {
-        std::set<const AstRelation*> inbound;
-        for (const auto& rel : relations(scc))
-            for (const auto& pred : precedenceGraph->graph().predecessors(rel))
-                if ((unsigned)relationToScc.at(pred) != scc) inbound.insert(pred);
+    /** Get all inbound and all input relations in the given SCC. */
+    std::set<const AstRelation*> getIns(const unsigned scc) const {
+        auto inbound = getInbound(scc);
+        const auto inputs = getInputs(scc);
+        inbound.insert(inputs.begin(), inputs.end());
         return inbound;
     }
 
+    /** Get all outbound and all output relations in the given SCC. */
+    std::set<const AstRelation*> getOuts(const unsigned scc) const {
+        auto outbound = getOutbound(scc);
+        const auto outputs = getOutputs(scc);
+        outbound.insert(outputs.begin(), outputs.end());
+        return outbound;
+    }
+
+    /** Get all input relations in the given SCC. */
+    std::set<const AstRelation*> getInputs(const unsigned scc) const {
+        std::set<const AstRelation*> inputs;
+        for (const auto& rel : relations(scc)) {
+            if (rel->isInput()) {
+                inputs.insert(rel);
+            }
+        }
+        return inputs;
+    }
+
+    /** Get all output relations in the given SCC. */
+    std::set<const AstRelation*> getOutputs(const unsigned scc) const {
+        std::set<const AstRelation*> outputs;
+        for (const auto& rel : relations(scc)) {
+            if (rel->isOutput()) {
+                outputs.insert(rel);
+            }
+        }
+        return outputs;
+    }
+
+    /** Get all relations in a predecessor SCC that have a successor relation in the given SCC. */
+    std::set<const AstRelation*> getInbound(const unsigned scc) const {
+        std::set<const AstRelation*> inbound;
+        for (const auto& rel : relations(scc)) {
+            for (const auto &pred : precedenceGraph->graph().predecessors(rel)) {
+                if ((unsigned) relationToScc.at(pred) != scc) {
+                    inbound.insert(pred);
+                }
+            }
+        }
+        return inbound;
+    }
+
+    /** Get all relations in the given SCC that have a successor relation in another SCC. */
     std::set<const AstRelation*> getOutbound(const unsigned scc) const {
         std::set<const AstRelation*> outbound;
-        for (const auto& rel : relations(scc))
-            for (const auto& succ : precedenceGraph->graph().successors(rel))
-                if ((unsigned)relationToScc.at(succ) != scc) outbound.insert(succ);
+        for (const auto& rel : relations(scc)) {
+            for (const auto &succ : precedenceGraph->graph().successors(rel)) {
+                if ((unsigned) relationToScc.at(succ) != scc) {
+                    outbound.insert(rel);
+                    break;
+                }
+            }
+        }
         return outbound;
     }
 
