@@ -55,6 +55,7 @@ case $1 in
     ;;
     ## - build: Build Souffle from scratch.
     build)
+		make clean;
 		case $2 in
 			clang)
 				export CC=clang-4.0;
