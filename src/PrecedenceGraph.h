@@ -196,8 +196,8 @@ public:
     std::set<const AstRelation*> getInbound(const unsigned scc) const {
         std::set<const AstRelation*> inbound;
         for (const auto& rel : relations(scc)) {
-            for (const auto &pred : precedenceGraph->graph().predecessors(rel)) {
-                if ((unsigned) relationToScc.at(pred) != scc) {
+            for (const auto& pred : precedenceGraph->graph().predecessors(rel)) {
+                if ((unsigned)relationToScc.at(pred) != scc) {
                     inbound.insert(pred);
                 }
             }
@@ -209,8 +209,8 @@ public:
     std::set<const AstRelation*> getOutbound(const unsigned scc) const {
         std::set<const AstRelation*> outbound;
         for (const auto& rel : relations(scc)) {
-            for (const auto &succ : precedenceGraph->graph().successors(rel)) {
-                if ((unsigned) relationToScc.at(succ) != scc) {
+            for (const auto& succ : precedenceGraph->graph().successors(rel)) {
+                if ((unsigned)relationToScc.at(succ) != scc) {
                     outbound.insert(rel);
                     break;
                 }

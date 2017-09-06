@@ -157,11 +157,6 @@ int main(int argc, char** argv) {
             ERROR("cannot open file " + std::string(Global::config().get("")));
         }
 
-        /* turn on compilation of executables */
-        if (Global::config().has("dl-program")) {
-            Global::config().set("compile");
-        }
-
         /* for the jobs option, to determine the number of threads used */
         if (Global::config().has("jobs")) {
             if (isNumber(Global::config().get("jobs").c_str())) {
@@ -180,13 +175,10 @@ int main(int argc, char** argv) {
 
         /* if an output directory is given, check it exists */
         if (Global::config().has("output-dir") && !Global::config().has("output-dir", "-") &&
-                !existDir(Global::config().get("output-dir"))) {
+                !existDir(Global::config().get("output-dir")) &&
+                !(Global::config().has("generate") ||
+                        (Global::config().has("dl-program") && !Global::config().has("compile")))) {
             ERROR("output directory " + Global::config().get("output-dir") + " does not exists");
-        }
-
-        /* turn on compilation if auto-scheduling is enabled */
-        if (Global::config().has("auto-schedule") && !Global::config().has("compile")) {
-            Global::config().set("compile");
         }
 
         /* ensure that if auto-scheduling is enabled an output file is given */
@@ -214,15 +206,22 @@ int main(int argc, char** argv) {
             allIncludes += " -I" + currentInclude;
             Global::config().set("include-dir", allIncludes);
         }
-    }
 
-    /* ensure that code generation and/or compilation is enabled if stratification is for non-none options*/
-    if (Global::config().has("stratify")) {
-        if (Global::config().get("stratify") == "-" && Global::config().has("generate")) {
-            ERROR("stratification cannot be enabled with format 'auto' and option 'generate'.");
-        } else if (!(Global::config().has("compile") || Global::config().has("dl-program") ||
-                           Global::config().has("generate"))) {
-            ERROR("one of 'compile', 'dl-program', or 'generate' options must be present for stratification");
+        /* ensure that code generation and/or compilation is enabled if stratification is for non-none
+         * options*/
+        if (Global::config().has("stratify")) {
+            if (Global::config().get("stratify") == "-" && Global::config().has("generate")) {
+                ERROR("stratification cannot be enabled with format 'auto' and option 'generate'.");
+            } else if (!(Global::config().has("compile") || Global::config().has("dl-program") ||
+                               Global::config().has("generate"))) {
+                ERROR("one of 'compile', 'dl-program', or 'generate' options must be present for "
+                      "stratification");
+            }
+        }
+
+        /* turn on compilation of executables */
+        if (Global::config().has("dl-program")) {
+            Global::config().set("compile");
         }
     }
 

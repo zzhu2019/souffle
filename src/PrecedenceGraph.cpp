@@ -306,7 +306,6 @@ void SCCGraph::printJson(std::ostream& os) const {
      */
     os << "\t\"vertices\": {\n";
     for (unsigned scc = 0; scc < size(); scc++) {
-
         os << "\t\t\"" << name << "_" << scc << "\": {\n";
 
         std::map<std::string, std::set<const AstRelation*>> relSets;
