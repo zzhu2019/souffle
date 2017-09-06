@@ -93,7 +93,8 @@ jobs:
         packages:
         - clang-format-4.0
     script: ".travis/run_test_format.sh"
- # Testing stage (-j8,-c -j8,-c -j8 -p profile.log,-j8 -p profile.log)
+
+# Testing stage (-j8,-c -j8,-c -j8 -p profile.log,-j8 -p profile.log)
   - <<: *linuxgcc
     env:
     - *gcc_environment
@@ -126,7 +127,7 @@ jobs:
     - *gcc_environment
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
 
- # Testing stage (-f -j8,-c -f -j8,-f -j8 -p profile.log,-c -f -j8 -p profile.log)
+# Testing stage (-f -j8,-c -f -j8,-f -j8 -p profile.log,-c -f -j8 -p profile.log)
   - <<: *linuxgcc
     env:
     - *gcc_environment
@@ -159,7 +160,7 @@ jobs:
     - *gcc_environment
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
 
- # Testing stage (-c -j8 -s-,-c -f -j8 -s)
+# Testing stage (-c -j8 -s-,-c -f -j8 -s)
   - <<: *linuxgcc
     env:
     - *gcc_environment
@@ -192,7 +193,6 @@ jobs:
 #    env:
 #    - *gcc_environment
 #    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-#
 
 # Packaging stage
   # Make the linux deb packages.
