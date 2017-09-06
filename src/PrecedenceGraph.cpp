@@ -296,23 +296,33 @@ void SCCGraph::printJson(std::ostream& os) const {
 
     /*
      *  vertices: {
-     *   scc_1: { rel_1, rel_2, ..., rel_m1 },
-     *   scc_2: { rel_1, rel_2, ..., rel_m2 },
+     *   scc_1: { on: [rel_1, rel_2, ..., rel_m1], out: ..., in: ... },
+     *   scc_2: { on: [rel_1, rel_2, ..., rel_m2], out: ..., in: ... },
      *   ...
-     *   scc_n: { rel_1, rel_2, ..., rel_mn }
+     *   scc_n: { on: [rel_1, rel_2, ..., rel_mn], out: ..., in: ... }
      *  }
      */
     os << "\t\"vertices\": {\n";
     for (unsigned scc = 0; scc < size(); scc++) {
-        os << "\t\t\"" << name << "_" << scc << "\": [\n";
-        const auto& rels = relations(scc);
-        if (!rels.empty()) {
-            os << "\t\t\t\"";
-            os << join(rels, "\",\n\t\t\t\"",
-                    [](std::ostream& out, const AstRelation* rel) { out << rel->getName(); });
-            os << "\"\n";
+        os << "\t\t\"" << name << "_" << scc << "\": {";
+
+        std::map<std::string, std::set<const AstRelation *>> relSets;
+        relSets["on"] = relations(scc);
+        relSets["in"] = getInbound(scc);
+        relSets["out"] = getOutbound(scc);
+
+        for (const auto& rels : relSets) {
+            os << rels.first << "[\n";
+            if (!rels.empty()) {
+                os << "\t\t\t\t\"";
+                os << join(rels.second, "\",\n\t\t\t\t\"",
+                           [](std::ostream &out, const AstRelation *rel) { out << rel->getName(); });
+                os << "\"\n";
+            }
+            os << "\t\t\t]";
         }
-        os << "\t\t]";
+
+        os << "\t\t}";
         if (scc != size() - 1) os << ",";
         os << "\n";
     }
