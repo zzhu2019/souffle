@@ -95,6 +95,7 @@ jobs:
         - clang-format-4.0
     script: ".travis/run_test_format.sh"
 # TODO (lyndonhenry): uncomment before putting final PR throguh
+
 # Testing stage (-j8,-c -j8,-c -j8 -p profile.log,-j8 -p profile.log)
 # - <<: *linuxgcc
 #   env:
