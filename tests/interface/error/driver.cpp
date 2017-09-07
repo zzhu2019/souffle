@@ -37,7 +37,7 @@ void error(std::string txt)
  */
 void handler(int n)
 {
-   perror("handler invoked.");
+   std::cerr << "handler invoked." << std::endl;
    exit(1);
 }
 
