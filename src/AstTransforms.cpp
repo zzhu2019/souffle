@@ -546,6 +546,52 @@ bool UniqueAggregationVariablesTransformer::transform(AstTranslationUnit& transl
     return changed;
 }
 
+bool EvaluateConstantAggregatesTransformer::transform(AstTranslationUnit& translationUnit) {
+  // TODO: need some way of checking if things have changed
+
+  // TODO: commenting
+  struct M : public AstNodeMapper {
+    M() {}
+    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+      if(AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
+        AstAggregator::Op op = aggr->getOperator();
+        if(op == AstAggregator::min || op == AstAggregator::max) {
+          const AstArgument* arg = aggr->getTargetExpression();
+          if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
+            return std::unique_ptr<AstNode>(arg->clone());
+          }
+        } else if (op == AstAggregator::count) {
+          // TODO: check correctness of this line
+          if (!dynamic_cast<const AstAtom*>(aggr->getBodyLiterals()[0])) {
+            return std::unique_ptr<AstNode>(new AstNumberConstant(1));
+          }
+        } else if (op == AstAggregator::sum) {
+          // TODO: at the moment sum doesn't seem to be working on the original souffle even?
+          //      - seems to change to min???
+          const AstArgument* arg = aggr->getTargetExpression();
+          if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
+            return std::unique_ptr<AstNode>(arg->clone());
+          }
+        } else {
+          assert(false && "undefined aggregate operator type");
+        }
+      }
+
+      node->apply(*this);
+      return node;
+    }
+  };
+
+  M update;
+  visitDepthFirst(*translationUnit.getProgram(), [&](const AstRelation& relation) {
+    for(AstClause* clause : relation.getClauses()) {
+      clause->apply(update);
+    }
+  });
+
+  return true;
+}
+
 bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
         AstTranslationUnit& translationUnit) {
     bool changed = false;
@@ -811,10 +857,6 @@ bool isFunctor(AstArgument* arg) {
   return (dynamic_cast<AstFunctor*>(arg));
 }
 
-bool isVariable(AstArgument* arg) {
-  return ((dynamic_cast<AstVariable*>(arg)) || isFunctor(arg));
-}
-
 bool isCounter(AstArgument* arg) {
   return (dynamic_cast<AstCounter*>(arg));
 }
@@ -829,6 +871,12 @@ bool isCounter(AstArgument* arg) {
 // TODO: not really Martelli-Montanari algo anymore?
 // Reduces a vector of substitutions based on Martelli-Montanari algorithm
 bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub) {
+  // Type-Checking functions
+  // TODO: is [&] needed?
+  //auto isConstant = [&](AstArgument* arg) {return (dynamic_cast<AstConstant*>(arg));};
+  //auto isFunctor = [&](AstArgument* arg) {return (dynamic_cast<AstFunctor*>(arg));};
+  // auto isVariable = [&](AstArgument* arg) {return ((dynamic_cast<AstVariable*>(arg)) || isFunctor(arg));};
+
   // Keep trying to reduce the substitutions until we reach a fixed point
   bool done = false;
   while (!done) {
@@ -1086,7 +1134,6 @@ int underscoreCount = 0;
 
 // Removes all underscores in inlined relations
 void removeInlinedUnderscores(AstProgram& program) {
-  struct UnderscoreNamer;
   // struct UpdateUnderscores : public AstNodeMapper;
   //
   // // construct mapping to name underscores
@@ -1126,36 +1173,34 @@ void removeInlinedUnderscores(AstProgram& program) {
   //   }
   // };
 
+  // TODO: NEED to only change the name of inlined stuff
   struct UnderscoreNamer : public AstNodeMapper {
-      AstProgram& program;
-
-      UnderscoreNamer(AstProgram& program) : program(program) {}
-      std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-          static int underscoreCount = 0;
-          if (AstLiteral* lit = dynamic_cast<AstLiteral*>(node.get())){
-            // Apply to the literal's arguments if and only if it is associated
-            // with an inlined relation
-            if(lit->getAtom() != nullptr && program.getRelation(lit->getAtom()->getName())->isInline()){
-              node->apply(*this);
-            }
-            return node;
-          } else if(AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())){
-            // Give a name to the underscord variable
-            std::stringstream newVarName;
-            newVarName << "<underscore_" << underscoreCount << ">";
-            AstVariable* newVar = new AstVariable(newVarName.str());
-            return std::unique_ptr<AstNode>(newVar);
-          }
-          return node;
+    UnderscoreNamer() {}
+    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+      static int underscoreCount = 0;
+      // std::cout << " performing replacement on " << *node << std::endl;
+      if (AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())) {
+        // Give a name to the underscored variable
+        std::stringstream newVarName;
+        newVarName << "<underscore_" << underscoreCount++ << ">";
+        AstVariable* newVar = new AstVariable(newVarName.str());
+        // TODO: check if should be applied beforehand
+        return std::unique_ptr<AstNode>(newVar);
       }
+      node->apply(*this);
+      return node;
+    }
   };
 
-  UnderscoreNamer update(program);
-  for(AstRelation* rel : program.getRelations()) {
-    for(AstClause* clause : rel->getClauses()) {
-        clause->apply(update);
-    }
-  }
+  UnderscoreNamer update;
+
+  // TODO: want to visit every atom and apply this to it
+  visitDepthFirst(program, [&](const AstAtom& a) {
+    // TODO: THIS IS HORRIBLE - GETTING RID OF THE CONST QUALIFIER
+    // TODO: but need a way to do this without having a const to begin with...
+    AstAtom* atom = (AstAtom*)((void *) &a);
+    atom->apply(update);
+  });
 }
 
 AstClause* replaceClauseLiteral(const AstClause& clause, int index, AstLiteral* lit) {
@@ -1268,6 +1313,8 @@ std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& progra
       std::pair<std::vector<AstArgument*>, bool> argumentVersions = getInlinedVersions(program, aggr->getTargetExpression());
       if(argumentVersions.second) {
         changed = true;
+        // TODO: add in the cases for MAX, MIN, COUNT, SUM (all aggr types)
+        // TODO: maybe put an assert if a different type?
         for(AstArgument* newArg : argumentVersions.first) {
           AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
           newAggr->setTargetExpression(std::unique_ptr<AstArgument>(newArg));
@@ -1289,7 +1336,9 @@ std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& progra
           changed = true;
           for(std::vector<AstLiteral*> inlineVersions : literalVersions.first.first) {
             AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
-            newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
+            if(aggr->getTargetExpression() != nullptr) {
+              newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
+            }
 
             // Add in everything except the current literal
             for(int j = 0; j < bodyLiterals.size(); j++) {
@@ -1309,7 +1358,9 @@ std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& progra
           changed = true;
           for(AstLiteral* newLit : literalVersions.second.first) {
             AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
-            newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
+            if(aggr->getTargetExpression() != nullptr) {
+              newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
+            }
             for(int j = 0; j < bodyLiterals.size(); j++) {
               if(i == j) {
                 newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(newLit));
@@ -1565,6 +1616,7 @@ std::pair<std::vector<AstClause*>, bool> getInlinedVersions(AstProgram& program,
 // TODO: handle constraints
 bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) {
   bool changed = false;
+
   AstProgram& program = *translationUnit.getProgram();
 
   renameInlinedArguments(program);
@@ -1649,7 +1701,7 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
   // };
 
 
-  //std::cout << program << std::endl;
+  std::cout << program << std::endl;
   return changed;
 }
 
