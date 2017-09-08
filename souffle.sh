@@ -29,7 +29,7 @@ case $1 in
         );
         sudo apt-get install -y clang-4.0 clang-format-4.0 libomp-dev;
     ;;
-    ## - Sync: Sync upstream and origin master, and format with clang.
+    ## - sync: Sync upstream and origin master, and format with clang.
     sync)
         # - format with clang
         clang-format-4.0 \
