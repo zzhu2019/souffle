@@ -1,6 +1,6 @@
 /*
  * Souffle - A Datalog Compiler
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved
+ * Copyright (c) 2017, The Souffle Developers. All rights reserved
  * Licensed under the Universal Permissive License v 1.0 as shown at:
  * - https://opensource.org/licenses/UPL
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
@@ -24,15 +24,6 @@
 using namespace souffle; 
 
 /**
- * Error handler
- */ 
-void error(std::string txt) 
-{
-   std::cerr << "error: " << txt << "\n"; 
-   exit(1); 
-} 
-
-/**
  * Signal handler
  */
 void handler(int n)
@@ -46,15 +37,11 @@ void handler(int n)
  */
 int main(int argc, char **argv)
 {
+   // set default signal handler for SIGINT signal
    signal(SIGINT, handler); 
-   // check number of arguments 
-   if(argc != 2) error("wrong number of arguments!"); 
 
-   // create instance of program "load_print"
-   if(SouffleProgram *prog = ProgramFactory::newInstance("error")) {
-
-      // load all input relations from current directory
-      prog->loadAll(argv[1]);
+   // create instance of program "signal_error"
+   if(SouffleProgram *prog = ProgramFactory::newInstance("signal_error")) {
  
       // run program 
       prog->run(); 
@@ -62,10 +49,13 @@ int main(int argc, char **argv)
       // free program 
       delete prog; 
 
-      // raise signal to check that signal handler is restored
+      // raise signal SIGINT to check that original signal handler is restored
       raise(SIGINT);
 
    } else {
-      error("cannot find program load_print");        
+      std::cerr << "cannot find program signal_error" << std::endl;
+      return 1;
    }
+
+   return 0;
 }
