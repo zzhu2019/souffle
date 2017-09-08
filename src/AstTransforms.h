@@ -244,4 +244,17 @@ public:
     }
 };
 
+/**
+*
+*/
+class EvaluateConstantAggregatesTransformer : public AstTransformer {
+private:
+  virtual bool transform(AstTranslationUnit& translationUnit);
+
+public:
+  virtual std::string getName() const {
+    return "EvaluateConstantAggregatesTransformer";
+  }
+};
+
 }  // end of namespace souffle
