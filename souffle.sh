@@ -76,7 +76,7 @@ case $1 in
         # run make
         make -j8;
     ;;
-    ## - debug: Debug Souffle with a given test case.
+    ## - debug <group>/<test> <options>: Debug a given <group>/<test> on <options> from the testsuite.
     debug)
         shift
         id=$(echo "${@}" | grep "\-[a-z]" -o | sort | sed 's/-//');
