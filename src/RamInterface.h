@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "RamExecutor.h"
 #include "RamRelation.h"
 #include "SouffleInterface.h"
 
@@ -35,12 +36,12 @@ private:
 protected:
     class iterator_base : public Relation::iterator_base {
     private:
-        RamRelationInterface* ramRelationInterface;
+        const RamRelationInterface* ramRelationInterface;
         RamRelation::iterator it;
         tuple tup;
 
     public:
-        iterator_base(uint32_t arg_id, RamRelationInterface* r, RamRelation::iterator i)
+        iterator_base(uint32_t arg_id, const RamRelationInterface* r, RamRelation::iterator i)
                 : Relation::iterator_base(arg_id), ramRelationInterface(r), it(i), tup(r) {}
         virtual ~iterator_base() {}
 
@@ -63,26 +64,26 @@ public:
     virtual ~RamRelationInterface() {}
 
     // insert a new tuple into the relation
-    void insert(const tuple& t);
+    void insert(const tuple& t) override;
 
     // check whether a tuple exists in the relation
-    bool contains(const tuple& t) const;
+    bool contains(const tuple& t) const override;
 
     // begin and end iterator
-    iterator begin();
-    iterator end();
+    iterator begin() const override;
+    iterator end() const override;
 
     // number of tuples in relation
-    std::size_t size();
+    std::size_t size() override;
 
     // properties
-    bool isOutput() const;
-    bool isInput() const;
-    std::string getName() const;
-    const char* getAttrType(size_t) const;
-    const char* getAttrName(size_t) const;
-    size_t getArity() const;
-    SymbolTable& getSymbolTable() const;
+    bool isOutput() const override;
+    bool isInput() const override;
+    std::string getName() const override;
+    const char* getAttrType(size_t) const override;
+    const char* getAttrName(size_t) const override;
+    size_t getArity() const override;
+    SymbolTable& getSymbolTable() const override;
 };
 
 /**
@@ -90,11 +91,15 @@ public:
  */
 class SouffleInterpreterInterface : public SouffleProgram {
 private:
+    RamProgram& prog;
+    RamExecutor& exec;
+    RamEnvironment& env;
     SymbolTable& symTable;
     std::vector<RamRelationInterface*> interfaces;
 
 public:
-    SouffleInterpreterInterface(RamEnvironment& r, SymbolTable& s) : symTable(s) {
+    SouffleInterpreterInterface(RamProgram& p, RamExecutor& e, RamEnvironment& r, SymbolTable& s)
+            : prog(p), exec(e), env(r), symTable(s) {
         uint32_t id = 0;
         for (auto& rel_pair : r.getRelationMap()) {
             auto& rel = rel_pair.second;
@@ -136,6 +141,12 @@ public:
     void printAll(std::string) {}
     void dumpInputs(std::ostream&) {}
     void dumpOutputs(std::ostream&) {}
+
+    // run subroutine
+    void executeSubroutine(std::string name, const std::vector<RamDomain>& args, std::vector<RamDomain>& ret,
+            std::vector<bool>& err) {
+        exec.executeSubroutine(env, prog.getSubroutine(name), args, ret, err);
+    }
 
     const SymbolTable& getSymbolTable() const {
         return symTable;

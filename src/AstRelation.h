@@ -83,12 +83,12 @@ protected:
     int qualifier;
 
     /** Clauses associated with this relation. Clauses could be
-      * either facts or rules.
-      */
+     * either facts or rules.
+     */
     std::vector<std::unique_ptr<AstClause>> clauses;
 
     /** IO directives associated with this relation.
-      */
+     */
     std::vector<std::unique_ptr<AstIODirective>> ioDirectives;
 
 public:

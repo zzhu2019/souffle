@@ -6,7 +6,7 @@
 
 // This code tests the provenance explain interface for a simple path example.
 
-.pragma "provenance" "2"
+.pragma "provenance" "1"
 
 .decl edge(x:symbol, y:symbol)
 edge("a", "b").

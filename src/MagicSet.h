@@ -160,4 +160,4 @@ public:
         return ignoredAtoms;
     }
 };
-}
+}  // namespace souffle

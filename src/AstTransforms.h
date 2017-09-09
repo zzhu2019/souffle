@@ -192,15 +192,28 @@ public:
 };
 
 /**
- * Transformer that inlines appropriate relations.
+ * Transformation pass to add provenance information via guided SLD
  */
+class ProvenanceTransformer : public AstTransformer {
+private:
+    bool transform(AstTranslationUnit& translationUnit) override;
+
+public:
+    std::string getName() const override {
+        return "NaiveProvenanceTransformer";
+    }
+};
+
+/**
+* Transformer that inlines appropriate relations.
+*/
 class InlineRelationsTransformer : public AstTransformer {
 private:
-    virtual bool transform(AstTranslationUnit& translationUnit);
+   virtual bool transform(AstTranslationUnit& translationUnit);
 
 public:
     virtual std::string getName() const {
-        return "InlineRelationsTransformer";
+       return "InlineRelationsTransformer";
     }
 };
 
