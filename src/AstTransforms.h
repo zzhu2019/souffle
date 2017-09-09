@@ -245,7 +245,7 @@ public:
 };
 
 /**
-*
+* Transformation pass to evaluate aggregators with constant target expressions.
 */
 class EvaluateConstantAggregatesTransformer : public AstTransformer {
 private:

@@ -546,52 +546,6 @@ bool UniqueAggregationVariablesTransformer::transform(AstTranslationUnit& transl
     return changed;
 }
 
-bool EvaluateConstantAggregatesTransformer::transform(AstTranslationUnit& translationUnit) {
-  // TODO: need some way of checking if things have changed
-
-  // TODO: commenting
-  struct M : public AstNodeMapper {
-    M() {}
-    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-      if(AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
-        AstAggregator::Op op = aggr->getOperator();
-        if(op == AstAggregator::min || op == AstAggregator::max) {
-          const AstArgument* arg = aggr->getTargetExpression();
-          if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
-            return std::unique_ptr<AstNode>(arg->clone());
-          }
-        } else if (op == AstAggregator::count) {
-          // TODO: check correctness of this line
-          if (!dynamic_cast<const AstAtom*>(aggr->getBodyLiterals()[0])) {
-            return std::unique_ptr<AstNode>(new AstNumberConstant(1));
-          }
-        } else if (op == AstAggregator::sum) {
-          // TODO: at the moment sum doesn't seem to be working on the original souffle even?
-          //      - seems to change to min???
-          const AstArgument* arg = aggr->getTargetExpression();
-          if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
-            return std::unique_ptr<AstNode>(arg->clone());
-          }
-        } else {
-          assert(false && "undefined aggregate operator type");
-        }
-      }
-
-      node->apply(*this);
-      return node;
-    }
-  };
-
-  M update;
-  visitDepthFirst(*translationUnit.getProgram(), [&](const AstRelation& relation) {
-    for(AstClause* clause : relation.getClauses()) {
-      clause->apply(update);
-    }
-  });
-
-  return true;
-}
-
 bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
         AstTranslationUnit& translationUnit) {
     bool changed = false;
@@ -738,6 +692,49 @@ bool MaterializeAggregationQueriesTransformer::needsMaterializedRelation(const A
 
     // for all others the materialization can be skipped
     return false;
+}
+
+bool EvaluateConstantAggregatesTransformer::transform(AstTranslationUnit& translationUnit) {
+  // TODO: need some way of checking if things have changed
+
+  // TODO: commenting
+  struct M : public AstNodeMapper {
+    M() {}
+    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+      if(AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
+        AstAggregator::Op op = aggr->getOperator();
+        if(op == AstAggregator::min || op == AstAggregator::max) {
+          const AstArgument* arg = aggr->getTargetExpression();
+          if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
+            return std::unique_ptr<AstNode>(arg->clone());
+          }
+        } else if (op == AstAggregator::count) {
+          // TODO: check correctness of this part!!! Mainly:
+          //        - does this check correctly that there is no body atom?
+          //        - should it always be 1? could be 0? in inlining's case, yes
+          if (!dynamic_cast<const AstAtom*>(aggr->getBodyLiterals()[0])) {
+            return std::unique_ptr<AstNode>(new AstNumberConstant(1));
+          }
+        } else if (op == AstAggregator::sum) {
+          const AstArgument* arg = aggr->getTargetExpression();
+          if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
+            return std::unique_ptr<AstNode>(arg->clone());
+          }
+        } else {
+          // TODO: correctness?
+          assert(false && "unhandled aggregate operator type");
+        }
+      }
+
+      node->apply(*this);
+      return node;
+    }
+  };
+
+  M update;
+  translationUnit.getProgram()->apply(update);
+
+  return true;
 }
 
 bool RemoveEmptyRelationsTransformer::removeEmptyRelations(AstTranslationUnit& translationUnit) {
@@ -1220,8 +1217,7 @@ std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& progra
 std::pair<std::vector<AstAtom*>, bool> getInlinedVersions(AstProgram& program, AstAtom& atom);
 std::pair<std::vector<AstLiteral*>, bool> getInlinedVersions(AstProgram& program, AstLiteral& literal);
 
-std::pair<std::pair<std::vector<std::vector<AstLiteral*>>, bool>, std::pair<std::vector<AstLiteral*>, bool>> getInlinedVersions(AstProgram& program, AstLiteral* lit);
-
+// TODO: NON-ATOM LITERALS ARE NOT HANLDED CORRECTLY - CHECK THROUGH THIS (e.g. negations)
 // ARGUMENTS: <<<inline body literals versions to add>, <inlined?>> <<replacement literal versions> <replacements exist?>>>
 std::pair<std::pair<std::vector<std::vector<AstLiteral*>>, bool>, std::pair<std::vector<AstLiteral*>, bool>> getInlinedVersions(AstProgram& program, AstLiteral* lit) {
   bool inlined = false;
@@ -1301,6 +1297,17 @@ std::pair<std::pair<std::vector<std::vector<AstLiteral*>>, bool>, std::pair<std:
   return std::make_pair(std::make_pair(addedBodyLiterals, inlined), std::make_pair(versions, changed));
 }
 
+AstArgument* combineAggregators(std::vector<AstArgument*> aggrs, BinaryOp fun) {
+  if(aggrs.size() == 1) {
+    return aggrs[0];
+  }
+
+  AstArgument* rhs = combineAggregators(std::vector<AstArgument*>(aggrs.begin() + 1, aggrs.end()), fun);
+  AstArgument* result = new AstBinaryFunctor(fun, std::unique_ptr<AstArgument>(aggrs[0]), std::unique_ptr<AstArgument> (rhs));
+
+  return result;
+}
+
 // TODO: this function
 // Handle aggregators
 std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& program, const AstArgument* arg) {
@@ -1309,12 +1316,12 @@ std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& progra
 
   if(const AstAggregator* aggr = dynamic_cast<const AstAggregator*>(arg)){
     // first check the argument
+    // TODO: how to handle this correctly? what does `sum aggr1 : aggr2` even mean?
     if(aggr->getTargetExpression() != nullptr) {
       std::pair<std::vector<AstArgument*>, bool> argumentVersions = getInlinedVersions(program, aggr->getTargetExpression());
       if(argumentVersions.second) {
         changed = true;
         // TODO: add in the cases for MAX, MIN, COUNT, SUM (all aggr types)
-        // TODO: maybe put an assert if a different type?
         for(AstArgument* newArg : argumentVersions.first) {
           AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
           newAggr->setTargetExpression(std::unique_ptr<AstArgument>(newArg));
@@ -1326,14 +1333,21 @@ std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& progra
       }
     }
 
+    // handle the body arguments
     // TODO: only handle one change at a time for now?
     if(!changed) {
       std::vector<AstLiteral*> bodyLiterals = aggr->getBodyLiterals();
       for(int i = 0; i < bodyLiterals.size(); i++) {
         AstLiteral* currLit = bodyLiterals[i];
         auto literalVersions = getInlinedVersions(program, currLit);
+
+        // literal is inlined
         if(literalVersions.first.second) {
           changed = true;
+          AstAggregator::Op op = aggr->getOperator();
+
+          std::vector<AstArgument*> aggrVersions;
+
           for(std::vector<AstLiteral*> inlineVersions : literalVersions.first.first) {
             AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
             if(aggr->getTargetExpression() != nullptr) {
@@ -1352,8 +1366,26 @@ std::pair<std::vector<AstArgument*>, bool> getInlinedVersions(AstProgram& progra
               newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(addedLit));
             }
 
-            versions.push_back(newAggr);
+            aggrVersions.push_back(newAggr);
           }
+
+          // create the actual overall aggregator
+          if(op == AstAggregator::min) {
+            // min x : { a(x) }. <=> min ( min x : { a1(x) }, min x : { a2(x) }, ... )
+            versions.push_back(combineAggregators(aggrVersions, BinaryOp::MIN));
+          } else if (op == AstAggregator::max) {
+            // max x : { a(x) }. <=> max ( max x : { a1(x) }, max x : { a2(x) }, ... )
+            versions.push_back(combineAggregators(aggrVersions, BinaryOp::MAX));
+          } else if (op == AstAggregator::count) {
+            // count : { a(x) }. <=> sum ( count : { a1(x) }, count : { a2(x) }, ... )
+            versions.push_back(combineAggregators(aggrVersions, BinaryOp::ADD));
+          } else if (op == AstAggregator::sum) {
+            // sum x : { a(x) }. <=> sum ( sum x : { a1(x) }, sum x : { a2(x) }, ... )
+            versions.push_back(combineAggregators(aggrVersions, BinaryOp::ADD));
+          } else {
+            assert(false && "unhandled aggregator operator type");
+          }
+
         } else if (literalVersions.second.second) {
           changed = true;
           for(AstLiteral* newLit : literalVersions.second.first) {
