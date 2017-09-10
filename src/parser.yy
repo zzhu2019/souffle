@@ -672,7 +672,7 @@ arg
         $$->setSrcLoc(@$);
     }
   | SUM arg COLON LBRACE body RBRACE {
-        auto res = new AstAggregator(AstAggregator::min);
+        auto res = new AstAggregator(AstAggregator::sum);
         res->setTargetExpression(std::unique_ptr<AstArgument>($2));
         auto bodies = $5->toClauseBodies();
         if (bodies.size() != 1) {
