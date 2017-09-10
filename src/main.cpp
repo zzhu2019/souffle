@@ -210,7 +210,9 @@ int main(int argc, char** argv) {
         /* ensure that code generation and/or compilation is enabled if stratification is for non-none
          * options*/
         if (Global::config().has("stratify")) {
-            if (Global::config().get("stratify") == "-" && Global::config().has("generate")) {
+            if (Global::config().has("profile")) {
+                ERROR("stratification cannot be enabled with option 'profile'.");
+            } else if (Global::config().get("stratify") == "-" && Global::config().has("generate")) {
                 ERROR("stratification cannot be enabled with format 'auto' and option 'generate'.");
             } else if (!(Global::config().has("compile") || Global::config().has("dl-program") ||
                                Global::config().has("generate"))) {
