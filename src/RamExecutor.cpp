@@ -21,6 +21,7 @@
 #include "BinaryFunctorOps.h"
 #include "Global.h"
 #include "IOSystem.h"
+#include "Macro.h"
 #include "RamAutoIndex.h"
 #include "RamData.h"
 #include "RamLogger.h"
@@ -39,6 +40,7 @@
 #include <utility>
 
 #include <unistd.h>
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -46,6 +48,7 @@
 namespace souffle {
 
 static const char ENV_NO_INDEX[] = "SOUFFLE_USE_NO_INDEX";
+
 bool useNoIndex() {
     static bool flag = std::getenv(ENV_NO_INDEX);
     static bool first = true;
@@ -845,13 +848,12 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
                 return true;
             }
 #endif
-            auto& rel = env.getRelation(store.getRelation());
             for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
                 try {
                     IOSystem::getInstance()
                             .getWriter(store.getRelation().getSymbolMask(), env.getSymbolTable(),
                                     ioDirectives, Global::config().has("provenance"))
-                            ->writeAll(rel);
+                            ->writeAll(env.getRelation(store.getRelation()));
                 } catch (std::exception& e) {
                     std::cerr << e.what();
                     exit(1);
@@ -1174,19 +1176,32 @@ std::set<RamRelationIdentifier> getReferencedRelations(const RamOperation& op) {
             res.insert(scan->getRelation());
         } else if (auto agg = dynamic_cast<const RamAggregate*>(&node)) {
             res.insert(agg->getRelation());
+        } else if (auto notExist = dynamic_cast<const RamNotExists*>(&node)) {
+            res.insert(notExist->getRelation());
         } else if (auto project = dynamic_cast<const RamProject*>(&node)) {
             res.insert(project->getRelation());
             if (project->hasFilter()) {
                 res.insert(project->getFilter());
             }
-        } else if (auto notExist = dynamic_cast<const RamNotExists*>(&node)) {
-            res.insert(notExist->getRelation());
         }
     });
     return res;
 }
 
 class Printer : public RamVisitor<void, std::ostream&> {
+// macros to add comments to generated code for debugging
+#ifndef PRINT_BEGIN_COMMENT
+#define PRINT_BEGIN_COMMENT(os)                                                  \
+    if (Global::config().has("debug-report") || Global::config().has("verbose")) \
+    os << "/* BEGIN " << __FUNCTION__ << " @" << __FILE__ << ":" << __LINE__ << " */\n"
+#endif
+
+#ifndef PRINT_END_COMMENT
+#define PRINT_END_COMMENT(os)                                                    \
+    if (Global::config().has("debug-report") || Global::config().has("verbose")) \
+    os << "/* END " << __FUNCTION__ << " @" << __FILE__ << ":" << __LINE__ << " */\n"
+#endif
+
     // const IndexMap& indices;
 
     std::function<void(std::ostream&, const RamNode*)> rec;
@@ -1194,8 +1209,11 @@ class Printer : public RamVisitor<void, std::ostream&> {
     struct printer {
         Printer& p;
         const RamNode& node;
+
         printer(Printer& p, const RamNode& n) : p(p), node(n) {}
+
         printer(const printer& other) = default;
+
         friend std::ostream& operator<<(std::ostream& out, const printer& p) {
             p.p.visit(p.node, out);
             return out;
@@ -1209,18 +1227,65 @@ public:
 
     // -- relation statements --
 
-    void visitCreate(const RamCreate& /*create*/, std::ostream& /*out*/) override {}
-
-    void visitFact(const RamFact& fact, std::ostream& out) override {
-        out << getRelationName(fact.getRelation()) << "->"
-            << "insert(" << join(fact.getValues(), ",", rec) << ");\n";
+    void visitCreate(const RamCreate& /*create*/, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
+        PRINT_END_COMMENT(out);
     }
 
-    void visitLoad(const RamLoad& /*load*/, std::ostream& /*out*/) override {}
+    void visitFact(const RamFact& fact, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
+        out << getRelationName(fact.getRelation()) << "->"
+            << "insert(" << join(fact.getValues(), ",", rec) << ");\n";
+        PRINT_END_COMMENT(out);
+    }
 
-    void visitStore(const RamStore& /*store*/, std::ostream& /*out*/) override {}
+    void visitLoad(const RamLoad& load, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
+        out << "if (performIO) {\n";
+        // get some table details
+        out << "try {";
+        out << "std::map<std::string, std::string> directiveMap(";
+        out << load.getRelation().getInputDirectives() << ");\n";
+        out << "if (!inputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
+        out << "directiveMap[\"filename\"].front() != '/') {";
+        out << "directiveMap[\"filename\"] = inputDirectory + \"/\" + directiveMap[\"filename\"];";
+        out << "}\n";
+        out << "IODirectives ioDirectives(directiveMap);\n";
+        out << "IOSystem::getInstance().getReader(";
+        out << "SymbolMask({" << load.getRelation().getSymbolMask() << "})";
+        out << ", symTable, ioDirectives";
+        out << ", " << Global::config().has("provenance");
+        out << ")->readAll(*" << getRelationName(load.getRelation());
+        out << ");\n";
+        out << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
+        out << "}\n";
+        PRINT_END_COMMENT(out);
+    }
+
+    void visitStore(const RamStore& store, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
+        out << "if (performIO) {\n";
+        for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
+            out << "try {";
+            out << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
+            out << "if (!outputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
+            out << "directiveMap[\"filename\"].front() != '/') {";
+            out << "directiveMap[\"filename\"] = outputDirectory + \"/\" + directiveMap[\"filename\"];";
+            out << "}\n";
+            out << "IODirectives ioDirectives(directiveMap);\n";
+            out << "IOSystem::getInstance().getWriter(";
+            out << "SymbolMask({" << store.getRelation().getSymbolMask() << "})";
+            out << ", symTable, ioDirectives";
+            out << ", " << Global::config().has("provenance");
+            out << ")->writeAll(*" << getRelationName(store.getRelation()) << ");\n";
+            out << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
+        }
+        out << "}\n";
+        PRINT_END_COMMENT(out);
+    }
 
     void visitInsert(const RamInsert& insert, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         // enclose operation with a check for an empty relation
         std::set<RamRelationIdentifier> input_relations;
         visitDepthFirst(insert, [&](const RamScan& scan) { input_relations.insert(scan.getRelation()); });
@@ -1268,6 +1333,8 @@ public:
 
         // create operation contexts for this operation
         for (const RamRelationIdentifier& rel : getReferencedRelations(insert.getOperation())) {
+            // TODO (#467): this causes bugs for subprogram compilation for record types if artificial
+            // dependencies are introduces in the precedence graph
             out << "CREATE_OP_CONTEXT(" << getOpContextName(rel) << "," << getRelationName(rel) << "->"
                 << "createContext());\n";
         }
@@ -1309,29 +1376,47 @@ public:
 
         out << "}\n";  // end lambda
         // out << "();";  // call lambda
+        PRINT_END_COMMENT(out);
     }
 
     void visitMerge(const RamMerge& merge, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << getRelationName(merge.getTargetRelation()) << "->"
             << "insertAll("
             << "*" << getRelationName(merge.getSourceRelation()) << ");\n";
+        PRINT_END_COMMENT(out);
     }
 
     void visitClear(const RamClear& clear, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << getRelationName(clear.getRelation()) << "->"
             << "purge();\n";
+        PRINT_END_COMMENT(out);
     }
 
     void visitDrop(const RamDrop& drop, std::ostream& out) override {
-        if (drop.getRelation().isTemp()) {
-            out << getRelationName(drop.getRelation()) << "->"
-                << "purge();\n";
-        }
+        PRINT_BEGIN_COMMENT(out);
+        out << "if (!isHintsProfilingEnabled() && (performIO || " << drop.getRelation().isTemp() << ")) ";
+        out << getRelationName(drop.getRelation()) << "->"
+            << "purge();\n";
+        PRINT_END_COMMENT(out);
     }
 
-    void visitPrintSize(const RamPrintSize& /*print*/, std::ostream& /*out*/) override {}
+    void visitPrintSize(const RamPrintSize& print, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
+        out << "if (performIO) {\n";
+        out << "{ auto lease = getOutputLock().acquire(); \n";
+        out << "(void)lease;\n";
+        out << "std::cout << R\"(" << print.getLabel() << ")\" <<  ";
+        out << getRelationName(print.getRelation()) << "->"
+            << "size() << std::endl;\n";
+        out << "}";
+        out << "}\n";
+        PRINT_END_COMMENT(out);
+    }
 
     void visitLogSize(const RamLogSize& print, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << "{ auto lease = getOutputLock().acquire(); \n";
         out << "(void)lease;\n";
         out << "profile << R\"(" << print.getLabel() << ")\" <<  ";
@@ -1339,28 +1424,34 @@ public:
         out << "->"
             << "size() << std::endl;\n"
             << "}";
+        PRINT_END_COMMENT(out);
     }
 
     // -- control flow statements --
 
     void visitSequence(const RamSequence& seq, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         for (const auto& cur : seq.getStatements()) {
             out << print(cur);
         }
+        PRINT_END_COMMENT(out);
     }
 
     void visitParallel(const RamParallel& parallel, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         auto stmts = parallel.getStatements();
 
         // special handling cases
         if (stmts.empty()) {
             return;
+            PRINT_END_COMMENT(out);
         }
 
         // a single statement => save the overhead
         if (stmts.size() == 1) {
             out << print(stmts[0]);
             return;
+            PRINT_END_COMMENT(out);
         }
 
         // more than one => parallel sections
@@ -1377,13 +1468,17 @@ public:
 
         // done
         out << "SECTIONS_END;\n";
+        PRINT_END_COMMENT(out);
     }
 
     void visitLoop(const RamLoop& loop, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << "for(;;) {\n" << print(loop.getBody()) << "}\n";
+        PRINT_END_COMMENT(out);
     }
 
     void visitSwap(const RamSwap& swap, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         const std::string tempKnowledge = "rel_0";
         const std::string& deltaKnowledge = getRelationName(swap.getFirstRelation());
         const std::string& newKnowledge = getRelationName(swap.getSecondRelation());
@@ -1393,13 +1488,17 @@ public:
             << deltaKnowledge << " = " << newKnowledge << ";\n"
             << newKnowledge << " = " << tempKnowledge << ";\n"
             << "}\n";
+        PRINT_END_COMMENT(out);
     }
 
     void visitExit(const RamExit& exit, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << "if(" << print(exit.getCondition()) << ") break;\n";
+        PRINT_END_COMMENT(out);
     }
 
     void visitLogTimer(const RamLogTimer& timer, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         // create local scope for name resolution
         out << "{\n";
 
@@ -1411,20 +1510,24 @@ public:
 
         // done
         out << "}\n";
+        PRINT_END_COMMENT(out);
     }
 
     void visitDebugInfo(const RamDebugInfo& dbg, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << "SignalHandler::instance()->setMsg(R\"_(";
         out << dbg.getLabel();
         out << ")_\");\n";
 
         // insert statements of the rule
         visit(dbg.getNested(), out);
+        PRINT_END_COMMENT(out);
     }
 
     // -- operations --
 
     void visitSearch(const RamSearch& search, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         auto condition = search.getCondition();
         if (condition) {
             out << "if( " << print(condition) << ") {\n" << print(search.getNestedOperation()) << "}\n";
@@ -1434,9 +1537,11 @@ public:
         } else {
             out << print(search.getNestedOperation());
         }
+        PRINT_END_COMMENT(out);
     }
 
     void visitScan(const RamScan& scan, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         // get relation name
         const auto& rel = scan.getRelation();
         auto relName = getRelationName(rel);
@@ -1465,6 +1570,7 @@ public:
                 out << "}\n";
             }
             return;
+            PRINT_END_COMMENT(out);
         }
 
         // check list of keys
@@ -1505,10 +1611,11 @@ public:
         }
         visitSearch(scan, out);
         out << "}\n";
-        return;
+        PRINT_END_COMMENT(out);
     }
 
     void visitLookup(const RamLookup& lookup, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         auto arity = lookup.getArity();
 
         // get the tuple type working with
@@ -1526,9 +1633,11 @@ public:
         visitSearch(lookup, out);
 
         out << "}\n";
+        PRINT_END_COMMENT(out);
     }
 
     void visitAggregate(const RamAggregate& aggregate, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         // get some properties
         const auto& rel = aggregate.getRelation();
         auto arity = rel.getArity();
@@ -1548,6 +1657,7 @@ public:
             out << "env" << level << "[0] = " << relName << "->"
                 << "size();\n";
             visitSearch(aggregate, out);
+            PRINT_END_COMMENT(out);
             return;
         }
 
@@ -1667,9 +1777,11 @@ public:
         if (aggregate.getFunction() != RamAggregate::COUNT) {
             out << "}\n";
         }
+        PRINT_END_COMMENT(out);
     }
 
     void visitProject(const RamProject& project, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         const auto& rel = project.getRelation();
         auto arity = rel.getArity();
         auto relName = getRelationName(rel);
@@ -1724,15 +1836,19 @@ public:
                 out << " else { ++private_num_failed_proofs; }";
             }
         }
+        PRINT_END_COMMENT(out);
     }
 
     // -- conditions --
 
     void visitAnd(const RamAnd& c, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << "((" << print(c.getLHS()) << ") && (" << print(c.getRHS()) << "))";
+        PRINT_END_COMMENT(out);
     }
 
     void visitBinaryRelation(const RamBinaryRelation& rel, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         switch (rel.getOperator()) {
             // comparison operators
             case BinaryConstraintOp::EQ:
@@ -1791,14 +1907,18 @@ public:
                 assert(0 && "Unsupported Operation!");
                 break;
         }
+        PRINT_END_COMMENT(out);
     }
 
     void visitEmpty(const RamEmpty& empty, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << getRelationName(empty.getRelation()) << "->"
             << "empty()";
+        PRINT_END_COMMENT(out);
     }
 
     void visitNotExists(const RamNotExists& ne, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         // get some details
         const auto& rel = ne.getRelation();
         auto relName = getRelationName(rel);
@@ -1811,6 +1931,7 @@ public:
                 << "contains(Tuple<RamDomain," << arity << ">({" << join(ne.getValues(), ",", rec) << "}),"
                 << ctxName << ")";
             return;
+            PRINT_END_COMMENT(out);
         }
 
         // else we conduct a range query
@@ -1826,22 +1947,30 @@ public:
             }
         });
         out << "})," << ctxName << ").empty()";
+        PRINT_END_COMMENT(out);
     }
 
     // -- values --
     void visitNumber(const RamNumber& num, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << num.getConstant();
+        PRINT_END_COMMENT(out);
     }
 
     void visitElementAccess(const RamElementAccess& access, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << "env" << access.getLevel() << "[" << access.getElement() << "]";
+        PRINT_END_COMMENT(out);
     }
 
     void visitAutoIncrement(const RamAutoIncrement& /*inc*/, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << "(ctr++)";
+        PRINT_END_COMMENT(out);
     }
 
     void visitUnaryOperator(const RamUnaryOperator& op, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         switch (op.getOperator()) {
             case UnaryOp::ORD:
                 out << print(op.getValue());
@@ -1904,9 +2033,11 @@ public:
                 assert(0 && "Unsupported Operation!");
                 break;
         }
+        PRINT_END_COMMENT(out);
     }
 
     void visitBinaryOperator(const RamBinaryOperator& op, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         switch (op.getOperator()) {
             // arithmetic
             case BinaryOp::ADD: {
@@ -1978,9 +2109,11 @@ public:
             default:
                 assert(0 && "Unsupported Operation!");
         }
+        PRINT_END_COMMENT(out);
     }
 
     void visitTernaryOperator(const RamTernaryOperator& op, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         switch (op.getOperator()) {
             case TernaryOp::SUBSTR:
                 out << "(RamDomain)symTable.lookup(";
@@ -1995,15 +2128,18 @@ public:
             default:
                 assert(0 && "Unsupported Operation!");
         }
+        PRINT_END_COMMENT(out);
     }
 
     // -- records --
 
     void visitPack(const RamPack& pack, std::ostream& out) override {
+        PRINT_BEGIN_COMMENT(out);
         out << "pack("
             << "ram::Tuple<RamDomain," << pack.getValues().size() << ">({" << join(pack.getValues(), ",", rec)
             << "})"
             << ")";
+        PRINT_END_COMMENT(out);
     }
 
     // -- subroutine argument --
@@ -2049,18 +2185,8 @@ void genCode(std::ostream& out, const RamStatement& stmt, const IndexMap& indice
 }
 }  // namespace
 
-std::string RamCompiler::resolveFileName() const {
-    if (Global::config().get("dl-program") == "") {
-        // generate temporary file
-        char templ[40] = "./souffleXXXXXX";
-        close(mkstemp(templ));
-        return templ;
-    }
-    return Global::config().get("dl-program");
-}
-
-std::string RamCompiler::generateCode(
-        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
+std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProgram& prog,
+        const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
     // ---------------------------------------------------------------
@@ -2114,30 +2240,18 @@ std::string RamCompiler::generateCode(
     // ---------------------------------------------------------------
 
     // generate class name
-    std::string simplename = baseName(filename);
-    // strip .h/.cpp, if present
-    if (endsWith(simplename, ".h")) {
-        simplename = simplename.substr(0, simplename.size() - 2);
-    } else if (endsWith(simplename, ".cpp")) {
-        simplename = simplename.substr(0, simplename.size() - 4);
-    }
-    // Remove invalid characters
-    for (size_t i = 0; i < simplename.length(); i++) {
-        if ((!isalpha(simplename[i]) && i == 0) || !isalnum(simplename[i])) {
-            simplename[i] = '_';
-        }
-    }
 
-    std::string classname = "Sf_" + simplename;
+    const std::string nameNoExtension = simpleName((filename != "") ? filename : tempFile());
+    const std::string indexStr = ((index != -1) ? "_" + std::to_string(index) : "");
+    const std::string id = identifier(baseName(nameNoExtension));
+
+    std::string classname = "Sf_" + id + indexStr;
 
     // add filename extension
-    std::string source = filename;
-    if (!(endsWith(source, ".h") || endsWith(source, ".cpp"))) {
-        source += ".cpp";
-    }
+    std::string sourceFilename = nameNoExtension + indexStr + ".cpp";
 
     // open output stream for header file
-    std::ofstream os(source);
+    std::ofstream os(sourceFilename);
 
     // generate C++ program
     os << "#include \"souffle/CompiledSouffle.h\"\n";
@@ -2247,12 +2361,14 @@ std::string RamCompiler::generateCode(
     if (Global::config().has("profile")) {
         os << "(std::string pf=\"profile.log\") : profiling_fname(pf)";
         if (initCons.size() > 0) {
-            os << ",\n";
+            os << ",\n" << initCons;
         }
     } else {
-        os << "() : \n";
+        os << "()";
+        if (initCons.size() > 0) {
+            os << " : " << initCons;
+        }
     }
-    os << initCons;
     os << "{\n";
     os << registerRel;
 
@@ -2277,7 +2393,8 @@ std::string RamCompiler::generateCode(
 
     // -- run function --
 
-    os << "void run() {\n";
+    os << "private:\ntemplate <bool performIO> void runFunction(std::string inputDirectory = \".\", "
+          "std::string outputDirectory = \".\") {\n";
 
     os << "SignalHandler::instance()->set();\n";
 
@@ -2301,7 +2418,6 @@ std::string RamCompiler::generateCode(
     } else {
         genCode(os, *(prog.getMain()), indices);
     }
-
     // add code printing hint statistics
     os << "\n// -- relation hint statistics --\n";
     os << "if(isHintsProfilingEnabled()) {\n";
@@ -2316,19 +2432,24 @@ std::string RamCompiler::generateCode(
 
     os << "SignalHandler::instance()->reset();\n";
 
-    os << "}\n";  // end of run() method
+    os << "}\n";  // end of runFunction() method
+
+    // add methods to run with and without performing IO (mainly for the interface)
+    os << "public:\nvoid run() { runFunction<false>(); }\n";
+    os << "public:\nvoid runAll(std::string inputDirectory = \".\", std::string outputDirectory = \".\") { "
+          "runFunction<true>(inputDirectory, outputDirectory); }\n";
 
     // issue printAll method
     os << "public:\n";
-    os << "void printAll(std::string dirname) {\n";
+    os << "void printAll(std::string outputDirectory = \".\") {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) {
         if (auto store = dynamic_cast<const RamStore*>(&node)) {
             for (IODirectives ioDirectives : store->getRelation().getOutputDirectives()) {
                 os << "try {";
                 os << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
-                os << "if (!dirname.empty() && directiveMap[\"IO\"] == \"file\" && ";
+                os << "if (!outputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
                 os << "directiveMap[\"filename\"].front() != '/') {";
-                os << "directiveMap[\"filename\"] = dirname + \"/\" + directiveMap[\"filename\"];";
+                os << "directiveMap[\"filename\"] = outputDirectory + \"/\" + directiveMap[\"filename\"];";
                 os << "}\n";
                 os << "IODirectives ioDirectives(directiveMap);\n";
                 os << "IOSystem::getInstance().getWriter(";
@@ -2351,17 +2472,16 @@ std::string RamCompiler::generateCode(
 
     // issue loadAll method
     os << "public:\n";
-    os << "void loadAll(std::string dirname) {\n";
+    os << "void loadAll(std::string inputDirectory = \".\") {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamLoad& load) {
         IODirectives ioDirectives = load.getRelation().getInputDirectives();
-
         // get some table details
         os << "try {";
         os << "std::map<std::string, std::string> directiveMap(";
         os << load.getRelation().getInputDirectives() << ");\n";
-        os << "if (!dirname.empty() && directiveMap[\"IO\"] == \"file\" && ";
+        os << "if (!inputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
         os << "directiveMap[\"filename\"].front() != '/') {";
-        os << "directiveMap[\"filename\"] = dirname + \"/\" + directiveMap[\"filename\"];";
+        os << "directiveMap[\"filename\"] = inputDirectory + \"/\" + directiveMap[\"filename\"];";
         os << "}\n";
         os << "IODirectives ioDirectives(directiveMap);\n";
         os << "IOSystem::getInstance().getReader(";
@@ -2453,8 +2573,8 @@ std::string RamCompiler::generateCode(
     os << "};\n";  // end of class declaration
 
     // hidden hooks
-    os << "SouffleProgram *newInstance_" << simplename << "(){return new " << classname << ";}\n";
-    os << "SymbolTable *getST_" << simplename << "(SouffleProgram *p){return &reinterpret_cast<" << classname
+    os << "SouffleProgram *newInstance_" << id << "(){return new " << classname << ";}\n";
+    os << "SymbolTable *getST_" << id << "(SouffleProgram *p){return &reinterpret_cast<" << classname
        << "*>(p)->symTable;}\n";
 
     os << "#ifdef __EMBEDDED_SOUFFLE__\n";
@@ -2463,7 +2583,7 @@ std::string RamCompiler::generateCode(
     os << "return new " << classname << "();\n";
     os << "};\n";
     os << "public:\n";
-    os << "factory_" << classname << "() : ProgramFactory(\"" << simplename << "\"){}\n";
+    os << "factory_" << classname << "() : ProgramFactory(\"" << id << "\"){}\n";
     os << "};\n";
     os << "static factory_" << classname << " __factory_" << classname << "_instance;\n";
     os << "}\n";
@@ -2500,10 +2620,7 @@ std::string RamCompiler::generateCode(
         os << classname + " obj;\n";
     }
 
-    os << "obj.loadAll(opt.getInputFileDir());\n";
-    os << "obj.run();\n";
-    os << "obj.printAll(opt.getOutputFileDir());\n";
-
+    os << "obj.runAll(opt.getInputFileDir(), opt.getOutputFileDir());\n";
     if (Global::config().get("provenance") == "1") {
         os << "explain(obj, true, false);\n";
     } else if (Global::config().get("provenance") == "2") {
@@ -2525,15 +2642,15 @@ std::string RamCompiler::generateCode(
     os.close();
 
     // return the filename
-    return source;
+    return sourceFilename;
 }
 
-std::string RamCompiler::compileToLibrary(
-        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
-    std::string source = generateCode(symTable, prog, filename + ".cpp");
+std::string RamCompiler::compileToLibrary(const SymbolTable& symTable, const RamProgram& prog,
+        const std::string& filename, const int index) const {
+    std::string sourceFilename = generateCode(symTable, prog, filename, index);
 
     // execute shell script that compiles the generated C++ program
-    std::string libCmd = "souffle-compilelib " + filename;
+    std::string libCmd = "souffle-compilelib " + sourceFilename;
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2542,22 +2659,22 @@ std::string RamCompiler::compileToLibrary(
 
     // run executable
     if (system(libCmd.c_str()) != 0) {
-        std::cerr << "failed to compile C++ source " << filename << "\n";
+        std::cerr << "failed to compile C++ source " << sourceFilename << "\n";
         std::cerr << "Have you installed souffle with java?\n";
         return "";
     }
 
     // done
-    return filename;
+    return sourceFilename;
 }
 
-std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog) const {
+std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
+        const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                       Code Generation
     // ---------------------------------------------------------------
 
-    std::string binary = resolveFileName();
-    std::string source = generateCode(symTable, prog, binary + ".cpp");
+    std::string sourceFilename = generateCode(symTable, prog, filename, index);
 
     // ---------------------------------------------------------------
     //                    Compilation & Execution
@@ -2572,7 +2689,7 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamP
     }
 
     // add source code
-    cmd += source;
+    cmd += sourceFilename;
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2581,16 +2698,18 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamP
 
     // run executable
     if (system(cmd.c_str()) != 0) {
-        throw std::invalid_argument("failed to compile C++ source <" + source + ">");
+        throw std::invalid_argument("failed to compile C++ source <" + sourceFilename + ">");
     }
 
     // done
-    return binary;
+    return sourceFilename;
 }
 
-void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
+std::string RamCompiler::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
+        const std::string& filename, const int index) const {
     // compile statement
-    std::string binary = compileToBinary(env.getSymbolTable(), prog);
+    std::string sourceFilename = compileToBinary(symTable, prog, filename, index);
+    std::string binaryFilename = "./" + simpleName(sourceFilename);
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
@@ -2598,19 +2717,24 @@ void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* 
     }
 
     // check whether the executable exists
-    if (!isExecutable(binary)) {
-        throw std::invalid_argument("Generated executable <" + binary + "> could not be found");
+    if (!isExecutable(binaryFilename)) {
+        throw std::invalid_argument("Generated executable <" + binaryFilename + "> could not be found");
     }
 
     // run executable
-    int result = system(binary.c_str());
+    int result = system(binaryFilename.c_str());
     if (Global::config().get("dl-program").empty()) {
-        remove(binary.c_str());
-        remove((binary + ".cpp").c_str());
+        remove(binaryFilename.c_str());
+        remove((binaryFilename + ".cpp").c_str());
     }
     if (result != 0) {
         exit(result);
     }
+    return sourceFilename;
+}
+
+void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
+    executeBinary(env.getSymbolTable(), prog);
 }
 
 void RamExecutor::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,

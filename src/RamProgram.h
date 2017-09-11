@@ -54,7 +54,7 @@ public:
         }
     }
 
-    const RamStatement* getMain() const {
+    RamStatement* getMain() const {
         return main.get();
     }
 
