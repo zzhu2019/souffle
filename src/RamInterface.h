@@ -127,17 +127,9 @@ public:
         }
     }
 
-    // running an interpreter program doesn't make sense
-    void run() {
-        std::cerr << "Cannot run interpreter program" << std::endl;
-    }
-
-    // loading facts for interpreter program doesn't make sense
-    void loadAll(std::string dirname = ".") {
-        std::cerr << "Cannot load facts for interpreter program" << std::endl;
-    }
-
-    // print methods
+    void run() {}
+    void runAll(std::string, std::string) {}
+    void loadAll(std::string) {}
     void printAll(std::string) {}
     void dumpInputs(std::ostream&) {}
     void dumpOutputs(std::ostream&) {}

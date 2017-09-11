@@ -258,19 +258,22 @@ protected:
 public:
     virtual ~SouffleProgram() {}
 
-    // execute Datalog program
-    virtual void run() = 0;
+    // execute program, without any loads or stores
+    virtual void run() {}
 
-    // load all relations
-    virtual void loadAll(std::string dirname = ".") = 0;
+    // execute program, loading inputs and storing outputs as requires
+    virtual void runAll(std::string inputDirectory = ".", std::string outputDirectory = ".") = 0;
 
-    // print all relations
-    virtual void printAll(std::string dirname = ".") = 0;
+    // load all input relations
+    virtual void loadAll(std::string inputDirectory = ".") = 0;
 
-    // print input relations (for debug purposes)
+    // store all output relations
+    virtual void printAll(std::string outputDirectory = ".") = 0;
+
+    // dump input relations (for debug purposes)
     virtual void dumpInputs(std::ostream& out = std::cout) = 0;
 
-    // print output relations (for debug purposes)
+    // dump output relations (for debug purposes)
     virtual void dumpOutputs(std::ostream& out = std::cout) = 0;
 
     // get Relation

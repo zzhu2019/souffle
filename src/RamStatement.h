@@ -41,6 +41,12 @@ public:
     void print(std::ostream& os) const override {
         print(os, 0);
     }
+
+    /** Add support for printing nodes */
+    friend std::ostream& operator<<(std::ostream& out, const RamStatement& other) {
+        other.print(out);
+        return out;
+    }
 };
 
 // ------------------------------------------------------------------
@@ -132,7 +138,8 @@ public:
         for (int i = 0; i < tabpos; ++i) {
             os << '\t';
         }
-        os << "LOAD DATA FOR " << getRelation().getName();
+        os << "LOAD DATA FOR " << getRelation().getName() << " FROM {"
+           << getRelation().getInputDirectives().getFileName() << "}";
     };
 };
 
@@ -146,7 +153,13 @@ public:
         for (int i = 0; i < tabpos; ++i) {
             os << '\t';
         }
-        os << "STORE DATA FOR " << getRelation().getName();
+        const auto& outputDirectives = getRelation().getOutputDirectives();
+        os << "STORE DATA FOR " << getRelation().getName() << " TO {";
+        if (!outputDirectives.empty()) os << outputDirectives.begin()->getFileName();
+        if (outputDirectives.size() > 1)
+            std::for_each(outputDirectives.begin() + 1, outputDirectives.end(),
+                    [&os](IODirectives directives) { os << ", " + directives.getFileName(); });
+        os << "}";
     };
 };
 
@@ -276,8 +289,7 @@ public:
         for (int i = 0; i < tabpos; ++i) {
             os << '\t';
         }
-        os << "MERGE ";
-        os << src.getName() << " INTO " << dest.getName();
+        os << "MERGE " << dest.getName() << " WITH " << src.getName();
     }
 
     /** Obtains a list of child nodes */
@@ -308,6 +320,8 @@ public:
         }
     }
 
+    RamSequence() : RamStatement(RN_Sequence) {}
+
     ~RamSequence() override = default;
 
     /* add new statement to parallel construct */
@@ -319,6 +333,11 @@ public:
 
     std::vector<RamStatement*> getStatements() const {
         return toPtrVector(stmts);
+    }
+
+    template <typename T>
+    void moveSubprograms(std::vector<std::unique_ptr<T>>& destination) {
+        movePtrVector(stmts, destination);
     }
 
     void print(std::ostream& os, int tabpos) const override {

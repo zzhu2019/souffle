@@ -19,6 +19,7 @@
 #include "SymbolMask.h"
 #include "SymbolTable.h"
 #include "Util.h"
+
 #ifdef USE_LIBZ
 #include "gzfstream.h"
 #else
@@ -146,11 +147,10 @@ class ReadFileCSV : public ReadStreamCSV {
 public:
     ReadFileCSV(const std::string& filename, const SymbolMask& symbolMask, SymbolTable& symbolTable,
             std::map<int, int> inputMap = std::map<int, int>(), std::string delimiter = "\t",
-            const bool provenance = false)
+            const bool provenance = false, const bool isIntermediate = false)
             : ReadStreamCSV(fileHandle, symbolMask, symbolTable, inputMap, delimiter, provenance),
-              fileHandle(filename) {
-        baseName = souffle::baseName(filename);
-        if (!fileHandle.is_open()) {
+              baseName(souffle::baseName(filename)), fileHandle(filename) {
+        if (!fileHandle.is_open() && !isIntermediate) {
             throw std::invalid_argument("Cannot open fact file " + baseName + "\n");
         }
     }
@@ -242,8 +242,8 @@ public:
         std::string delimiter = getDelimiter(ioDirectives);
         std::string filename = ioDirectives.has("filename") ? ioDirectives.get("filename")
                                                             : (ioDirectives.getRelationName() + ".facts");
-        return std::unique_ptr<ReadFileCSV>(
-                new ReadFileCSV(filename, symbolMask, symbolTable, inputMap, delimiter, provenance));
+        return std::unique_ptr<ReadFileCSV>(new ReadFileCSV(filename, symbolMask, symbolTable, inputMap,
+                delimiter, provenance, ioDirectives.has("intermediate")));
     }
     const std::string& getName() const override {
         static const std::string name = "file";
