@@ -717,12 +717,11 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
         const QueryExecutionStrategy& queryExecutor;
         std::ostream* report;
         std::ostream* profile;
-        RamData* data;
 
     public:
         Interpreter(RamEnvironment& env, const QueryExecutionStrategy& executor, std::ostream* report,
                 std::ostream* profile, RamData* data)
-                : env(env), queryExecutor(executor), report(report), profile(profile), data(data) {}
+                : env(env), queryExecutor(executor), report(report), profile(profile) {}
 
         // -- Statements -----------------------------
 
@@ -916,6 +915,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 }  // namespace
 
 void RamGuidedInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* data) const {
+    SignalHandler::instance()->set();
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
         // open output stream
@@ -928,6 +928,7 @@ void RamGuidedInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, 
     } else {
         run(queryStrategy, report, nullptr, *(prog.getMain()), env, data);
     }
+    SignalHandler::instance()->reset();
 }
 
 namespace {
@@ -2395,6 +2396,8 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
     os << "private:\ntemplate <bool performIO> void runFunction(std::string inputDirectory = \".\", "
           "std::string outputDirectory = \".\") {\n";
 
+    os << "SignalHandler::instance()->set();\n";
+
     // initialize counter
     os << "// -- initialize counter --\n";
     os << "std::atomic<RamDomain> ctr(0);\n\n";
@@ -2426,6 +2429,9 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
         os << "std::cout << \"\\n\";\n";
     });
     os << "}\n";
+
+    os << "SignalHandler::instance()->reset();\n";
+
     os << "}\n";  // end of runFunction() method
 
     // add methods to run with and without performing IO (mainly for the interface)
