@@ -51,7 +51,7 @@ AC_ARG_ENABLE(
 )
 AS_IF([test "x$enable_provenance" != "xno"], [
   AX_WITH_CURSES
-  AS_IF([test "x$ax_cv_ncurses" != "xyes"],[AC_MSG_ERROR([required library ncurses missing])])
+  AS_IF([test "x$ax_cv_ncurses" != "xyes"],[AC_MSG_ERROR([ncurses library is needed for support of provenance display. To build without provenance support use --disable-provenance.])])
   AS_VAR_APPEND(LIBS, ["$CURSES_LIB"])
   AS_VAR_APPEND(CXXFLAGS, [" -DUSE_PROVENANCE "])
 ])
@@ -136,8 +136,8 @@ AC_ARG_ENABLE(
   AS_HELP_STRING([--disable-libz], [Disable use of libz file compression])
 )
 AS_IF([test "x$enable_libz" != "xno"], [
-    AC_CHECK_HEADER(zlib.h,,[AC_MSG_ERROR([required library zlib missing])])
-    AC_CHECK_LIB(z, compress,,[AC_MSG_ERROR([required library zlib missing])])
+       AC_CHECK_HEADER(zlib.h,,[AC_MSG_ERROR([required library zlib missing. Use --disable-libz to build without gzip file IO.])])
+       AC_CHECK_LIB(z, compress,,[AC_MSG_ERROR([required library zlib missingi. Use --disable-libz to build without gzip file IO.])])
     AS_VAR_APPEND(CXXFLAGS, [" -DUSE_LIBZ "])
 ])
 AM_CONDITIONAL([LIBZ], [test "x$enable_libz" != "xno"])
@@ -148,8 +148,8 @@ AC_ARG_ENABLE(
   AS_HELP_STRING([--disable-sqlite], [Disable use of sqlite IO])
 )
 AS_IF([test "x$enable_sqlite" != "xno"], [
-    AC_CHECK_HEADER(sqlite3.h,,[AC_MSG_ERROR([required library sqlite3 missing])])
-    AC_CHECK_LIB(sqlite3, sqlite3_open,,[AC_MSG_ERROR([required library sqlite3 missing])])
+    AC_CHECK_HEADER(sqlite3.h,,[AC_MSG_ERROR([required library sqlite3 missing. Use --disable-sqlite without support for SQLite IO support.])])
+    AC_CHECK_LIB(sqlite3, sqlite3_open,,[AC_MSG_ERROR([required library sqlite3 missing. Use --disable-sqlite without support for SQLite IO support.])])
     AS_VAR_APPEND(CXXFLAGS, [" -DUSE_SQLITE "])
 ])
 AM_CONDITIONAL([SQLITE], [test "x$enable_sqlite" != "xno"])
