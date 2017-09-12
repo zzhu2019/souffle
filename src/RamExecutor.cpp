@@ -271,7 +271,7 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
                         sub_str = str.substr(idx, len);
                     } catch (...) {
                         std::cerr << "warning: wrong index position provided by substr(\"";
-                        std::cerr << str << "\"," << idx << "," << len << ") functor.\n";
+                        std::cerr << str << "\"," << (int32_t)idx << "," << (int32_t)len << ") functor.\n";
                     }
                     return env.getSymbolTable().lookup(sub_str.c_str());
                 }
@@ -2277,7 +2277,8 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
     os << "   std::string sub_str, result; \n";
     os << "   try { result = std::string(str).substr(idx,len); } catch(...) { \n";
     os << "     std::cerr << \"warning: wrong index position provided by substr(\\\"\";\n";
-    os << "     std::cerr << str << \"\\\",\" << idx << \",\" << len << \") functor.\\n\";\n";
+    os << "     std::cerr << str << \"\\\",\" << (int32_t)idx << \",\" << (int32_t)len << \") "
+          "functor.\\n\";\n";
     os << "   } return result;\n";
     os << "}\n";
 
