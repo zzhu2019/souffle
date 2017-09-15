@@ -1123,6 +1123,7 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
     }
     RamRelationIdentifier rrel = getRamRelationIdentifier(
             mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
+    delete mrel;
     // create and load the relation at the start
     appendStmt(current, std::make_unique<RamCreate>(rrel));
 
@@ -1151,7 +1152,7 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
     }
     RamRelationIdentifier rrel = getRamRelationIdentifier(
             mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
-
+    delete mrel;
     if (rel->isPrintSize()) {
         appendStmt(current, std::make_unique<RamPrintSize>(rrel));
     }
