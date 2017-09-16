@@ -24,18 +24,18 @@ namespace souffle {
 const std::string identifierToString(const AstRelationIdentifier& name) {
     std::stringstream ss;
     ss << name;
-    return *(new std::string(ss.str()));
+    return ss.str();
 }
 
 inline AstRelationIdentifier makeRelationName(
         const AstRelationIdentifier& orig, const std::string& type, int num = -1) {
-    auto newName = new AstRelationIdentifier(identifierToString(orig));
-    newName->append(type);
+    AstRelationIdentifier newName(identifierToString(orig));
+    newName.append(type);
     if (num != -1) {
-        newName->append((const std::string&)std::to_string(num));
+        newName.append((const std::string&)std::to_string(num));
     }
 
-    return *newName;
+    return newName;
 }
 
 std::unique_ptr<AstRelation> makeInfoRelation(
