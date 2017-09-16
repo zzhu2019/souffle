@@ -1166,10 +1166,10 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
 std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
         const AstClause& clause, const AstProgram* program, const TypeEnvironment& typeEnv) {
     // make intermediate clause with constraints
-    AstClause* intermediateClause = clause.clone();
+    std::unique_ptr<AstClause> intermediateClause(clause.clone());
 
     // name unnamed variables
-    nameUnnamedVariables(intermediateClause);
+    nameUnnamedVariables(intermediateClause.get());
 
     // add constraint for each argument in head of atom
     AstAtom* head = intermediateClause->getHead();
@@ -1177,17 +1177,14 @@ std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
         auto arg = head->getArgument(i);
 
         if (auto var = dynamic_cast<AstVariable*>(arg)) {
-            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
-                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(var),
-                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                    std::unique_ptr<AstArgument>(var->clone()), std::make_unique<AstSubroutineArgument>(i)));
         } else if (auto func = dynamic_cast<AstFunctor*>(arg)) {
-            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
-                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(func),
-                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                    std::unique_ptr<AstArgument>(func->clone()), std::make_unique<AstSubroutineArgument>(i)));
         } else if (auto rec = dynamic_cast<AstRecordInit*>(arg)) {
-            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
-                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(rec),
-                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                    std::unique_ptr<AstArgument>(rec->clone()), std::make_unique<AstSubroutineArgument>(i)));
         }
     }
 
@@ -1201,14 +1198,13 @@ std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
             auto arity = atom->getArity();
 
             // arity - 1 is the level number in body atoms
-            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(
-                    BinaryConstraintOp::LT, std::unique_ptr<AstArgument>(atom->getArgument(arity - 1)),
-                    std::unique_ptr<AstArgument>(new AstSubroutineArgument(levelIndex)))));
+            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::LT,
+                    std::unique_ptr<AstArgument>(atom->getArgument(arity - 1)->clone()),
+                    std::make_unique<AstSubroutineArgument>(levelIndex)));
         }
     }
 
-    auto result = translateClause(*intermediateClause, program, &typeEnv, 0, true);
-    return result;
+    return translateClause(*intermediateClause, program, &typeEnv, 0, true);
 }
 
 /** translates the given datalog program into an equivalent RAM program  */
