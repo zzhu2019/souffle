@@ -716,6 +716,7 @@ bool EvaluateConstantAggregatesTransformer::transform(AstTranslationUnit& transl
             return std::unique_ptr<AstNode>(new AstNumberConstant(1));
           }
         } else if (op == AstAggregator::sum) {
+          // TODO: Same as above
           const AstArgument* arg = aggr->getTargetExpression();
           if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
             return std::unique_ptr<AstNode>(arg->clone());
@@ -841,38 +842,14 @@ bool RemoveRedundantRelationsTransformer::transform(AstTranslationUnit& translat
     return changed;
 }
 
-// TODO: Get rid of these
-bool isConstant(AstArgument* arg) {
-  return (dynamic_cast<AstConstant*>(arg));
-}
-
-bool isRecord(AstArgument* arg) {
-  return (dynamic_cast<AstRecordInit*>(arg));
-}
-
-bool isFunctor(AstArgument* arg) {
-  return (dynamic_cast<AstFunctor*>(arg));
-}
-
-bool isCounter(AstArgument* arg) {
-  return (dynamic_cast<AstCounter*>(arg));
-}
-
-// TODO LIST:
-/*
-1 - underscores -> variables
-2 - alpha reductions
-3 - get rid of inner arguments for aggregators
-*/
-
 // TODO: not really Martelli-Montanari algo anymore?
 // Reduces a vector of substitutions based on Martelli-Montanari algorithm
 bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub) {
   // Type-Checking functions
   // TODO: is [&] needed?
-  //auto isConstant = [&](AstArgument* arg) {return (dynamic_cast<AstConstant*>(arg));};
-  //auto isFunctor = [&](AstArgument* arg) {return (dynamic_cast<AstFunctor*>(arg));};
-  // auto isVariable = [&](AstArgument* arg) {return ((dynamic_cast<AstVariable*>(arg)) || isFunctor(arg));};
+  auto isConstant = [&](AstArgument* arg) {return (dynamic_cast<AstConstant*>(arg));};
+  auto isRecord = [&](AstArgument* arg) {return (dynamic_cast<AstRecordInit*>(arg));};
+  auto isCounter = [&](AstArgument* arg) {return (dynamic_cast<AstCounter*>(arg));};
 
   // Keep trying to reduce the substitutions until we reach a fixed point
   bool done = false;
@@ -889,7 +866,6 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
       // AstArgument Cases:
       //  0 - AstVariable
       //  1 - AstUnnamedVariable (_) -> change all to variables to reduce this case -> need to rename everything
-      //  2 - AstCounter ($) -> find out what this does --> UHH??
       //  3 - AstConstant -> as straightforward as variables
       //  4 - AstFunctor -> can this just be direct? or more thought into this?
       //  5 - AstRecordInit -> this should just be pairwise equality right? think about this...
@@ -927,73 +903,6 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
         // TODO: is this correct? is this even possible?
         return false;
       }
-
-      // // TODO: see doubles.dl file for what's left
-      // // AstArgument Cases:
-      // //  0 - AstVariable [x]
-      // //  1 - AstUnnamedVariable (_) -> change all to variables to reduce this case -> need to rename everything
-      // //  2 - AstCounter ($) -> find out what this does --> UHH??
-      // //  3 - AstConstant -> as straightforward as variables [x]
-      // //  4 - AstFunctor -> can this just be direct? or more thought into this? [x]
-      // //  5 - AstRecordInit -> this should just be pairwise equality right? think about this... [x]
-      // //  6 - AstTypeCast -> find out what this does ;; SIDE NOTE: no idea how this looks actually but should work immediately [x]
-      // //  7 - AstAggregator -> complicated! think about this - perhaps equate arguments on a lower level
-      //
-      // // Unify the arguments
-      // // If returnCode = -1, then failed to unify
-      // // If return code = 0, then unified and theres no change
-      // // If return code = 1, then unified and there was a change
-      // // int returnCode = unifyArguments(firstTerm, secondTerm, sub);
-      //
-      // // TODO: change to LHS and RHS
-      // if (*firstTerm == *secondTerm) {
-      //   // get rid of `x = x`
-      //   sub.erase(sub.begin() + i);
-      //   done = false;
-      // } else if (isRecord(firstTerm) && isRecord(secondTerm)) {
-      //   std::vector<AstArgument*> firstRecArgs = static_cast<AstRecordInit*>(firstTerm)->getArguments();
-      //   std::vector<AstArgument*> secondRecArgs = static_cast<AstRecordInit*>(secondTerm)->getArguments();
-      //   if (firstRecArgs.size() != secondRecArgs.size()) {
-      //     return false;
-      //   }
-      //   for (int i = 0; i < firstRecArgs.size(); i++) {
-      //     sub.push_back(std::make_pair(firstRecArgs[i], secondRecArgs[i]));
-      //   }
-      //   sub.erase(sub.begin() + i);
-      //   done = false;
-      // } else if (isConstant(firstTerm) && isConstant(secondTerm)) {
-        // // both are constants but non-equal (prev case => !=)
-        // // failed to unify!
-        // return false;
-      // } else if (!isVariable(firstTerm) && isVariable(secondTerm)) {
-      //   // rewrite `t=x` as `x=t`
-      //   sub[i] = std::make_pair(secondTerm, firstTerm);
-      //   done = false;
-      // } else if (isVariable(firstTerm) && (isVariable(secondTerm) || isConstant(secondTerm))) {
-      //   // // variable elimination when repeated
-      //   // for(int j = 0; j < sub.size(); j++) {
-      //   //   // TODO: functions here too!
-      //   //   if(j == i) {
-      //   //     continue;
-      //   //   }
-      //   //
-      //   //   if(isVariable(sub[j].first) && (*sub[j].first == *firstTerm)){
-      //   //     if(*sub[j].second == *secondTerm) {
-      //   //       sub.erase(sub.begin() + i);
-      //   //     } else {
-      //   //       sub[j].first = secondTerm;
-      //   //     }
-      //   //     done = false;
-      //   //   } else if(isVariable(sub[j].second) && (*sub[j].second == *firstTerm)) {
-      //   //     if(*sub[j].first == *secondTerm) {
-      //   //       sub.erase(sub.begin() + i);
-      //   //     } else {
-      //   //       sub[j].second = secondTerm;
-      //   //     }
-      //   //     done = false;
-      //   //   }
-      //   // }
-      // }
     }
   }
 
@@ -1023,8 +932,33 @@ std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> unifyAtoms(A
 }
 
 std::pair<std::vector<AstLiteral*>, bool> inlineBodyLiterals(AstAtom* atom, AstClause* atomClause) {
+  // NOTE: this renaming is done to fix the problem when an inined atom is used twice in a body
+  static int inlineCount = 0;
   bool changed = false;
   std::vector<AstLiteral*> addedLits;
+
+  struct VariableRenamer : public AstNodeMapper {
+    int varnum;
+    VariableRenamer(int varnum) : varnum(varnum) {}
+    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+        if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())){
+          // Rename the variable
+          AstVariable* newVar = var->clone();
+          std::stringstream newName;
+          // TODO: the var name can get way too long
+          newName << var->getName() << "_" << varnum;
+          newVar->setName(newName.str());
+          inlineCount++;
+          return std::unique_ptr<AstNode>(newVar);
+        }
+        node->apply(*this);
+        return node;
+    }
+  };
+
+  VariableRenamer update(inlineCount);
+  inlineCount++;
+  atomClause->apply(update);
 
   // Get the constraints needed to unify the two atoms
   std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> res = unifyAtoms(atomClause->getHead(), atom);
@@ -1045,55 +979,52 @@ std::pair<std::vector<AstLiteral*>, bool> inlineBodyLiterals(AstAtom* atom, AstC
   return std::make_pair(addedLits, changed);
 }
 
-// Returns an equivalent clause after inlining the given atom in the clause wrt atomClause
-// TODO: fix up
-AstClause* inlineClause(const AstClause& clause, AstAtom* atom, AstClause* atomClause) {
-  // TODO: what if variable names are non-unique across atoms being unified? - \alpha reduction time later!
-  //      -- see apply function?
+std::pair<std::vector<AstLiteral*>, bool> inlineNegatedBodyLiterals (AstAtom* atom, AstClause* atomClause, std::vector<AstConstraint*>& constraints) {
+  // NOTE: this renaming is done to fix the problem when an inined atom is used twice in a body
+  static int inlineCount = 0;
+  bool changed = false;
+  std::vector<AstLiteral*> addedLits;
+
+  struct VariableRenamer : public AstNodeMapper {
+    int varnum;
+    VariableRenamer(int varnum) : varnum(varnum) {}
+    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+        if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())){
+          // Rename the variable
+          AstVariable* newVar = var->clone();
+          std::stringstream newName;
+          // TODO: the var name can get way too long
+          newName << var->getName() << "_" << varnum;
+          newVar->setName(newName.str());
+          inlineCount++;
+          return std::unique_ptr<AstNode>(newVar);
+        }
+        node->apply(*this);
+        return node;
+    }
+  };
+
+  VariableRenamer update(inlineCount);
+  inlineCount++;
+  atomClause->apply(update);
 
   // Get the constraints needed to unify the two atoms
   std::pair<std::vector<std::pair<AstArgument*, AstArgument*>>, bool> res = unifyAtoms(atomClause->getHead(), atom);
+  if(res.second) {
+    changed = true;
+    for(auto pair : res.first) {
+      constraints.push_back(new AstConstraint(BinaryConstraintOp::EQ,
+              std::unique_ptr<AstArgument>(pair.first->clone()),
+              std::unique_ptr<AstArgument>(pair.second->clone())));
+    }
 
-  // NOTE: DEBUGGING
-  //std::cout << "NEW UNIFICATION: " << *atomClause->getHead() << " " << *atom << std::endl;
-  //for(auto argPair : res.first) {
-  //  std::cout << *argPair.first << " " << *argPair.second << "\t";
-  //}
-  //std::cout << std::endl;
-
-  if(!res.second) {
-    // Could not unify!
-    // TODO: how to proceed? means an error has occurred and this formed clause is b a d
-    //std::cout << "BROKEN UNIFICATION ^ ^ ^" << std::endl;
-    return nullptr;
-  }
-
-  // Start creating the replacement clause
-  AstClause* replacementClause = clause.cloneHead();
-
-  // Add in all the literals except the atom to be inlined
-  for(AstLiteral* lit : clause.getBodyLiterals()) {
-    if(atom != lit) {
-      replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+    // Add in the body of the current clause of the inlined atom
+    for(AstLiteral* lit : atomClause->getBodyLiterals()) {
+      addedLits.push_back(lit->clone());
     }
   }
 
-  // Add in the body of the current clause of the inlined atom
-  for(AstLiteral* lit : atomClause->getBodyLiterals()) {
-    replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
-  }
-
-  // Add in the substitutions as constraints to unify
-  // TODO: need alpha reduction to make sure everything doesn't break
-  for(auto pair : res.first) {
-    AstConstraint* subCons = new AstConstraint(BinaryConstraintOp::EQ,
-            std::unique_ptr<AstArgument>(pair.first->clone()),
-            std::unique_ptr<AstArgument>(pair.second->clone()));
-
-    replacementClause->addToBody(std::unique_ptr<AstLiteral>(subCons));
-  }
-
-  return replacementClause;
+  return std::make_pair(addedLits, changed);
 }
 
 // Renames all arguments contained in inlined relations to prevent conflict
@@ -1102,16 +1033,13 @@ void renameInlinedArguments(AstProgram& program) {
   struct VariableRenamer : public AstNodeMapper {
       VariableRenamer() {}
       std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-          if (dynamic_cast<AstLiteral*>(node.get())){
-            // Apply to the literal's arguments
-            node->apply(*this);
-            return node;
-          } else if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())){
+          if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())){
             // Rename the variable
             AstVariable* newVar = var->clone();
             newVar->setName("<inlined_" + var->getName() + ">");
             return std::unique_ptr<AstNode>(newVar);
           }
+          node->apply(*this);
           return node;
       }
   };
@@ -1127,61 +1055,18 @@ void renameInlinedArguments(AstProgram& program) {
   }
 }
 
-int underscoreCount = 0;
-
 // Removes all underscores in inlined relations
-void removeInlinedUnderscores(AstProgram& program) {
-  // struct UpdateUnderscores : public AstNodeMapper;
-  //
-  // // construct mapping to name underscores
-  // struct UnderscoreNamer : public AstNodeMapper {
-  //     AstProgram& program;
-  //     UpdateUnderscores* updater;
-  //     UnderscoreNamer(AstProgram& program, UpdateUnderscores* updater) : program(program), updater(updater) {}
-  //     std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-  //         if(AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())){
-  //           // Give a name to the underscord variable
-  //           std::stringstream newVarName;
-  //           newVarName << "<underscore_" << underscoreCount++ << ">";
-  //           AstVariable* newVar = new AstVariable(newVarName.str());
-  //           return std::unique_ptr<AstNode>(newVar);
-  //         }
-  //         return node->apply(*updater);
-  //     }
-  // };
-
-  // // TODO: fix this so that it fits the proper style?
-  // struct UpdateUnderscores : public AstNodeMapper {
-  //   AstProgram& program;
-  //   UpdateUnderscores(AstProgram& program) : program(program) {}
-  //   std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-  //     if(AstLiteral* lit = dynamic_cast<AstLiteral*>(node.get())) {
-  //       if(lit->getAtom() != nullptr) {
-  //         if(program.getRelation(lit->getAtom()->getName())->isInline()){
-  //           UnderscoreNamer m(program);
-  //           node->apply(m);
-  //           return node;
-  //         }
-  //       }
-  //     }
-  //
-  //     node->apply(*this);
-  //     return node;
-  //   }
-  // };
-
-  // TODO: NEED to only change the name of inlined stuff
-  struct UnderscoreNamer : public AstNodeMapper {
-    UnderscoreNamer() {}
+void nameUnderscores(AstProgram& program) {
+  struct M : public AstNodeMapper {
+    M() {}
     std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
       static int underscoreCount = 0;
-      // std::cout << " performing replacement on " << *node << std::endl;
       if (AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())) {
-        // Give a name to the underscored variable
+        // Give a unique name to the underscored vairable
         std::stringstream newVarName;
+        // TODO: match NormaliseConstraintsTransformer for consistency?
         newVarName << "<underscore_" << underscoreCount++ << ">";
         AstVariable* newVar = new AstVariable(newVarName.str());
-        // TODO: check if should be applied beforehand
         return std::unique_ptr<AstNode>(newVar);
       }
       node->apply(*this);
@@ -1189,15 +1074,104 @@ void removeInlinedUnderscores(AstProgram& program) {
     }
   };
 
-  UnderscoreNamer update;
+  M update;
+  program.apply(update);
+}
 
-  // TODO: want to visit every atom and apply this to it
-  visitDepthFirst(program, [&](const AstAtom& a) {
-    // TODO: THIS IS HORRIBLE - GETTING RID OF THE CONST QUALIFIER
-    // TODO: but need a way to do this without having a const to begin with...
-    AstAtom* atom = (AstAtom*)((void *) &a);
-    atom->apply(update);
-  });
+// Replaces all previously unnamed variables back with underscores
+void unnameUnderscores(AstProgram& program) {
+  struct M : public AstNodeMapper {
+    M() {}
+    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+      if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+        std::string name = var->getName();
+        if((name.find("<underscore_")==0) && (name[name.length()-1] == '>')) {
+          return std::unique_ptr<AstNode>(new AstUnnamedVariable());
+        }
+      }
+      node->apply(*this);
+      return node;
+    }
+  };
+
+  M update;
+  program.apply(update);
+}
+
+// Replaces all previously unnamed variables back with underscores
+void renameUnderscores(AstArgument* arg) {
+  struct M : public AstNodeMapper {
+    M() {}
+    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+      static int underscoreCount = 0;
+      if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+        std::string name = var->getName();
+        if((name.find("<underscore_")==0) && (name[name.length()-1] == '>')) {
+          // Give a unique name to the underscored vairable
+          std::stringstream newVarName;
+          // TODO: match NormaliseConstraintsTransformer for consistency?
+          newVarName << "<underscore_" << underscoreCount++ << ">";
+          AstVariable* newVar = new AstVariable(newVarName.str());
+          return std::unique_ptr<AstNode>(newVar);        }
+      }
+      node->apply(*this);
+      return node;
+    }
+  };
+
+  M update;
+  arg->apply(update);
+}
+
+// TODO: this is only necessary because for some reason the aggregators are sharing variable scope
+// Replaces all previously unnamed variables back with underscores
+void renameTargetExpressions(AstArgument* arg) {
+  renameUnderscores(arg);
+  struct N : public AstNodeMapper {
+    std::string name;
+    int varnum;
+    N(std::string name, int varnum) : name(name), varnum(varnum) {}
+    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+      if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+        if(var->getName() == name) {
+          // Give a unique name to the underscored vairable
+          std::stringstream newVarName;
+          // TODO: match NormaliseConstraintsTransformer for consistency?
+          newVarName << "<" << name << "_" << varnum << ">";
+          AstVariable* newVar = new AstVariable(newVarName.str());
+          return std::unique_ptr<AstNode>(newVar);
+        }
+      }
+      node->apply(*this);
+      return node;
+    }
+  };
+
+  struct M : public AstNodeMapper {
+    M() {}
+    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+      static int targetExpr = 0;
+      if(AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
+        AstAggregator* newAggr = aggr->clone();
+        const AstArgument* target = newAggr->getTargetExpression();
+        if(target == nullptr) {
+          node->apply(*this);
+          return node;
+        }
+        if(const AstVariable* var = dynamic_cast<const AstVariable*>(target)) {
+          N update(var->getName(), targetExpr++);
+          newAggr->apply(update);
+        }
+        newAggr->apply(*this);
+        return std::unique_ptr<AstNode>(newAggr);
+      }
+      node->apply(*this);
+      return node;
+    }
+  };
+
+  M update;
+  arg->apply(update);
 }
 
 AstClause* replaceClauseLiteral(const AstClause& clause, int index, AstLiteral* lit) {
@@ -1262,6 +1236,41 @@ AstLiteral* negateLiteral(AstLiteral* lit) {
     return res;
   }
 
+std::vector<std::vector<AstLiteral*>> formNegatedLiterals(AstProgram& program, AstAtom* atom) {
+  std::vector<std::vector<AstLiteral*>> addedBodyLiterals;
+  std::vector<std::vector<AstConstraint*>> addedConstraints;
+  for (AstClause* inClause : program.getRelation(atom->getName())->getClauses()) {
+    std::vector<AstConstraint*> currCons;
+    // Form the replacement clause
+    std::pair<std::vector<AstLiteral*>, bool> replacementBodyLiterals = inlineNegatedBodyLiterals(atom, inClause, currCons);
+    if(!replacementBodyLiterals.second) {
+      // Failed to unify
+      continue;
+    }
+    addedBodyLiterals.push_back(replacementBodyLiterals.first);
+    addedConstraints.push_back(currCons);
+  }
+  addedBodyLiterals = combineNegatedLiterals(addedBodyLiterals);
+
+  std::vector<std::vector<AstLiteral*>> newBodyLiterals;
+  for(auto subvector : addedBodyLiterals) {
+    newBodyLiterals.push_back(subvector);
+  }
+
+  // Add in the constraints to all the body literals
+  for(int i = 0; i < addedBodyLiterals.size(); i++) {
+    std::vector<AstLiteral*> currentBody = addedBodyLiterals[i];
+
+    for(std::vector<AstConstraint*> constraintGroup : addedConstraints) {
+      for(AstConstraint* constraint : constraintGroup) {
+        newBodyLiterals[i].push_back(constraint->clone()); // need to clone?
+      }
+    }
+  }
+
+  return newBodyLiterals;
+}
+
 std::pair<std::vector<AstArgument*>, bool> getInlinedArgument(AstProgram& program, const AstArgument* arg);
 std::pair<std::vector<AstAtom*>, bool> getInlinedAtom(AstProgram& program, AstAtom& atom);
 std::pair<std::vector<AstLiteral*>, bool> getInlinedLiteral(AstProgram& program, AstLiteral& literal);
@@ -1306,11 +1315,6 @@ std::pair<std::pair<std::vector<std::vector<AstLiteral*>>, bool>, std::pair<std:
       }
     }
   } else if (AstNegation* neg = dynamic_cast<AstNegation*>(lit)) {
-    // negation
-
-    // negated atoms that are supposed to be inlined are dealt with earlier
-    // TODO: DO THAT HANDLING
-
     // check if its arguments need to be changed
     AstAtom* atom = neg->getAtom();
     auto atomVersions = getInlinedLiteral(program, atom);
@@ -1319,7 +1323,7 @@ std::pair<std::pair<std::vector<std::vector<AstLiteral*>>, bool>, std::pair<std:
 
       // c(x) :- b(x), !a(x) ==> c(x) :- b(x), !a1(x), !a2(x).
       // TODO: check the unified atoms whether you can `and` them together without problems
-      addedBodyLiterals = combineNegatedLiterals(atomVersions.first.first);
+      addedBodyLiterals = formNegatedLiterals(program, atom);
     } else if (atomVersions.second.second) {
       changed = true;
       for(AstLiteral* nextLit : atomVersions.second.first) {
@@ -1361,7 +1365,22 @@ AstArgument* combineAggregators(std::vector<AstArgument*> aggrs, BinaryOp fun) {
   }
 
   AstArgument* rhs = combineAggregators(std::vector<AstArgument*>(aggrs.begin() + 1, aggrs.end()), fun);
+
   AstArgument* result = new AstBinaryFunctor(fun, std::unique_ptr<AstArgument>(aggrs[0]), std::unique_ptr<AstArgument> (rhs));
+
+  std::cout << "COMBINING AGGREGATORS" << std::endl;
+  for(auto agg : aggrs) {
+    if(agg == nullptr) {
+      std::cout << "WHAT?????" << std::endl;
+    } else {
+      std::cout << "LOOK: " << agg << std::endl;
+    }
+  }
+  std::cout << "GIVES US" << std::endl;
+  std::cout << *result << std::endl;
+  std::cout << "END" << std::endl;
+
+  renameTargetExpressions(result);
 
   return result;
 }
@@ -1609,7 +1628,6 @@ std::pair<std::vector<AstClause*>, bool> getInlinedClause(AstProgram& program, c
     }
   }
 
-
   // Go through the atoms in the clause and inline the necessary atoms
   // TODO: this only does atoms... fix this up
   if(!changed) {
@@ -1654,22 +1672,56 @@ std::pair<std::vector<AstClause*>, bool> getInlinedClause(AstProgram& program, c
         break;
       }
     }
-}
+  }
 
   return std::make_pair(versions, changed);
 }
 
-// TODO: handle negation -> maybe create a new relation <negated_a> :- !a(x,y).
-// TODO: won't be grounded though! so should be careful using it!
-// TODO: handle constraints
+void normaliseInlinedConstraints(AstProgram& program) {
+  static int newVarCount = 0;
+  for(AstRelation* rel : program.getRelations()) {
+    if (rel->isInline()) {
+      for(AstClause* clause : rel->getClauses()) {
+        AstClause* newClause = new AstClause();
+        newClause->setSrcLoc(clause->getSrcLoc());
+
+        AstAtom* clauseHead = new AstAtom();
+        clauseHead->setName(clause->getHead()->getName());
+        for(AstArgument* arg : clause->getHead()->getArguments()) {
+          if(AstConstant* constant = dynamic_cast<AstConstant*>(arg)) {
+            std::stringstream newVar;
+            newVar << "<new_var_" << newVarCount++ << ">" << std::endl;
+            clauseHead->addArgument(std::unique_ptr<AstArgument>(new AstVariable(newVar.str())));
+            newClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(
+                    BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(new AstVariable(newVar.str())),
+                    std::unique_ptr<AstArgument>(constant->clone()))));
+          } else {
+            clauseHead->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+          }
+        }
+
+        newClause->setHead(std::unique_ptr<AstAtom>(clauseHead));
+        for(AstLiteral* lit : clause->getBodyLiterals()) {
+          newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+        }
+        rel->addClause(std::unique_ptr<AstClause>(newClause));
+        program.removeClause(clause);
+      }
+    }
+  }
+}
+
+// TODO: are constraints handled properly?
 bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) {
   bool changed = false;
 
   AstProgram& program = *translationUnit.getProgram();
 
+  normaliseInlinedConstraints(program);
+
   renameInlinedArguments(program);
 
-  removeInlinedUnderscores(program);
+  nameUnderscores(program);
 
   // Keep trying to inline until we reach a fixed point
   // TODO: why is this important?
@@ -1695,8 +1747,6 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
 
         // Add in the new clauses
         for(AstClause* replacementClause : newClauses.first) {
-          //std::cout << "NEW CLAUSE:\n" << *replacementClause << std::endl;
-          //std::cout << "OLD CLAUSE:\n" << clause << std::endl;
           program.appendClause(std::unique_ptr<AstClause>(replacementClause));
         }
 
@@ -1712,42 +1762,7 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
     }
   }
 
-  // // handle aggregators
-  // clausesChanged = true;
-  // visitDepthFirst(program, [&](AstAggregator& agg) {
-  //
-  // });
-  //
-  // struct AggregateInliner : public AstNodeMapper {
-  //   AstProgram& program;
-  //
-  //   AggregateInliner(AstProgram& program) : program(program) {}
-  //   std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-  //     // apply down to the base case first
-  //     node->apply(*this);
-  //
-  //     if(AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
-  //       AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
-  //       if(aggr->getTargetExpression() != nullptr) {
-  //         newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
-  //       }
-  //
-  //       for(AstLiteral* lit : aggr->getBodyLiterals()) {
-  //         if(auto atom = dynamic_cast<AstAtom*>(lit)) {
-  //           if(program.getRelation(atom->getName())->isInline()) {
-  //
-  //           } else {
-  //             newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(atom->clone()));
-  //           }
-  //         } else {
-  //           newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(lit->clone()));
-  //         }
-  //       }
-  //     }
-  //     return node;
-  //   }
-  // };
-
+  //unnameUnderscores(program);
 
   std::cout << program << std::endl;
   return changed;
