@@ -155,14 +155,8 @@ public:
         }
         const auto& outputDirectives = getRelation().getOutputDirectives();
         os << "STORE DATA FOR " << getRelation().getName() << " TO {";
-        if (!outputDirectives.empty()) {
-            os << "[";
-        }
         os << join(outputDirectives, "], [",
                 [](std::ostream& out, const IODirectives& directives) { out << directives; });
-        if (!outputDirectives.empty()) {
-            os << "]";
-        }
         os << "}";
     };
 };
