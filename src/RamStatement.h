@@ -155,7 +155,6 @@ public:
         }
         const auto& outputDirectives = getRelation().getOutputDirectives();
         os << "STORE DATA FOR " << getRelation().getName() << " TO {";
-
         bool useStdout = false;
         std::for_each(
                 outputDirectives.begin(), outputDirectives.end(), [&useStdout](IODirectives directives) {
