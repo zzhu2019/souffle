@@ -1,5 +1,14 @@
 souffle (@VERSION@-1) UNRELEASED; urgency=low
 
+  * Interactive provenance browser (taipan-snake)
+  * Add compiling to subprograms for separate execution (lyndonhenry)
+  * Magic Sets (azreika)
+  * Bug fixes and usability fixes
+
+ -- Kostyantyn Vorobyov <k.a.vorobyov@gmail.com>  Wed, 29 Mar 2017 12:00:23 +1100
+
+souffle (1.1.0); urgency=low
+
   * Configurable I/O System with more options and support for new language
     extensions (mmcgr).
   * Support of equivalence relation using union/find data-structures (pnappa)
