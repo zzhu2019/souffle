@@ -1,0 +1,4 @@
+.decl a(x:number)
+.output a()
+
+a(1).

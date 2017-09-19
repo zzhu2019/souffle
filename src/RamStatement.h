@@ -155,10 +155,19 @@ public:
         }
         const auto& outputDirectives = getRelation().getOutputDirectives();
         os << "STORE DATA FOR " << getRelation().getName() << " TO {";
-        if (!outputDirectives.empty()) os << outputDirectives.begin()->getFileName();
-        if (outputDirectives.size() > 1)
-            std::for_each(outputDirectives.begin() + 1, outputDirectives.end(),
-                    [&os](IODirectives directives) { os << ", " + directives.getFileName(); });
+	
+		bool useStdout = false;	
+		std::for_each(outputDirectives.begin(), outputDirectives.end(),
+                    [&useStdout](IODirectives directives) { if (directives.get("IO") == "stdout") useStdout = true; });
+		if (useStdout) {
+			// for the case of running with -D- or --output-dir=-, so as not to throw an error when no file name is defined for a directive
+			os << "-";	
+		} else {
+			if (!outputDirectives.empty()) os << outputDirectives.begin()->getFileName();
+			if (outputDirectives.size() > 1)
+				std::for_each(outputDirectives.begin() + 1, outputDirectives.end(),
+						[&os](IODirectives directives) { os << ", " + directives.getFileName(); });
+		}
         os << "}";
     };
 };
