@@ -111,6 +111,58 @@ jobs:
     - *gcc_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8,-c -p profile.log,-p profile.log"
 
+# Testing stage (-c -j8 -s-)
+  - <<: *linuxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -j8 -s-"
+  - <<: *linuxclang
+    env:
+    - *clang_environment
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -j8 -s-"
+  - <<: *osxclang
+    env:
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -j8 -s-"
+  - <<: *osxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -j8 -s-"
+
+# Testing stage (-f -j8,-c -f -j8)
+  - <<: *linuxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8"
+  - <<: *linuxclang
+    env:
+    - *clang_environment
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8"
+  - <<: *osxclang
+    env:
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8"
+  - <<: *osxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8"
+
+# Testing stage (-c -f -j8 -s-)
+  - <<: *linuxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -f -j8 -s-"
+  - <<: *linuxclang
+    env:
+    - *clang_environment
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -f -j8 -s-"
+  - <<: *osxclang
+    env:
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -f -j8 -s-"
+  - <<: *osxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -f -j8 -s-"
+
+# Testing stage (-j8,-c -j8)
   - <<: *linuxgcc
     env:
     - *gcc_environment
@@ -131,22 +183,6 @@ jobs:
   - <<: *linuxgcc
     env:
     - *gcc_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-f -j8,-c -f -j8"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-f -j8,-c -f -j8"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-f -j8,-c -f -j8"
-  - <<: *osxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-f -j8,-c -f -j8"
-
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
   - <<: *linuxclang
     env:
@@ -159,40 +195,6 @@ jobs:
     env:
     - *gcc_environment
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-
-# Testing stage (-c -j8 -s-)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface SOUFFLE_CONFS="-c -j8 -s-"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface SOUFFLE_CONFS="-c -j8 -s-"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface SOUFFLE_CONFS="-c -j8 -s-"
-  - <<: *osxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface SOUFFLE_CONFS="-c -j8 -s-"
-
-# Testing stage (-c -f -j8 -s-)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface SOUFFLE_CONFS="-c -f -j8 -s-"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface SOUFFLE_CONFS="-c -f -j8 -s-"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface SOUFFLE_CONFS="-c -f -j8 -s-"
-  - <<: *osxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface SOUFFLE_CONFS="-c -f -j8 -s-"
 
 # TODO (#468): these tests currently time out with travis, due to the significant increase in compilation time incurred by the -s option
 #  - <<: *linuxgcc
