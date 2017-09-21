@@ -10,6 +10,6 @@ set -x
 
 # create configure files
 ./bootstrap
-./configure
+CXXFLAGS=--coverage ./configure
 make -j2
 
