@@ -10,6 +10,7 @@ set -x
 
 # create configure files
 ./bootstrap
+gcov --version
 CXXFLAGS=--coverage ./configure
 make -j2
 
