@@ -698,33 +698,54 @@ bool EvaluateConstantAggregatesTransformer::transform(AstTranslationUnit& transl
   // TODO: need some way of checking if things have changed
 
   // TODO: commenting
+  // struct M : public AstNodeMapper {
+  //   M() {}
+  //   std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+  //     if(AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
+  //       AstAggregator::Op op = aggr->getOperator();
+  //       if(op == AstAggregator::min || op == AstAggregator::max) {
+  //         const AstArgument* arg = aggr->getTargetExpression();
+  //         if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
+  //           return std::unique_ptr<AstNode>(arg->clone());
+  //         }
+  //       } else if (op == AstAggregator::count) {
+  //         // TODO: check correctness of this part!!! Mainly:
+  //         //        - does this check correctly that there is no body atom?
+  //         //        - should it always be 1? could be 0? in inlining's case, yes
+  //         if (!dynamic_cast<const AstAtom*>(aggr->getBodyLiterals()[0])) {
+  //           return std::unique_ptr<AstNode>(new AstNumberConstant(1));
+  //         }
+  //       } else if (op == AstAggregator::sum) {
+  //         // TODO: Same as above
+  //         const AstArgument* arg = aggr->getTargetExpression();
+  //         if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
+  //           return std::unique_ptr<AstNode>(arg->clone());
+  //         }
+  //       } else {
+  //         // TODO: correctness?
+  //         assert(false && "unhandled aggregate operator type");
+  //       }
+  //     }
+  //
+  //     node->apply(*this);
+  //     return node;
+  //   }
+  // };
+
+  AstRelation* trueRel = new AstRelation();
+  trueRel->setName("+true+");
+  AstClause* fact = new AstClause();
+  fact->setHead(std::unique_ptr<AstAtom>(new AstAtom("+true+")));
+  translationUnit.getProgram()->appendRelation(std::unique_ptr<AstRelation>(trueRel));
+  translationUnit.getProgram()->appendClause(std::unique_ptr<AstClause>(fact));
+
   struct M : public AstNodeMapper {
     M() {}
     std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-      if(AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
-        AstAggregator::Op op = aggr->getOperator();
-        if(op == AstAggregator::min || op == AstAggregator::max) {
-          const AstArgument* arg = aggr->getTargetExpression();
-          if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
-            return std::unique_ptr<AstNode>(arg->clone());
-          }
-        } else if (op == AstAggregator::count) {
-          // TODO: check correctness of this part!!! Mainly:
-          //        - does this check correctly that there is no body atom?
-          //        - should it always be 1? could be 0? in inlining's case, yes
-          if (!dynamic_cast<const AstAtom*>(aggr->getBodyLiterals()[0])) {
-            return std::unique_ptr<AstNode>(new AstNumberConstant(1));
-          }
-        } else if (op == AstAggregator::sum) {
-          // TODO: Same as above
-          const AstArgument* arg = aggr->getTargetExpression();
-          if (arg != nullptr && dynamic_cast<const AstConstant*>(arg)) {
-            return std::unique_ptr<AstNode>(arg->clone());
-          }
-        } else {
-          // TODO: correctness?
-          assert(false && "unhandled aggregate operator type");
-        }
+      if (AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
+        AstAggregator* newAggr= aggr->clone();
+        newAggr->addBodyLiteral(std::unique_ptr<AstAtom>(new AstAtom("+true+")));
+        return std::unique_ptr<AstNode>(newAggr);
       }
 
       node->apply(*this);
@@ -1123,6 +1144,21 @@ void renameUnderscores(AstArgument* arg) {
   arg->apply(update);
 }
 
+// TODO: move this into renameTargetExpressions
+std::string getNewAggrTargetName(std::string name, int varnum) {
+    // TODO: should match <A_N>,  where N is a number
+    int nameLength = name.length();
+    int lastUnderscore = name.find_last_of('_');
+
+    std::stringstream newVarName;
+    if(nameLength > 0 && name[0] == '<' && name[nameLength-1] == '>' && lastUnderscore != name.npos){
+        newVarName << name.substr(0, lastUnderscore) << "_" << varnum << ">";
+    } else {
+        newVarName << "<" << name << "_" << varnum << ">";
+    }
+    return newVarName.str();
+}
+
 // TODO: this is only necessary because for some reason the aggregators are sharing variable scope
 // Replaces all previously unnamed variables back with underscores
 void renameTargetExpressions(AstArgument* arg) {
@@ -1134,11 +1170,10 @@ void renameTargetExpressions(AstArgument* arg) {
     std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
       if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
         if(var->getName() == name) {
-          // Give a unique name to the underscored vairable
-          std::stringstream newVarName;
+          // Give a unique new name to the variable
           // TODO: match NormaliseConstraintsTransformer for consistency?
-          newVarName << "<" << name << "_" << varnum << ">";
-          AstVariable* newVar = new AstVariable(newVarName.str());
+          std::string newVarName = getNewAggrTargetName(name, varnum);
+          AstVariable* newVar = new AstVariable(newVarName);
           return std::unique_ptr<AstNode>(newVar);
         }
       }
@@ -1172,19 +1207,6 @@ void renameTargetExpressions(AstArgument* arg) {
 
   M update;
   arg->apply(update);
-}
-
-AstClause* replaceClauseLiteral(const AstClause& clause, int index, AstLiteral* lit) {
-  AstClause* newClause = clause.clone();
-  auto bodyLiterals = clause.getBodyLiterals();
-  for(int i = 0; i < bodyLiterals.size(); i++) {
-    if(i == index) {
-      newClause->addToBody(std::unique_ptr<AstLiteral>(lit));
-    } else {
-      newClause->addToBody(std::unique_ptr<AstLiteral>(bodyLiterals[i]->clone()));
-    }
-  }
-  return newClause;
 }
 
 AstLiteral* negateLiteral(AstLiteral* lit) {
