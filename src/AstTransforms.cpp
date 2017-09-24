@@ -674,9 +674,9 @@ bool MaterializeAggregationQueriesTransformer::needsMaterializedRelation(const A
     // inspect remaining atom more closely
     const AstAtom* atom = dynamic_cast<const AstAtom*>(agg.getBodyLiterals()[0]);
     if(!atom) {
-      return false;
+      // no atoms, so materialize
+      return true;
     }
-    assert(atom && "Body of aggregate is not containing an atom!");
 
     // if the same variable occurs several times => materialize
     bool duplicates = false;
