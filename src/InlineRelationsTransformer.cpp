@@ -23,7 +23,7 @@ public:
   }
 };
 
-std::pair<NullableVector<std::vector<AstLiteral*>>, NullableVector<AstLiteral*>> getInlinedLiteral(AstProgram&, AstLiteral*);
+NullableVector<std::vector<AstLiteral*>> getInlinedLiteral(AstProgram&, AstLiteral*);
 
 // Replace constants in the head of inlined clauses with (constrained) variables.
 void normaliseInlinedHeads(AstProgram& program) {
@@ -519,9 +519,9 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
       for(int i = 0; i < bodyLiterals.size(); i++) {
         AstLiteral* currLit = bodyLiterals[i];
 
-        std::pair<NullableVector<std::vector<AstLiteral*>>, NullableVector<AstLiteral*>> literalVersions = getInlinedLiteral(program, currLit);
+        NullableVector<std::vector<AstLiteral*>> literalVersions = getInlinedLiteral(program, currLit);
 
-        if(literalVersions.first.isValid()) {
+        if(literalVersions.isValid()) {
           // Literal can be inlined!
           changed = true;
 
@@ -529,7 +529,7 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
 
           // Create an aggregator (with the same operation) for each possible body
           std::vector<AstAggregator*> aggrVersions;
-          for(std::vector<AstLiteral*> inlineVersions : literalVersions.first.getVector()) {
+          for(std::vector<AstLiteral*> inlineVersions : literalVersions.getVector()) {
             AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
             if(aggr->getTargetExpression() != nullptr) {
               newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
@@ -550,47 +550,6 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
             aggrVersions.push_back(newAggr);
           }
 
-          // Create the actual overall aggregator that ties the replacement aggregators together.
-          if(op == AstAggregator::min) {
-            // min x : { a(x) }. <=> min ( min x : { a1(x) }, min x : { a2(x) }, ... )
-            versions.push_back(combineAggregators(aggrVersions, BinaryOp::MIN));
-          } else if (op == AstAggregator::max) {
-            // max x : { a(x) }. <=> max ( max x : { a1(x) }, max x : { a2(x) }, ... )
-            versions.push_back(combineAggregators(aggrVersions, BinaryOp::MAX));
-          } else if (op == AstAggregator::count) {
-            // count : { a(x) }. <=> sum ( count : { a1(x) }, count : { a2(x) }, ... )
-            versions.push_back(combineAggregators(aggrVersions, BinaryOp::ADD));
-          } else if (op == AstAggregator::sum) {
-            // sum x : { a(x) }. <=> sum ( sum x : { a1(x) }, sum x : { a2(x) }, ... )
-            versions.push_back(combineAggregators(aggrVersions, BinaryOp::ADD));
-          } else {
-            assert(false && "unhandled aggregator operator type");
-          }
-        } else if (literalVersions.second.isValid()) {
-          // Literal can't be inlined, but it has subnodes that can be, so replace
-          // the literal with new versions.
-          changed = true;
-
-          AstAggregator::Op op = aggr->getOperator();
-
-          // Create a new aggregator per literal that can replace the original
-          std::vector<AstAggregator*> aggrVersions;
-          for(AstLiteral* newLit : literalVersions.second.getVector()) {
-            AstAggregator* newAggr = new AstAggregator(aggr->getOperator());
-            if(aggr->getTargetExpression() != nullptr) {
-              newAggr->setTargetExpression(std::unique_ptr<AstArgument>(aggr->getTargetExpression()->clone()));
-            }
-            for(int j = 0; j < bodyLiterals.size(); j++) {
-              if(i == j) {
-                newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(newLit));
-              } else {
-                newAggr->addBodyLiteral(std::unique_ptr<AstLiteral>(bodyLiterals[j]->clone()));
-              }
-            }
-            aggrVersions.push_back(newAggr);
-          }
-
-          // TODO (azreika): Check if this needs to be done for this stage, or if they should be separate aggregators
           // Create the actual overall aggregator that ties the replacement aggregators together.
           if(op == AstAggregator::min) {
             // min x : { a(x) }. <=> min ( min x : { a1(x) }, min x : { a2(x) }, ... )
@@ -770,7 +729,7 @@ NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
 //      that will replace it.
 //    - If both are invalid, then no more inlining can occur on this literal and we are done.
 // TODO (azreika): fix this up so only NullableVector<std::vector<AstLiteral*>> is needed
-std::pair<NullableVector<std::vector<AstLiteral*>>, NullableVector<AstLiteral*>> getInlinedLiteral(AstProgram& program, AstLiteral* lit) {
+NullableVector<std::vector<AstLiteral*>> getInlinedLiteral(AstProgram& program, AstLiteral* lit) {
   bool inlined = false;
   bool changed = false;
 
@@ -813,10 +772,10 @@ std::pair<NullableVector<std::vector<AstLiteral*>>, NullableVector<AstLiteral*>>
   } else if (AstNegation* neg = dynamic_cast<AstNegation*>(lit)) {
     // For negations, check the corresponding atom
     AstAtom* atom = neg->getAtom();
-    std::pair<NullableVector<std::vector<AstLiteral*>>, NullableVector<AstLiteral*>> atomVersions = getInlinedLiteral(program, atom);
+    NullableVector<std::vector<AstLiteral*>> atomVersions = getInlinedLiteral(program, atom);
 
-    if(atomVersions.first.isValid()) {
-      // The atom can be directly inlined
+    if(atomVersions.isValid()) {
+      // The atom can be inlined
       inlined = true;
 
       // Suppose an atom a(x) is inlined and has the following rules:
@@ -828,21 +787,6 @@ std::pair<NullableVector<std::vector<AstLiteral*>>, NullableVector<AstLiteral*>>
       // Essentially, produce every combination (m_1 ^ m_2 ^ ...) where m_i is a
       // negated literal in the ith rule of a.
       addedBodyLiterals = formNegatedLiterals(program, atom);
-    } else if (atomVersions.second.isValid()) {
-      // We just have replacement atoms
-      // TODO (azreika): this isn't actually direct inlining, but we have to replace
-      // it with a list of body literals so... fix this up (and maybe change this
-      // whole function to only return body vectors)
-      inlined = true;
-      std::vector<AstLiteral*> newBody;
-      // !(a1 v a2 v a3 v ...) = !a1 ^ !a2 ^ !a3 ^ ...
-      for(AstLiteral* nextLit : atomVersions.second.getVector()) {
-        AstAtom* newAtom = dynamic_cast<AstAtom*>(nextLit);
-        assert("atom expected" && newAtom); // TODO (azreika): fix this up
-        AstLiteral* newNeg = new AstNegation(std::unique_ptr<AstAtom>(newAtom));
-        newBody.push_back(newNeg);
-      }
-      addedBodyLiterals.push_back(newBody);
     }
   } else {
     AstConstraint* constraint = dynamic_cast<AstConstraint*>(lit);
@@ -865,15 +809,21 @@ std::pair<NullableVector<std::vector<AstLiteral*>>, NullableVector<AstLiteral*>>
     }
   }
 
+  if(changed) {
+    // Not inlined directly but found replacement literals
+    // Rewrite these as single-literal bodies
+    for(AstLiteral* version : versions) {
+      std::vector<AstLiteral*> newBody;
+      newBody.push_back(version);
+      addedBodyLiterals.push_back(newBody);
+    }
+    inlined = true;
+  }
+
   if(inlined) {
-    // inlined
-    return std::make_pair(NullableVector<std::vector<AstLiteral*>>(addedBodyLiterals), NullableVector<AstLiteral*>());
-  } else if (changed) {
-    // replaced
-    return std::make_pair(NullableVector<std::vector<AstLiteral*>>(), NullableVector<AstLiteral*>(versions));
+    return NullableVector<std::vector<AstLiteral*>>(addedBodyLiterals);
   } else {
-    // neither
-    return std::make_pair(NullableVector<std::vector<AstLiteral*>>(), NullableVector<AstLiteral*>());
+    return NullableVector<std::vector<AstLiteral*>>();
   }
 }
 
@@ -922,15 +872,15 @@ std::vector<AstClause*> getInlinedClause(AstProgram& program, const AstClause& c
       //    may need to be inlined. In this case, an altered literal must replace the original.
       //    Again, several possible versions may exist, as the inlined relation may have several rules.
       //  3) The literal does not depend on any inlined relations, and so does not need to be changed.
-      std::pair<NullableVector<std::vector<AstLiteral*>>, NullableVector<AstLiteral*>> litVersions = getInlinedLiteral(program, currLit);
+      NullableVector<std::vector<AstLiteral*>> litVersions = getInlinedLiteral(program, currLit);
 
-      if(litVersions.first.isValid()) {
-        // Case 1: The literal has been inlined!
+      if(litVersions.isValid()) {
+        // Case 1 and 2: Inlining has occurred!
         changed = true;
 
         // The literal may be replaced with several different bodies.
         // Create a new clause for each possible version.
-        std::vector<std::vector<AstLiteral*>> bodyVersions = litVersions.first.getVector();
+        std::vector<std::vector<AstLiteral*>> bodyVersions = litVersions.getVector();
         for(std::vector<AstLiteral*> body : bodyVersions) {
           AstClause* replacementClause = clause.cloneHead();
 
@@ -942,30 +892,10 @@ std::vector<AstClause*> getInlinedClause(AstProgram& program, const AstClause& c
           }
 
           // Add in the current set of literals replacing the literal
+          // In Case 2, each body contains exactly one literal
           for(AstLiteral* newLit : body) {
             replacementClause->addToBody(std::unique_ptr<AstLiteral>(newLit));
           }
-
-          versions.push_back(replacementClause);
-        }
-      } else if (litVersions.second.isValid()) {
-        // Case 2: The literal hasn't been inlined, but a subnode has been.
-        changed = true;
-
-        // Go through the list of replacement versions of the literal,
-        // and create a new clause for each.
-        for(AstLiteral* newLit : litVersions.second.getVector()) {
-          AstClause* replacementClause = clause.cloneHead();
-
-          // Add in all body literals from the original except the literal being replaced
-          for(AstLiteral* oldLit : bodyLiterals) {
-            if(currLit != oldLit) {
-              replacementClause->addToBody(std::unique_ptr<AstLiteral>(oldLit->clone()));
-            }
-          }
-
-          // Add in the current replacement literal
-          replacementClause->addToBody(std::unique_ptr<AstLiteral>(newLit));
 
           versions.push_back(replacementClause);
         }
@@ -1039,7 +969,6 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
     }
   }
 
-  std::cout << program << std::endl;
   return changed;
 }
 
