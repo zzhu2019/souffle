@@ -289,7 +289,6 @@ int main(int argc, char** argv) {
     transforms.push_back(std::unique_ptr<AstTransformer>(new MaterializeAggregationQueriesTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveEmptyRelationsTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRedundantRelationsTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new EvaluateConstantAggregatesTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new MaterializeAggregationQueriesTransformer()));
 
 
