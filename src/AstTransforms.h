@@ -205,8 +205,8 @@ public:
 };
 
 /**
- * Transformer that inlines appropriate relations.
- */
+* Transformer that inlines marked relations.
+*/
 class InlineRelationsTransformer : public AstTransformer {
 private:
     virtual bool transform(AstTranslationUnit& translationUnit);
@@ -242,19 +242,6 @@ public:
     virtual std::string getName() const {
         return "MagicSetTransformer";
     }
-};
-
-/**
-* Transformation pass to evaluate aggregators with constant target expressions.
-*/
-class EvaluateConstantAggregatesTransformer : public AstTransformer {
-private:
-  virtual bool transform(AstTranslationUnit& translationUnit);
-
-public:
-  virtual std::string getName() const {
-    return "EvaluateConstantAggregatesTransformer";
-  }
 };
 
 }  // end of namespace souffle

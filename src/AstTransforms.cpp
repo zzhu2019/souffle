@@ -693,36 +693,6 @@ bool MaterializeAggregationQueriesTransformer::needsMaterializedRelation(const A
     return false;
 }
 
-// TODO (azreika): fix this up to only add when necessary
-bool EvaluateConstantAggregatesTransformer::transform(AstTranslationUnit& translationUnit) {
-  // TODO: need some way of checking if things have changed
-  AstRelation* trueRel = new AstRelation();
-  trueRel->setName("+true+");
-  AstClause* fact = new AstClause();
-  fact->setHead(std::unique_ptr<AstAtom>(new AstAtom("+true+")));
-  translationUnit.getProgram()->appendRelation(std::unique_ptr<AstRelation>(trueRel));
-  translationUnit.getProgram()->appendClause(std::unique_ptr<AstClause>(fact));
-
-  struct M : public AstNodeMapper {
-    M() {}
-    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-      if (AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
-        AstAggregator* newAggr= aggr->clone();
-        newAggr->addBodyLiteral(std::unique_ptr<AstAtom>(new AstAtom("+true+")));
-        return std::unique_ptr<AstNode>(newAggr);
-      }
-
-      node->apply(*this);
-      return node;
-    }
-  };
-
-  M update;
-  translationUnit.getProgram()->apply(update);
-
-  return true;
-}
-
 bool RemoveEmptyRelationsTransformer::removeEmptyRelations(AstTranslationUnit& translationUnit) {
     AstProgram& program = *translationUnit.getProgram();
     bool changed = false;
