@@ -138,8 +138,8 @@ public:
         for (int i = 0; i < tabpos; ++i) {
             os << '\t';
         }
-        os << "LOAD DATA FOR " << getRelation().getName() << " FROM {"
-           << getRelation().getInputDirectives().getFileName() << "}";
+        os << "LOAD DATA FOR " << getRelation().getName() << " FROM {" << getRelation().getInputDirectives()
+           << "}";
     };
 };
 
@@ -155,10 +155,8 @@ public:
         }
         const auto& outputDirectives = getRelation().getOutputDirectives();
         os << "STORE DATA FOR " << getRelation().getName() << " TO {";
-        if (!outputDirectives.empty()) os << outputDirectives.begin()->getFileName();
-        if (outputDirectives.size() > 1)
-            std::for_each(outputDirectives.begin() + 1, outputDirectives.end(),
-                    [&os](IODirectives directives) { os << ", " + directives.getFileName(); });
+        os << join(outputDirectives, "], [",
+                [](std::ostream& out, const IODirectives& directives) { out << directives; });
         os << "}";
     };
 };
