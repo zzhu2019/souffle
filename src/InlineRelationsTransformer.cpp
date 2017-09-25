@@ -939,29 +939,32 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
     std::vector<const AstClause*> clausesToDelete;
     clausesChanged = false;
 
-    // Go through each clause in the program and check if we need to inline anything
-    visitDepthFirst(program, [&](const AstClause& clause) {
-      // Skip if the clause is meant to be inlined
-      // TODO (azreika): is it more efficient if these are actually inlined first? Need to think about this
-      if(program.getRelation(clause.getHead()->getName())->isInline()) {
-        return;
+    // Go through each relation in the program and check if we need to inline any of its clauses
+    for(AstRelation* rel : program.getRelations()) {
+      // Skip if the relation is going to be inlined
+      // TODO (azreika): is it more efficient if these are actually inlined first?
+      if(rel->isInline()) {
+        continue;
       }
 
-      if(containsInlinedAtom(program, clause)) {
-        // Generate the inlined versions of this clause - the clause will be replaced by these
-        std::vector<AstClause*> newClauses = getInlinedClause(program, clause);
+      // Go through the relation's clauses and try inlining them
+      for(AstClause* clause : rel->getClauses()) {
+        if(containsInlinedAtom(program, *clause)) {
+          // Generate the inlined versions of this clause - the clause will be replaced by these
+          std::vector<AstClause*> newClauses = getInlinedClause(program, *clause);
 
-        // Replace the clause with these equivalent versions
-        clausesToDelete.push_back(&clause);
-        for (AstClause* replacementClause : newClauses) {
-          program.appendClause(std::unique_ptr<AstClause>(replacementClause));
+          // Replace the clause with these equivalent versions
+          clausesToDelete.push_back(clause);
+          for (AstClause* replacementClause : newClauses) {
+            program.appendClause(std::unique_ptr<AstClause>(replacementClause));
+          }
+
+          // We've changed the program this iteration
+          clausesChanged = true;
+          changed = true;
         }
-
-        // We've changed the program this iteration
-        clausesChanged = true;
-        changed = true;
       }
-    });
+    }
 
     // Delete all clauses that were replaced
     for (const AstClause* clause : clausesToDelete) {
