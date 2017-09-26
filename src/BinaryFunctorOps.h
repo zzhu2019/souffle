@@ -96,8 +96,8 @@ inline BinaryOp getBinaryOpForSymbol(const std::string& symbol) {
     if (symbol == "bxor") return BinaryOp::BXOR;
     if (symbol == "land") return BinaryOp::LAND;
     if (symbol == "lor") return BinaryOp::LOR;
-    if (symbol == "maxnum") return BinaryOp::MAX;
-    if (symbol == "minnum") return BinaryOp::MIN;
+    if (symbol == "max") return BinaryOp::MAX;
+    if (symbol == "min") return BinaryOp::MIN;
     if (symbol == "cat") return BinaryOp::CAT;
     std::cout << "Unrecognised operator: " << symbol << "\n";
     assert(false && "Unsupported Operator!");
