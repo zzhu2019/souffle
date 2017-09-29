@@ -138,7 +138,6 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
   // Type-Checking functions
   auto isConstant = [&](AstArgument* arg) {return (dynamic_cast<AstConstant*>(arg));};
   auto isRecord = [&](AstArgument* arg) {return (dynamic_cast<AstRecordInit*>(arg));};
-  auto isCounter = [&](AstArgument* arg) {return (dynamic_cast<AstCounter*>(arg));};
 
   // Keep trying to reduce the substitutions until we reach a fixed point
   bool done = false;
@@ -150,9 +149,6 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
       auto currPair = sub[i];
       AstArgument* lhs = currPair.first;
       AstArgument* rhs = currPair.second;
-
-      // TODO: throw this error properly
-      assert(!isCounter(lhs) && !isCounter(rhs) && "ERROR: CONTAINS `$`");
 
       // Start trying to reduce the substitution
       // TODO (azreika): Can possibly go further with this substitution reduction
@@ -465,7 +461,6 @@ void renameVariables(AstArgument* arg) {
 
 // Performs a given binary op on a list of aggregators recursively.
 // E.g. ( <aggr1, aggr2, aggr3, ...>, o > = (aggr1 o (aggr2 o (agg3 o (...))))
-// TODO: fix up the type
 AstArgument* combineAggregators(std::vector<AstAggregator*> aggrs, BinaryOp fun) {
   if(aggrs.size() == 1) {
     return aggrs[0];
@@ -933,7 +928,6 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
 
   // Keep trying to inline things until we reach a fixed point.
   // Since we know there are no cyclic dependencies between inlined relations, this will necessarily terminate.
-  // TODO (azreika): Actually take care of this recursive inlining - throw an error in the semantic checker maybe? How to do it here?
   bool clausesChanged = true;
   while(clausesChanged) {
     std::vector<const AstClause*> clausesToDelete;
