@@ -76,13 +76,12 @@ namespace {
 
 class EvalContext {
     std::vector<const RamDomain*> data;
-    std::vector<RamDomain>* returnValues;
-    std::vector<bool>* returnErrors;
-    const std::vector<RamDomain>* args;
+    std::vector<RamDomain>* returnValues = nullptr;
+    std::vector<bool>* returnErrors = nullptr;
+    const std::vector<RamDomain>* args = nullptr;
 
 public:
-    EvalContext(size_t size = 0, const std::vector<RamDomain>* args = new std::vector<RamDomain>())
-            : data(size), args(args) {}
+    EvalContext(size_t size = 0) : data(size) {}
 
     const RamDomain*& operator[](size_t index) {
         return data[index];
@@ -123,7 +122,7 @@ public:
     }
 
     RamDomain getArgument(size_t i) const {
-        assert(i < args->size() && "argument out of range");
+        assert(args != nullptr && i < args->size() && "argument out of range");
         return (*args)[i];
     }
 };

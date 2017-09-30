@@ -350,35 +350,35 @@ std::unique_ptr<RamValue> translateValue(const AstArgument* arg, const ValueInde
     if (const AstVariable* var = dynamic_cast<const AstVariable*>(arg)) {
         ASSERT(index.isDefined(*var) && "variable not grounded");
         const Location& loc = index.getDefinitionPoint(*var);
-        val = std::unique_ptr<RamValue>(new RamElementAccess(loc.level, loc.component, loc.name));
+        val = std::make_unique<RamElementAccess>(loc.level, loc.component, loc.name);
     } else if (dynamic_cast<const AstUnnamedVariable*>(arg)) {
-        return nullptr;  // utilized to identify _ values
+        return nullptr;  // utilised to identify _ values
     } else if (const AstConstant* c = dynamic_cast<const AstConstant*>(arg)) {
-        val = std::unique_ptr<RamValue>(new RamNumber(c->getIndex()));
+        val = std::make_unique<RamNumber>(c->getIndex());
     } else if (const AstUnaryFunctor* uf = dynamic_cast<const AstUnaryFunctor*>(arg)) {
         val = std::unique_ptr<RamValue>(
                 new RamUnaryOperator(uf->getFunction(), translateValue(uf->getOperand(), index)));
     } else if (const AstBinaryFunctor* bf = dynamic_cast<const AstBinaryFunctor*>(arg)) {
-        val = std::unique_ptr<RamValue>(new RamBinaryOperator(
-                bf->getFunction(), translateValue(bf->getLHS(), index), translateValue(bf->getRHS(), index)));
+        val = std::make_unique<RamBinaryOperator>(
+                bf->getFunction(), translateValue(bf->getLHS(), index), translateValue(bf->getRHS(), index));
     } else if (const AstTernaryFunctor* tf = dynamic_cast<const AstTernaryFunctor*>(arg)) {
         val = std::unique_ptr<RamValue>(
                 new RamTernaryOperator(tf->getFunction(), translateValue(tf->getArg(0), index),
                         translateValue(tf->getArg(1), index), translateValue(tf->getArg(2), index)));
     } else if (dynamic_cast<const AstCounter*>(arg)) {
-        val = std::unique_ptr<RamValue>(new RamAutoIncrement());
+        val = std::make_unique<RamAutoIncrement>();
     } else if (const AstRecordInit* init = dynamic_cast<const AstRecordInit*>(arg)) {
         std::vector<std::unique_ptr<RamValue>> values;
         for (const auto& cur : init->getArguments()) {
             values.push_back(translateValue(cur, index));
         }
-        val = std::unique_ptr<RamValue>(new RamPack(std::move(values)));
+        val = std::make_unique<RamPack>(std::move(values));
     } else if (const AstAggregator* agg = dynamic_cast<const AstAggregator*>(arg)) {
         // here we look up the location the aggregation result gets bound
         auto loc = index.getAggregatorLocation(*agg);
-        val = std::unique_ptr<RamValue>(new RamElementAccess(loc.level, loc.component, loc.name));
+        val = std::make_unique<RamElementAccess>(loc.level, loc.component, loc.name);
     } else if (const AstSubroutineArgument* subArg = dynamic_cast<const AstSubroutineArgument*>(arg)) {
-        val = std::unique_ptr<RamValue>(new RamArgument(subArg->getNumber()));
+        val = std::make_unique<RamArgument>(subArg->getNumber());
     } else {
         std::cout << "Unsupported node type of " << arg << ": " << typeid(*arg).name() << "\n";
         ASSERT(false && "unknown AST node type not permissible");
@@ -579,7 +579,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& cl
 
         // check existence for original tuple if we have provenance
         if (Global::config().has("provenance")) {
-            auto uniquenessEnforcement = new RamNotExists(getRelation(&head));
+            auto uniquenessEnforcement = std::make_unique<RamNotExists>(getRelation(&head));
             auto arity = head.getArity() - 2;
 
             bool add = true;
@@ -601,7 +601,7 @@ std::unique_ptr<RamStatement> RamTranslator::translateClause(const AstClause& cl
             uniquenessEnforcement->addArg(nullptr);
 
             if (add) {
-                project->addCondition(std::unique_ptr<RamCondition>(uniquenessEnforcement), project);
+                project->addCondition(std::move(uniquenessEnforcement), project);
             }
         }
 
@@ -1123,6 +1123,7 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
     }
     RamRelationIdentifier rrel = getRamRelationIdentifier(
             mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
+    delete mrel;
     // create and load the relation at the start
     appendStmt(current, std::make_unique<RamCreate>(rrel));
 
@@ -1151,7 +1152,7 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
     }
     RamRelationIdentifier rrel = getRamRelationIdentifier(
             mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
-
+    delete mrel;
     if (rel->isPrintSize()) {
         appendStmt(current, std::make_unique<RamPrintSize>(rrel));
     }
@@ -1165,10 +1166,10 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
 std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
         const AstClause& clause, const AstProgram* program, const TypeEnvironment& typeEnv) {
     // make intermediate clause with constraints
-    AstClause* intermediateClause = clause.clone();
+    std::unique_ptr<AstClause> intermediateClause(clause.clone());
 
     // name unnamed variables
-    nameUnnamedVariables(intermediateClause);
+    nameUnnamedVariables(intermediateClause.get());
 
     // add constraint for each argument in head of atom
     AstAtom* head = intermediateClause->getHead();
@@ -1176,17 +1177,14 @@ std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
         auto arg = head->getArgument(i);
 
         if (auto var = dynamic_cast<AstVariable*>(arg)) {
-            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
-                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(var),
-                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                    std::unique_ptr<AstArgument>(var->clone()), std::make_unique<AstSubroutineArgument>(i)));
         } else if (auto func = dynamic_cast<AstFunctor*>(arg)) {
-            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
-                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(func),
-                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                    std::unique_ptr<AstArgument>(func->clone()), std::make_unique<AstSubroutineArgument>(i)));
         } else if (auto rec = dynamic_cast<AstRecordInit*>(arg)) {
-            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(
-                    new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(rec),
-                            std::unique_ptr<AstArgument>(new AstSubroutineArgument(i)))));
+            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                    std::unique_ptr<AstArgument>(rec->clone()), std::make_unique<AstSubroutineArgument>(i)));
         }
     }
 
@@ -1200,14 +1198,13 @@ std::unique_ptr<RamStatement> RamTranslator::makeSubproofSubroutine(
             auto arity = atom->getArity();
 
             // arity - 1 is the level number in body atoms
-            intermediateClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(
-                    BinaryConstraintOp::LT, std::unique_ptr<AstArgument>(atom->getArgument(arity - 1)),
-                    std::unique_ptr<AstArgument>(new AstSubroutineArgument(levelIndex)))));
+            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::LT,
+                    std::unique_ptr<AstArgument>(atom->getArgument(arity - 1)->clone()),
+                    std::make_unique<AstSubroutineArgument>(levelIndex)));
         }
     }
 
-    auto result = translateClause(*intermediateClause, program, &typeEnv, 0, true);
-    return result;
+    return translateClause(*intermediateClause, program, &typeEnv, 0, true);
 }
 
 /** translates the given datalog program into an equivalent RAM program  */
