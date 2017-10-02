@@ -17,13 +17,15 @@ Soufflé is a translator of Horn clauses into parallel C++. Soufflé language ha
 Use git to obtain the source code of Soufflé. 
 
     $ git clone git://github.com/souffle-lang/souffle.git
+    
+Build instructions can be found [here](http://souffle-lang.org/docs/build).     
 
-## [Soufflé home page](http://souffle-lang.github.io)
+## [Home Page](http://souffle-lang.org)
 
-## [Documentation](http://souffle-lang.org/docs/)
+## [Documentation](http://souffle-lang.org/docs/home)
 
 ## [Contributors](http://souffle-lang.org/docs/contributors/)
 
 ## [Issues](https://github.com/souffle-lang/souffle/issues)
 
-## [License](https://github.com/souffle-lang/souffle/blob/master/licenses/SOUFFLE-UPL.txt).
+## [License](https://github.com/souffle-lang/souffle/blob/master/licenses/SOUFFLE-UPL.txt)
