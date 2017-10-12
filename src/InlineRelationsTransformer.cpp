@@ -18,7 +18,7 @@ public:
   }
 
   std::vector<T> getVector() const {
-    assert(valid && "invalid vector access");
+    assert(valid && "Accessing invalid vector!");
     return vector;
   }
 };
@@ -95,7 +95,7 @@ void nameInlinedUnderscores(AstProgram& program) {
         }
       } else if (AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())) {
         // Give a unique name to the underscored variable
-        // TODO (azreika): come up with a consistent naming standard for new variables (see ConstraintNormalisation naming style)
+        // TODO (azreika): need a more consistent way of handling internally generated variables
         std::stringstream newVarName;
         newVarName << "<underscore_" << underscoreCount++ << ">";
         AstVariable* newVar = new AstVariable(newVarName.str());
@@ -133,18 +133,20 @@ bool containsInlinedAtom(const AstProgram& program, const AstClause& clause) {
   return foundInlinedAtom;
 }
 
-// Reduces a vector of substitutions
+// Reduces a vector of substitutions.
+// Returns false only if matched argument pairs are found to be incompatible.
 bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub) {
   // Type-Checking functions
   auto isConstant = [&](AstArgument* arg) {return (dynamic_cast<AstConstant*>(arg));};
   auto isRecord = [&](AstArgument* arg) {return (dynamic_cast<AstRecordInit*>(arg));};
 
-  // Keep trying to reduce the substitutions until we reach a fixed point
+  // Keep trying to reduce the substitutions until we reach a fixed point.
+  // Note that at this point no underscores ('_') or counters ('$') should appear.
   bool done = false;
   while (!done) {
     done = true;
 
-    // Try reducing each pair
+    // Try reducing each pair by one step
     for(int i = 0; i < sub.size(); i++) {
       auto currPair = sub[i];
       AstArgument* lhs = currPair.first;
@@ -153,7 +155,7 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
       // Start trying to reduce the substitution
       // TODO (azreika): Can possibly go further with this substitution reduction
       if (*lhs == *rhs) {
-        // Get rid of `x = x`
+        // Get rid of redundant `x = x`
         sub.erase(sub.begin() + i);
         done = false;
       } else if (isConstant(lhs) && isConstant(rhs)) {
@@ -162,12 +164,13 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
         return false;
       } else if (isRecord(lhs) && isRecord(rhs)) {
         // Note: we will not deal with the case where only one side is
-        // a record and the other is a variable
+        // a record and the other is a variable, as variables can be records
+        // on a deeper level.
         std::vector<AstArgument*> lhsArgs = static_cast<AstRecordInit*>(lhs)->getArguments();
         std::vector<AstArgument*> rhsArgs = static_cast<AstRecordInit*>(rhs)->getArguments();
 
         if (lhsArgs.size() != rhsArgs.size()) {
-          // Records of unequal size
+          // Records of unequal size can't be equated
           return false;
         }
 
@@ -181,7 +184,6 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
         done = false;
       } else if ((isRecord(lhs) && isConstant(rhs))||(isConstant(lhs) && isRecord(rhs))) {
         // A record =/= a constant
-        // TODO (azreika): is this true? is this possible?
         return false;
       }
     }
@@ -215,69 +217,12 @@ NullableVector<std::pair<AstArgument*, AstArgument*>> unifyAtoms(AstAtom* first,
 }
 
 // Inlines the given atom based on a given clause.
-// TODO (azreika): merge with inlineNegatedBodyLiterals
-NullableVector<AstLiteral*> inlineBodyLiterals(AstAtom* atom, AstClause* atomInlineClause) {
-  bool changed = false;
-
-  static int inlineCount = 0;
-
-  // Start off by renaming the variables in the inlined clause to avoid conflicts when unifying multiple atom
-  // - particularly when an inlined relation appears twice in a clause.
-  std::vector<AstLiteral*> addedLits;
-
-  AstClause* atomClause = atomInlineClause->clone();
-
-  struct VariableRenamer : public AstNodeMapper {
-    int varnum;
-    VariableRenamer(int varnum) : varnum(varnum) {}
-    std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-        if(AstVariable* var = dynamic_cast<AstVariable*>(node.get())){
-          // Rename the variable
-          AstVariable* newVar = var->clone();
-          std::stringstream newName;
-          newName << "<inlined_" << var->getName() << "_" << varnum << ">";
-          newVar->setName(newName.str());
-          return std::unique_ptr<AstNode>(newVar);
-        }
-        node->apply(*this);
-        return node;
-    }
-  };
-
-  VariableRenamer update(inlineCount);
-  atomClause->apply(update);
-  inlineCount++;
-
-  // Get the constraints needed to unify the two atoms
-  NullableVector<std::pair<AstArgument*, AstArgument*>> res = unifyAtoms(atomClause->getHead(), atom);
-  if(res.isValid()) {
-    changed = true;
-    for(auto pair : res.getVector()) {
-      addedLits.push_back(new AstConstraint(BinaryConstraintOp::EQ,
-              std::unique_ptr<AstArgument>(pair.first->clone()),
-              std::unique_ptr<AstArgument>(pair.second->clone())));
-    }
-
-    // Add in the body of the current clause of the inlined atom
-    for(AstLiteral* lit : atomClause->getBodyLiterals()) {
-      addedLits.push_back(lit->clone());
-    }
-  }
-
-  delete atomClause;
-
-  if(changed) {
-    return NullableVector<AstLiteral*>(addedLits);
-  } else {
-    return NullableVector<AstLiteral*>();
-  }
-}
-
-// Inlines the given atom based on a given clause, storing unification constraints in the given vector.
-// TODO (azreika): Fix up the constraints thing + combine this somehow with inlineBodyLiterals
-NullableVector<AstLiteral*> inlineNegatedBodyLiterals (AstAtom* atom, AstClause* atomInlineClause, std::vector<AstConstraint*>& constraints) {
+// Returns the vector of replacement literals and the necessary constraints.
+// If unification is unsuccessful, the vector of literals is marked as invalid.
+std::pair<NullableVector<AstLiteral*>, std::vector<AstConstraint*>> inlineBodyLiterals (AstAtom* atom, AstClause* atomInlineClause) {
   bool changed = false;
   std::vector<AstLiteral*> addedLits;
+  std::vector<AstConstraint*> constraints;
 
   // Start off by renaming the variables in the inlined clause to avoid conflicts when unifying multiple atom
   // - particularly when an inlined relation appears twice in a clause.
@@ -326,9 +271,9 @@ NullableVector<AstLiteral*> inlineNegatedBodyLiterals (AstAtom* atom, AstClause*
   delete atomClause;
 
   if(changed) {
-    return NullableVector<AstLiteral*>(addedLits);
+    return std::make_pair(NullableVector<AstLiteral*>(addedLits), constraints);
   } else {
-    return NullableVector<AstLiteral*>();
+    return std::make_pair(NullableVector<AstLiteral*>(), constraints);
   }
 }
 
@@ -345,8 +290,7 @@ AstLiteral* negateLiteral(AstLiteral* lit) {
     newCons->negate();
     return newCons;
   } else {
-    // TODO (azreika): make sure this assertion matches others (for consistency)
-    assert(false && "unexpected literal type");
+    assert(false && "Unsupported literal type!");
   }
 }
 
@@ -403,10 +347,10 @@ std::vector<std::vector<AstLiteral*>> formNegatedLiterals(AstProgram& program, A
 
   // Go through every possible clause associated with the given atom
   for (AstClause* inClause : program.getRelation(atom->getName())->getClauses()) {
-    std::vector<AstConstraint*> currCons;
-
     // Form the replacement clause by inlining based on the current clause
-    NullableVector<AstLiteral*> replacementBodyLiterals = inlineNegatedBodyLiterals(atom, inClause, currCons);
+    std::pair<NullableVector<AstLiteral*>, std::vector<AstConstraint*>> inlineResult = inlineBodyLiterals(atom, inClause);
+    NullableVector<AstLiteral*> replacementBodyLiterals = inlineResult.first;
+    std::vector<AstConstraint*> currConstraints = inlineResult.second;
 
     if(!replacementBodyLiterals.isValid()) {
       // Failed to unify, so just move on
@@ -414,7 +358,7 @@ std::vector<std::vector<AstLiteral*>> formNegatedLiterals(AstProgram& program, A
     }
 
     addedBodyLiterals.push_back(replacementBodyLiterals.getVector());
-    addedConstraints.push_back(currCons);
+    addedConstraints.push_back(currConstraints);
   }
 
   // We now have a list of bodies needed to inline the given atom.
@@ -508,7 +452,6 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
 
     // Try inlining body arguments if the target expression has not been changed.
     // (At this point we only handle one step of inlining at a time)
-    // TODO (azreika): Multiple steps at a time?
     if(!changed) {
       std::vector<AstLiteral*> bodyLiterals = aggr->getBodyLiterals();
       for(int i = 0; i < bodyLiterals.size(); i++) {
@@ -559,19 +502,18 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
             // sum x : { a(x) }. <=> sum ( sum x : { a1(x) }, sum x : { a2(x) }, ... )
             versions.push_back(combineAggregators(aggrVersions, BinaryOp::ADD));
           } else {
-            assert(false && "unhandled aggregator operator type");
+            assert(false && "Unsupported aggregator type");
           }
         }
 
         // Only perform one stage of inlining at a time to avoid confusion.
-        // TODO (azreika): check if it is possible to inline multiple stages at a time
         if(changed) {
           break;
         }
       }
     }
   } else if (dynamic_cast<const AstFunctor*>(arg)) {
-    // TODO (azreika): changing functors to just have a vector of arguments would make this a lot cleaner
+    // TODO (azreika): changing Souffle functors in the future to just have a vector of arguments would make this (a lot) cleaner
     if(const AstUnaryFunctor* functor = dynamic_cast<const AstUnaryFunctor*>(arg)) {
       NullableVector<AstArgument*> argumentVersions = getInlinedArgument(program, functor->getOperand());
       if (argumentVersions.isValid()) {
@@ -657,7 +599,6 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
       }
 
       // Only perform one stage of inlining at a time to avoid confusion.
-      // TODO (azreika): check if it is possible to inline multiple stages at a time
       if(changed) {
         break;
       }
@@ -674,7 +615,7 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
 }
 
 // Returns a vector of atoms that should replace the given atom after one step of inlining.
-// TODO (azreika): change this to "getInlinedHead" - not used for literals in general
+// Assumes the relation the atom belongs to is not inlined itself.
 NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
   bool changed = false;
   std::vector<AstAtom*> versions;
@@ -700,7 +641,6 @@ NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
     }
 
     // Only perform one stage of inlining at a time to avoid confusion.
-    // TODO (azreika): check if it is possible to inline multiple stages at a time
     if(changed) {
       break;
     }
@@ -723,7 +663,6 @@ NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
 //      but contains a subargument that can be. In this case, it will contain the versions
 //      that will replace it.
 //    - If both are invalid, then no more inlining can occur on this literal and we are done.
-// TODO (azreika): fix this up so only NullableVector<std::vector<AstLiteral*>> is needed
 NullableVector<std::vector<AstLiteral*>> getInlinedLiteral(AstProgram& program, AstLiteral* lit) {
   bool inlined = false;
   bool changed = false;
@@ -744,14 +683,24 @@ NullableVector<std::vector<AstLiteral*>> getInlinedLiteral(AstProgram& program, 
       // associated with the inlined relation
       for (AstClause* inClause : rel->getClauses()) {
         // Form the replacement clause
-        NullableVector<AstLiteral*> replacementBodyLiterals = inlineBodyLiterals(atom, inClause);
+        std::pair<NullableVector<AstLiteral*>, std::vector<AstConstraint*>> inlineResult = inlineBodyLiterals(atom, inClause);
+        NullableVector<AstLiteral*> replacementBodyLiterals = inlineResult.first;
+        std::vector<AstConstraint*> currConstraints = inlineResult.second;
+
         if(!replacementBodyLiterals.isValid()) {
           // Failed to unify the atoms! We can skip this one...
           continue;
         }
 
         // Unification successful - the returned vector of literals represents one possible body replacement
-        addedBodyLiterals.push_back(replacementBodyLiterals.getVector());
+        // We can add in the unification constraints as part of these literals.
+        std::vector<AstLiteral*> bodyResult = replacementBodyLiterals.getVector();
+
+        for(AstConstraint* cons : currConstraints) {
+          bodyResult.push_back(cons);
+        }
+
+        addedBodyLiterals.push_back(bodyResult);
       }
     } else {
       // Not meant to be inlined, but a subargument may be
@@ -853,7 +802,6 @@ std::vector<AstClause*> getInlinedClause(AstProgram& program, const AstClause& c
   }
 
   // Only perform one stage of inlining at a time to avoid confusion.
-  // TODO (azreika): check if it is possible to inline multiple stages at a time
   // If the head atoms did not need inlining, try inlining atoms nested in the body.
   if(!changed) {
     std::vector<AstLiteral*> bodyLiterals = clause.getBodyLiterals();
@@ -897,7 +845,6 @@ std::vector<AstClause*> getInlinedClause(AstProgram& program, const AstClause& c
       }
 
       // To avoid confusion, only replace at most one literal per iteration
-      // TODO (azreika): Think about changing this to work on more than one lit per iteration
       if(changed) {
         break;
       }
@@ -936,7 +883,9 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
     // Go through each relation in the program and check if we need to inline any of its clauses
     for(AstRelation* rel : program.getRelations()) {
       // Skip if the relation is going to be inlined
-      // TODO (azreika): is it more efficient if these are actually inlined first?
+      // TODO (azreika): Consider the case a(x) :- b(x), where both a and b are to be inlined:
+      //    May be more efficient if these are inlined first, as it may reduce the number
+      //    of inlining steps needed later on.
       if(rel->isInline()) {
         continue;
       }
