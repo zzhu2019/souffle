@@ -271,17 +271,7 @@ int main(int argc, char** argv) {
     transforms.push_back(std::unique_ptr<AstTransformer>(new ComponentInstantiationTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new UniqueAggregationVariablesTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new AstSemanticChecker()));
-    if (Global::config().get("bddbddb").empty()) {
-        transforms.push_back(std::unique_ptr<AstTransformer>(new ResolveAliasesTransformer()));
-    }
-
-    // TODO: remove these after
-    transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRelationCopiesTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new MaterializeAggregationQueriesTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveEmptyRelationsTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRedundantRelationsTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new InlineRelationsTransformer()));
-
     if (Global::config().get("bddbddb").empty()) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new ResolveAliasesTransformer()));
     }
@@ -289,8 +279,6 @@ int main(int argc, char** argv) {
     transforms.push_back(std::unique_ptr<AstTransformer>(new MaterializeAggregationQueriesTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveEmptyRelationsTransformer()));
     transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRedundantRelationsTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new MaterializeAggregationQueriesTransformer()));
-
 
     if (Global::config().has("magic-transform")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new NormaliseConstraintsTransformer()));

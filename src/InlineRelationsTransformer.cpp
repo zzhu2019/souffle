@@ -634,7 +634,7 @@ NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
       // Create a new atom per new version of the argument
       for(AstArgument* newArgument : argumentVersions.getVector()) {
         AstAtom* newAtom = atom.clone();
-        // TODO (azreika): Check if the old argument needs to be deleted
+        // TODO (azreika): Check if the old argument needs to be deleted [memory leak]
         newAtom->setArgument(i, std::unique_ptr<AstArgument>(newArgument));
         versions.push_back(newAtom);
       }
