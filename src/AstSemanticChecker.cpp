@@ -625,17 +625,6 @@ void AstSemanticChecker::checkRelation(ErrorReport& report, const TypeEnvironmen
         report.addWarning(
                 "No rules/facts defined for relation " + toString(relation.getName()), relation.getSrcLoc());
     }
-
-    // inlined relations cannot be computed or input relations
-    if (relation.isInline()) {
-      if (relation.isComputed()) {
-        report.addError("Computed relation " + toString(relation.getName()) + " cannot be inlined", relation.getSrcLoc());
-      }
-
-      if (relation.isInput()) {
-        report.addError("Input relation " + toString(relation.getName()) + " cannot be inlined.", relation.getSrcLoc());
-      }
-    }
 }
 
 void AstSemanticChecker::checkRules(ErrorReport& report, const TypeEnvironment& typeEnv,
@@ -861,80 +850,115 @@ void AstSemanticChecker::checkIODirectives(ErrorReport& report, const AstProgram
 }
 
 void AstSemanticChecker::checkInlining(ErrorReport& report, const AstProgram& program, const PrecedenceGraph& precedenceGraph) {
-  // Cannot inline recursive clauses
-    /*
-  for(AstRelation* rel : program.getRelations()) {
-    if(rel->isInline()) {
-      for(AstClause* clause : rel->getClauses()) {
-        if(recursiveClauses.isRecursive(clause)) {
-          report.addError("Recursive clause cannot be inlined", clause->getSrcLoc());
+  // Find all inlined relations
+  AstRelationSet inlinedRelations;
+  visitDepthFirst(program, [&](const AstRelation& relation) {
+    if(relation.isInline()) {
+      inlinedRelations.insert(&relation);
+
+      // Inlined relations cannot be computed or input relations
+      if (relation.isComputed()) {
+        report.addError("Computed relation " + toString(relation.getName()) + " cannot be inlined", relation.getSrcLoc());
+      }
+
+      if (relation.isInput()) {
+        report.addError("Input relation " + toString(relation.getName()) + " cannot be inlined", relation.getSrcLoc());
+      }
+    }
+  });
+
+  // TODO: comments
+  // Let G' be the subgraph of the precedence graph G containing only those nodes
+  // which are marked with the inline directive.
+  // If G' contains a cycle, then inlining cannot be performed.
+
+  // Remember all inlined nodes that have been visited
+  AstRelationSet visitedNodes;
+
+  // Keep going until all nodes have been visited
+  while(true) {
+    // Grab an unvisited node
+    const AstRelation* currNode = nullptr;
+    for(const AstRelation* rel : inlinedRelations) {
+      if(visitedNodes.find(rel) == visitedNodes.end()) {
+        currNode = rel;
+      }
+    }
+
+    // All nodes have been visited
+    if(currNode == nullptr) {
+      break;
+    }
+
+    // Check if a cycle exists in its connected component
+    bool cyclic = false;
+    const AstRelation* cyclicOrigin;  // origin of the cycle
+    const AstRelation* cyclicWitness; // predecessor of the origin of the cycle
+
+    std::stack<const AstRelation*> fringe;
+    std::set<const AstRelation*> visited;
+    std::map<const AstRelation*, const AstRelation*> origin;
+
+    origin[currNode] = nullptr;
+    fringe.push(currNode);
+
+    // Keep going until we've visited all inlined nodes or found a cycle
+    while(!fringe.empty() && !cyclic) {
+      currNode = fringe.top();
+      fringe.pop();
+      visited.insert(currNode);
+
+      const AstRelationSet& successors = precedenceGraph.getSuccessors(currNode);
+      for(const AstRelation* successor : successors) {
+        // We only want to deal with the subgraph of the precedence graph containing
+        // inlined relations
+        if(successor->isInline()) {
+          if(visited.find(successor) != visited.end()) {
+            // Found a node that we've already visited!
+            cyclic = true;
+            cyclicOrigin = successor;
+            cyclicWitness = currNode;
+            break;
+          }
+
+          origin[successor] = currNode;
+          fringe.push(successor);
         }
       }
     }
-  }*/
 
-  // If the subgraph of the precedence graph with only inlined nodes contains a cycle,
-  // then we cannot inline
+    // Check if we found a cycle
+    if(cyclic) {
+      // Construct the cycle
+      std::stringstream cycle;
+      cycle << "{" << cyclicOrigin->getName();
 
-  // TODO: comments
-  bool cyclic = false;
-  const AstRelation* cyclicWitness;
+      const AstRelation* currRelation = cyclicWitness;
 
-  std::stack<const AstRelation*> fringe;
-  std::set<const AstRelation*> visited;
-  std::map<const AstRelation*, const AstRelation*> origin;
+      while(currRelation != cyclicOrigin) {
+        cycle << ", " << currRelation -> getName();
+        currRelation = origin[currRelation];
+      }
+      cycle << "}";
 
-  for(AstRelation* rel : program.getRelations()) {
-    if(rel->isInline()) {
-      fringe.push(rel);
-      origin[rel] = nullptr;
+      report.addError("Inlined relations " + cycle.str() + " are cyclically dependent", cyclicOrigin->getSrcLoc());
+
       break;
+    }
+
+    for(const AstRelation* vis : visited) {
+      visitedNodes.insert(vis);
     }
   }
 
   // TODO: move the output check ot here?
 
-  while(!fringe.empty()) {
-    const AstRelation* currRelation = fringe.top();
-    fringe.pop();
-    visited.insert(currRelation);
-
-    const AstRelationSet& successors = precedenceGraph.getSuccessors(currRelation);
-    for(const AstRelation* successor : successors) {
-      if(successor->isInline()) {
-        // TODO: should we not be counting a(x) :- a(x) dependencies??
-        if(visited.find(successor) != visited.end()) {
-          cyclic = true;
-          cyclicWitness = currRelation;
-          break;
-        }
-
-        // TODO: should origin be done beforehand too
-        origin[successor] = currRelation;
-        fringe.push(successor);
-      }
-    }
-  }
-
-  if(cyclic) {
-    std::stringstream cycle; cycle << "{";
-    const AstRelation* currRelation = cyclicWitness;
-
-    while(currRelation != nullptr) {
-      cycle << currRelation->getName() << ", ";
-      currRelation = origin[currRelation];
-    }
-
-    std::string cyclestr = cycle.str().substr(0, cycle.str().length() - 2);
-    cyclestr = cyclestr + "}";
-
-    report.addError("Inlined relations " + cyclestr + " are cyclically dependent", cyclicWitness->getSrcLoc());
-  }
-
   // TODO: possibly extend?
+  // TODO: possibly move this up?
   // Cannot use the counter argument ('$') in inlined relations
   visitDepthFirst(program, [&](const AstAtom& atom) {
-    if(program.getRelation(atom.getName())->isInline()) {
+    AstRelation* associatedRelation = program.getRelation(atom.getName());
+    if(associatedRelation != nullptr && associatedRelation->isInline()) {
       visitDepthFirst(atom, [&](const AstArgument& arg) {
         if(dynamic_cast<const AstCounter*>(&arg)) {
           report.addError("Cannot inline clause containing a counter argument '$'", arg.getSrcLoc());
@@ -943,6 +967,10 @@ void AstSemanticChecker::checkInlining(ErrorReport& report, const AstProgram& pr
     }
   });
 
+  // Suppose the relation b is marked with the inline directive, but appears negated
+  // in a clause. Then, if b introduces a new variable in its body, we cannot inline
+  // the relation b.
+  // TODO
 }
 
 // Check that type, relation, component names are disjoint sets.
