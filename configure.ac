@@ -311,10 +311,6 @@ DIST_PACKAGING([debian ubuntu],[DEBIAN_PACKAGE],[DEBUILD],[debuild])
 DIST_PACKAGING([osx],[OSX_PACKAGE],[PKGBUILD],[pkgbuild])
 DIST_PACKAGING([bsd],[BSD_PACKAGE],[PKGBUILD],[pkgbuild])
 
-dnl Enable pthread library
-AC_CHECK_LIB(pthread, pthread_create,,
-          [AC_MSG_ERROR([required library pthread missing])])
-
 dnl Enables OpenMP in the souffle compiler and interpreter
 AC_OPENMP
 AS_VAR_APPEND(CXXFLAGS, [" $OPENMP_CFLAGS "])

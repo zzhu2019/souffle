@@ -21,11 +21,12 @@
 #include "RamNode.h"
 #include "RamOperation.h"
 #include "RamRelation.h"
+#include "RamValue.h"
 
-#include <map>
-#include <set>
-
-#include <pthread.h>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <vector>
 
 namespace souffle {
 
