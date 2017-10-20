@@ -4,14 +4,14 @@
 // - https://opensource.org/licenses/UPL
 // - <souffle root>/licenses/SOUFFLE-UPL.txt
 
-//Test if sqlite3 IO works
+// Test if sqlite3 IO works
 
 .decl A(x:number)
-// Read in from sqlite3
-.input A(IO=sqlite,dbname="A.sqlite")
+// Read in from sqlite3 (assumes relative path to test dir is correct
+.input A(IO=sqlite,dbname="../../semantic/store3/A.sqlite.input")
 // Add a tuple to make sure input and output are different
 A(2).
 // Write to CSV
 .output A(IO=file,filename="AA.csv")
 // Write to sqlite3
-.output A(IO=sqlite,dbname="BB.sqlite")
+.output A(IO=sqlite,dbname="BB.sqlite.output")
