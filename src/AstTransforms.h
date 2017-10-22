@@ -205,8 +205,8 @@ public:
 };
 
 /**
-* Transformer that inlines marked relations.
-*/
+ * Transformer that inlines marked relations.
+ */
 class InlineRelationsTransformer : public AstTransformer {
 private:
     virtual bool transform(AstTranslationUnit& translationUnit);

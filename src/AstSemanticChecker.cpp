@@ -849,175 +849,180 @@ void AstSemanticChecker::checkIODirectives(ErrorReport& report, const AstProgram
     }
 }
 
-void AstSemanticChecker::checkInlining(ErrorReport& report, const AstProgram& program, const PrecedenceGraph& precedenceGraph) {
-  // Find all inlined relations
-  AstRelationSet inlinedRelations;
-  visitDepthFirst(program, [&](const AstRelation& relation) {
-    if(relation.isInline()) {
-      inlinedRelations.insert(&relation);
+void AstSemanticChecker::checkInlining(
+        ErrorReport& report, const AstProgram& program, const PrecedenceGraph& precedenceGraph) {
+    // Find all inlined relations
+    AstRelationSet inlinedRelations;
+    visitDepthFirst(program, [&](const AstRelation& relation) {
+        if (relation.isInline()) {
+            inlinedRelations.insert(&relation);
 
-      // Inlined relations cannot be computed or input relations
-      if (relation.isComputed()) {
-        report.addError("Computed relation " + toString(relation.getName()) + " cannot be inlined", relation.getSrcLoc());
-      }
+            // Inlined relations cannot be computed or input relations
+            if (relation.isComputed()) {
+                report.addError("Computed relation " + toString(relation.getName()) + " cannot be inlined",
+                        relation.getSrcLoc());
+            }
 
-      if (relation.isInput()) {
-        report.addError("Input relation " + toString(relation.getName()) + " cannot be inlined", relation.getSrcLoc());
-      }
-    }
-  });
+            if (relation.isInput()) {
+                report.addError("Input relation " + toString(relation.getName()) + " cannot be inlined",
+                        relation.getSrcLoc());
+            }
+        }
+    });
 
-  // Check 1:
-  // Let G' be the subgraph of the precedence graph G containing only those nodes
-  // which are marked with the inline directive.
-  // If G' contains a cycle, then inlining cannot be performed.
+    // Check 1:
+    // Let G' be the subgraph of the precedence graph G containing only those nodes
+    // which are marked with the inline directive.
+    // If G' contains a cycle, then inlining cannot be performed.
 
-  // Remember all inlined nodes that have been visited
-  AstRelationSet visitedNodes;
+    // Remember all inlined nodes that have been visited
+    AstRelationSet visitedNodes;
 
-  // Keep going until all nodes have been visited
-  while(true) {
-    // Grab an unvisited node
-    const AstRelation* currNode = nullptr;
-    for(const AstRelation* rel : inlinedRelations) {
-      if(visitedNodes.find(rel) == visitedNodes.end()) {
-        currNode = rel;
-      }
-    }
+    // Keep going until all nodes have been visited
+    while (true) {
+        // Grab an unvisited node
+        const AstRelation* currNode = nullptr;
+        for (const AstRelation* rel : inlinedRelations) {
+            if (visitedNodes.find(rel) == visitedNodes.end()) {
+                currNode = rel;
+            }
+        }
 
-    // All nodes have been visited
-    if(currNode == nullptr) {
-      break;
-    }
-
-    // Check if a cycle exists in its connected component
-    bool cyclic = false;
-    const AstRelation* cyclicOrigin;  // origin of the cycle
-    const AstRelation* cyclicWitness; // predecessor of the origin of the cycle
-
-    std::stack<const AstRelation*> fringe; // Nodes we are planning to visit
-    std::set<const AstRelation*> visited; // Nodes we have already visited
-    std::map<const AstRelation*, const AstRelation*> origin; // Start node
-
-    origin[currNode] = nullptr;
-    fringe.push(currNode);
-
-    // Keep going until we've visited all inlined nodes or found a cycle
-    while(!fringe.empty() && !cyclic) {
-      currNode = fringe.top();
-      fringe.pop();
-      visited.insert(currNode);
-
-      const AstRelationSet& successors = precedenceGraph.getSuccessors(currNode);
-      for(const AstRelation* successor : successors) {
-        // We only want to deal with the subgraph of the precedence graph containing
-        // inlined relations
-        if(successor->isInline()) {
-          if(visited.find(successor) != visited.end()) {
-            // Found a node that we've already visited!
-            cyclic = true;
-            cyclicOrigin = successor;
-            cyclicWitness = currNode;
+        // All nodes have been visited
+        if (currNode == nullptr) {
             break;
-          }
-
-          origin[successor] = currNode;
-          fringe.push(successor);
         }
-      }
-    }
 
-    // Check if we found a cycle
-    if(cyclic) {
-      // Construct the string representation of the cycle
-      std::stringstream cycle;
-      cycle << "{" << cyclicOrigin->getName();
-      const AstRelation* currRelation = cyclicWitness;
-      while(currRelation != cyclicOrigin) {
-        cycle << ", " << currRelation -> getName();
-        currRelation = origin[currRelation];
-      }
-      cycle << "}";
-      report.addError("Inlined relations " + cycle.str() + " are cyclically dependent", cyclicOrigin->getSrcLoc());
-      break;
-    }
+        // Check if a cycle exists in its connected component
+        bool cyclic = false;
+        const AstRelation* cyclicOrigin;   // origin of the cycle
+        const AstRelation* cyclicWitness;  // predecessor of the origin of the cycle
 
-    for(const AstRelation* vis : visited) {
-      visitedNodes.insert(vis);
-    }
-  }
+        std::stack<const AstRelation*> fringe;                    // Nodes we are planning to visit
+        std::set<const AstRelation*> visited;                     // Nodes we have already visited
+        std::map<const AstRelation*, const AstRelation*> origin;  // Start node
 
-  // Check 2:
-  // Cannot use the counter argument ('$') in inlined relations
+        origin[currNode] = nullptr;
+        fringe.push(currNode);
 
-  // Check if an inlined literal ever takes in a $
-  visitDepthFirst(program, [&](const AstAtom& atom) {
-    AstRelation* associatedRelation = program.getRelation(atom.getName());
-    if(associatedRelation != nullptr && associatedRelation->isInline()) {
-      visitDepthFirst(atom, [&](const AstArgument& arg) {
-        if(dynamic_cast<const AstCounter*>(&arg)) {
-          report.addError("Cannot inline literal containing a counter argument '$'", arg.getSrcLoc());
+        // Keep going until we've visited all inlined nodes or found a cycle
+        while (!fringe.empty() && !cyclic) {
+            currNode = fringe.top();
+            fringe.pop();
+            visited.insert(currNode);
+
+            const AstRelationSet& successors = precedenceGraph.getSuccessors(currNode);
+            for (const AstRelation* successor : successors) {
+                // We only want to deal with the subgraph of the precedence graph containing
+                // inlined relations
+                if (successor->isInline()) {
+                    if (visited.find(successor) != visited.end()) {
+                        // Found a node that we've already visited!
+                        cyclic = true;
+                        cyclicOrigin = successor;
+                        cyclicWitness = currNode;
+                        break;
+                    }
+
+                    origin[successor] = currNode;
+                    fringe.push(successor);
+                }
+            }
         }
-      });
-    }
-  });
 
-  // Check if an inlined clause ever contains a $
-  for(const AstRelation* rel : inlinedRelations) {
-    for(AstClause* clause : rel->getClauses()) {
-      visitDepthFirst(*clause, [&](const AstArgument& arg) {
-        if(dynamic_cast<const AstCounter*>(&arg)) {
-          report.addError("Cannot inline clause containing a counter argument '$'", arg.getSrcLoc());
+        // Check if we found a cycle
+        if (cyclic) {
+            // Construct the string representation of the cycle
+            std::stringstream cycle;
+            cycle << "{" << cyclicOrigin->getName();
+            const AstRelation* currRelation = cyclicWitness;
+            while (currRelation != cyclicOrigin) {
+                cycle << ", " << currRelation->getName();
+                currRelation = origin[currRelation];
+            }
+            cycle << "}";
+            report.addError("Inlined relations " + cycle.str() + " are cyclically dependent",
+                    cyclicOrigin->getSrcLoc());
+            break;
         }
-      });
-    }
-  }
 
-  // Check 3:
-  // Suppose the relation b is marked with the inline directive, but appears negated
-  // in a clause. Then, if b introduces a new variable in its body, we cannot inline
-  // the relation b.
-
-  // Find all relations with the inline declarative that introduce new variables in their bodies
-  AstRelationSet nonNegatableRelations;
-  for(const AstRelation* rel : inlinedRelations) {
-    bool foundNonNegatable = false;
-    for(const AstClause* clause : rel->getClauses()) {
-      // Get the variables in the head
-      std::set<std::string> headVariables;
-      visitDepthFirst(*clause->getHead(), [&](const AstVariable& var) {
-        headVariables.insert(var.getName());
-      });
-
-      // Get the variables in the body
-      std::set<std::string> bodyVariables;
-      visitDepthFirst(clause->getBodyLiterals(), [&](const AstVariable& var) {
-        bodyVariables.insert(var.getName());
-      });
-
-      // Check if all body variables are in the head
-      // Do this separately to the above so only one error is printed per variable
-      for(std::string var : bodyVariables) {
-        if(headVariables.find(var) == headVariables.end()) {
-          nonNegatableRelations.insert(rel);
-          foundNonNegatable = true;
-          break;
+        for (const AstRelation* vis : visited) {
+            visitedNodes.insert(vis);
         }
-      }
-
-      if(foundNonNegatable) {
-        break;
-      }
     }
-  }
 
-  // Check that these relations never appear negated
-  visitDepthFirst(program, [&](const AstNegation& neg) {
-    AstRelation* associatedRelation = program.getRelation(neg.getAtom()->getName());
-    if(nonNegatableRelations.find(associatedRelation) != nonNegatableRelations.end()) {
-      report.addError("Inlined relation may introduce new variables but appears negated", neg.getSrcLoc());
+    // Check 2:
+    // Cannot use the counter argument ('$') in inlined relations
+
+    // Check if an inlined literal ever takes in a $
+    visitDepthFirst(program, [&](const AstAtom& atom) {
+        AstRelation* associatedRelation = program.getRelation(atom.getName());
+        if (associatedRelation != nullptr && associatedRelation->isInline()) {
+            visitDepthFirst(atom, [&](const AstArgument& arg) {
+                if (dynamic_cast<const AstCounter*>(&arg)) {
+                    report.addError(
+                            "Cannot inline literal containing a counter argument '$'", arg.getSrcLoc());
+                }
+            });
+        }
+    });
+
+    // Check if an inlined clause ever contains a $
+    for (const AstRelation* rel : inlinedRelations) {
+        for (AstClause* clause : rel->getClauses()) {
+            visitDepthFirst(*clause, [&](const AstArgument& arg) {
+                if (dynamic_cast<const AstCounter*>(&arg)) {
+                    report.addError(
+                            "Cannot inline clause containing a counter argument '$'", arg.getSrcLoc());
+                }
+            });
+        }
     }
-  });
+
+    // Check 3:
+    // Suppose the relation b is marked with the inline directive, but appears negated
+    // in a clause. Then, if b introduces a new variable in its body, we cannot inline
+    // the relation b.
+
+    // Find all relations with the inline declarative that introduce new variables in their bodies
+    AstRelationSet nonNegatableRelations;
+    for (const AstRelation* rel : inlinedRelations) {
+        bool foundNonNegatable = false;
+        for (const AstClause* clause : rel->getClauses()) {
+            // Get the variables in the head
+            std::set<std::string> headVariables;
+            visitDepthFirst(
+                    *clause->getHead(), [&](const AstVariable& var) { headVariables.insert(var.getName()); });
+
+            // Get the variables in the body
+            std::set<std::string> bodyVariables;
+            visitDepthFirst(clause->getBodyLiterals(),
+                    [&](const AstVariable& var) { bodyVariables.insert(var.getName()); });
+
+            // Check if all body variables are in the head
+            // Do this separately to the above so only one error is printed per variable
+            for (std::string var : bodyVariables) {
+                if (headVariables.find(var) == headVariables.end()) {
+                    nonNegatableRelations.insert(rel);
+                    foundNonNegatable = true;
+                    break;
+                }
+            }
+
+            if (foundNonNegatable) {
+                break;
+            }
+        }
+    }
+
+    // Check that these relations never appear negated
+    visitDepthFirst(program, [&](const AstNegation& neg) {
+        AstRelation* associatedRelation = program.getRelation(neg.getAtom()->getName());
+        if (nonNegatableRelations.find(associatedRelation) != nonNegatableRelations.end()) {
+            report.addError(
+                    "Inlined relation may introduce new variables but appears negated", neg.getSrcLoc());
+        }
+    });
 }
 
 // Check that type, relation, component names are disjoint sets.
