@@ -95,7 +95,7 @@ void nameInlinedUnderscores(AstProgram& program) {
         }
       } else if (AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())) {
         // Give a unique name to the underscored variable
-        // TODO (azreika): need a more consistent way of handling internally generated variables
+        // TODO (azreika): need a more consistent way of handling internally generated variables in general
         std::stringstream newVarName;
         newVarName << "<underscore_" << underscoreCount++ << ">";
         AstVariable* newVar = new AstVariable(newVarName.str());
@@ -153,7 +153,7 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
       AstArgument* rhs = currPair.second;
 
       // Start trying to reduce the substitution
-      // TODO (azreika): Can possibly go further with this substitution reduction
+      // Note: Can probably go further with this substitution reduction
       if (*lhs == *rhs) {
         // Get rid of redundant `x = x`
         sub.erase(sub.begin() + i);
@@ -228,6 +228,7 @@ std::pair<NullableVector<AstLiteral*>, std::vector<AstConstraint*>> inlineBodyLi
   // - particularly when an inlined relation appears twice in a clause.
   static int inlineCount = 0;
 
+  // Make a temporary clone so we can rename variables without fear
   AstClause* atomClause = atomInlineClause->clone();
 
   struct VariableRenamer : public AstNodeMapper {
@@ -258,8 +259,8 @@ std::pair<NullableVector<AstLiteral*>, std::vector<AstConstraint*>> inlineBodyLi
     changed = true;
     for(std::pair<AstArgument*, AstArgument*> pair : res.getVector()) {
       constraints.push_back(new AstConstraint(BinaryConstraintOp::EQ,
-              std::unique_ptr<AstArgument>(pair.first->clone()),
-              std::unique_ptr<AstArgument>(pair.second->clone())));
+              std::unique_ptr<AstArgument>(pair.first),
+              std::unique_ptr<AstArgument>(pair.second)));
     }
 
     // Add in the body of the current clause of the inlined atom
@@ -306,7 +307,6 @@ std::vector<std::vector<AstLiteral*>> combineNegatedLiterals(std::vector<std::ve
       std::vector<AstLiteral*> newVec;
       newVec.push_back(negateLiteral(litGroup[i]));
       negation.push_back(newVec);
-      // TODO (azreika): consider memory leaks - should litGroup[i] be deleted? see negateLiteral
     }
 
     // Done!
@@ -324,7 +324,6 @@ std::vector<std::vector<AstLiteral*>> combineNegatedLiterals(std::vector<std::ve
       newVec.push_back(negateLiteral(lhsLit));
 
       for(AstLiteral* lit : rhsVec) {
-        // TODO (azreika): be careful of memory leaks here
         newVec.push_back(lit->clone());
       }
 
@@ -363,19 +362,30 @@ std::vector<std::vector<AstLiteral*>> formNegatedLiterals(AstProgram& program, A
 
   // We now have a list of bodies needed to inline the given atom.
   // We want to inline the negated version, however, which is done using De Morgan's Law.
-  addedBodyLiterals = combineNegatedLiterals(addedBodyLiterals);
+  std::vector<std::vector<AstLiteral*>> negatedAddedBodyLiterals = combineNegatedLiterals(addedBodyLiterals);
 
   // Add in the necessary constraints to all the body literals
-  for(int i = 0; i < addedBodyLiterals.size(); i++) {
+  for(int i = 0; i < negatedAddedBodyLiterals.size(); i++) {
     for(std::vector<AstConstraint*> constraintGroup : addedConstraints) {
       for(AstConstraint* constraint : constraintGroup) {
-        // TODO (azreika): careful of memory leaks with the constraints here
-        addedBodyLiterals[i].push_back(constraint->clone());
+        negatedAddedBodyLiterals[i].push_back(constraint->clone());
       }
     }
   }
 
-  return addedBodyLiterals;
+  // Free up the old body literals and constraints
+  for(std::vector<AstLiteral*> litGroup : addedBodyLiterals) {
+    for(AstLiteral* lit : litGroup) {
+      delete lit;
+    }
+  }
+  for(std::vector<AstConstraint*> consGroup : addedConstraints) {
+    for(AstConstraint* cons : consGroup) {
+      delete cons;
+    }
+  }
+
+  return negatedAddedBodyLiterals;
 }
 
 // Renames all variables in a given argument uniquely.
@@ -430,7 +440,6 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
   // nested aggregators, and inline their bodies if needed.
   if(const AstAggregator* aggr = dynamic_cast<const AstAggregator*>(arg)){
     // First try inlining the target expression if necessary
-    // TODO (azreika): come up with a test for this - what does `sum aggr1 : aggr2` even mean?
     if(aggr->getTargetExpression() != nullptr) {
       NullableVector<AstArgument*> argumentVersions = getInlinedArgument(program, aggr->getTargetExpression());
 
@@ -634,7 +643,6 @@ NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
       // Create a new atom per new version of the argument
       for(AstArgument* newArgument : argumentVersions.getVector()) {
         AstAtom* newAtom = atom.clone();
-        // TODO (azreika): Check if the old argument needs to be deleted [memory leak]
         newAtom->setArgument(i, std::unique_ptr<AstArgument>(newArgument));
         versions.push_back(newAtom);
       }
