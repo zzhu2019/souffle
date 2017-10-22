@@ -205,15 +205,15 @@ public:
 };
 
 /**
-* Transformer that inlines marked relations.
-*/
+ * Transformer that inlines marked relations.
+ */
 class InlineRelationsTransformer : public AstTransformer {
 private:
-   virtual bool transform(AstTranslationUnit& translationUnit);
+    virtual bool transform(AstTranslationUnit& translationUnit);
 
 public:
     virtual std::string getName() const {
-       return "InlineRelationsTransformer";
+        return "InlineRelationsTransformer";
     }
 };
 
