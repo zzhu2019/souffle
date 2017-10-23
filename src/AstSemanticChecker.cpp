@@ -911,7 +911,7 @@ void AstSemanticChecker::checkInlining(
             fringe.pop();
             visited.insert(currNode);
 
-            const AstRelationSet& successors = precedenceGraph.getSuccessors(currNode);
+            const AstRelationSet& successors = precedenceGraph.graph().successors(currNode);
             for (const AstRelation* successor : successors) {
                 // We only want to deal with the subgraph of the precedence graph containing
                 // inlined relations
