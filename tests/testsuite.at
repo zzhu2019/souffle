@@ -252,11 +252,12 @@ m4_ifblank(m4_join([],ENV_CONFS), [
 ])
 
 m4_define([DEFAULT_CATEGORIES], [[Syntactic],
-  [Semantic],
-  [Evaluation],
-  [Interface],
-  [Profile],
-  [Provenance]])
+ [Semantic],
+ [Evaluation],
+ [Interface],
+ [Profile],
+ [Provenance],
+])
 
 dnl Store user-defined souffle flag configuration given by the SOUFFLE_CONFS env (if any)
 m4_define([ENV_CATEGORIES],
@@ -273,37 +274,30 @@ m4_foreach(current, [CATEGORIES],
 [
   AT_BANNER([current])
   m4_if(current, Syntactic, [
-    dnl Syntactic Tests
     m4_include([syntactic.at])
   ])
 
   m4_if(current, Semantic, [
-    dnl Semantic Tests
     m4_include([semantic.at])
   ])
 
   m4_if(current, Evaluation, [
-    dnl Evaluation
     m4_include([evaluation.at])
   ])
 
   m4_if(current, Interface, [
-    dnl Interface
     m4_include([interface.at])
   ])
 
   m4_if(current, Profile, [
-    dnl Profile
     m4_include([profile.at])
   ])
 
   m4_if(current, Provenance, [
-   dnl Provenance
    m4_include([provenance.at])
   ])
 
   m4_if(current, Example, [
-    dnl Profile
     m4_include([example.at])
   ])
 ])
