@@ -442,6 +442,8 @@ AstArgument* combineAggregators(std::vector<AstAggregator*> aggrs, BinaryOp fun)
 }
 
 // Returns a vector of arguments that should replace the given argument after one step of inlining.
+// Note: This function is currently generalised to perform any required inlining within aggregators
+// as well, making it simple to extend to this later on if desired (and the semantic check is removed).
 NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstArgument* arg) {
     bool changed = false;
     std::vector<AstArgument*> versions;
@@ -529,15 +531,14 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
                     }
                 }
 
-                // Only perform one stage of inlining at a time to avoid confusion.
+                // Only perform one stage of inlining at a time.
                 if (changed) {
                     break;
                 }
             }
         }
     } else if (dynamic_cast<const AstFunctor*>(arg)) {
-        // TODO (azreika): changing Souffle functors in the future to just have a vector of arguments would
-        // make this (a lot) cleaner
+        // Each type of functor (unary, binary, ternary) must be handled differently.
         if (const AstUnaryFunctor* functor = dynamic_cast<const AstUnaryFunctor*>(arg)) {
             NullableVector<AstArgument*> argumentVersions =
                     getInlinedArgument(program, functor->getOperand());
@@ -556,7 +557,7 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
                 for (AstArgument* newLhs : lhsVersions.getVector()) {
                     AstArgument* newFunctor =
                             new AstBinaryFunctor(functor->getFunction(), std::unique_ptr<AstArgument>(newLhs),
-                                    std::unique_ptr<AstArgument>(functor->getRHS()));
+                                    std::unique_ptr<AstArgument>(functor->getRHS()->clone()));
                     versions.push_back(newFunctor);
                 }
             } else {
@@ -565,7 +566,7 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
                     changed = true;
                     for (AstArgument* newRhs : rhsVersions.getVector()) {
                         AstArgument* newFunctor = new AstBinaryFunctor(functor->getFunction(),
-                                std::unique_ptr<AstArgument>(functor->getLHS()),
+                                std::unique_ptr<AstArgument>(functor->getLHS()->clone()),
                                 std::unique_ptr<AstArgument>(newRhs));
                         versions.push_back(newFunctor);
                     }
@@ -639,7 +640,7 @@ NullableVector<AstArgument*> getInlinedArgument(AstProgram& program, const AstAr
                 }
             }
 
-            // Only perform one stage of inlining at a time to avoid confusion.
+            // Only perform one stage of inlining at a time.
             if (changed) {
                 break;
             }
@@ -680,7 +681,7 @@ NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
             }
         }
 
-        // Only perform one stage of inlining at a time to avoid confusion.
+        // Only perform one stage of inlining at a time.
         if (changed) {
             break;
         }
@@ -846,7 +847,7 @@ std::vector<AstClause*> getInlinedClause(AstProgram& program, const AstClause& c
         }
     }
 
-    // Only perform one stage of inlining at a time to avoid confusion.
+    // Only perform one stage of inlining at a time.
     // If the head atoms did not need inlining, try inlining atoms nested in the body.
     if (!changed) {
         std::vector<AstLiteral*> bodyLiterals = clause.getBodyLiterals();
@@ -889,7 +890,7 @@ std::vector<AstClause*> getInlinedClause(AstProgram& program, const AstClause& c
                 }
             }
 
-            // To avoid confusion, only replace at most one literal per iteration
+            // Only replace at most one literal per iteration
             if (changed) {
                 break;
             }
@@ -923,15 +924,12 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
     // terminate.
     bool clausesChanged = true;
     while (clausesChanged) {
-        std::vector<const AstClause*> clausesToDelete;
+        std::set<AstClause*> clausesToDelete;
         clausesChanged = false;
 
         // Go through each relation in the program and check if we need to inline any of its clauses
         for (AstRelation* rel : program.getRelations()) {
             // Skip if the relation is going to be inlined
-            // TODO (azreika): Consider the case a(x) :- b(x), where both a and b are to be inlined:
-            //    May be more efficient if these are inlined first, as it may reduce the number
-            //    of inlining steps needed later on.
             if (rel->isInline()) {
                 continue;
             }
@@ -943,7 +941,7 @@ bool InlineRelationsTransformer::transform(AstTranslationUnit& translationUnit) 
                     std::vector<AstClause*> newClauses = getInlinedClause(program, *clause);
 
                     // Replace the clause with these equivalent versions
-                    clausesToDelete.push_back(clause);
+                    clausesToDelete.insert(clause);
                     for (AstClause* replacementClause : newClauses) {
                         program.appendClause(std::unique_ptr<AstClause>(replacementClause));
                     }

@@ -1023,6 +1023,25 @@ void AstSemanticChecker::checkInlining(
                     "Inlined relation may introduce new variables but appears negated", neg.getSrcLoc());
         }
     });
+
+    // Check 4:
+    // Don't support inlining atoms within aggregators at this point.
+
+    // Reasoning: Suppose we have an aggregator like `max X: a(X)`, where `a` is inlined to `a1` and `a2`.
+    // Then, `max X: a(X)` will become `max( max X: a1(X),  max X: a2(X) )`. Suppose further that a(X) has
+    // values X where it is true, while a2(X) does not. Then, the produced argument
+    // `max( max X: a1(X),  max X: a2(X) )` will not return anything (as one of its arguments fails), while
+    // `max X: a(X)` will.
+
+    // This corner case prevents generalising aggregator inlining with the current set up.
+
+    visitDepthFirst(program, [&](const AstAggregator& aggr) {
+        visitDepthFirst(aggr, [&](const AstAtom& subatom) {
+            if (program.getRelation(subatom.getName())->isInline()) {
+                report.addError("Inlined relation appears in aggregator", subatom.getSrcLoc());
+            }
+        });
+    });
 }
 
 // Check that type, relation, component names are disjoint sets.
