@@ -22,10 +22,24 @@ m4_define([FILE_EXISTS],[
 dnl Check whether the contents of two files are identical
 dnl $1 -- first file
 dnl $2 -- second file
-m4_define([SAME_FILES],[
+m4_define([SAME_FILE],[
  FILE_EXISTS(["$1"])
  FILE_EXISTS(["$2"])
  AT_CHECK([diff "$1" "$2"],[],[],[])
+])
+
+dnl Check whether all files matching a regex have identical sorted contents
+dnl to those in the given directory.
+dnl the contents of two files are identical
+dnl $1 -- input files regex
+dnl $2 -- directory containing the expected output files
+m4_define([SORTED_SAME_FILES], [
+ for i in $1
+ do
+  sort "$i" > "$i.sorted.generated"
+  sort $2/"$i" > "$i.sorted.expected"
+  SAME_FILE(["$i.sorted.generated"], ["$i.sorted.expected"])
+ done
 ])
 
 dnl Check whether two files have the same number of lines
@@ -68,22 +82,15 @@ m4_define([TEST_EVAL],[
  m4_define([EXPECTEDDIR], [TESTDIR$4])
  # invoke souffle
  AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [0])
- # sort the expected and the generated CSV files
- # and compare whether both files are the same.
- for i in *.csv
- do
-  sort "$i" > "$i.sorted.generated"
-  sort EXPECTEDDIR/"$i" > "$i.sorted.expected"
-  SAME_FILES(["$i.sorted.generated"],["$i.sorted.expected"])
- done
+ SORTED_SAME_FILES([*.csv],[EXPECTEDDIR])
  # validate whether the number of generated CSV files
  # is equal to the number of expected CSV files.
  ls *.csv|wc -l >"num.generated"
  ls EXPECTEDDIR/*.csv|wc -l >"num.expected"
  # validate stdout and stderr
- SAME_FILES([TESTNAME.out],[EXPECTEDDIR/TESTNAME.out])
- SAME_FILES([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
- SAME_FILES([num.generated],[num.expected])
+ SAME_FILE([TESTNAME.out],[EXPECTEDDIR/TESTNAME.out])
+ SAME_FILE([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
+ SAME_FILE([num.generated],[num.expected])
 ])
 
 dnl Execute a positive test case for a given flag configuration
@@ -101,14 +108,7 @@ m4_define([TEST_EVAL_IN],[
  m4_define([EXPECTEDDIR], [TESTDIR$4])
  # invoke souffle
  AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTDIR/TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [0])
- # sort the expected and the generated CSV files
- # and compare whether both files are the same.
- for i in *.csv
- do
-  sort "$i" > "$i.sorted.generated"
-  sort EXPECTEDDIR/"$i" > "$i.sorted.expected"
-  SAME_FILES(["$i.sorted.generated"],["$i.sorted.expected"])
- done
+ SORTED_SAME_FILES([*.csv],[EXPECTEDDIR])
  # validate whether the number of generated CSV files
  # is equal to the number of expected CSV files.
  ls *.csv|wc -l >"num.generated"
@@ -116,9 +116,9 @@ m4_define([TEST_EVAL_IN],[
  # remove non-deterministic record numbering
  sed 's/subproof \(@<:@a-zA-Z0-9?_@:>@*\)(@<:@0-9@:>@*)/subproof \1()/g' TESTNAME.out | sed -e '$a\' >TESTNAME.sed.out
  # validate stdout and stderr
- SAME_FILES([TESTNAME.sed.out],[EXPECTEDDIR/TESTNAME.out])
- SAME_FILES([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
- SAME_FILES([num.generated],[num.expected])
+ SAME_FILE([TESTNAME.sed.out],[EXPECTEDDIR/TESTNAME.out])
+ SAME_FILE([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
+ SAME_FILE([num.generated],[num.expected])
 ])
 
 dnl Execute a negative test case for a given flag configuration
@@ -131,8 +131,8 @@ m4_define([TEST_EVAL_ERROR],[
  m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
  m4_define([FACTS],[TESTDIR/facts])
  AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [1])
- SAME_FILES([TESTNAME.out],[TESTDIR/TESTNAME.out])
- SAME_FILES([TESTNAME.err],[TESTDIR/TESTNAME.err])
+ SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
+ SAME_FILE([TESTNAME.err],[TESTDIR/TESTNAME.err])
 ])
 
 dnl Execute a negative test case for a given flag configuration
@@ -145,8 +145,8 @@ m4_define([TEST_EVAL_ERROR_IN],[
  m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
  m4_define([FACTS],[TESTDIR/facts])
  AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTDIR/TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [1])
- SAME_FILES([TESTNAME.out],[TESTDIR/TESTNAME.out])
- SAME_FILES([TESTNAME.err],[TESTDIR/TESTNAME.err])
+ SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
+ SAME_FILE([TESTNAME.err],[TESTDIR/TESTNAME.err])
 ])
 
 dnl Positive testcase for Souffle

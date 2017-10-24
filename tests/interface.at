@@ -19,7 +19,7 @@ m4_define([TEST_EVAL_INTERFACE],[
  AT_CHECK([rm $1 2>>TESTNAME.err],[0])
  AT_CHECK(["$CXX" "-I$SOUFFLE_INC" $CXXFLAGS -D__EMBEDDED_SOUFFLE__ -o $1 TESTDIR/driver.cpp $1.cpp $LIBS 2>>TESTNAME.err],[0])
  AT_CHECK([./$1 FACTS 1>TESTNAME.out 2>>TESTNAME.err], [0])
- SAME_FILES([TESTNAME.out],[TESTDIR/TESTNAME.out])
+ SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
 ])
 
 dnl Execute a negative interface test case
@@ -38,8 +38,8 @@ m4_define([TEST_EVAL_ERROR_INTERFACE],[
  AT_CHECK(["$CXX" "-I$SOUFFLE_INC" $CXXFLAGS -D__EMBEDDED_SOUFFLE__ -o $1 TESTDIR/driver.cpp $1.cpp $LIBS 2>>TESTNAME.err],[0])
  AT_CHECK([rm TESTNAME.err],[0])
  AT_CHECK([./$1 FACTS 1>TESTNAME.out 2>>TESTNAME.err], [1])
- SAME_FILES([TESTNAME.out],[TESTDIR/TESTNAME.out])
- SAME_FILES([TESTNAME.err],[TESTDIR/TESTNAME.err])
+ SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
+ SAME_FILE([TESTNAME.err],[TESTDIR/TESTNAME.err])
 ])
 
 dnl Positive interface testcase for Souffle
