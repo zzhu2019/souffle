@@ -1,0 +1,4 @@
+Error: Inlined relation may introduce new variables but appears negated in file inline_negation3.dl at line 25
+a(x) :- c(x), !b(x).
+---------------^-----
+1 errors generated, evaluation aborted
