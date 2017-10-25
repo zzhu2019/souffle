@@ -849,6 +849,85 @@ void AstSemanticChecker::checkIODirectives(ErrorReport& report, const AstProgram
     }
 }
 
+// Find a cycle consisting entirely of inlined relations.
+// If no cycle exists, then an empty vector is returned.
+std::vector<AstRelationIdentifier> findInlineCycle(const PrecedenceGraph& precedenceGraph,
+        std::map<const AstRelation*, const AstRelation*>& origins, const AstRelation* current,
+        AstRelationSet& unvisited, AstRelationSet& visiting, AstRelationSet& visited) {
+    std::vector<AstRelationIdentifier> result;
+
+    if (current == nullptr) {
+        // Not looking at any nodes at the moment, so choose any node from the unvisited list
+        if (unvisited.size() == 0) {
+            // Nothing left to visit - so no cycles exist!
+            return result;
+        } else {
+            // Choose any element from the unvisited set
+            current = *unvisited.begin();
+            origins[current] = nullptr;
+
+            // Move it to "currently visiting"
+            unvisited.erase(current);
+            visiting.insert(current);
+
+            // Check if we can find a cycle beginning from this node
+            std::vector<AstRelationIdentifier> subresult =
+                    findInlineCycle(precedenceGraph, origins, current, unvisited, visiting, visited);
+
+            if (subresult.size() == 0) {
+                // No cycle found, try again from another node
+                return findInlineCycle(precedenceGraph, origins, nullptr, unvisited, visiting, visited);
+            } else {
+                // Cycle found! Return it
+                return subresult;
+            }
+        }
+    }
+
+    // Check neighbours
+    const AstRelationSet& successors = precedenceGraph.graph().successors(current);
+    for (const AstRelation* successor : successors) {
+        // Only care about inlined neighbours in the graph
+        if (successor->isInline()) {
+            if (visited.find(successor) != visited.end()) {
+                // The neighbour has already been visited, so move on
+                continue;
+            }
+
+            if (visiting.find(successor) != visiting.end()) {
+                // Found a cycle!!
+                // Construct the cycle in reverse
+                while (current != nullptr) {
+                    result.push_back(current->getName());
+                    current = origins[current];
+                }
+                return result;
+            }
+
+            // Node has not been visited yet
+            origins[successor] = current;
+
+            // Move from unvisited to visiting
+            unvisited.erase(successor);
+            visiting.insert(successor);
+
+            // Visit recursively and check if a cycle is formed
+            std::vector<AstRelationIdentifier> subgraphCycle =
+                    findInlineCycle(precedenceGraph, origins, successor, unvisited, visiting, visited);
+
+            if (subgraphCycle.size() != 0) {
+                // Found a cycle!
+                return subgraphCycle;
+            }
+        }
+    }
+
+    // Visited all neighbours with no cycle found, so done visiting this node.
+    visiting.erase(current);
+    visited.insert(current);
+    return result;
+}
+
 void AstSemanticChecker::checkInlining(
         ErrorReport& report, const AstProgram& program, const PrecedenceGraph& precedenceGraph) {
     // Find all inlined relations
@@ -875,80 +954,38 @@ void AstSemanticChecker::checkInlining(
     // which are marked with the inline directive.
     // If G' contains a cycle, then inlining cannot be performed.
 
-    // Remember all inlined nodes that have been visited
-    AstRelationSet visitedNodes;
+    AstRelationSet unvisited;  // nodes that have not been visited yet
+    AstRelationSet visiting;   // nodes that we are currently visiting
+    AstRelationSet visited;    // nodes that have been completely explored
 
-    // Keep going until all nodes have been visited
-    while (true) {
-        // Grab an unvisited node
-        const AstRelation* currNode = nullptr;
-        for (const AstRelation* rel : inlinedRelations) {
-            if (visitedNodes.find(rel) == visitedNodes.end()) {
-                currNode = rel;
-            }
+    // All nodes are initially unvisited
+    for (const AstRelation* rel : inlinedRelations) {
+        unvisited.insert(rel);
+    }
+
+    // Remember the parent node of each visited node to construct the found cycle
+    std::map<const AstRelation*, const AstRelation*> origins;
+
+    std::vector<AstRelationIdentifier> result =
+            findInlineCycle(precedenceGraph, origins, nullptr, unvisited, visiting, visited);
+
+    // If the result contains anything, then a cycle was found
+    if (result.size() != 0) {
+        AstRelation* cycleOrigin = program.getRelation(result[result.size() - 1]);
+
+        // Construct the string representation of the cycle
+        std::stringstream cycle;
+        cycle << "{" << cycleOrigin->getName();
+
+        // Print it backwards to preserve the initial cycle order
+        for (int i = result.size() - 2; i >= 0; i--) {
+            cycle << ", " << result[i];
         }
 
-        // All nodes have been visited
-        if (currNode == nullptr) {
-            break;
-        }
+        cycle << "}";
 
-        // Check if a cycle exists in its connected component
-        bool cyclic = false;
-        const AstRelation* cyclicOrigin;   // origin of the cycle
-        const AstRelation* cyclicWitness;  // predecessor of the origin of the cycle
-
-        std::stack<const AstRelation*> fringe;                    // Nodes we are planning to visit
-        std::set<const AstRelation*> visited;                     // Nodes we have already visited
-        std::map<const AstRelation*, const AstRelation*> origin;  // Start node
-
-        origin[currNode] = nullptr;
-        fringe.push(currNode);
-
-        // Keep going until we've visited all inlined nodes or found a cycle
-        while (!fringe.empty() && !cyclic) {
-            currNode = fringe.top();
-            fringe.pop();
-            visited.insert(currNode);
-
-            const AstRelationSet& successors = precedenceGraph.graph().successors(currNode);
-            for (const AstRelation* successor : successors) {
-                // We only want to deal with the subgraph of the precedence graph containing
-                // inlined relations
-                if (successor->isInline()) {
-                    if (visited.find(successor) != visited.end()) {
-                        // Found a node that we've already visited!
-                        cyclic = true;
-                        cyclicOrigin = successor;
-                        cyclicWitness = currNode;
-                        break;
-                    }
-
-                    origin[successor] = currNode;
-                    fringe.push(successor);
-                }
-            }
-        }
-
-        // Check if we found a cycle
-        if (cyclic) {
-            // Construct the string representation of the cycle
-            std::stringstream cycle;
-            cycle << "{" << cyclicOrigin->getName();
-            const AstRelation* currRelation = cyclicWitness;
-            while (currRelation != cyclicOrigin) {
-                cycle << ", " << currRelation->getName();
-                currRelation = origin[currRelation];
-            }
-            cycle << "}";
-            report.addError("Inlined relations " + cycle.str() + " are cyclically dependent",
-                    cyclicOrigin->getSrcLoc());
-            break;
-        }
-
-        for (const AstRelation* vis : visited) {
-            visitedNodes.insert(vis);
-        }
+        report.addError(
+                "Inlined relations " + cycle.str() + " are cyclically dependent", cycleOrigin->getSrcLoc());
     }
 
     // Check 2:
