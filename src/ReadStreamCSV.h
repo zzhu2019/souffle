@@ -67,6 +67,10 @@ protected:
         if (!getline(file, line)) {
             return nullptr;
         }
+        // Handle Windows line endings on non-Windows systems
+        if (line.back() == '\r') {
+            line = line.substr(0, line.length() - 1);
+        }
         ++lineNumber;
 
         size_t start = 0, end = 0, columnsFilled = 0;
