@@ -619,7 +619,7 @@ public:
     }
 
     std::string getType() const {
-      return type;
+        return type;
     }
 
     /** Obtains a list of all embedded child nodes */

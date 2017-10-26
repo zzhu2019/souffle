@@ -238,7 +238,7 @@ public:
             os << "overridable ";
         }
         if (isInline()) {
-          os << "inline ";
+            os << "inline ";
         }
     }
 
