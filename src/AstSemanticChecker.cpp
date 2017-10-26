@@ -1074,7 +1074,8 @@ void AstSemanticChecker::checkInlining(
 
     visitDepthFirst(program, [&](const AstAggregator& aggr) {
         visitDepthFirst(aggr, [&](const AstAtom& subatom) {
-            if (program.getRelation(subatom.getName())->isInline()) {
+            const AstRelation* rel = program.getRelation(subatom.getName());
+            if(rel != nullptr && rel->isInline()) {
                 report.addError("Inlined relation appears in aggregator", subatom.getSrcLoc());
             }
         });
