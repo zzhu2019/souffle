@@ -209,10 +209,10 @@ public:
  */
 class InlineRelationsTransformer : public AstTransformer {
 private:
-    virtual bool transform(AstTranslationUnit& translationUnit);
+    bool transform(AstTranslationUnit& translationUnit) override;
 
 public:
-    virtual std::string getName() const {
+    std::string getName() const override {
         return "InlineRelationsTransformer";
     }
 };
@@ -223,10 +223,10 @@ public:
  */
 class NormaliseConstraintsTransformer : public AstTransformer {
 private:
-    virtual bool transform(AstTranslationUnit& translationUnit);
+    bool transform(AstTranslationUnit& translationUnit) override;
 
 public:
-    virtual std::string getName() const {
+    std::string getName() const override {
         return "NormaliseConstraintsTransformer";
     }
 };
@@ -236,10 +236,10 @@ public:
  */
 class MagicSetTransformer : public AstTransformer {
 private:
-    virtual bool transform(AstTranslationUnit& translationUnit);
+    bool transform(AstTranslationUnit& translationUnit) override;
 
 public:
-    virtual std::string getName() const {
+    std::string getName() const override {
         return "MagicSetTransformer";
     }
 };

@@ -618,7 +618,7 @@ public:
         return value.get();
     }
 
-    std::string getType() const {
+    const std::string& getType() const {
         return type;
     }
 

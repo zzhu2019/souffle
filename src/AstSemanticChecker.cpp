@@ -849,8 +849,10 @@ void AstSemanticChecker::checkIODirectives(ErrorReport& report, const AstProgram
     }
 }
 
-// Find a cycle consisting entirely of inlined relations.
-// If no cycle exists, then an empty vector is returned.
+/**
+ * Find a cycle consisting entirely of inlined relations.
+ * If no cycle exists, then an empty vector is returned.
+ */
 std::vector<AstRelationIdentifier> findInlineCycle(const PrecedenceGraph& precedenceGraph,
         std::map<const AstRelation*, const AstRelation*>& origins, const AstRelation* current,
         AstRelationSet& unvisited, AstRelationSet& visiting, AstRelationSet& visited) {
@@ -858,29 +860,30 @@ std::vector<AstRelationIdentifier> findInlineCycle(const PrecedenceGraph& preced
 
     if (current == nullptr) {
         // Not looking at any nodes at the moment, so choose any node from the unvisited list
-        if (unvisited.size() == 0) {
+
+        if (unvisited.empty()) {
             // Nothing left to visit - so no cycles exist!
             return result;
+        }
+
+        // Choose any element from the unvisited set
+        current = *unvisited.begin();
+        origins[current] = nullptr;
+
+        // Move it to "currently visiting"
+        unvisited.erase(current);
+        visiting.insert(current);
+
+        // Check if we can find a cycle beginning from this node
+        std::vector<AstRelationIdentifier> subresult =
+                findInlineCycle(precedenceGraph, origins, current, unvisited, visiting, visited);
+
+        if (subresult.empty()) {
+            // No cycle found, try again from another node
+            return findInlineCycle(precedenceGraph, origins, nullptr, unvisited, visiting, visited);
         } else {
-            // Choose any element from the unvisited set
-            current = *unvisited.begin();
-            origins[current] = nullptr;
-
-            // Move it to "currently visiting"
-            unvisited.erase(current);
-            visiting.insert(current);
-
-            // Check if we can find a cycle beginning from this node
-            std::vector<AstRelationIdentifier> subresult =
-                    findInlineCycle(precedenceGraph, origins, current, unvisited, visiting, visited);
-
-            if (subresult.size() == 0) {
-                // No cycle found, try again from another node
-                return findInlineCycle(precedenceGraph, origins, nullptr, unvisited, visiting, visited);
-            } else {
-                // Cycle found! Return it
-                return subresult;
-            }
+            // Cycle found! Return it
+            return subresult;
         }
     }
 
@@ -915,7 +918,7 @@ std::vector<AstRelationIdentifier> findInlineCycle(const PrecedenceGraph& preced
             std::vector<AstRelationIdentifier> subgraphCycle =
                     findInlineCycle(precedenceGraph, origins, successor, unvisited, visiting, visited);
 
-            if (subgraphCycle.size() != 0) {
+            if (!subgraphCycle.empty()) {
                 // Found a cycle!
                 return subgraphCycle;
             }
@@ -970,7 +973,7 @@ void AstSemanticChecker::checkInlining(
             findInlineCycle(precedenceGraph, origins, nullptr, unvisited, visiting, visited);
 
     // If the result contains anything, then a cycle was found
-    if (result.size() != 0) {
+    if (!result.empty()) {
         AstRelation* cycleOrigin = program.getRelation(result[result.size() - 1]);
 
         // Construct the string representation of the cycle
@@ -985,7 +988,7 @@ void AstSemanticChecker::checkInlining(
         cycle << "}";
 
         report.addError(
-                "Inlined relations " + cycle.str() + " are cyclically dependent", cycleOrigin->getSrcLoc());
+                "Cannot inline cyclically dependent relations " + cycle.str(), cycleOrigin->getSrcLoc());
     }
 
     // Check 2:
@@ -1038,7 +1041,7 @@ void AstSemanticChecker::checkInlining(
 
             // Check if all body variables are in the head
             // Do this separately to the above so only one error is printed per variable
-            for (std::string var : bodyVariables) {
+            for (const std::string& var : bodyVariables) {
                 if (headVariables.find(var) == headVariables.end()) {
                     nonNegatableRelations.insert(rel);
                     foundNonNegatable = true;
@@ -1057,7 +1060,7 @@ void AstSemanticChecker::checkInlining(
         AstRelation* associatedRelation = program.getRelation(neg.getAtom()->getName());
         if (nonNegatableRelations.find(associatedRelation) != nonNegatableRelations.end()) {
             report.addError(
-                    "Inlined relation may introduce new variables but appears negated", neg.getSrcLoc());
+                    "Cannot inline negated relation which may introduce new variables", neg.getSrcLoc());
         }
     });
 
@@ -1076,7 +1079,7 @@ void AstSemanticChecker::checkInlining(
         visitDepthFirst(aggr, [&](const AstAtom& subatom) {
             const AstRelation* rel = program.getRelation(subatom.getName());
             if (rel != nullptr && rel->isInline()) {
-                report.addError("Inlined relation appears in aggregator", subatom.getSrcLoc());
+                report.addError("Cannot inline relations that appear in aggregator", subatom.getSrcLoc());
             }
         });
     });
