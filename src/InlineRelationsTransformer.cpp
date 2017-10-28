@@ -42,7 +42,6 @@ void normaliseInlinedHeads(AstProgram& program) {
             auto newClause = std::make_unique<AstClause>();
             newClause->setSrcLoc(clause->getSrcLoc());
             auto clauseHead = std::make_unique<AstAtom>(clause->getHead()->getName());
-            newClause->setHead(std::move(clauseHead));
 
             // Add in everything in the original body
             for (AstLiteral* lit : clause->getBodyLiterals()) {
@@ -66,6 +65,8 @@ void normaliseInlinedHeads(AstProgram& program) {
                     clauseHead->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
                 }
             }
+
+            newClause->setHead(std::move(clauseHead));
 
             // Replace the old clause with this one
             rel->addClause(std::move(newClause));
