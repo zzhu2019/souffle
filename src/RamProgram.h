@@ -62,10 +62,10 @@ public:
         subroutines.insert(std::make_pair(name, std::move(subroutine)));
     }
 
-    const std::map<std::string, RamStatement&> getSubroutines() const {
-        std::map<std::string, RamStatement&> subroutineRefs;
+    const std::map<std::string, RamStatement*> getSubroutines() const {
+        std::map<std::string, RamStatement*> subroutineRefs;
         for (auto& s : subroutines) {
-            subroutineRefs.insert({s.first, *s.second});
+            subroutineRefs.insert({s.first, s.second.get()});
         }
         return subroutineRefs;
     }

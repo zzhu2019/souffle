@@ -1608,7 +1608,7 @@ std::string RamSynthesiser::generateCode(const SymbolTable& symTable, const RamP
                                                   "std::vector<RamDomain>& ret, std::vector<bool>& err) {\n";
 
             // generate code for body
-            genCode(os, sub.second, indices);
+            genCode(os, *sub.second, indices);
 
             os << "return;\n";
             os << "}\n";  // end of subroutine
