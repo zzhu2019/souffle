@@ -116,6 +116,7 @@ RamRelationIdentifier getRamRelationIdentifier(const AstRelation* rel, const Typ
             outputDirectives.clear();
             IODirectives ioDirectives;
             ioDirectives.setIOType("stdout");
+            ioDirectives.set("headers", "true");
             outputDirectives.push_back(ioDirectives);
         } else if (outputDirectives.empty()) {
             IODirectives ioDirectives;
