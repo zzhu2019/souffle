@@ -112,6 +112,7 @@ RamRelationIdentifier getRamRelationIdentifier(const AstRelation* rel, const Typ
         const std::string outputFilePath = (filePath.empty()) ? Global::config().get("output-dir") : filePath;
         const std::string outputFileExt = (fileExt.empty()) ? ".csv" : fileExt;
         if (Global::config().get("output-dir") == "-") {
+            // If stdout is requested then remove all directives from the datalog file.
             outputDirectives.clear();
             IODirectives ioDirectives;
             ioDirectives.setIOType("stdout");
@@ -122,7 +123,6 @@ RamRelationIdentifier getRamRelationIdentifier(const AstRelation* rel, const Typ
             ioDirectives.setFileName(getRelationName(rel->getName()) + outputFileExt);
             outputDirectives.push_back(ioDirectives);
         }
-        // If stdout is requested then remove all directives from the datalog file.
         for (auto& ioDirectives : outputDirectives) {
             ioDirectives.setRelationName(getRelationName(rel->getName()));
             if (!ioDirectives.has("IO")) {
@@ -133,6 +133,13 @@ RamRelationIdentifier getRamRelationIdentifier(const AstRelation* rel, const Typ
             }
             if (ioDirectives.getIOType() == "file" && ioDirectives.getFileName().front() != '/') {
                 ioDirectives.setFileName(outputFilePath + "/" + ioDirectives.get("filename"));
+            }
+            if (!ioDirectives.has("attributeNames")) {
+                std::string delimiter("\t");
+                if (ioDirectives.has("delimiter")) {
+                    delimiter = ioDirectives.get("delimiter");
+                }
+                ioDirectives.set("attributeNames", toString(join(attributeNames, delimiter)));
             }
         }
     }
