@@ -136,12 +136,11 @@ public:
     WriteCoutCSV(const SymbolMask& symbolMask, const SymbolTable& symbolTable,
             const IODirectives& ioDirectives, const bool provenance = false)
             : WriteStream(symbolMask, symbolTable, provenance), delimiter(getDelimiter(ioDirectives)) {
+        std::cout << "---------------\n" << ioDirectives.getRelationName();
         if (ioDirectives.has("headers") && ioDirectives.get("headers") == "true") {
-            std::cout << "---------------\n" << ioDirectives.getRelationName() << "(";
-            std::cout << ioDirectives.get("attributeNames") << ")\n===============\n";
-        } else {
-            std::cout << "---------------\n" << ioDirectives.getRelationName() << "\n===============\n";
+            std::cout << "\n" << ioDirectives.get("attributeNames");
         }
+        std::cout << "\n===============\n";
     }
 
     ~WriteCoutCSV() override {
