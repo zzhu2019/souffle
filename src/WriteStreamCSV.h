@@ -29,14 +29,17 @@
 
 namespace souffle {
 
-inline std::string getDelimiter(const IODirectives& ioDirectives) {
-    if (ioDirectives.has("delimiter")) {
-        return ioDirectives.get("delimiter");
+class WriteStreamCSV {
+protected:
+    virtual std::string getDelimiter(const IODirectives& ioDirectives) const {
+        if (ioDirectives.has("delimiter")) {
+            return ioDirectives.get("delimiter");
+        }
+        return "\t";
     }
-    return "\t";
-}
+};
 
-class WriteFileCSV : public WriteStream {
+class WriteFileCSV : public WriteStreamCSV, public WriteStream {
 public:
     WriteFileCSV(const SymbolMask& symbolMask, const SymbolTable& symbolTable,
             const IODirectives& ioDirectives, const bool provenance = false)
@@ -83,7 +86,7 @@ protected:
 };
 
 #ifdef USE_LIBZ
-class WriteGZipFileCSV : public WriteStream {
+class WriteGZipFileCSV : public WriteStreamCSV, public WriteStream {
 public:
     WriteGZipFileCSV(const SymbolMask& symbolMask, const SymbolTable& symbolTable,
             const IODirectives& ioDirectives, const bool provenance = false)
@@ -131,7 +134,7 @@ protected:
 };
 #endif
 
-class WriteCoutCSV : public WriteStream {
+class WriteCoutCSV : public WriteStreamCSV, public WriteStream {
 public:
     WriteCoutCSV(const SymbolMask& symbolMask, const SymbolTable& symbolTable,
             const IODirectives& ioDirectives, const bool provenance = false)

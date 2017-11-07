@@ -190,6 +190,7 @@ public:
             if (!fileHandle.is_open()) {
                 throw std::invalid_argument("Cannot open fact file " + baseName + "\n");
             }
+            // Strip headers if we're using them
             if (ioDirectives.has("headers") && ioDirectives.get("headers") == "true") {
                 std::string line;
                 getline(file, line);
