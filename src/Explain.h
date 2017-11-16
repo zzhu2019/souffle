@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "ExplainProvenanceRecords.h"
 #include "ExplainProvenanceSLD.h"
 
 #include <csignal>
@@ -45,24 +44,44 @@ private:
     int depthLimit;
 
     // parse relation, split into relation name and values
-    std::pair<std::string, std::vector<std::string>> parseRel(std::string rel) {
-        // remove spaces
-        rel.erase(std::remove(rel.begin(), rel.end(), ' '), rel.end());
-
-        // remove last closing parenthesis
-        if (rel.back() == ')') {
-            rel.pop_back();
-        }
-
-        auto splitRel = split(rel, '(');
+    std::pair<std::string, std::vector<std::string>> parseRel(std::string str) {
         std::string relName;
-        if (splitRel.size() > 0) {
-            relName = splitRel[0];
-        }
         std::vector<std::string> args;
 
-        if (splitRel.size() > 1) {
-            args = split(splitRel[1], ',');
+        // regex for matching tuples
+        // values matches numbers or strings enclosed in quotation marks
+        std::regex relRegex("([a-zA-Z0-9_]*)\\s*\\(((?:[0-9]+|\"[^\"]*\")(?:,\\s*(?:[0-9]+|\"[^\"]*\"))*)\\)");
+        std::smatch relMatch;
+
+        // first check that format matches correctly
+        // and extract relation name
+        if (!std::regex_match(str, relMatch, relRegex) || relMatch.size() != 3) {
+            return std::make_pair(relName, args);
+        }
+
+        // set relation name
+        relName = relMatch[1];
+
+        // extract each argument
+        std::string argsList = relMatch[2];
+        std::regex argRegex("(?:[0-9]+|\"[^\"]*\")");
+
+        // iterate through each argument
+        std::regex_iterator<std::string::iterator> argMatcher(argsList.begin(), argsList.end(), argRegex);
+        std::regex_iterator<std::string::iterator> rend;
+
+        while (argMatcher != rend) {
+            std::string currentArg = argMatcher->str();
+
+            /*
+            // remove quotation marks if string
+            if (currentArg.size() >= 2 && currentArg[0] == '"' && currentArg[currentArg.size() - 1] == '"') {
+                currentArg = currentArg.substr(1, currentArg.size() - 2);
+            }
+            */
+
+            args.push_back(currentArg);
+            ++argMatcher;
         }
 
         return std::make_pair(relName, args);
@@ -188,10 +207,10 @@ public:
                 printStr("Depth is now " + std::to_string(depthLimit) + "\n");
             } else if (command[0] == "explain") {
                 std::pair<std::string, std::vector<std::string>> query;
-                if (command.size() > 1) {
+                if (command.size() == 2) {
                     query = parseRel(command[1]);
                 } else {
-                    printStr("Usage: explain relation_name(<element1>, <element2>, ...)\n");
+                    printStr("Usage: explain relation_name(\"<string element1>\", <number element2>, ...)\n");
                     continue;
                 }
                 std::unique_ptr<TreeNode> t = prov.explain(query.first, query.second, depthLimit);
@@ -255,19 +274,10 @@ public:
 inline void explain(SouffleProgram& prog, bool sld = true, bool ncurses = false) {
     std::cout << "Explain is invoked.\n";
 
-    ExplainProvenance* prov;
-    if (sld) {
-        prov = new ExplainProvenanceSLD(prog);
-    } else {
-        prov = new ExplainProvenanceRecords(prog);
-    }
+    ExplainProvenanceSLD prov(prog);
 
-    Explain exp(*prov, ncurses);
+    Explain exp(prov, ncurses);
     exp.explain();
-
-    if (prov) {
-        delete prov;
-    }
 }
 
 }  // end of namespace souffle

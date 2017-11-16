@@ -179,19 +179,6 @@ public:
 };
 
 /**
- * Transformation pass to add provenance information via records
- */
-class NaiveProvenanceTransformer : public AstTransformer {
-private:
-    bool transform(AstTranslationUnit& translationUnit) override;
-
-public:
-    std::string getName() const override {
-        return "NaiveProvenanceTransformer";
-    }
-};
-
-/**
  * Transformation pass to add provenance information via guided SLD
  */
 class ProvenanceTransformer : public AstTransformer {
@@ -200,7 +187,7 @@ private:
 
 public:
     std::string getName() const override {
-        return "NaiveProvenanceTransformer";
+        return "ProvenanceTransformer";
     }
 };
 
