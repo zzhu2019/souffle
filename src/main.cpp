@@ -223,6 +223,25 @@ int main(int argc, char** argv) {
         if (Global::config().has("dl-program")) {
             Global::config().set("compile");
         }
+
+        /* disable provenance with multithreading */
+        if (Global::config().has("provenance")) {
+            if (Global::config().has("jobs")) {
+                if (Global::config().get("jobs") != "1") {
+                    ERROR("provenance cannot be enabled with multiple jobs.");
+                }
+
+                /*
+                if (isNumber(Global::config().get("jobs").c_str())) {
+                    if (std::stoi(Global::config().get("jobs")) > 1) {
+                        ERROR("provenance cannot be enabled with multiple jobs.");
+                    }
+                } else if (Global::config().has("jobs", "auto")) {
+                    ERROR("provenance cannot be enabled with multiple jobs.");
+                }
+                */
+            }
+        }
     }
 
     // ------ start souffle -------------

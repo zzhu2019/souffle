@@ -140,7 +140,14 @@ RamRelationIdentifier getRamRelationIdentifier(const AstRelation* rel, const Typ
                 if (ioDirectives.has("delimiter")) {
                     delimiter = ioDirectives.get("delimiter");
                 }
-                ioDirectives.set("attributeNames", toString(join(attributeNames, delimiter)));
+
+                if (Global::config().has("provenance")) {
+                    assert(attributeNames.size() >= 2);
+                    std::vector<std::string> originalAttributeNames(attributeNames.begin(), attributeNames.end() - 2);
+                    ioDirectives.set("attributeNames", toString(join(originalAttributeNames, delimiter)));
+                } else {
+                    ioDirectives.set("attributeNames", toString(join(attributeNames, delimiter)));
+                }
             }
         }
     }

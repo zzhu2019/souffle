@@ -188,7 +188,7 @@ soufflepublic_HEADERS = CompiledRamOptions.h    \
                         Explain.h               \
                         ExplainTree.h           \
                         ExplainProvenance.h     \
-                        ExplainProvenanceSLD.h  \
+                        ExplainProvenanceSLD.h 
 
 souffle_CPPFLAGS = -DPACKAGE_VERSION="\"${PACKAGE_VERSION}\""
 
