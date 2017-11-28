@@ -10,7 +10,7 @@
  *
  * @file RamInterpreter.h
  *
- * Declares the interpreter class for executing RAM programs. 
+ * Declares the interpreter class for executing RAM programs.
  *
  ***********************************************************************/
 
@@ -102,8 +102,7 @@ class RamInterpreter : public RamExecutor {
 
 public:
     /** A constructor accepting a query executor strategy */
-    RamInterpreter(const QueryExecutionStrategy& queryStrategy)
-            : queryStrategy(queryStrategy) {}
+    RamInterpreter(const QueryExecutionStrategy& queryStrategy) : queryStrategy(queryStrategy) {}
 
     /**
      * The implementation of the interpreter applying the given program
