@@ -17,9 +17,9 @@
 #include "AstTuner.h"
 #include "AstProgram.h"
 #include "AstVisitor.h"
-#include "RamExecutor.h"
 #include "RamStatement.h"
 #include "RamTranslator.h"
+#include "RamInterpreter.h"
 
 namespace souffle {
 
@@ -119,7 +119,7 @@ bool AutoScheduleTransformer::autotune(AstTranslationUnit& translationUnit, std:
     souffle::SymbolTable table = translationUnit.getSymbolTable();
 
     // create interpreter instance
-    RamGuidedInterpreter interpreter(profiler);
+    RamInterpreter interpreter(profiler);
 
     if (report && verbose) {
         SplitStream splitStream(report, &std::cout);

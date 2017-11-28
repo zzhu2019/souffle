@@ -31,7 +31,8 @@
 #include "Global.h"
 #include "ParserDriver.h"
 #include "PrecedenceGraph.h"
-#include "RamExecutor.h"
+#include "RamInterpreter.h"
+#include "RamSynthesiser.h"
 #include "RamInterface.h"
 #include "RamStatement.h"
 #include "RamTranslator.h"
@@ -400,8 +401,8 @@ int main(int argc, char** argv) {
         // configure interpreter
         std::unique_ptr<RamExecutor> executor =
                 (Global::config().has("auto-schedule"))
-                        ? std::unique_ptr<RamExecutor>(new RamGuidedInterpreter())
-                        : std::unique_ptr<RamExecutor>(new RamInterpreter());
+                        ? std::unique_ptr<RamExecutor>(new RamInterpreter(ScheduledExecution))
+                        : std::unique_ptr<RamExecutor>(new RamInterpreter(DirectExecution));
         std::unique_ptr<RamEnvironment> env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
 
 #ifdef USE_PROVENANCE

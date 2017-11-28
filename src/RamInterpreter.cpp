@@ -14,7 +14,7 @@
  *
  ***********************************************************************/
 
-#include "RamExecutor.h"
+#include "RamInterpreter.h"
 #include "AstRelation.h"
 #include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
@@ -47,9 +47,60 @@
 
 namespace souffle {
 
+class EvalContext {
+    std::vector<const RamDomain*> data;
+    std::vector<RamDomain>* returnValues = nullptr;
+    std::vector<bool>* returnErrors = nullptr;
+    const std::vector<RamDomain>* args = nullptr;
 
+public:
+    EvalContext(size_t size = 0) : data(size) {}
+
+    const RamDomain*& operator[](size_t index) {
+        return data[index];
+    }
+
+    const RamDomain* const& operator[](size_t index) const {
+        return data[index];
+    }
+
+    std::vector<RamDomain>& getReturnValues() const {
+        return *returnValues;
+    }
+
+    void setReturnValues(std::vector<RamDomain>& retVals) {
+        returnValues = &retVals;
+    }
+
+    void addReturnValue(RamDomain val, bool err = false) {
+        assert(returnValues != nullptr && returnErrors != nullptr);
+        returnValues->push_back(val);
+        returnErrors->push_back(err);
+    }
+
+    std::vector<bool>& getReturnErrors() const {
+        return *returnErrors;
+    }
+
+    void setReturnErrors(std::vector<bool>& retErrs) {
+        returnErrors = &retErrs;
+    }
+
+    const std::vector<RamDomain>& getArguments() const {
+        return *args;
+    }
+
+    void setArguments(const std::vector<RamDomain>& a) {
+        args = &a;
+    }
+
+    RamDomain getArgument(size_t i) const {
+        assert(args != nullptr && i < args->size() && "argument out of range");
+        return (*args)[i];
+    }
+};
+  
 namespace {
-
 
 RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ctxt = EvalContext()) {
     class Evaluator : public RamVisitor<RamDomain> {
@@ -837,7 +888,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 }
 }  // namespace
 
-void RamGuidedInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* data) const {
+void RamInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* data) const {
     SignalHandler::instance()->set();
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
@@ -857,9 +908,9 @@ void RamGuidedInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, 
 /**
  * Runs a subroutine of a RamProgram
  */
-void RamGuidedInterpreter::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
+void RamInterpreter::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
         const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
-        std::vector<bool>& returnErrors) {
+        std::vector<bool>& returnErrors) const {
     EvalContext ctxt;
     ctxt.setReturnValues(returnValues);
     ctxt.setReturnErrors(returnErrors);
