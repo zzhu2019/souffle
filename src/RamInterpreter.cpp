@@ -10,7 +10,7 @@
  *
  * @file RamInterpreter.cpp
  *
- * Defines entities capable of executing a RAM program.
+ * Implementation of the RAM interpreter.
  *
  ***********************************************************************/
 

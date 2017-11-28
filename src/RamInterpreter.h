@@ -10,7 +10,7 @@
  *
  * @file RamInterpreter.h
  *
- * Declares entities capable of executing a RAM program.
+ * Declares the interpreter class for executing RAM programs. 
  *
  ***********************************************************************/
 

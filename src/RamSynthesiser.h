@@ -10,7 +10,7 @@
  *
  * @file RamSynthesiser.h
  *
- * Declares entities capable of executing a RAM program.
+ * Declares synthesiser classes to synthesise C++ code from a RAM program.
  *
  ***********************************************************************/
 

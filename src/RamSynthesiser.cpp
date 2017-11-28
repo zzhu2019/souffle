@@ -10,7 +10,7 @@
  *
  * @file RamSynthesiser.cpp
  *
- * Defines entities capable of executing a RAM program.
+ * Implementation of the C++ synthesiser for RAM programs.
  *
  ***********************************************************************/
 
