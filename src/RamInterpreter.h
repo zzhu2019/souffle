@@ -18,6 +18,7 @@
 
 #include "RamExecutor.h"
 
+#include <function>
 #include <vector>
 
 namespace souffle {
