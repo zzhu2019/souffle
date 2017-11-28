@@ -50,7 +50,8 @@ private:
 
         // regex for matching tuples
         // values matches numbers or strings enclosed in quotation marks
-        std::regex relRegex("([a-zA-Z0-9_]*)\\s*\\(((?:[0-9]+|\"[^\"]*\")(?:,\\s*(?:[0-9]+|\"[^\"]*\"))*)\\)");
+        std::regex relRegex(
+                "([a-zA-Z0-9_]*)\\s*\\(((?:[0-9]+|\"[^\"]*\")(?:,\\s*(?:[0-9]+|\"[^\"]*\"))*)\\)");
         std::smatch relMatch;
 
         // first check that format matches correctly

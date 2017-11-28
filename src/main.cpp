@@ -230,16 +230,6 @@ int main(int argc, char** argv) {
                 if (Global::config().get("jobs") != "1") {
                     ERROR("provenance cannot be enabled with multiple jobs.");
                 }
-
-                /*
-                if (isNumber(Global::config().get("jobs").c_str())) {
-                    if (std::stoi(Global::config().get("jobs")) > 1) {
-                        ERROR("provenance cannot be enabled with multiple jobs.");
-                    }
-                } else if (Global::config().has("jobs", "auto")) {
-                    ERROR("provenance cannot be enabled with multiple jobs.");
-                }
-                */
             }
         }
     }
@@ -421,7 +411,8 @@ int main(int argc, char** argv) {
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
-        if (Global::config().has("provenance") && dynamic_cast<RamInterpreter*>(executor.get()) && env != nullptr) {
+        if (Global::config().has("provenance") && dynamic_cast<RamInterpreter*>(executor.get()) &&
+                env != nullptr) {
             // construct SouffleProgram from env
             SouffleInterpreterInterface interface(
                     *ramProg, *executor, *env, translationUnit->getSymbolTable());
