@@ -809,25 +809,6 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
         }
 
         bool visitLoad(const RamLoad& load) override {
-#ifdef USE_JAVAI
-            if (load.getRelation().isData()) {
-                // Load from mem
-                std::string name = load.getRelation().getName();
-                if (data == nullptr) {
-                    std::cout << "data is null\n";
-                    return false;
-                }
-                PrimData* pd = data->getTuples(name);
-                if (pd == nullptr || pd->data.empty()) {
-                    std::cout << "relation " << name << " is empty\n";
-                    return true;
-                }
-
-                bool err = env.getRelation(load.getRelation())
-                                   .load(pd->data, env.getSymbolTable(), load.getRelation().getSymbolMask());
-                return !err;
-            }
-#endif
             try {
                 RamRelation& relation = env.getRelation(load.getRelation());
                 std::unique_ptr<ReadStream> reader = IOSystem::getInstance().getReader(
@@ -842,11 +823,6 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
         }
 
         bool visitStore(const RamStore& store) override {
-#ifdef USE_JAVAI
-            if (store.getRelation().isData()) {
-                return true;
-            }
-#endif
             for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
                 try {
                     IOSystem::getInstance()
@@ -2642,29 +2618,6 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
     os.close();
 
     // return the filename
-    return sourceFilename;
-}
-
-std::string RamCompiler::compileToLibrary(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename, const int index) const {
-    std::string sourceFilename = generateCode(symTable, prog, filename, index);
-
-    // execute shell script that compiles the generated C++ program
-    std::string libCmd = "souffle-compilelib " + sourceFilename;
-
-    // separate souffle output form executable output
-    if (Global::config().has("profile")) {
-        std::cout.flush();
-    }
-
-    // run executable
-    if (system(libCmd.c_str()) != 0) {
-        std::cerr << "failed to compile C++ source " << sourceFilename << "\n";
-        std::cerr << "Have you installed souffle with java?\n";
-        return "";
-    }
-
-    // done
     return sourceFilename;
 }
 
