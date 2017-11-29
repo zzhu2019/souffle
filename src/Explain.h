@@ -44,7 +44,7 @@ private:
     int depthLimit;
 
     // parse relation, split into relation name and values
-    std::pair<std::string, std::vector<std::string>> parseRel(std::string str) {
+    std::pair<std::string, std::vector<std::string>> parseTuple(std::string str) {
         std::string relName;
         std::vector<std::string> args;
 
@@ -62,6 +62,8 @@ private:
 
         // set relation name
         relName = relMatch[1];
+
+        std::cout << relName << std::endl;
 
         // extract each argument
         std::string argsList = relMatch[2];
@@ -202,7 +204,7 @@ public:
             } else if (command[0] == "explain") {
                 std::pair<std::string, std::vector<std::string>> query;
                 if (command.size() == 2) {
-                    query = parseRel(command[1]);
+                    query = parseTuple(command[1]);
                 } else {
                     printStr("Usage: explain relation_name(\"<string element1>\", <number element2>, ...)\n");
                     continue;
@@ -213,7 +215,7 @@ public:
                 std::pair<std::string, std::vector<std::string>> query;
                 int label = -1;
                 if (command.size() > 1) {
-                    query = parseRel(command[1]);
+                    query = parseTuple(command[1]);
                     label = std::stoi(query.second[0]);
                 } else {
                     printStr("Usage: subproof relation_name(<label>)\n");

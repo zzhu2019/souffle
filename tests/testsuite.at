@@ -53,6 +53,18 @@ m4_define([TEST_GROUP],[
  ])
 ])
 
+dnl Group test for all provenance flag configurations
+dnl $1 -- directory of testcase
+dnl $2 -- test category
+dnl $3 -- command to execute testcase
+m4_define([TEST_PROV_GROUP],[
+ m4_foreach([FLAGS],[PROV_FLAGS],[
+  AT_SETUP([$1 FLAGS])
+  $2
+  AT_CLEANUP([])
+ ])
+])
+
 dnl Execute a positive test case for a given flag configuration
 dnl $1 -- test case
 dnl $2 -- category
@@ -289,10 +301,10 @@ dnl Positive testcase for Souffle provenance explainer
 dnl $1 -- test name
 dnl $2 -- category
 m4_define([POSITIVE_PROVENANCE_TEST],[
-  AT_SETUP([$1])
-  m4_define([FLAGS],[])
-  TEST_EVAL_IN([$1],[$2], facts)
-  AT_CLEANUP([])
+  m4_define([PROV_FLAGS], [[], [-c]])
+  TEST_PROV_GROUP([$1],[
+    TEST_EVAL_IN([$1],[$2], facts)
+  ])
 ])
 
 dnl Positive testcase for Souffle
@@ -338,10 +350,10 @@ dnl Negative testcase for Souffle provenance explainer
 dnl $1 -- test name
 dnl $2 -- category
 m4_define([NEGATIVE_PROVENANCE_TEST],[
-  AT_SETUP([$1])
-  m4_define([FLAGS],[])
-  TEST_EVAL_ERROR_IN([$1],[$2])
-  AT_CLEANUP([])
+  m4_define([PROV_FLAGS], [[], [-c]])
+  TEST_PROV_GROUP([$1],[
+    TEST_EVAL_IN([$1],[$2], facts)
+  ])
 ])
 
 ##########################################################################

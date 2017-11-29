@@ -56,7 +56,7 @@ protected:
 
         auto rel = prog.getRelation(relName);
         if (rel == nullptr) {
-            return std::vector<RamDomain>();
+            return nums;
         }
 
         for (size_t i = 0; i < args.size(); i++) {
