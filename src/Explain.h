@@ -51,7 +51,7 @@ private:
         // regex for matching tuples
         // values matches numbers or strings enclosed in quotation marks
         std::regex relRegex(
-                "([a-zA-Z0-9_]*)\\s*\\(((?:[0-9]+|\"[^\"]*\")(?:,\\s*(?:[0-9]+|\"[^\"]*\"))*)\\)");
+                "([a-zA-Z0-9_]*)\\s*\\(((?:[0-9]+|\"[^\"]*\")(?:,\\s*(?:[0-9]+|\"[^\"]*\"))*)?\\)");
         std::smatch relMatch;
 
         // first check that format matches correctly
@@ -73,13 +73,6 @@ private:
 
         while (argMatcher != rend) {
             std::string currentArg = argMatcher->str();
-
-            /*
-            // remove quotation marks if string
-            if (currentArg.size() >= 2 && currentArg[0] == '"' && currentArg[currentArg.size() - 1] == '"') {
-                currentArg = currentArg.substr(1, currentArg.size() - 2);
-            }
-            */
 
             args.push_back(currentArg);
             ++argMatcher;
