@@ -106,8 +106,8 @@ public:
         // and this is not normal souffle behaviour
         // statesLock.lock_shared();
 
-        orderedStates.erase(x);
-        orderedStates.erase(y);
+        orderedStates.erase(sds.readOnlyFindNode(x));
+        orderedStates.erase(sds.readOnlyFindNode(y));
         sds.unionNodes(x, y);
 
         bool retval = contains(x, y);
