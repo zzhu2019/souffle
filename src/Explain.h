@@ -63,8 +63,6 @@ private:
         // set relation name
         relName = relMatch[1];
 
-        std::cout << relName << std::endl;
-
         // extract each argument
         std::string argsList = relMatch[2];
         std::regex argRegex("(?:[0-9]+|\"[^\"]*\")");

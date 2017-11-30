@@ -372,7 +372,7 @@ m4_define([DEFAULT_CONFS], [[],     dnl run interpreter
  [-c -f -j8],                       dnl compile with fault tolerance enabled, then execute in parallel
  [-c -f -j8 -p profile.log],        dnl compile with fault tolerance enabled, then execute in parallel, with profiling enabled
  [-c -j8 -s-],                      dnl compile to subprograms, then execute each in parallel
- [-c -f -j8 -s-],                   dnl compile to subprograms with fault tolerance enabled, then execute each in parallel
+ [-c -f -j8 -s-]                    dnl compile to subprograms with fault tolerance enabled, then execute each in parallel
 ])
 
 dnl Store user-defined souffle flag configuration given by the SOUFFLE_CONFS env (if any)

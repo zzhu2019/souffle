@@ -1,6 +1,5 @@
 Explain is invoked.
-Enter command > path
-                              edge("c", "d")   
+Enter command >                               edge("c", "d")   
                               -----------(R1)  
                edge("b", "c") path("c", "d")   
                ---------------------------(R2) 
