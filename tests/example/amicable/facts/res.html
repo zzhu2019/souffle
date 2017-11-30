@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Souffle Debug Report</title>
+<style>
+ul { list-style-type: none; }
+ul > li.leaf { display: inline-block; padding: 0em 1em; }
+ul > li.nonleaf { padding: 0em 1em; }
+* { font-family: sans-serif; }
+pre { white-space: pre-wrap; font-family: monospace; }
+a:link { text-decoration: none; color: blue; }
+a:visited { text-decoration: none; color: blue; }
+div.headerdiv { background-color:lightgrey; margin:10px; padding-left:10px; padding-right:10px; padding-top:3px; padding-bottom:3px; border-radius:5px }
+.headerdiv h1 { display:inline; }
+.headerdiv a { float:right; }
+</style>
+<script type="text/javascript">
+function toggleVisibility(id) {
+  var element = document.getElementById(id);
+  if (element.style.display == 'none') {
+    element.style.display = 'block';
+  } else {
+    element.style.display = 'none';
+  }
+}
+</script>
+</head>
+<body>
+<div class='headerdiv'><h1>Souffle Debug Report</h1></div>
+<a href="#Parsing">After Parsing (0.024259s)</a>
+<ul>
+<li class='leaf'><a href="#Parsing-dl">Datalog</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#Parsing-prec-graph">Precedence Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#Parsing-scc-graph">SCC Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#Parsing-topsort-scc-graph">SCC Topological Sort Order</a>
+<ul>
+</ul>
+</li></ul>
+<a href="#ComponentInstantiationTransformer">After ComponentInstantiationTransformer (0.000332s)</a>
+<ul>
+<li class='leaf'><a href="#ComponentInstantiationTransformer-dl">Datalog</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#ComponentInstantiationTransformer-prec-graph">Precedence Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#ComponentInstantiationTransformer-scc-graph">SCC Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#ComponentInstantiationTransformer-topsort-scc-graph">SCC Topological Sort Order</a>
+<ul>
+</ul>
+</li></ul>
+<a href="#UniqueAggregationVariablesTransformer">After UniqueAggregationVariablesTransformer (0.000028s)</a>
+<ul>
+<li class='leaf'><a href="#UniqueAggregationVariablesTransformer-dl">Datalog</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#UniqueAggregationVariablesTransformer-prec-graph">Precedence Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#UniqueAggregationVariablesTransformer-scc-graph">SCC Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#UniqueAggregationVariablesTransformer-topsort-scc-graph">SCC Topological Sort Order</a>
+<ul>
+</ul>
+</li></ul>
+<a href="#AstSemanticChecker">After AstSemanticChecker (0.001163s) (unchanged)</a>
+<ul>
+</ul>
+<a href="#InlineRelationsTransformer">After InlineRelationsTransformer (0.000041s) (unchanged)</a>
+<ul>
+</ul>
+<a href="#ResolveAliasesTransformer">After ResolveAliasesTransformer (0.000267s)</a>
+<ul>
+<li class='leaf'><a href="#ResolveAliasesTransformer-dl">Datalog</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#ResolveAliasesTransformer-prec-graph">Precedence Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#ResolveAliasesTransformer-scc-graph">SCC Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#ResolveAliasesTransformer-topsort-scc-graph">SCC Topological Sort Order</a>
+<ul>
+</ul>
+</li></ul>
+<a href="#RemoveRelationCopiesTransformer">After RemoveRelationCopiesTransformer (0.000002s) (unchanged)</a>
+<ul>
+</ul>
+<a href="#MaterializeAggregationQueriesTransformer">After MaterializeAggregationQueriesTransformer (0.000113s)</a>
+<ul>
+<li class='leaf'><a href="#MaterializeAggregationQueriesTransformer-dl">Datalog</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#MaterializeAggregationQueriesTransformer-prec-graph">Precedence Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#MaterializeAggregationQueriesTransformer-scc-graph">SCC Graph</a>
+<ul>
+</ul>
+</li><li class='leaf'><a href="#MaterializeAggregationQueriesTransformer-topsort-scc-graph">SCC Topological Sort Order</a>
+<ul>
+</ul>
+</li></ul>
+<a href="#RemoveEmptyRelationsTransformer">After RemoveEmptyRelationsTransformer (0.000002s) (unchanged)</a>
+<ul>
+</ul>
+<a href="#RemoveRedundantRelationsTransformer">After RemoveRedundantRelationsTransformer (0.000045s) (unchanged)</a>
+<ul>
+</ul>
+<a href="#AstExecutionPlanChecker">After AstExecutionPlanChecker (0.000407s) (unchanged)</a>
+<ul>
+</ul>
+<a href="#ram-program">RAM Program (0.000702s)</a>
+<ul>
+</ul>
+<a id="Parsing"></a>
+<div class='headerdiv'>
+<h1>After Parsing (0.024259s)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+<a id="Parsing-dl"></a>
+<div class='headerdiv'>
+<h1>Datalog</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>// ----- Types -----
+
+// ----- Relations -----
+
+
+// -- amicable --
+.decl amicable(a:number,b:number) output 
+
+amicable(a,b) :- 
+   num(a),
+   b = sum i : factor(a,i),
+   a = sum j : factor(b,j),
+   a &lt; b.
+
+
+
+// -- factor --
+.decl factor(x:number,f:number) 
+
+factor(x,f) :- 
+   num(x),
+   num(f),
+   f &lt;= (x/2),
+   (x%f) = 0.
+
+
+
+// -- lim --
+.decl lim(n:number) input 
+
+
+
+// -- num --
+.decl num(x:number) 
+
+num(1).
+
+num((x+1)) :- 
+   num(x),
+   lim(l),
+   x &lt; l.
+
+</pre>
+
+</div>
+<a id="Parsing-prec-graph"></a>
+<div class='headerdiv'>
+<h1>Precedence Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('Parsing-prec-graph-source')">(show dot source)</a>
+<div id='Parsing-prec-graph-source' style='display:none'>
+<pre>digraph {
+	"amicable" [label = "amicable"];
+	"factor" [label = "factor"];
+	"lim" [label = "lim"];
+	"num" [label = "num"];
+	"factor" -> "amicable";
+	"lim" -> "num";
+	"num" -> "amicable";
+	"num" -> "factor";
+	"num" -> "num";
+}
+</pre>
+</div>
+
+</div>
+<a id="Parsing-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('Parsing-scc-graph-source')">(show dot source)</a>
+<div id='Parsing-scc-graph-source' style='display:none'>
+<pre>digraph {
+	_0[label = "lim" ];
+	_1[label = "num" ];
+	_2[label = "factor" ];
+	_3[label = "amicable" ];
+	_0 -> _1;
+	_1 -> _2;
+	_1 -> _3;
+	_2 -> _3;
+}</pre>
+</div>
+
+</div>
+<a id="Parsing-topsort-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Topological Sort Order</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>[lim]
+[num]
+[factor]
+[amicable]
+
+cost: 2
+</pre>
+
+</div>
+</div>
+<a id="ComponentInstantiationTransformer"></a>
+<div class='headerdiv'>
+<h1>After ComponentInstantiationTransformer (0.000332s)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+<a id="ComponentInstantiationTransformer-dl"></a>
+<div class='headerdiv'>
+<h1>Datalog</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>// ----- Types -----
+
+// ----- Relations -----
+
+
+// -- amicable --
+.decl amicable(a:number,b:number) output 
+
+amicable(a,b) :- 
+   num(a),
+   b = sum i : factor(a,i),
+   a = sum j : factor(b,j),
+   a &lt; b.
+
+
+
+// -- factor --
+.decl factor(x:number,f:number) 
+
+factor(x,f) :- 
+   num(x),
+   num(f),
+   f &lt;= (x/2),
+   (x%f) = 0.
+
+
+
+// -- lim --
+.decl lim(n:number) input 
+
+
+
+// -- num --
+.decl num(x:number) 
+
+num(1).
+
+num((x+1)) :- 
+   num(x),
+   lim(l),
+   x &lt; l.
+
+</pre>
+
+</div>
+<a id="ComponentInstantiationTransformer-prec-graph"></a>
+<div class='headerdiv'>
+<h1>Precedence Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('ComponentInstantiationTransformer-prec-graph-source')">(show dot source)</a>
+<div id='ComponentInstantiationTransformer-prec-graph-source' style='display:none'>
+<pre>digraph {
+	"amicable" [label = "amicable"];
+	"factor" [label = "factor"];
+	"lim" [label = "lim"];
+	"num" [label = "num"];
+	"factor" -> "amicable";
+	"lim" -> "num";
+	"num" -> "amicable";
+	"num" -> "factor";
+	"num" -> "num";
+}
+</pre>
+</div>
+
+</div>
+<a id="ComponentInstantiationTransformer-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('ComponentInstantiationTransformer-scc-graph-source')">(show dot source)</a>
+<div id='ComponentInstantiationTransformer-scc-graph-source' style='display:none'>
+<pre>digraph {
+	_0[label = "lim" ];
+	_1[label = "num" ];
+	_2[label = "factor" ];
+	_3[label = "amicable" ];
+	_0 -> _1;
+	_1 -> _2;
+	_1 -> _3;
+	_2 -> _3;
+}</pre>
+</div>
+
+</div>
+<a id="ComponentInstantiationTransformer-topsort-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Topological Sort Order</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>[lim]
+[num]
+[factor]
+[amicable]
+
+cost: 2
+</pre>
+
+</div>
+</div>
+<a id="UniqueAggregationVariablesTransformer"></a>
+<div class='headerdiv'>
+<h1>After UniqueAggregationVariablesTransformer (0.000028s)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+<a id="UniqueAggregationVariablesTransformer-dl"></a>
+<div class='headerdiv'>
+<h1>Datalog</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>// ----- Types -----
+
+// ----- Relations -----
+
+
+// -- amicable --
+.decl amicable(a:number,b:number) output 
+
+amicable(a,b) :- 
+   num(a),
+   b = sum  i0 : factor(a, i0),
+   a = sum  j1 : factor(b, j1),
+   a &lt; b.
+
+
+
+// -- factor --
+.decl factor(x:number,f:number) 
+
+factor(x,f) :- 
+   num(x),
+   num(f),
+   f &lt;= (x/2),
+   (x%f) = 0.
+
+
+
+// -- lim --
+.decl lim(n:number) input 
+
+
+
+// -- num --
+.decl num(x:number) 
+
+num(1).
+
+num((x+1)) :- 
+   num(x),
+   lim(l),
+   x &lt; l.
+
+</pre>
+
+</div>
+<a id="UniqueAggregationVariablesTransformer-prec-graph"></a>
+<div class='headerdiv'>
+<h1>Precedence Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('UniqueAggregationVariablesTransformer-prec-graph-source')">(show dot source)</a>
+<div id='UniqueAggregationVariablesTransformer-prec-graph-source' style='display:none'>
+<pre>digraph {
+	"amicable" [label = "amicable"];
+	"factor" [label = "factor"];
+	"lim" [label = "lim"];
+	"num" [label = "num"];
+	"factor" -> "amicable";
+	"lim" -> "num";
+	"num" -> "amicable";
+	"num" -> "factor";
+	"num" -> "num";
+}
+</pre>
+</div>
+
+</div>
+<a id="UniqueAggregationVariablesTransformer-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('UniqueAggregationVariablesTransformer-scc-graph-source')">(show dot source)</a>
+<div id='UniqueAggregationVariablesTransformer-scc-graph-source' style='display:none'>
+<pre>digraph {
+	_0[label = "lim" ];
+	_1[label = "num" ];
+	_2[label = "factor" ];
+	_3[label = "amicable" ];
+	_0 -> _1;
+	_1 -> _2;
+	_1 -> _3;
+	_2 -> _3;
+}</pre>
+</div>
+
+</div>
+<a id="UniqueAggregationVariablesTransformer-topsort-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Topological Sort Order</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>[lim]
+[num]
+[factor]
+[amicable]
+
+cost: 2
+</pre>
+
+</div>
+</div>
+<a id="AstSemanticChecker"></a>
+<div class='headerdiv'>
+<h1>After AstSemanticChecker (0.001163s) (unchanged)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+</div>
+<a id="InlineRelationsTransformer"></a>
+<div class='headerdiv'>
+<h1>After InlineRelationsTransformer (0.000041s) (unchanged)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+</div>
+<a id="ResolveAliasesTransformer"></a>
+<div class='headerdiv'>
+<h1>After ResolveAliasesTransformer (0.000267s)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+<a id="ResolveAliasesTransformer-dl"></a>
+<div class='headerdiv'>
+<h1>Datalog</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>// ----- Types -----
+
+// ----- Relations -----
+
+
+// -- amicable --
+.decl amicable(a:number,b:number) output 
+
+amicable(sum  j1 : factor(b, j1),b) :- 
+   num(sum  j1 : factor(b, j1)),
+   b = sum  i0 : factor(sum  j1 : factor(b, j1), i0),
+   sum  j1 : factor(b, j1) &lt; b.
+
+
+
+// -- factor --
+.decl factor(x:number,f:number) 
+
+factor(x,f) :- 
+   num(x),
+   num(f),
+   f &lt;= (x/2),
+   (x%f) = 0.
+
+
+
+// -- lim --
+.decl lim(n:number) input 
+
+
+
+// -- num --
+.decl num(x:number) 
+
+num(1).
+
+num((x+1)) :- 
+   num(x),
+   lim(l),
+   x &lt; l.
+
+</pre>
+
+</div>
+<a id="ResolveAliasesTransformer-prec-graph"></a>
+<div class='headerdiv'>
+<h1>Precedence Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('ResolveAliasesTransformer-prec-graph-source')">(show dot source)</a>
+<div id='ResolveAliasesTransformer-prec-graph-source' style='display:none'>
+<pre>digraph {
+	"amicable" [label = "amicable"];
+	"factor" [label = "factor"];
+	"lim" [label = "lim"];
+	"num" [label = "num"];
+	"factor" -> "amicable";
+	"lim" -> "num";
+	"num" -> "amicable";
+	"num" -> "factor";
+	"num" -> "num";
+}
+</pre>
+</div>
+
+</div>
+<a id="ResolveAliasesTransformer-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('ResolveAliasesTransformer-scc-graph-source')">(show dot source)</a>
+<div id='ResolveAliasesTransformer-scc-graph-source' style='display:none'>
+<pre>digraph {
+	_0[label = "lim" ];
+	_1[label = "num" ];
+	_2[label = "factor" ];
+	_3[label = "amicable" ];
+	_0 -> _1;
+	_1 -> _2;
+	_1 -> _3;
+	_2 -> _3;
+}</pre>
+</div>
+
+</div>
+<a id="ResolveAliasesTransformer-topsort-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Topological Sort Order</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>[lim]
+[num]
+[factor]
+[amicable]
+
+cost: 2
+</pre>
+
+</div>
+</div>
+<a id="RemoveRelationCopiesTransformer"></a>
+<div class='headerdiv'>
+<h1>After RemoveRelationCopiesTransformer (0.000002s) (unchanged)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+</div>
+<a id="MaterializeAggregationQueriesTransformer"></a>
+<div class='headerdiv'>
+<h1>After MaterializeAggregationQueriesTransformer (0.000113s)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+<a id="MaterializeAggregationQueriesTransformer-dl"></a>
+<div class='headerdiv'>
+<h1>Datalog</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>// ----- Types -----
+
+// ----- Relations -----
+
+
+// -- __agg_rel_0 --
+.decl __agg_rel_0( i0:number, j1:number,b:number) 
+
+__agg_rel_0( i0, j1,b) :- 
+   factor(sum  j1 : factor(b, j1), i0).
+
+
+
+// -- amicable --
+.decl amicable(a:number,b:number) output 
+
+amicable(sum  j1 : factor(b, j1),b) :- 
+   num(sum  j1 : factor(b, j1)),
+   b = sum  i0 : __agg_rel_0( i0, j1,b),
+   sum  j1 : factor(b, j1) &lt; b.
+
+
+
+// -- factor --
+.decl factor(x:number,f:number) 
+
+factor(x,f) :- 
+   num(x),
+   num(f),
+   f &lt;= (x/2),
+   (x%f) = 0.
+
+
+
+// -- lim --
+.decl lim(n:number) input 
+
+
+
+// -- num --
+.decl num(x:number) 
+
+num(1).
+
+num((x+1)) :- 
+   num(x),
+   lim(l),
+   x &lt; l.
+
+</pre>
+
+</div>
+<a id="MaterializeAggregationQueriesTransformer-prec-graph"></a>
+<div class='headerdiv'>
+<h1>Precedence Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('MaterializeAggregationQueriesTransformer-prec-graph-source')">(show dot source)</a>
+<div id='MaterializeAggregationQueriesTransformer-prec-graph-source' style='display:none'>
+<pre>digraph {
+	"__agg_rel_0" [label = "__agg_rel_0"];
+	"amicable" [label = "amicable"];
+	"factor" [label = "factor"];
+	"lim" [label = "lim"];
+	"num" [label = "num"];
+	"__agg_rel_0" -> "amicable";
+	"factor" -> "__agg_rel_0";
+	"factor" -> "amicable";
+	"lim" -> "num";
+	"num" -> "amicable";
+	"num" -> "factor";
+	"num" -> "num";
+}
+</pre>
+</div>
+
+</div>
+<a id="MaterializeAggregationQueriesTransformer-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Graph</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<p>(error: unable to generate dot graph image)</p><a href="javascript:toggleVisibility('MaterializeAggregationQueriesTransformer-scc-graph-source')">(show dot source)</a>
+<div id='MaterializeAggregationQueriesTransformer-scc-graph-source' style='display:none'>
+<pre>digraph {
+	_0[label = "lim" ];
+	_1[label = "num" ];
+	_2[label = "factor" ];
+	_3[label = "__agg_rel_0" ];
+	_4[label = "amicable" ];
+	_0 -> _1;
+	_1 -> _2;
+	_1 -> _4;
+	_2 -> _3;
+	_2 -> _4;
+	_3 -> _4;
+}</pre>
+</div>
+
+</div>
+<a id="MaterializeAggregationQueriesTransformer-topsort-scc-graph"></a>
+<div class='headerdiv'>
+<h1>SCC Topological Sort Order</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>[lim]
+[num]
+[factor]
+[__agg_rel_0]
+[amicable]
+
+cost: 3
+</pre>
+
+</div>
+</div>
+<a id="RemoveEmptyRelationsTransformer"></a>
+<div class='headerdiv'>
+<h1>After RemoveEmptyRelationsTransformer (0.000002s) (unchanged)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+</div>
+<a id="RemoveRedundantRelationsTransformer"></a>
+<div class='headerdiv'>
+<h1>After RemoveRedundantRelationsTransformer (0.000045s) (unchanged)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+</div>
+<a id="AstExecutionPlanChecker"></a>
+<div class='headerdiv'>
+<h1>After AstExecutionPlanChecker (0.000407s) (unchanged)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+
+</div>
+<a id="ram-program"></a>
+<div class='headerdiv'>
+<h1>RAM Program (0.000702s)</h1>
+<a href='#'>(return to top)</a>
+</div><div style='clear:both'></div>
+<div style='padding-left: 1em'>
+<pre>PROGRAM 
+CREATE lim(n);
+LOAD DATA FOR lim FROM {{{"IO","file"},{"filename","./lim.facts"},{"name","lim"}}};
+CREATE num(x);
+CREATE @delta_num(x);
+CREATE @new_num(x);
+BEGIN_DEBUG "num(1).
+in file /Users/jonathan/Documents/USYD/SSP/Summer2/souffle/tests/example/amicable/amicable.dl [6:1-6:8]"
+	INSERT (number(1)) INTO num
+END_DEBUG "num(1).
+in file /Users/jonathan/Documents/USYD/SSP/Summer2/souffle/tests/example/amicable/amicable.dl [6:1-6:8]";
+MERGE @delta_num WITH num;
+LOOP
+	PARALLEL
+		BEGIN_DEBUG "num((x+1)) :- 
+   num(x),
+   lim(l),
+   x &lt; l.
+in file /Users/jonathan/Documents/USYD/SSP/Summer2/souffle/tests/example/amicable/amicable.dl [7:1-7:35]"
+			INSERT 
+				SCAN @delta_num AS t0 WHERE ((t0.c0+number(1))) ∉ num
+					SCAN lim AS t1 WHERE t0.c0 &lt; t1.n
+						PROJECT ((t0.c0+number(1))) INTO @new_num
+		END_DEBUG "num((x+1)) :- 
+   num(x),
+   lim(l),
+   x &lt; l.
+in file /Users/jonathan/Documents/USYD/SSP/Summer2/souffle/tests/example/amicable/amicable.dl [7:1-7:35]"
+	END PARALLEL;
+	EXIT @new_num ≠ ∅;
+	MERGE num WITH @new_num;
+	SWAP (@delta_num, @new_num);
+	CLEAR @new_num
+END LOOP;
+DROP @delta_num;
+DROP @new_num;
+DROP lim;
+CREATE factor(x,f);
+BEGIN_DEBUG "factor(x,f) :- 
+   num(x),
+   num(f),
+   f &lt;= (x/2),
+   (x%f) = 0.
+in file /Users/jonathan/Documents/USYD/SSP/Summer2/souffle/tests/example/amicable/amicable.dl [15:1-15:55]"
+	INSERT 
+		SCAN num AS t0 
+			SCAN num AS t1 WHERE t1.x &lt;= (t0.x/number(2)) and (t0.x%t1.x) = number(0)
+				PROJECT (t0.x, t1.x) INTO factor
+END_DEBUG "factor(x,f) :- 
+   num(x),
+   num(f),
+   f &lt;= (x/2),
+   (x%f) = 0.
+in file /Users/jonathan/Documents/USYD/SSP/Summer2/souffle/tests/example/amicable/amicable.dl [15:1-15:55]";
+CREATE __agg_rel_0( i0, j1,b);
+BEGIN_DEBUG "__agg_rel_0( i0, j1,b) :- 
+   factor(sum  j1 : factor(b, j1), i0).
+in file  [0:0-0:0]"
+	INSERT 
+		SCAN factor AS t0 
+			SUM t1.f AS t1.0 IN t1 ∈ factor(t0.x,_) FOR 
+				PROJECT (t0.f, t1.f, t1.x) INTO __agg_rel_0
+END_DEBUG "__agg_rel_0( i0, j1,b) :- 
+   factor(sum  j1 : factor(b, j1), i0).
+in file  [0:0-0:0]";
+CREATE amicable(a,b);
+BEGIN_DEBUG "amicable(sum  j1 : factor(b, j1),b) :- 
+   num(sum  j1 : factor(b, j1)),
+   b = sum  i0 : __agg_rel_0( i0, j1,b),
+   sum  j1 : factor(b, j1) &lt; b.
+in file /Users/jonathan/Documents/USYD/SSP/Summer2/souffle/tests/example/amicable/amicable.dl [20:1-20:85]"
+	INSERT 
+		SCAN num AS t0 
+			SUM t1.f AS t1.0 IN t1 ∈ factor(t0.x,_) WHERE env(t1, i0) &lt; t1.x FOR 
+				SUM t2. i0 AS t2.0 IN t2 ∈ __agg_rel_0(_,t1.f,t1.x) WHERE env(t2, i0) = t1.x FOR 
+					PROJECT (env(t1, i0), t1.x) INTO amicable
+END_DEBUG "amicable(sum  j1 : factor(b, j1),b) :- 
+   num(sum  j1 : factor(b, j1)),
+   b = sum  i0 : __agg_rel_0( i0, j1,b),
+   sum  j1 : factor(b, j1) &lt; b.
+in file /Users/jonathan/Documents/USYD/SSP/Summer2/souffle/tests/example/amicable/amicable.dl [20:1-20:85]";
+STORE DATA FOR amicable TO {{{"IO","file"},{"attributeNames","a\tb"},{"filename","./amicable.csv"},{"name","amicable"}}};
+DROP num;
+DROP factor;
+DROP __agg_rel_0;
+DROP amicable</pre>
+
+</div>
+<a href='#'>(return to top)</a>
+</body>
+</html>
