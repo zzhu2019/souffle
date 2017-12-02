@@ -114,7 +114,7 @@ souffle_sources = \
               RamOperation.cpp      RamOperation.h      \
               RamProgram.h                              \
               RamRecords.cpp        RamRecords.h        \
-              RamRelation.cpp       RamRelation.h       \
+              RamRelation.h                             \
               RamRelationStats.cpp  RamRelationStats.h  \
               RamVisitor.h                              \
               RuleScheduler.h                           \
@@ -138,11 +138,7 @@ souffle_sources = \
 # -- build souffle as a library so it can be reused in testing
 noinst_LTLIBRARIES = libsouffle.la
 libsouffle_la_SOURCES  = $(souffle_sources)
-if JAVAI
-libsouffle_la_CXXFLAGS = $(souffle_CPPFLAGS) -DJNI_INTERFACE
-else
 libsouffle_la_CXXFLAGS = $(souffle_CPPFLAGS)
-endif
 libsouffle_la_LDFLAGS = --static --dlopen --pic
 
 souffle_SOURCES = main.cpp

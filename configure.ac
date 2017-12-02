@@ -21,26 +21,6 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_MACRO_DIR([m4])
 
-# Enable jni
-AC_ARG_ENABLE(
-  [jni],
-  [AS_HELP_STRING([--enable-jni], [Enable java interface])]
-)
-AS_IF([test "x$enable_jni" = "xyes"], [
-  AS_VAR_APPEND(CXXFLAGS, [" -DUSE_JAVAI "])
-  # Java
-  AX_PROG_JAVAC
-  AX_PROG_JAVAH
-  AX_PROG_JAVA
-  AX_PROG_JAR
-  AX_JNI_INCLUDE_DIR
-  for dir in $JNI_INCLUDE_DIRS; do
-    JNIFLAGS="$JNIFLAGS -I$dir"
-  done
-  AC_SUBST([JNIFLAGS])
-])
-AM_CONDITIONAL([JAVAI], [test "x$enable_jni" = "xyes"])
-
 dnl Do not set default CFLAGS and CXXFLAGS
 CXXFLAGS=" -Wall -std=c++11  $CXXFLAGS"
 
@@ -520,7 +500,6 @@ AC_CONFIG_TESTDIR([tests])
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
-  interfaces/Makefile
   tests/Makefile
   tests/atlocal
 ])
@@ -591,6 +570,6 @@ AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([dup2 fchdir getcwd getpagesize gettimeofday isascii memset mkdir munmap pow regcomp rmdir setenv socket strcasecmp strchr strdup strerror strrchr strstr strtol strtoull])
 
 AC_OUTPUT(
-  [ src/souffle-compile src/souffle-config interfaces/souffle-compilelib debian/changelog ],
-  [ chmod +x src/souffle-compile src/souffle-config interfaces/souffle-compilelib ]
+  [ src/souffle-compile src/souffle-config debian/changelog ],
+  [ chmod +x src/souffle-compile src/souffle-config ]
 )
