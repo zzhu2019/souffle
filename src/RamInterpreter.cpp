@@ -25,7 +25,7 @@
 #include "RamAutoIndex.h"
 #include "RamData.h"
 #include "RamLogger.h"
-#include "RamTranslator.h"
+#include "AstTranslator.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"
@@ -990,7 +990,7 @@ Order scheduleByModel(AstClause& clause, RamEnvironment& env, std::ostream* repo
         }
 
         // add new atom
-        RamTranslator translator;
+        AstTranslator translator;
         p.addAtom(
                 Atom(i, args, env.getRelation(translator.translateRelationName(atoms[i]->getName())).size()));
     }
@@ -1069,7 +1069,7 @@ const QueryExecutionStrategy ScheduledExecution = [](
 
     // create operation
     std::unique_ptr<RamStatement> stmt =
-            RamTranslator(Global::config().has("profile")).translateClause(*clause, nullptr, nullptr);
+            AstTranslator(Global::config().has("profile")).translateClause(*clause, nullptr, nullptr);
     assert(dynamic_cast<RamInsert*>(stmt.get()));
 
     // run rescheduled node

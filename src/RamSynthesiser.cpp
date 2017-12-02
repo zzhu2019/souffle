@@ -25,7 +25,6 @@
 #include "RamAutoIndex.h"
 #include "RamData.h"
 #include "RamLogger.h"
-#include "RamTranslator.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"

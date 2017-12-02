@@ -35,7 +35,7 @@
 #include "RamSynthesiser.h"
 #include "RamInterface.h"
 #include "RamStatement.h"
-#include "RamTranslator.h"
+#include "AstTranslator.h"
 #include "SymbolTable.h"
 #include "Util.h"
 
@@ -371,7 +371,7 @@ int main(int argc, char** argv) {
 
     /* translate AST to RAM */
     std::unique_ptr<RamProgram> ramProg =
-            RamTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
+            AstTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
 
     if (!Global::config().get("debug-report").empty()) {
         if (ramProg) {

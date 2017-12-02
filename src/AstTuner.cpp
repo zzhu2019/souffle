@@ -18,7 +18,7 @@
 #include "AstProgram.h"
 #include "AstVisitor.h"
 #include "RamStatement.h"
-#include "RamTranslator.h"
+#include "AstTranslator.h"
 #include "RamInterpreter.h"
 
 namespace souffle {
@@ -91,7 +91,7 @@ bool AutoScheduleTransformer::autotune(AstTranslationUnit& translationUnit, std:
         std::cout << "[ Converting to RAM Program ...                           ]\n";
     }
 
-    std::unique_ptr<RamProgram> prog = RamTranslator().translateProgram(translationUnit);
+    std::unique_ptr<RamProgram> prog = AstTranslator().translateProgram(translationUnit);
     const RamStatement* stmt = prog->getMain();
 
     // check whether there is something to tune
