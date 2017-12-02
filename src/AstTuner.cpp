@@ -16,11 +16,10 @@
 
 #include "AstTuner.h"
 #include "AstProgram.h"
+#include "AstTranslator.h"
 #include "AstVisitor.h"
 #include "RamInterpreter.h"
 #include "RamStatement.h"
-#include "AstTranslator.h"
-#include "RamInterpreter.h"
 
 namespace souffle {
 

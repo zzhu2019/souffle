@@ -28,13 +28,14 @@
 #ifdef USE_PROVENANCE
 #include "Explain.h"
 #endif
+#include "AstTranslator.h"
 #include "Global.h"
 #include "ParserDriver.h"
 #include "PrecedenceGraph.h"
 #include "RamInterface.h"
 #include "RamInterpreter.h"
 #include "RamStatement.h"
-#include "AstTranslator.h"
+#include "RamSynthesiser.h"
 #include "SymbolTable.h"
 #include "Util.h"
 
