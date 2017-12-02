@@ -514,13 +514,6 @@ public:
         return totalIndex->exists(tuple);
     }
 
-    /** input table as memory */
-    bool load(std::vector<std::vector<std::string>> data, SymbolTable& symTable, const SymbolMask& mask);
-
-    /** store data to vectors */
-    void store(std::vector<std::vector<std::string>>& result, const SymbolTable& symTable,
-            const SymbolMask& mask) const;
-
     // --- iterator ---
 
     /** Iterator for relation */

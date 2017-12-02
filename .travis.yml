@@ -55,7 +55,6 @@ aliases:
         - devscripts
         - debhelper
         - fakeroot
-        - openjdk-7-jdk
     before_script: ".travis/init_make_package.sh"
     script: ".travis/linux/make_package.sh"
   - &osxgcc
