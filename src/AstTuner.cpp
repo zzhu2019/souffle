@@ -17,6 +17,7 @@
 #include "AstTuner.h"
 #include "AstProgram.h"
 #include "AstVisitor.h"
+#include "RamInterpreter.h"
 #include "RamStatement.h"
 #include "AstTranslator.h"
 #include "RamInterpreter.h"

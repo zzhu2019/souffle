@@ -99,7 +99,7 @@ public:
         return (*args)[i];
     }
 };
-  
+
 namespace {
 
 RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ctxt = EvalContext()) {

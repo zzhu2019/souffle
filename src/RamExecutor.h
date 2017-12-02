@@ -83,7 +83,7 @@ public:
      */
     virtual void executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
             const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
-            std::vector<bool>& returnErrors) const = 0; 
+            std::vector<bool>& returnErrors) const = 0;
     /**
      * Runs the given statement on the given environment.
      */

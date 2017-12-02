@@ -131,7 +131,6 @@ bool useNoIndex() {
     return flag;
 }
 
-
 // Static wrapper to get relation names without going directly though the CPPIdentifierMap.
 static const std::string getRelationName(const RamRelationIdentifier& rel) {
     return "rel_" + CPPIdentifierMap::getIdentifier(rel.getName());
@@ -1231,7 +1230,7 @@ void genCode(std::ostream& out, const RamStatement& stmt, const IndexMap& indice
 }
 }  // namespace
 
-std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProgram& prog,
+std::string RamSynthesiser::generateCode(const SymbolTable& symTable, const RamProgram& prog,
         const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
@@ -1692,30 +1691,7 @@ std::string RamCompiler::generateCode(const SymbolTable& symTable, const RamProg
     return sourceFilename;
 }
 
-std::string RamCompiler::compileToLibrary(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename, const int index) const {
-    std::string sourceFilename = generateCode(symTable, prog, filename, index);
-
-    // execute shell script that compiles the generated C++ program
-    std::string libCmd = "souffle-compilelib " + sourceFilename;
-
-    // separate souffle output form executable output
-    if (Global::config().has("profile")) {
-        std::cout.flush();
-    }
-
-    // run executable
-    if (system(libCmd.c_str()) != 0) {
-        std::cerr << "failed to compile C++ source " << sourceFilename << "\n";
-        std::cerr << "Have you installed souffle with java?\n";
-        return "";
-    }
-
-    // done
-    return sourceFilename;
-}
-
-std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
+std::string RamSynthesiser::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
         const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                       Code Generation
@@ -1752,7 +1728,7 @@ std::string RamCompiler::compileToBinary(const SymbolTable& symTable, const RamP
     return sourceFilename;
 }
 
-std::string RamCompiler::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
+std::string RamSynthesiser::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
         const std::string& filename, const int index) const {
     // compile statement
     std::string sourceFilename = compileToBinary(symTable, prog, filename, index);
@@ -1780,9 +1756,8 @@ std::string RamCompiler::executeBinary(const SymbolTable& symTable, const RamPro
     return sourceFilename;
 }
 
-void RamCompiler::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
+void RamSynthesiser::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
     executeBinary(env.getSymbolTable(), prog);
 }
-
 
 }  // end of namespace souffle
