@@ -686,19 +686,17 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             // add constraints
             for (size_t pos = 0; pos < atom->argSize(); ++pos) {
                 if (AstConstant* c = dynamic_cast<AstConstant*>(atom->getArgument(pos))) {
-                    op->addCondition(
-                            std::unique_ptr<RamCondition>(new RamBinaryRelation(BinaryConstraintOp::EQ,
-                                    std::unique_ptr<RamValue>(
-                                            new RamElementAccess(level, pos, getRelation(atom).getArg(pos))),
-                                    std::unique_ptr<RamValue>(new RamNumber(c->getIndex())))));
+                    op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(
+                            BinaryConstraintOp::EQ, std::unique_ptr<RamValue>(new RamElementAccess(
+                                                            level, pos, getRelation(atom).getArg(pos))),
+                            std::unique_ptr<RamValue>(new RamNumber(c->getIndex())))));
                 } else if (AstAggregator* agg = dynamic_cast<AstAggregator*>(atom->getArgument(pos))) {
                     auto loc = valueIndex.getAggregatorLocation(*agg);
-                    op->addCondition(
-                            std::unique_ptr<RamCondition>(new RamBinaryRelation(BinaryConstraintOp::EQ,
-                                    std::unique_ptr<RamValue>(
-                                            new RamElementAccess(level, pos, getRelation(atom).getArg(pos))),
-                                    std::unique_ptr<RamValue>(
-                                            new RamElementAccess(loc.level, loc.component, loc.name)))));
+                    op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(
+                            BinaryConstraintOp::EQ, std::unique_ptr<RamValue>(new RamElementAccess(
+                                                            level, pos, getRelation(atom).getArg(pos))),
+                            std::unique_ptr<RamValue>(
+                                    new RamElementAccess(loc.level, loc.component, loc.name)))));
                 }
             }
 
@@ -984,9 +982,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
     std::unique_ptr<RamParallel> loopSeq(new RamParallel());
 
     // create a utility to check SCC membership
-    auto isInSameSCC = [&](const AstRelation* rel) {
-        return std::find(scc.begin(), scc.end(), rel) != scc.end();
-    };
+    auto isInSameSCC = [&](
+            const AstRelation* rel) { return std::find(scc.begin(), scc.end(), rel) != scc.end(); };
 
     /* Compute temp for the current tables */
     for (const AstRelation* rel : scc) {

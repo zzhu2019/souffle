@@ -299,12 +299,11 @@ public:
                                          << join(cur.second, "\n\t",
                                                     [](std::ostream& out,
                                                             const std::pair<plan, state_type>& cur) {
-                                                        out << "["
-                                                            << join(cur.first, ",",
-                                                                       [](std::ostream& out,
-                                                                               const atom_type& atom) {
-                                                                           out << atom.getID();
-                                                                       })
+                                                        out << "[" << join(cur.first, ",",
+                                                                              [](std::ostream& out,
+                                                                                      const atom_type& atom) {
+                                                                                  out << atom.getID();
+                                                                              })
                                                             << "] => " << cur.second;
                                                     })
                                          << "\n";
