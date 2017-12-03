@@ -220,10 +220,10 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
 
                 // strings
                 case BinaryOp::CAT: {
-                    return env.getSymbolTable().lookup(
-                            (std::string(env.getSymbolTable().resolve(visit(op.getLHS()))) +
-                                    std::string(env.getSymbolTable().resolve(visit(op.getRHS()))))
-                                    .c_str());
+                    return env.getSymbolTable().lookup((
+                            std::string(env.getSymbolTable().resolve(visit(op.getLHS()))) +
+                            std::string(env.getSymbolTable().resolve(
+                                    visit(op.getRHS())))).c_str());
                 }
                 default:
                     assert(0 && "unsupported operator");
@@ -995,8 +995,8 @@ Order scheduleByModel(AstClause& clause, RamEnvironment& env, std::ostream* repo
 }  // namespace
 
 /** With this strategy queries will be processed as they are stated by the user */
-const QueryExecutionStrategy DirectExecution = [](const RamInsert& insert, RamEnvironment& env,
-                                                       std::ostream*) -> ExecutionSummary {
+const QueryExecutionStrategy DirectExecution = [](
+        const RamInsert& insert, RamEnvironment& env, std::ostream*) -> ExecutionSummary {
     // measure the time
     auto start = now();
 
@@ -1010,8 +1010,8 @@ const QueryExecutionStrategy DirectExecution = [](const RamInsert& insert, RamEn
 };
 
 /** With this strategy queries will be dynamically rescheduled before each execution */
-const QueryExecutionStrategy ScheduledExecution = [](const RamInsert& insert, RamEnvironment& env,
-                                                          std::ostream* report) -> ExecutionSummary {
+const QueryExecutionStrategy ScheduledExecution = [](
+        const RamInsert& insert, RamEnvironment& env, std::ostream* report) -> ExecutionSummary {
 
     // Report scheduling
     // TODO: only re-schedule atoms (avoid cloning entire clause)

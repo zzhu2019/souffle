@@ -335,13 +335,11 @@ public:
         std::set<RamRelationIdentifier> input_relations;
         visitDepthFirst(insert, [&](const RamScan& scan) { input_relations.insert(scan.getRelation()); });
         if (!input_relations.empty()) {
-            out << "if ("
-                << join(input_relations, "&&",
-                           [&](std::ostream& out, const RamRelationIdentifier& rel) {
-                               out << "!" << getRelationName(rel) << "->"
-                                   << "empty()";
-                           })
-                << ") ";
+            out << "if (" << join(input_relations, "&&", [&](std::ostream& out,
+                                                                 const RamRelationIdentifier& rel) {
+                out << "!" << getRelationName(rel) << "->"
+                    << "empty()";
+            }) << ") ";
         }
 
         // outline each search operation to improve compilation time
@@ -1606,9 +1604,8 @@ std::string RamSynthesiser::generateCode(const SymbolTable& symTable, const RamP
         for (auto& sub : prog.getSubroutines()) {
             // method header
             os << "void "
-               << "subproof_" << subroutineNum
-               << "(const std::vector<RamDomain>* args, "
-                  "std::vector<RamDomain>* ret, std::vector<bool>* err) {\n";
+               << "subproof_" << subroutineNum << "(const std::vector<RamDomain>* args, "
+                                                  "std::vector<RamDomain>* ret, std::vector<bool>* err) {\n";
 
             // generate code for body
             genCode(os, sub.second, indices);
