@@ -802,152 +802,152 @@ bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& trans
     bool changed = false;
     AstProgram& program = *translationUnit.getProgram();
 
-    bool complete = false;
+    /* Process:
+     * Go through each clause and construct a variable dependency graph G.
+     * The nodes of G are the variables. A path between a and b exists iff
+     * a and b appear in a common body literal.
+     *
+     * Based on the graph, we can extract the body literals that are not associated
+     * with the arguments in the head atom into a new relation.
+     *
+     * E.g. a(x) :- b(x), c(y), d(y). will be transformed into:
+     *      - a(x) :- b(x), newrel().
+     *      - newrel() :- c(y), d(y).
+     *
+     * Note that only one pass through the clauses is needed:
+     *  - All arguments in the body literals of the transformed clause cannot be
+     *    independent of the head arguments (by construction).
+     *  - The new relations holding the disconnected body literals have no
+     *    head arguments by definition, and so the transformation does not apply.
+     */
 
-    // keep checking clauses until we reach a fixed point
-    while (!complete) {
-        complete = true;
+    std::vector<AstClause*> clausesToAdd;
+    std::vector<const AstClause*> clausesToRemove;
 
-        std::vector<AstClause*> clausesToAdd;
-        std::vector<const AstClause*> clausesToRemove;
+    visitDepthFirst(program, [&](const AstClause& clause) {
+        // get head variables
+        std::set<std::string> headVars;
+        visitDepthFirst(*clause.getHead(), [&](const AstVariable& var) { headVars.insert(var.getName()); });
 
-        /* Process:
-         * Go through each clause and construct a variable dependency graph G.
-         * The nodes of G are the variables. A path between a and b exists iff
-         * a and b appear in a common body literal.
-         *
-         * Based on the graph, we can extract the body literals that are not associated
-         * with the arguments in the head atom into a new relation.
-         */
-
-        visitDepthFirst(program, [&](const AstClause& clause) {
-            // get head variables
-            std::set<std::string> headVars;
-            visitDepthFirst(
-                    *clause.getHead(), [&](const AstVariable& var) { headVars.insert(var.getName()); });
-
-            // nothing to do if no arguments in the head
-            if (headVars.empty()) {
-                return;
-            }
-
-            // construct the graph
-            Graph<std::string> variableGraph = Graph<std::string>();
-
-            // add in its nodes
-            visitDepthFirst(clause, [&](const AstVariable& var) { variableGraph.insert(var.getName()); });
-
-            // add in the edges
-            // since we are only looking at reachability, we can just add in an
-            // undirected edge from the first argument in the literal to each of the others
-
-            // edges from the head
-            std::string firstVariable = *headVars.begin();
-            headVars.erase(headVars.begin());
-            for (std::string var : headVars) {
-                variableGraph.insert(firstVariable, var);
-                variableGraph.insert(var, firstVariable);
-            }
-
-            // edges from literals
-            for (AstLiteral* bodyLiteral : clause.getBodyLiterals()) {
-                std::set<std::string> litVars;
-
-                visitDepthFirst(*bodyLiteral, [&](const AstVariable& var) { litVars.insert(var.getName()); });
-
-                // no new edges if only one variable is present
-                if (litVars.size() > 1) {
-                    std::string firstVariable = *litVars.begin();
-                    litVars.erase(litVars.begin());
-
-                    // create the undirected edge
-                    for (std::string var : litVars) {
-                        variableGraph.insert(firstVariable, var);
-                        variableGraph.insert(var, firstVariable);
-                    }
-                }
-            }
-
-            // run a DFS from the first head variable
-            std::set<std::string> importantVariables;
-
-            variableGraph.visitDepthFirst(
-                    firstVariable, [&](const std::string var) { importantVariables.insert(var); });
-
-            // paritition the literals into connected and disconnected based on their variables
-            std::vector<AstLiteral*> connectedLiterals;
-            std::vector<AstLiteral*> disconnectedLiterals;
-
-            for (AstLiteral* bodyLiteral : clause.getBodyLiterals()) {
-                bool connected = false;
-                bool hasVars = false;  // ignore literals with no args
-
-                visitDepthFirst(*bodyLiteral, [&](const AstVariable& var) {
-                    hasVars = true;
-                    if (importantVariables.find(var.getName()) != importantVariables.end()) {
-                        connected = true;
-                    }
-                });
-
-                if (connected || !hasVars) {
-                    connectedLiterals.push_back(bodyLiteral);
-                } else {
-                    disconnectedLiterals.push_back(bodyLiteral);
-                }
-            }
-
-            if (!disconnectedLiterals.empty()) {
-                // need to extract some disconnected lits!
-                complete = false;
-                changed = true;
-
-                static int disconnectedCount = 0;
-                std::stringstream nextName;
-                nextName << "+disconnected" << disconnectedCount;
-                AstRelationIdentifier newRelationName = nextName.str();
-                disconnectedCount++;
-
-                // create the extracted relation and clause
-                // newrel() :- disconnectedLiterals(x).
-                auto newRelation = std::make_unique<AstRelation>();
-                newRelation->setName(newRelationName);
-                program.appendRelation(std::move(newRelation));
-
-                AstClause* disconnectedClause = new AstClause();
-                disconnectedClause->setSrcLoc(clause.getSrcLoc());
-                disconnectedClause->setHead(std::make_unique<AstAtom>(newRelationName));
-
-                for (AstLiteral* disconnectedLit : disconnectedLiterals) {
-                    disconnectedClause->addToBody(std::unique_ptr<AstLiteral>(disconnectedLit->clone()));
-                }
-
-                // create the replacement clause
-                // a(x) :- b(x), c(y). --> a(x) :- b(x), newrel().
-                AstClause* newClause = new AstClause();
-                newClause->setSrcLoc(clause.getSrcLoc());
-                newClause->setHead(std::unique_ptr<AstAtom>(clause.getHead()->clone()));
-
-                for (AstLiteral* connectedLit : connectedLiterals) {
-                    newClause->addToBody(std::unique_ptr<AstLiteral>(connectedLit->clone()));
-                }
-
-                // add the disconnected clause to the body
-                newClause->addToBody(std::make_unique<AstAtom>(newRelationName));
-
-                // replace the original clause with the new clauses
-                clausesToAdd.push_back(newClause);
-                clausesToAdd.push_back(disconnectedClause);
-                clausesToRemove.push_back(&clause);
-            }
-        });
-
-        for (AstClause* newClause : clausesToAdd) {
-            program.appendClause(std::unique_ptr<AstClause>(newClause));
+        // nothing to do if no arguments in the head
+        if (headVars.empty()) {
+            return;
         }
 
-        for (const AstClause* oldClause : clausesToRemove) {
-            program.removeClause(oldClause);
+        // construct the graph
+        Graph<std::string> variableGraph = Graph<std::string>();
+
+        // add in its nodes
+        visitDepthFirst(clause, [&](const AstVariable& var) { variableGraph.insert(var.getName()); });
+
+        // add in the edges
+        // since we are only looking at reachability, we can just add in an
+        // undirected edge from the first argument in the literal to each of the others
+
+        // edges from the head
+        std::string firstVariable = *headVars.begin();
+        headVars.erase(headVars.begin());
+        for (std::string var : headVars) {
+            variableGraph.insert(firstVariable, var);
+            variableGraph.insert(var, firstVariable);
         }
+
+        // edges from literals
+        for (AstLiteral* bodyLiteral : clause.getBodyLiterals()) {
+            std::set<std::string> litVars;
+
+            visitDepthFirst(*bodyLiteral, [&](const AstVariable& var) { litVars.insert(var.getName()); });
+
+            // no new edges if only one variable is present
+            if (litVars.size() > 1) {
+                std::string firstVariable = *litVars.begin();
+                litVars.erase(litVars.begin());
+
+                // create the undirected edge
+                for (std::string var : litVars) {
+                    variableGraph.insert(firstVariable, var);
+                    variableGraph.insert(var, firstVariable);
+                }
+            }
+        }
+
+        // run a DFS from the first head variable
+        std::set<std::string> importantVariables;
+        variableGraph.visitDepthFirst(
+                firstVariable, [&](const std::string var) { importantVariables.insert(var); });
+
+        // partition the literals into connected and disconnected based on their variables
+        std::vector<AstLiteral*> connectedLiterals;
+        std::vector<AstLiteral*> disconnectedLiterals;
+
+        for (AstLiteral* bodyLiteral : clause.getBodyLiterals()) {
+            bool connected = false;
+            bool hasVars = false;  // ignore literals with no variables
+
+            visitDepthFirst(*bodyLiteral, [&](const AstVariable& var) {
+                hasVars = true;
+                if (importantVariables.find(var.getName()) != importantVariables.end()) {
+                    connected = true;
+                }
+            });
+
+            if (connected || !hasVars) {
+                connectedLiterals.push_back(bodyLiteral);
+            } else {
+                disconnectedLiterals.push_back(bodyLiteral);
+            }
+        }
+
+        if (!disconnectedLiterals.empty()) {
+            // need to extract some disconnected lits!
+            changed = true;
+
+            static int disconnectedCount = 0;
+            std::stringstream nextName;
+            nextName << "+disconnected" << disconnectedCount;
+            AstRelationIdentifier newRelationName = nextName.str();
+            disconnectedCount++;
+
+            // create the extracted relation and clause
+            // newrel() :- disconnectedLiterals(x).
+            auto newRelation = std::make_unique<AstRelation>();
+            newRelation->setName(newRelationName);
+            program.appendRelation(std::move(newRelation));
+
+            AstClause* disconnectedClause = new AstClause();
+            disconnectedClause->setSrcLoc(clause.getSrcLoc());
+            disconnectedClause->setHead(std::make_unique<AstAtom>(newRelationName));
+
+            for (AstLiteral* disconnectedLit : disconnectedLiterals) {
+                disconnectedClause->addToBody(std::unique_ptr<AstLiteral>(disconnectedLit->clone()));
+            }
+
+            // create the replacement clause
+            // a(x) :- b(x), c(y). --> a(x) :- b(x), newrel().
+            AstClause* newClause = new AstClause();
+            newClause->setSrcLoc(clause.getSrcLoc());
+            newClause->setHead(std::unique_ptr<AstAtom>(clause.getHead()->clone()));
+
+            for (AstLiteral* connectedLit : connectedLiterals) {
+                newClause->addToBody(std::unique_ptr<AstLiteral>(connectedLit->clone()));
+            }
+
+            // add the disconnected clause to the body
+            newClause->addToBody(std::make_unique<AstAtom>(newRelationName));
+
+            // replace the original clause with the new clauses
+            clausesToAdd.push_back(newClause);
+            clausesToAdd.push_back(disconnectedClause);
+            clausesToRemove.push_back(&clause);
+        }
+    });
+
+    for (AstClause* newClause : clausesToAdd) {
+        program.appendClause(std::unique_ptr<AstClause>(newClause));
+    }
+
+    for (const AstClause* oldClause : clausesToRemove) {
+        program.removeClause(oldClause);
     }
 
     return changed;
