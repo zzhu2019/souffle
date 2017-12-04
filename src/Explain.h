@@ -65,17 +65,14 @@ private:
 
         // extract each argument
         std::string argsList = relMatch[2];
+        std::smatch argsMatcher;
         std::regex argRegex("(?:[0-9]+|\"[^\"]*\")");
 
-        // iterate through each argument
-        std::regex_iterator<std::string::iterator> argMatcher(argsList.begin(), argsList.end(), argRegex);
-        std::regex_iterator<std::string::iterator> rend;
-
-        while (argMatcher != rend) {
-            std::string currentArg = argMatcher->str();
-
+        while (std::regex_search(argsList, argsMatcher, argRegex)) {
+            std::string currentArg = argsMatcher[0];
             args.push_back(currentArg);
-            ++argMatcher;
+
+            argsList = argsMatcher.suffix().str();
         }
 
         return std::make_pair(relName, args);
