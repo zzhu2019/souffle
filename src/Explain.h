@@ -51,13 +51,14 @@ private:
         // regex for matching tuples
         // values matches numbers or strings enclosed in quotation marks
         std::regex relRegex(
-                "([a-zA-Z0-9_]*)\\s*\\(((?:[0-9]+|\"[^\"]*\")(?:,\\s*(?:[0-9]+|\"[^\"]*\"))*)?\\)",
-                std::regex_constants::ECMAScript);
+                "([a-zA-Z0-9_]*)[[:blank:]]*\\(([[:blank:]]*([0-9]+|\"[^\"]*\")([[:blank:]]*,[[:blank:]]*([0-"
+                "9]+|\"[^\"]*\"))*)?\\)",
+                std::regex_constants::extended);
         std::smatch relMatch;
 
         // first check that format matches correctly
         // and extract relation name
-        if (!std::regex_match(str, relMatch, relRegex) || relMatch.size() != 3) {
+        if (!std::regex_match(str, relMatch, relRegex) || relMatch.size() < 3) {
             return std::make_pair(relName, args);
         }
 
@@ -67,12 +68,14 @@ private:
         // extract each argument
         std::string argsList = relMatch[2];
         std::smatch argsMatcher;
-        std::regex argRegex("(?:[0-9]+|\"[^\"]*\")", std::regex_constants::ECMAScript);
+        std::regex argRegex("[0-9]+|\"[^\"]*\"", std::regex_constants::extended);
 
         while (std::regex_search(argsList, argsMatcher, argRegex)) {
+            // match the start of the arguments
             std::string currentArg = argsMatcher[0];
             args.push_back(currentArg);
 
+            // use the rest of the arguments
             argsList = argsMatcher.suffix().str();
         }
 
