@@ -205,7 +205,7 @@ public:
 };
 
 /**
- * Transformer that inlines marked relations.
+ * Transformation pass to inline marked relations
  */
 class InlineRelationsTransformer : public AstTransformer {
 private:
@@ -214,6 +214,23 @@ private:
 public:
     std::string getName() const override {
         return "InlineRelationsTransformer";
+    }
+};
+
+/**
+ * Transformation pass to move literals out of a clause and into
+ * new relations if they are independent of head arguments.
+ * E.g. a(x) :- b(x), c(y), d(y). is transformed into:
+ *      - a(x) :- b(x), newrel().
+ *      - newrel() :- c(y), d(y).
+ */
+class ExtractDisconnectedLiteralsTransformer : public AstTransformer {
+private:
+    bool transform(AstTranslationUnit& translationUnit) override;
+
+public:
+    std::string getName() const override {
+        return "ExtractDisconnectedLiteralsTransformer";
     }
 };
 
