@@ -29,16 +29,17 @@ aliases:
     os: linux
     # enable sudo for libomp-dev in debian-sid repository
     # It clashes with the existing repo if we add it here.
-    sudo: required
+    # sudo: required
     addons:
       apt:
         sources:
         - llvm-toolchain-trusty-4.0
+        - ubuntu-toolchain-r-test
         packages:
         - *linux_deps
         - clang-4.0
-        - gdb
-    install: ".travis/linux/clang_install.sh"
+        - libstdc++-7-dev
+    #install: ".travis/linux/clang_install.sh"
     before_script: ".travis/init_test.sh"
     script: ".travis/run_test.sh"
   - &linuxpackage
@@ -55,7 +56,6 @@ aliases:
         - devscripts
         - debhelper
         - fakeroot
-        - openjdk-7-jdk
     before_script: ".travis/init_make_package.sh"
     script: ".travis/linux/make_package.sh"
   - &osxgcc
