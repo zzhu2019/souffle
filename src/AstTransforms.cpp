@@ -146,12 +146,11 @@ public:
 
     /** A print function (for debugging) */
     void print(std::ostream& out) const {
-        out << "{"
-            << join(map, ",",
-                       [](std::ostream& out,
-                               const std::pair<const std::string, std::unique_ptr<AstArgument>>& cur) {
-                           out << cur.first << " -> " << *cur.second;
-                       })
+        out << "{" << join(map, ",",
+                              [](std::ostream& out,
+                                      const std::pair<const std::string, std::unique_ptr<AstArgument>>& cur) {
+                                  out << cur.first << " -> " << *cur.second;
+                              })
             << "}";
     }
 
@@ -847,7 +846,7 @@ bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& trans
         // edges from the head
         std::string firstVariable = *headVars.begin();
         headVars.erase(headVars.begin());
-        for (std::string var : headVars) {
+        for (const std::string& var : headVars) {
             variableGraph.insert(firstVariable, var);
             variableGraph.insert(var, firstVariable);
         }
@@ -864,7 +863,7 @@ bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& trans
                 litVars.erase(litVars.begin());
 
                 // create the undirected edge
-                for (std::string var : litVars) {
+                for (const std::string& var : litVars) {
                     variableGraph.insert(firstVariable, var);
                     variableGraph.insert(var, firstVariable);
                 }
@@ -874,7 +873,7 @@ bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& trans
         // run a DFS from the first head variable
         std::set<std::string> importantVariables;
         variableGraph.visitDepthFirst(
-                firstVariable, [&](const std::string var) { importantVariables.insert(var); });
+                firstVariable, [&](const std::string& var) { importantVariables.insert(var); });
 
         // partition the literals into connected and disconnected based on their variables
         std::vector<AstLiteral*> connectedLiterals;
@@ -887,7 +886,7 @@ bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& trans
             visitDepthFirst(*bodyLiteral, [&](const AstArgument& arg) {
                 hasArgs = true;
 
-                if(auto var = dynamic_cast<const AstVariable*>(&arg)) {
+                if (auto var = dynamic_cast<const AstVariable*>(&arg)) {
                     if (importantVariables.find(var->getName()) != importantVariables.end()) {
                         connected = true;
                     }
