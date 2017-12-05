@@ -34,10 +34,11 @@ aliases:
       apt:
         sources:
         - llvm-toolchain-trusty-4.0
+        - ubuntu-toolchain-r-test
         packages:
         - *linux_deps
         - clang-4.0
-        - gdb
+        - libstdc++-7-dev
     #install: ".travis/linux/clang_install.sh"
     before_script: ".travis/init_test.sh"
     script: ".travis/run_test.sh"
