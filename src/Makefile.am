@@ -135,7 +135,6 @@ souffle_sources = \
               IOSystem.h                                \
               RamInterface.cpp      RamInterface.h      \
               ProvenanceTransformer.cpp                 \
-              ProvenanceRecordTransformer.cpp ProvenanceRecordTransformer.h \
               Global.cpp            Global.h
 
 # -- build souffle as a library so it can be reused in testing
@@ -187,8 +186,7 @@ soufflepublic_HEADERS = CompiledRamOptions.h    \
                         Explain.h               \
                         ExplainTree.h           \
                         ExplainProvenance.h     \
-                        ExplainProvenanceSLD.h  \
-                        ExplainProvenanceRecords.h
+                        ExplainProvenanceSLD.h 
 
 souffle_CPPFLAGS = -DPACKAGE_VERSION="\"${PACKAGE_VERSION}\""
 
