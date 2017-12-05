@@ -882,16 +882,19 @@ bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& trans
 
         for (AstLiteral* bodyLiteral : clause.getBodyLiterals()) {
             bool connected = false;
-            bool hasVars = false;  // ignore literals with no variables
+            bool hasArgs = false;  // ignore literals with no arguments
 
-            visitDepthFirst(*bodyLiteral, [&](const AstVariable& var) {
-                hasVars = true;
-                if (importantVariables.find(var.getName()) != importantVariables.end()) {
-                    connected = true;
+            visitDepthFirst(*bodyLiteral, [&](const AstArgument& arg) {
+                hasArgs = true;
+
+                if(auto var = dynamic_cast<const AstVariable*>(&arg)) {
+                    if (importantVariables.find(var->getName()) != importantVariables.end()) {
+                        connected = true;
+                    }
                 }
             });
 
-            if (connected || !hasVars) {
+            if (connected || !hasArgs) {
                 connectedLiterals.push_back(bodyLiteral);
             } else {
                 disconnectedLiterals.push_back(bodyLiteral);
