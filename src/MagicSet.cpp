@@ -132,74 +132,20 @@ bool isBoundArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundA
     return false;
 }
 
-/* functor/aggregator check functions */
+// checks whether the clause involves functors or aggregators
+bool containsFunctorsOrAggregators(AstClause* clause) {
+    bool found = false;
 
-// checks whether an argument involves functors or aggregators
-bool argumentContainsFunctorsOrAggs(AstArgument* arg) {
-    if (dynamic_cast<AstFunctor*>(arg)) {
-        // functor found!
-        return true;
-    } else if (dynamic_cast<AstRecordInit*>(arg)) {
-        AstRecordInit* recordarg = dynamic_cast<AstRecordInit*>(arg);
-        for (AstArgument* subarg : recordarg->getArguments()) {
-            if (argumentContainsFunctorsOrAggs(subarg)) {
-                return true;
-            }
-        }
-    } else if (dynamic_cast<AstTypeCast*>(arg)) {
-        AstTypeCast* typearg = dynamic_cast<AstTypeCast*>(arg);
-        if (argumentContainsFunctorsOrAggs(typearg->getValue())) {
-            return true;
-        }
-    } else if (dynamic_cast<AstAggregator*>(arg)) {
-        // aggregator found!
+    // check for functors
+    visitDepthFirst(*clause, [&](const AstFunctor& functor) { found = true; });
+    if (found) {
         return true;
     }
-    return false;
-}
 
-// checks whether an atom involves functors or aggregators
-bool atomContainsFunctorsOrAggs(AstAtom* atom) {
-    for (AstArgument* arg : atom->getArguments()) {
-        if (argumentContainsFunctorsOrAggs(arg)) {
-            return true;
-        }
-    }
-    return false;
-}
+    // check for aggregators
+    visitDepthFirst(*clause, [&](const AstAggregator& aggr) { found = true; });
 
-// checks whether a literal involves functors or aggregators
-bool literalContainsFunctorsOrAggs(AstLiteral* lit) {
-    if (dynamic_cast<AstAtom*>(lit)) {
-        if (atomContainsFunctorsOrAggs(dynamic_cast<AstAtom*>(lit))) {
-            return true;
-        }
-    } else if (dynamic_cast<AstNegation*>(lit)) {
-        AstNegation* negLit = dynamic_cast<AstNegation*>(lit);
-        if (atomContainsFunctorsOrAggs(negLit->getAtom())) {
-            return true;
-        }
-    } else {
-        AstConstraint* cons = dynamic_cast<AstConstraint*>(lit);
-        if (argumentContainsFunctorsOrAggs(cons->getLHS()) ||
-                argumentContainsFunctorsOrAggs(cons->getRHS())) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// checks whether the clause contains functors or aggregators
-bool containsFunctorsOrAggs(AstClause* clause) {
-    if (atomContainsFunctorsOrAggs(clause->getHead())) {
-        return true;
-    }
-    for (AstLiteral* lit : clause->getBodyLiterals()) {
-        if (literalContainsFunctorsOrAggs(lit)) {
-            return true;
-        }
-    }
-    return false;
+    return found;
 }
 
 /* program-adding related functions */
@@ -716,7 +662,7 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     for (AstRelation* rel : program->getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
             // ignore atoms that have rules containing functors or aggregators
-            if (containsFunctorsOrAggs(clause)) {
+            if (containsFunctorsOrAggregators(clause)) {
                 ignoredAtoms.insert(clause->getHead()->getName());
             }
 
