@@ -137,8 +137,6 @@ int main(int argc, char** argv) {
 #ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information via guided SLD."},
-                            {"record-provenance", 'T', "EXPLAIN", "", false,
-                                    "Enable provenance information via records."},
 #endif
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
@@ -225,6 +223,15 @@ int main(int argc, char** argv) {
         /* turn on compilation of executables */
         if (Global::config().has("dl-program")) {
             Global::config().set("compile");
+        }
+
+        /* disable provenance with multithreading */
+        if (Global::config().has("provenance")) {
+            if (Global::config().has("jobs")) {
+                if (Global::config().get("jobs") != "1") {
+                    ERROR("provenance cannot be enabled with multiple jobs.");
+                }
+            }
         }
     }
 
@@ -318,8 +325,6 @@ int main(int argc, char** argv) {
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
         transforms.push_back(std::unique_ptr<AstTransformer>(new ProvenanceTransformer()));
-    } else if (Global::config().has("record-provenance")) {
-        transforms.push_back(std::unique_ptr<AstTransformer>(new NaiveProvenanceTransformer()));
     }
 #endif
     if (!Global::config().get("debug-report").empty()) {
@@ -408,8 +413,8 @@ int main(int argc, char** argv) {
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
-        if ((Global::config().has("provenance") || Global::config().has("record-provenance")) &&
-                dynamic_cast<RamInterpreter*>(executor.get()) && env != nullptr) {
+        if (Global::config().has("provenance") && dynamic_cast<RamInterpreter*>(executor.get()) &&
+                env != nullptr) {
             // construct SouffleProgram from env
             SouffleInterpreterInterface interface(
                     *ramProg, *executor, *env, translationUnit->getSymbolTable());
@@ -418,12 +423,6 @@ int main(int argc, char** argv) {
                 explain(interface, true, false);
             } else if (Global::config().get("provenance") == "2") {
                 explain(interface, true, true);
-            }
-
-            if (Global::config().get("record-provenance") == "1") {
-                explain(interface, false, false);
-            } else if (Global::config().get("record-provenance") == "2") {
-                explain(interface, false, true);
             }
         }
 #endif
