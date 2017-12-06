@@ -802,88 +802,97 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
     // set a prefix for variables bound by magic-set for identification later
     // prepended by + to avoid conflict with user-defined variables
-    const std::string boundPrefix = "+abdul";
+    static const std::string boundPrefix = "+abdul";
 
-    AstProgram* program = translationUnit.getProgram();
-    std::vector<AstRelation*> relations = program->getRelations();
+    AstProgram& program = *translationUnit.getProgram();
 
-    int constantCount = 0;    // number of constants seen so far
-    int underscoreCount = 0;  // number of underscores seen so far
+    /* Create a node mapper that recursively replaces all constant and underscores
+     * with named variables.
+     *
+     * The mapper keeps track of constraints that should be added to the original
+     * clause it is being applied on in a given constraint set.
+     */
+    struct M : public AstNodeMapper {
+        std::set<AstConstraint*>& constraints;
+        mutable int changeCount;
 
-    // go through the relations, replacing constants and underscores with constraints and variables
-    for (AstRelation* rel : relations) {
-        std::vector<AstClause*> clauses = rel->getClauses();
-        for (AstClause* clause : clauses) {
-            // create the replacement clause
-            AstClause* newClause = clause->cloneHead();
+        M(std::set<AstConstraint*>& constraints, int changeCount)
+                : constraints(constraints), changeCount(changeCount) {}
 
-            for (AstLiteral* lit : clause->getBodyLiterals()) {
-                // if not an atom, just add it immediately
-                if (dynamic_cast<AstAtom*>(lit) == 0) {
-                    newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
-                    continue;
-                }
+        bool hasChanged() const {
+            return changeCount > 0;
+        }
 
-                AstAtom* newAtom = lit->getAtom()->clone();
-                std::vector<AstArgument*> args = newAtom->getArguments();
-                for (size_t argNum = 0; argNum < args.size(); argNum++) {
-                    AstArgument* currArg = args[argNum];
+        int getChangeCount() const {
+            return changeCount;
+        }
 
-                    // check if the argument is constant
-                    if (dynamic_cast<const AstConstant*>(currArg)) {
-                        // constant found
-                        changed = true;
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            if (AstStringConstant* stringConstant = dynamic_cast<AstStringConstant*>(node.get())) {
+                // string constant found
+                changeCount++;
 
-                        // create new variable name (with appropriate suffix)
-                        std::stringstream newVariableName;
-                        std::stringstream currArgName;
-                        currArgName << *currArg;
+                // create new variable name (with appropriate suffix)
+                std::string constantValue = stringConstant->getConstant();
+                std::stringstream newVariableName;
+                newVariableName << boundPrefix << changeCount << "_" << constantValue << "_s";
 
-                        if (dynamic_cast<AstNumberConstant*>(currArg)) {
-                            newVariableName << boundPrefix << constantCount << "_" << currArgName.str()
-                                            << "_n";
-                        } else {
-                            newVariableName << boundPrefix << constantCount << "_"
-                                            << currArgName.str().substr(1, currArgName.str().size() - 2)
-                                            << "_s";
-                        }
+                // create new constraint (+abdulX = constant)
+                auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
+                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                        std::unique_ptr<AstArgument>(newVariable->clone()),
+                        std::unique_ptr<AstArgument>(stringConstant->clone())));
 
-                        AstArgument* variable = new AstVariable(newVariableName.str());
-                        AstArgument* constant = currArg->clone();
+                // update constant to be the variable created
+                return std::move(newVariable);
+            } else if (AstNumberConstant* numberConstant = dynamic_cast<AstNumberConstant*>(node.get())) {
+                // number constant found
+                changeCount++;
 
-                        constantCount++;
+                // create new variable name (with appropriate suffix)
+                AstDomain constantValue = numberConstant->getIndex();
+                std::stringstream newVariableName;
+                newVariableName << boundPrefix << changeCount << "_" << constantValue << "_n";
 
-                        // update argument to be the variable created
-                        newAtom->setArgument(argNum, std::unique_ptr<AstArgument>(variable));
+                // create new constraint (+abdulX = constant)
+                auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
+                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                        std::unique_ptr<AstArgument>(newVariable->clone()),
+                        std::unique_ptr<AstArgument>(numberConstant->clone())));
 
-                        // add in constraint (+abdulX = constant)
-                        newClause->addToBody(std::unique_ptr<AstLiteral>(new AstConstraint(
-                                BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(variable->clone()),
-                                std::unique_ptr<AstArgument>(constant))));
-                    } else if (dynamic_cast<const AstUnnamedVariable*>(currArg)) {
-                        // underscore found
-                        changed = true;
+                // update constant to be the variable created
+                return std::move(newVariable);
+            } else if (AstUnnamedVariable* underscoredVar = dynamic_cast<AstUnnamedVariable*>(node.get())) {
+                // underscore found
+                changeCount++;
 
-                        // create new variable name for the underscore (with appropriate suffix)
-                        std::stringstream newVariableName;
-                        newVariableName.str("");
-                        newVariableName << "+underscore" << underscoreCount;
-                        underscoreCount++;
+                // create new variable name
+                std::stringstream newVariableName;
+                newVariableName << "+underscore" << changeCount;
 
-                        AstArgument* variable = new AstVariable(newVariableName.str());
-
-                        // update argument to be a variable
-                        newAtom->setArgument(argNum, std::unique_ptr<AstArgument>(variable));
-                    }
-                }
-
-                // add the new atom to the body
-                newClause->addToBody(std::unique_ptr<AstLiteral>(newAtom));
+                return std::make_unique<AstVariable>(newVariableName.str());
             }
 
-            // swap out the old clause with the new one
-            rel->removeClause(clause);
-            rel->addClause(std::unique_ptr<AstClause>(newClause));
+            node->apply(*this);
+            return node;
+        }
+    };
+
+    int changeCount = 0;  // number of constants and underscores seen so far
+
+    // apply the change to all clauses in the program
+    for (AstRelation* rel : program.getRelations()) {
+        for (AstClause* clause : rel->getClauses()) {
+            std::set<AstConstraint*> constraints;
+            M update(constraints, changeCount);
+            clause->apply(update);
+
+            changeCount = update.getChangeCount();
+            changed = changed || update.hasChanged();
+
+            for (AstConstraint* constraint : constraints) {
+                clause->addToBody(std::unique_ptr<AstConstraint>(constraint));
+            }
         }
     }
 
