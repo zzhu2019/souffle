@@ -25,19 +25,13 @@ namespace souffle {
 // checks whether the adorned version of two predicates is equal
 bool isEqualAdornment(
         AstRelationIdentifier pred1, std::string adorn1, AstRelationIdentifier pred2, std::string adorn2) {
-    if ((pred1 == pred2) && (adorn1.compare(adorn2) == 0)) {
-        return true;
-    }
-    return false;
+    return ((pred1 == pred2) && (adorn1.compare(adorn2) == 0));
 }
 
 // checks whether an element is contained within a set
 template <class T>
 bool contains(std::set<T> set, T element) {
-    if (set.find(element) != set.end()) {
-        return true;
-    }
-    return false;
+    return (set.find(element) != set.end());
 }
 
 // checks whether a given adorned predicate is contained within a set
@@ -266,81 +260,15 @@ AstRelationIdentifier createSubIdentifier(AstRelationIdentifier relationName, si
 
 /* functions to find atoms to ignore */
 
-// add all atoms of an argument that contain aggregators to the ignored relations list
-// ignoredNames - name of relations already ignored
-std::set<AstRelationIdentifier> argumentAddAggregators(
-        AstArgument* arg, std::set<AstRelationIdentifier> ignoredNames) {
-    std::set<AstRelationIdentifier> retVal = ignoredNames;
-
-    if (dynamic_cast<AstAggregator*>(arg)) {
-        AstAggregator* aggregator = dynamic_cast<AstAggregator*>(arg);
-        // aggregator found - add all atoms in body to ignored atoms list
-        for (AstLiteral* lit : aggregator->getBodyLiterals()) {
-            if (lit->getAtom() != nullptr) {
-                retVal.insert(lit->getAtom()->getName());
-            }
-        }
-    } else if (dynamic_cast<AstFunctor*>(arg)) {
-        // if the argument is a functor, check each of its respective
-        // arguments for aggregators
-        if (dynamic_cast<AstUnaryFunctor*>(arg)) {
-            AstUnaryFunctor* func = dynamic_cast<AstUnaryFunctor*>(arg);
-            retVal = argumentAddAggregators(func->getOperand(), retVal);
-        } else if (dynamic_cast<AstBinaryFunctor*>(arg)) {
-            AstBinaryFunctor* func = dynamic_cast<AstBinaryFunctor*>(arg);
-            retVal = argumentAddAggregators(func->getLHS(), retVal);
-            retVal = argumentAddAggregators(func->getRHS(), retVal);
-        } else if (dynamic_cast<AstTernaryFunctor*>(arg)) {
-            AstTernaryFunctor* func = dynamic_cast<AstTernaryFunctor*>(arg);
-            retVal = argumentAddAggregators(func->getArg(0), retVal);
-            retVal = argumentAddAggregators(func->getArg(1), retVal);
-            retVal = argumentAddAggregators(func->getArg(2), retVal);
-        }
-    } else if (dynamic_cast<AstRecordInit*>(arg)) {
-        // if the argument is a record, check each of its own arguments for aggregators
-        AstRecordInit* rec = dynamic_cast<AstRecordInit*>(arg);
-        for (AstArgument* subarg : rec->getArguments()) {
-            retVal = argumentAddAggregators(subarg, retVal);
-        }
-    } else if (dynamic_cast<AstTypeCast*>(arg)) {
-        // if the argument is a typecast, check the subargument
-        AstTypeCast* tcast = dynamic_cast<AstTypeCast*>(arg);
-        retVal = argumentAddAggregators(tcast->getValue(), retVal);
-    }
-
-    return retVal;
-}
-
-// add all atoms of an atom that contain aggregators to the ignored relations list
-std::set<AstRelationIdentifier> atomAddAggregators(
-        AstAtom* atom, std::set<AstRelationIdentifier> ignoredNames) {
-    std::set<AstRelationIdentifier> retVal = ignoredNames;
-    for (AstArgument* arg : atom->getArguments()) {
-        retVal = argumentAddAggregators(arg, retVal);
-    }
-    return retVal;
-}
-
 // add all atoms within a clause that contain aggregators to the ignored relations list
 std::set<AstRelationIdentifier> addAggregators(
         AstClause* clause, std::set<AstRelationIdentifier> ignoredNames) {
     std::set<AstRelationIdentifier> retVal = ignoredNames;
 
-    // check for aggregators in the head
-    retVal = atomAddAggregators(clause->getHead(), retVal);
+    visitDepthFirst(*clause, [&](const AstAggregator& aggregator) {
+        visitDepthFirst(aggregator, [&](const AstAtom& atom) { retVal.insert(atom.getName()); });
+    });
 
-    // check for aggregators in the body literals
-    for (AstLiteral* lit : clause->getBodyLiterals()) {
-        if (dynamic_cast<AstAtom*>(lit)) {
-            retVal = atomAddAggregators((AstAtom*)lit, retVal);
-        } else if (dynamic_cast<AstNegation*>(lit)) {
-            retVal = atomAddAggregators((AstAtom*)(lit->getAtom()), retVal);
-        } else {
-            AstConstraint* cons = dynamic_cast<AstConstraint*>(lit);
-            retVal = argumentAddAggregators(cons->getLHS(), retVal);
-            retVal = argumentAddAggregators(cons->getRHS(), retVal);
-        }
-    }
     return retVal;
 }
 
@@ -880,41 +808,22 @@ std::string extractAdornment(AstRelationIdentifier magicRelationName) {
 // transforms the program so that all underscores previously transformed
 // to a "+underscoreX" are changed back to underscores
 void replaceUnderscores(AstProgram* program) {
+    struct M : public AstNodeMapper {
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            if (AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+                if (hasPrefix(var->getName(), "+underscore")) {
+                    return std::make_unique<AstUnnamedVariable>();
+                }
+            }
+            node->apply(*this);
+            return node;
+        }
+    };
+
+    M update;
     for (AstRelation* rel : program->getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
-            // create a new clause for the final result
-            AstClause* newClause = clause->cloneHead();
-
-            for (AstLiteral* lit : clause->getBodyLiterals()) {
-                if (dynamic_cast<AstAtom*>(lit) == 0) {
-                    // all non-atoms added immediately
-                    newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
-                    continue;
-                }
-
-                AstAtom* newLit = lit->getAtom()->clone();
-                std::vector<AstArgument*> args = newLit->getArguments();
-                for (size_t argNum = 0; argNum < args.size(); argNum++) {
-                    AstArgument* currArg = args[argNum];
-
-                    // find all variables beginning with "+underscore" and
-                    // replace them with actual underscores
-                    if (dynamic_cast<const AstVariable*>(currArg)) {
-                        AstVariable* var = (AstVariable*)currArg;
-                        if (hasPrefix(var->getName(), "+underscore")) {
-                            newLit->setArgument(
-                                    argNum, std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
-                        }
-                    }
-                }
-
-                // add the fixed atom to the body
-                newClause->addToBody(std::unique_ptr<AstLiteral>(newLit));
-            }
-
-            // remove the old clause and add the fixed one
-            rel->removeClause(clause);
-            rel->addClause(std::unique_ptr<AstClause>(newClause));
+            clause->apply(update);
         }
     }
 }
