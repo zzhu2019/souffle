@@ -91,25 +91,60 @@ int getEndpoint(std::string mainName) {
 /* argument-related functions */
 
 // returns the string representation of a given argument
-std::string getString(AstArgument* arg) {
+std::string getString(const AstArgument* arg) {
     std::stringstream argStream;
     argStream.str("");
     argStream << *arg;
     return argStream.str();
 }
 
+// checks whether a given functor is bound
+bool isBoundFunctor(AstFunctor* functor, std::set<std::string> boundArgs) {
+    bool bound = true;
+
+    // a functor bound iff all its subvariables are bound
+    visitDepthFirst(*functor, [&](const AstVariable& var) {
+        if (!contains(boundArgs, var.getName())) {
+            bound = false;
+        }
+    });
+
+    return bound;
+}
+
+bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs) {
+    if (AstFunctor* functor = dynamic_cast<AstFunctor*>(arg)) {
+        // have a functor
+        // TODO: contains string... hmm...
+        if (contains(boundArgs, getString(functor)) || isBoundFunctor(functor, boundArgs)) {
+            return true;  // found a bound argument, so can stop
+        }
+    } else if (AstVariable* var = dynamic_cast<AstVariable*>(arg)) {
+        // just a variable then
+        if (contains(boundArgs, var->getName())) {
+            return true;  // found a bound argument, so can stop
+        }
+    } else {
+        // TODO: check completeness here! this should be checked elsewhere
+        assert(false && "incomplete checks (MST)");
+    }
+
+    return false;
+}
+
 // checks whether a given atom has a bound argument
 bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs) {
     for (AstArgument* arg : atom->getArguments()) {
-        std::string name = getString(arg);
-        if (boundArgs.find(name) != boundArgs.end()) {
-            return true;  // found a bound argument, so can stop
+        if (isBoundArgument(arg, boundArgs)) {
+            return true;
         }
     }
     return false;
 }
 
-// checks whether the lhs is bound by a binary functor (and is not bound yet)
+// -- TODO -- change this where its used
+// -- TODO -- change the name
+// checks whether the lhs is bound by a binary constraint (and is not bound yet)
 bool isBoundArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundArgs) {
     std::string lhs_name = getString(lhs);
     std::string rhs_name = getString(rhs);
@@ -126,15 +161,9 @@ bool isBoundArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundA
     return false;
 }
 
-// checks whether the clause involves functors or aggregators
-bool containsFunctorsOrAggregators(AstClause* clause) {
+// checks whether the clause involves aggregators
+bool containsAggregators(AstClause* clause) {
     bool found = false;
-
-    // check for functors
-    visitDepthFirst(*clause, [&](const AstFunctor& functor) { found = true; });
-    if (found) {
-        return true;
-    }
 
     // check for aggregators
     visitDepthFirst(*clause, [&](const AstAggregator& aggr) { found = true; });
@@ -370,11 +399,12 @@ std::pair<std::string, std::set<std::string>> bindArguments(
     std::string atomAdornment = "";
 
     for (AstArgument* arg : currAtom->getArguments()) {
-        std::string argName = getString(arg);
-        if (boundArgs.find(argName) != boundArgs.end()) {
+        if (isBoundArgument(arg, boundArgs)) {
             atomAdornment += "b";  // bound
         } else {
-            atomAdornment += "f";            // free
+            atomAdornment += "f";  // free
+            std::string argName = getString(arg);
+            // TODO: UHHHHHHHHHHH why names for functors change this
             newlyBoundArgs.insert(argName);  // now bound
         }
     }
@@ -384,10 +414,7 @@ std::pair<std::string, std::set<std::string>> bindArguments(
         boundArgs.insert(newArg);
     }
 
-    std::pair<std::string, std::set<std::string>> result;
-    result.first = atomAdornment;
-    result.second = boundArgs;
-    return result;
+    return std::make_pair(atomAdornment, boundArgs);
 }
 
 // SIPS #1:
@@ -449,9 +476,8 @@ int getNextAtomMaxBoundSIPS(
 
         int numBound = 0;
         for (AstArgument* arg : currAtom->getArguments()) {
-            std::string name = getString(arg);
-            if (boundArgs.find(name) != boundArgs.end()) {
-                numBound++;  // found a bound argument
+            if (isBoundArgument(arg, boundArgs)) {
+                numBound++;
             }
         }
 
@@ -489,9 +515,8 @@ int getNextAtomMaxRatioSIPS(
 
         int numBound = 0;
         for (AstArgument* arg : currAtom->getArguments()) {
-            std::string name = getString(arg);
-            if (boundArgs.find(name) != boundArgs.end()) {
-                numBound++;  // found a bound argument
+            if (isBoundArgument(arg, boundArgs)) {
+                numBound++;
             }
         }
 
@@ -590,7 +615,7 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     for (AstRelation* rel : program->getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
             // ignore atoms that have rules containing functors or aggregators
-            if (containsFunctorsOrAggregators(clause)) {
+            if (containsAggregators(clause)) {
                 ignoredAtoms.insert(clause->getHead()->getName());
             }
 
@@ -1092,8 +1117,12 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                         }
 
                         // go through the arguments in the head and bind the bound variables using constraints
-                        std::vector<AstArgument*> currArguments = magicClause->getHead()->getArguments();
-                        for (AstArgument* arg : currArguments) {
+                        std::vector<const AstArgument*> currArguments;
+                        visitDepthFirst(*magicClause, [&](const AstArgument& argument){
+                            currArguments.push_back(&argument);
+                        });
+
+                        for (const AstArgument* arg : currArguments) {
                             std::string argName = getString(arg);
 
                             // all bound arguments begin with "+abdul" (see AstTransforms.cpp)
