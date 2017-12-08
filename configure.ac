@@ -96,10 +96,15 @@ DX_INIT_DOXYGEN([$PACKAGE_NAME],[doxygen.cfg],[doc])
 AC_CHECK_PROG(FLEX, flex, flex)
 AS_IF([test -z "$FLEX"], [AC_MSG_ERROR([flex not found.])])
 
+# Check for mcpp
+AC_CHECK_PROG(MCPP, mcpp, mcpp)
+AS_IF([test -z "$MCPP"], [AC_MSG_ERROR([mcpp not found.])])
+
 # Check for bison
 AC_CHECK_PROG(BISON, bison, bison)
 AS_IF([test -z "$BISON"], [AC_MSG_ERROR([bison not found.])])
 AX_PROG_BISON_VERSION([3.0.2], [], [AC_MSG_ERROR([bison version 3.0.2 is required.])])
+
 
 # Enable packaging option
 AC_ARG_ENABLE(
