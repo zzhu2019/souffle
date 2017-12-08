@@ -244,7 +244,7 @@ int main(int argc, char** argv) {
     }
 
     /* Create the pipe to establish a communication between cpp and souffle */
-    std::string cmd = "mcpp";
+    std::string cmd = ::which("mcpp");
 
     if (!isExecutable(cmd)) {
         ERROR("failed to locate mcpp pre-processor");
