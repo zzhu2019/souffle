@@ -883,6 +883,10 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
     // apply the change to all clauses in the program
     for (AstRelation* rel : program.getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
+            if (clause->isFact()) {
+                continue;  // don't normalise facts
+            }
+
             std::set<AstConstraint*> constraints;
             M update(constraints, changeCount);
             clause->apply(update);

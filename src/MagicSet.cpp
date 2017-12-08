@@ -99,28 +99,35 @@ std::string getString(const AstArgument* arg) {
 }
 
 // checks whether a given functor is bound
-bool isBoundFunctor(AstFunctor* functor, std::set<std::string> boundArgs) {
+bool isBoundFunctor(const AstVariable* functorVariable, std::set<std::string> boundArgs,
+        std::map<std::string, std::set<std::string>> functorBindings) {
+    if (contains(boundArgs, functorVariable->getName())) {
+        return true;
+    }
+
     bool bound = true;
 
     // a functor bound iff all its subvariables are bound
-    visitDepthFirst(*functor, [&](const AstVariable& var) {
-        if (!contains(boundArgs, var.getName())) {
+    std::set<std::string> bindings = functorBindings[functorVariable->getName()];
+
+    for (const std::string& var : bindings) {
+        if (!contains(boundArgs, var)) {
             bound = false;
         }
-    });
+    }
 
     return bound;
 }
 
-bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs) {
-    if (AstFunctor* functor = dynamic_cast<AstFunctor*>(arg)) {
-        // have a functor
-        // TODO: contains string... hmm...
-        if (contains(boundArgs, getString(functor)) || isBoundFunctor(functor, boundArgs)) {
-            return true;  // found a bound argument, so can stop
+bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs,
+        std::map<std::string, std::set<std::string>> functorBindings) {
+    if (AstVariable* var = dynamic_cast<AstVariable*>(arg)) {
+        if (hasPrefix(var->getName(), "+functor")) {
+            if (isBoundFunctor(var, boundArgs, functorBindings)) {
+                return true;
+            }
         }
-    } else if (AstVariable* var = dynamic_cast<AstVariable*>(arg)) {
-        // just a variable then
+
         if (contains(boundArgs, var->getName())) {
             return true;  // found a bound argument, so can stop
         }
@@ -133,9 +140,10 @@ bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs) {
 }
 
 // checks whether a given atom has a bound argument
-bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs) {
+bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs,
+        std::map<std::string, std::set<std::string>> functorBindings) {
     for (AstArgument* arg : atom->getArguments()) {
-        if (isBoundArgument(arg, boundArgs)) {
+        if (isBoundArgument(arg, boundArgs, functorBindings)) {
             return true;
         }
     }
@@ -393,18 +401,17 @@ std::vector<std::string> reorderAdornment(
 
 // computes the adornment of a newly chosen atom
 // returns both the adornment and the new list of bound arguments
-std::pair<std::string, std::set<std::string>> bindArguments(
-        AstAtom* currAtom, std::set<std::string> boundArgs) {
+std::pair<std::string, std::set<std::string>> bindArguments(AstAtom* currAtom,
+        std::set<std::string> boundArgs, std::map<std::string, std::set<std::string>> functorBindings) {
     std::set<std::string> newlyBoundArgs;
     std::string atomAdornment = "";
 
     for (AstArgument* arg : currAtom->getArguments()) {
-        if (isBoundArgument(arg, boundArgs)) {
+        if (isBoundArgument(arg, boundArgs, functorBindings)) {
             atomAdornment += "b";  // bound
         } else {
             atomAdornment += "f";  // free
             std::string argName = getString(arg);
-            // TODO: UHHHHHHHHHHH why names for functors change this
             newlyBoundArgs.insert(argName);  // now bound
         }
     }
@@ -420,8 +427,8 @@ std::pair<std::string, std::set<std::string>> bindArguments(
 // SIPS #1:
 // Choose the left-most body atom with at least one bound argument
 // If none exist, prioritise EDB predicates.
-int getNextAtomNaiveSIPS(
-        std::vector<AstAtom*> atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs,
+        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> functorBindings) {
     // find the first available atom with at least one bound argument
     int firstedb = -1;
     int firstidb = -1;
@@ -444,7 +451,7 @@ int getNextAtomNaiveSIPS(
         }
 
         // if it has at least one bound argument, then adorn this atom next
-        if (hasBoundArgument(currAtom, boundArgs)) {
+        if (hasBoundArgument(currAtom, boundArgs, functorBindings)) {
             return i;
         }
     }
@@ -461,8 +468,9 @@ int getNextAtomNaiveSIPS(
 // SIPS #2:
 // Choose the body atom with the maximum number of bound arguments
 // If equal boundness, prioritise left-most EDB
-int getNextAtomMaxBoundSIPS(
-        std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+// TODO: change all the SIPS to prioritise by EDB -> IDB -> atoms with functors
+int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
+        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> functorBindings) {
     int maxBound = -1;
     int maxIndex = 0;
     bool maxIsEDB = false;  // checks if current max index is an EDB predicate
@@ -476,7 +484,7 @@ int getNextAtomMaxBoundSIPS(
 
         int numBound = 0;
         for (AstArgument* arg : currAtom->getArguments()) {
-            if (isBoundArgument(arg, boundArgs)) {
+            if (isBoundArgument(arg, boundArgs, functorBindings)) {
                 numBound++;
             }
         }
@@ -496,8 +504,8 @@ int getNextAtomMaxBoundSIPS(
 }
 
 // Choose the atom with the maximum ratio of bound arguments to total arguments
-int getNextAtomMaxRatioSIPS(
-        std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+int getNextAtomMaxRatioSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
+        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> functorBindings) {
     double maxRatio = -1;
     int maxIndex = 0;
 
@@ -515,7 +523,7 @@ int getNextAtomMaxRatioSIPS(
 
         int numBound = 0;
         for (AstArgument* arg : currAtom->getArguments()) {
-            if (isBoundArgument(arg, boundArgs)) {
+            if (isBoundArgument(arg, boundArgs, functorBindings)) {
                 numBound++;
             }
         }
@@ -537,9 +545,74 @@ int getNextAtomMaxRatioSIPS(
 
 // Choose the SIP Strategy to be used
 // Current choice is the max ratio SIPS
-int getNextAtomSIPS(
-        std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
-    return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb);
+int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
+        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> functorBindings) {
+    return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb, functorBindings);
+}
+
+std::map<std::string, std::set<std::string>> bindFunctors(const AstProgram* program) {
+    std::map<std::string, std::set<std::string>> functorBindings;
+
+    struct M : public AstNodeMapper {
+        std::map<std::string, std::set<std::string>>& functorBindings;
+        std::set<AstConstraint*>& constraints;
+        mutable int changeCount;
+
+        M(std::map<std::string, std::set<std::string>>& functorBindings,
+                std::set<AstConstraint*>& constraints, int changeCount)
+                : functorBindings(functorBindings), constraints(constraints), changeCount(changeCount) {}
+
+        int getChangeCount() const {
+            return changeCount;
+        }
+
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            node->apply(*this);
+            if (AstFunctor* functor = dynamic_cast<AstFunctor*>(node.get())) {
+                // functor found
+                changeCount++;
+
+                // create new variable name (with appropriate suffix)
+                std::stringstream newVariableName;
+                newVariableName << "+functor" << changeCount;
+
+                // get all variables it depends on
+                std::set<std::string> requiredVars;
+                visitDepthFirst(
+                        *functor, [&](const AstVariable& var) { requiredVars.insert(var.getName()); });
+
+                // create new constraint (+abdulX = constant)
+                auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
+                functorBindings[newVariableName.str()] = requiredVars;
+                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                        std::unique_ptr<AstArgument>(newVariable->clone()),
+                        std::unique_ptr<AstArgument>(functor->clone())));
+
+                // update constant to be the variable created
+                return std::move(newVariable);
+            }
+            return node;
+        }
+    };
+
+    int changeCount = 0;  // number of functors seen so far
+
+    // apply the change to all clauses in the program
+    for (AstRelation* rel : program->getRelations()) {
+        for (AstClause* clause : rel->getClauses()) {
+            std::set<AstConstraint*> constraints;
+            M update(functorBindings, constraints, changeCount);
+            clause->apply(update);
+
+            changeCount = update.getChangeCount();
+
+            for (AstConstraint* constraint : constraints) {
+                clause->addToBody(std::unique_ptr<AstConstraint>(constraint));
+            }
+        }
+    }
+
+    return functorBindings;
 }
 
 // runs the adornment algorithm on an input program
@@ -566,6 +639,8 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     // --- Setup ---
     // -------------
     const AstProgram* program = translationUnit.getProgram();
+
+    std::map<std::string, std::set<std::string>> functorBindings = bindFunctors(program);
 
     // set up IDB/EDB and the output queries
     std::vector<AstRelationIdentifier> outputQueries;
@@ -703,13 +778,14 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
 
                 while (atomsAdorned < atomsTotal) {
                     // get the next body atom to adorn based on our SIPS
-                    int currIndex = getNextAtomSIPS(atoms, boundArgs, adornmentEdb);
+                    int currIndex = getNextAtomSIPS(atoms, boundArgs, adornmentEdb, functorBindings);
                     AstAtom* currAtom = atoms[currIndex];
                     AstRelationIdentifier atomName = currAtom->getName();
 
                     // compute the adornment pattern of this atom, and
                     // add all its arguments to the list of bound args
-                    std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundArgs);
+                    std::pair<std::string, std::set<std::string>> result =
+                            bindArguments(currAtom, boundArgs, functorBindings);
                     std::string atomAdornment = result.first;
                     boundArgs = result.second;
 
@@ -1118,9 +1194,8 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
                         // go through the arguments in the head and bind the bound variables using constraints
                         std::vector<const AstArgument*> currArguments;
-                        visitDepthFirst(*magicClause, [&](const AstArgument& argument){
-                            currArguments.push_back(&argument);
-                        });
+                        visitDepthFirst(*magicClause,
+                                [&](const AstArgument& argument) { currArguments.push_back(&argument); });
 
                         for (const AstArgument* arg : currArguments) {
                             std::string argName = getString(arg);
