@@ -7,6 +7,7 @@ aliases:
     - automake
     - autoconf
     - bison
+    - mcpp
     - flex
     - lsb-release
     - libncurses5-dev

@@ -7,7 +7,7 @@
 
 SUFFIXES = .cpp .h .yy .ll .cc .hh .hpp
 
-bin_PROGRAMS = souffle souffle-mcpp souffle-profile
+bin_PROGRAMS = souffle souffle-profile
 
 nodist_souffle_profile_SOURCES = $(BUILT_SOURCES)
 
@@ -42,15 +42,6 @@ souffle_profile_SOURCES = souffle_prof.cpp profilerlib/Cell.hpp \
 DIR := ${CURDIR}
 
 souffle_profile_CXXFLAGS = $(souffle_CPPFLAGS) -DMAKEDIR='"$(DIR)"'
-
-nodist_souffle_mcpp_SOURCES = $(BUILT_SOURCES)
-
-souffle_mcpp_SOURCES = mcpp-system.H mcpp-configed.H mcpp-internal.H mcpp-main.c mcpp-directive.c mcpp-eval.c \
-                        mcpp-expand.c mcpp-mbchar.c mcpp-support.c mcpp-system.c mcpp_out.h
-
-mcpp-main.o mcpp-directive.o mcpp-eval.o mcpp-expand.o mcpp-mbchar.o mcpp-support.o mcpp-system.o    :    \
-     mcpp-system.H mcpp-internal.H mcpp_out.h
-mcpp-system.H    : mcpp-configed.H
 
 
 # ... which should no go to distribution

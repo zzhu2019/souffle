@@ -244,13 +244,13 @@ int main(int argc, char** argv) {
     }
 
     /* Create the pipe to establish a communication between cpp and souffle */
-    std::string cmd = ::findTool("souffle-mcpp", souffleExecutable, ".");
+    std::string cmd = "mcpp"; 
 
     if (!isExecutable(cmd)) {
-        ERROR("failed to locate souffle preprocessor");
+        ERROR("failed to locate mcpp pre-processor");
     }
 
-    cmd += " " + Global::config().get("include-dir") + " " + Global::config().get("");
+    cmd += " -W0 " + Global::config().get("include-dir") + " " + Global::config().get("");
     FILE* in = popen(cmd.c_str(), "r");
 
     /* Time taking for parsing */
