@@ -9,11 +9,11 @@ dnl $1 -- directory of testcase
 dnl $2 -- test category
 dnl $3 -- command to execute testcase
 m4_define([TEST_PROV_GROUP],[
- m4_foreach([FLAGS],[PROV_FLAGS],[
-  AT_SETUP([$1 FLAGS])
-  $2
-  AT_CLEANUP([])
- ])
+  m4_foreach([FLAGS],[PROV_FLAGS],[
+    AT_SETUP([$1 FLAGS])
+    $2
+    AT_CLEANUP([])
+  ])
 ])
 
 dnl Positive testcase for Souffle provenance explainer

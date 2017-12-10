@@ -16,16 +16,16 @@ m4_define([FAIL],[AT_CHECK([echo "$1" >> testsuite.log ; exit 99])])
 dnl Check if a file exists
 dnl $1 -- file name to test
 m4_define([FILE_EXISTS],[
- AS_IF([test -f "$1"],[],[FAIL("$1 does not exist")])
+  AS_IF([test -f "$1"],[],[FAIL("$1 does not exist")])
 ])
 
 dnl Check whether the contents of two files are identical
 dnl $1 -- first file
 dnl $2 -- second file
 m4_define([SAME_FILE],[
- FILE_EXISTS(["$1"])
- FILE_EXISTS(["$2"])
- AT_CHECK([diff "$1" "$2"],[],[],[])
+  FILE_EXISTS(["$1"])
+  FILE_EXISTS(["$2"])
+  AT_CHECK([diff "$1" "$2"],[],[],[])
 ])
 
 dnl Check whether all files matching a regex have identical sorted contents
@@ -33,26 +33,26 @@ dnl to those in the given directory.
 dnl the contents of two files are identical
 dnl $1 -- input files regex
 dnl $2 -- directory containing the expected output files
-m4_define([SORTED_SAME_FILES], [
- for i in $1
- do
-  sort "$i" > "$i.sorted.generated"
-  sort $2/"$i" > "$i.sorted.expected"
-  SAME_FILE(["$i.sorted.generated"], ["$i.sorted.expected"])
- done
+m4_define([SORTED_SAME_FILES],[
+  for i in $1
+  do
+    sort "$i" > "$i.sorted.generated"
+    sort $2/"$i" > "$i.sorted.expected"
+    SAME_FILE(["$i.sorted.generated"], ["$i.sorted.expected"])
+  done
 ])
 
 dnl Check whether two files have the same number of lines
 dnl $1 -- first file
 dnl $2 -- second file
 m4_define([SAME_LINE_COUNT],[
- FILE_EXISTS([$1])
- FILE_EXISTS([$2])
- m4_define([COUNT_F1],["F1.count"])
- m4_define([COUNT_F2],["F2.count"])
- cat "$1" | wc -l > COUNT_F1
- cat "$2" | wc -l > COUNT_F2
- AT_CHECK([diff COUNT_F1 COUNT_F2],[],[],[])
+  FILE_EXISTS([$1])
+  FILE_EXISTS([$2])
+  m4_define([COUNT_F1],["F1.count"])
+  m4_define([COUNT_F2],["F2.count"])
+  cat "$1" | wc -l > COUNT_F1
+  cat "$2" | wc -l > COUNT_F2
+  AT_CHECK([diff COUNT_F1 COUNT_F2],[],[],[])
 ])
 
 dnl Group test for all flag configurations
@@ -60,11 +60,11 @@ dnl $1 -- directory of testcase
 dnl $2 -- test category
 dnl $3 -- command to execute testcase
 m4_define([TEST_GROUP],[
- m4_foreach([FLAGS],[CONFS],[
-  AT_SETUP([$1 FLAGS])
-  $2
-  AT_CLEANUP([])
- ])
+  m4_foreach([FLAGS],[CONFS],[
+    AT_SETUP([$1 FLAGS])
+    $2
+    AT_CLEANUP([])
+  ])
 ])
 
 dnl Execute a positive test case for a given flag configuration
@@ -74,23 +74,23 @@ dnl $3 -- facts directory relative to the test directory
 dnl $4 -- directory with expected output
 dnl       (relative to the test dir, but starting with '/'), or empty string
 m4_define([TEST_EVAL],[
- m4_define([TESTNAME],[$1])
- m4_define([CATEGORY],[$2])
- m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
- m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
- m4_define([FACTS],[TESTDIR/$3])
- m4_define([EXPECTEDDIR], [TESTDIR$4])
- # invoke souffle
- AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [0])
- SORTED_SAME_FILES([*.csv],[EXPECTEDDIR])
- # validate whether the number of generated CSV files
- # is equal to the number of expected CSV files.
- ls *.csv|wc -l >"num.generated"
- ls EXPECTEDDIR/*.csv|wc -l >"num.expected"
- # validate stdout and stderr
- SAME_FILE([TESTNAME.out],[EXPECTEDDIR/TESTNAME.out])
- SAME_FILE([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
- SAME_FILE([num.generated],[num.expected])
+  m4_define([TESTNAME],[$1])
+  m4_define([CATEGORY],[$2])
+  m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
+  m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
+  m4_define([FACTS],[TESTDIR/$3])
+  m4_define([EXPECTEDDIR], [TESTDIR$4])
+  # invoke souffle
+  AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [0])
+  SORTED_SAME_FILES([*.csv],[EXPECTEDDIR])
+  # validate whether the number of generated CSV files
+  # is equal to the number of expected CSV files.
+  ls *.csv|wc -l >"num.generated"
+  ls EXPECTEDDIR/*.csv|wc -l >"num.expected"
+  # validate stdout and stderr
+  SAME_FILE([TESTNAME.out],[EXPECTEDDIR/TESTNAME.out])
+  SAME_FILE([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
+  SAME_FILE([num.generated],[num.expected])
 ])
 
 dnl Execute a positive test case for a given flag configuration
@@ -100,62 +100,62 @@ dnl $3 -- facts directory relative to the test directory
 dnl $4 -- directory with expected output
 dnl       (relative to the test dir, but starting with '/'), or empty string
 m4_define([TEST_EVAL_IN],[
- m4_define([TESTNAME],[$1])
- m4_define([CATEGORY],[$2])
- m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
- m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
- m4_define([FACTS],[TESTDIR/$3])
- m4_define([EXPECTEDDIR], [TESTDIR$4])
- # invoke souffle
- AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTDIR/TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [0])
- SORTED_SAME_FILES([*.csv],[EXPECTEDDIR])
- # validate whether the number of generated CSV files
- # is equal to the number of expected CSV files.
- ls *.csv|wc -l >"num.generated"
- ls EXPECTEDDIR/*.csv|wc -l >"num.expected"
- # remove non-deterministic record numbering
- sed 's/subproof \(@<:@a-zA-Z0-9?_@:>@*\)(@<:@0-9@:>@*)/subproof \1()/g' TESTNAME.out | sed -e '$a\' >TESTNAME.sed.out
- # validate stdout and stderr
- SAME_FILE([TESTNAME.sed.out],[EXPECTEDDIR/TESTNAME.out])
- SAME_FILE([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
- SAME_FILE([num.generated],[num.expected])
+  m4_define([TESTNAME],[$1])
+  m4_define([CATEGORY],[$2])
+  m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
+  m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
+  m4_define([FACTS],[TESTDIR/$3])
+  m4_define([EXPECTEDDIR], [TESTDIR$4])
+  # invoke souffle
+  AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTDIR/TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [0])
+  SORTED_SAME_FILES([*.csv],[EXPECTEDDIR])
+  # validate whether the number of generated CSV files
+  # is equal to the number of expected CSV files.
+  ls *.csv|wc -l >"num.generated"
+  ls EXPECTEDDIR/*.csv|wc -l >"num.expected"
+  # remove non-deterministic record numbering
+  sed 's/subproof \(@<:@a-zA-Z0-9?_@:>@*\)(@<:@0-9@:>@*)/subproof \1()/g' TESTNAME.out | sed -e '$a\' >TESTNAME.sed.out
+  # validate stdout and stderr
+  SAME_FILE([TESTNAME.sed.out],[EXPECTEDDIR/TESTNAME.out])
+  SAME_FILE([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
+  SAME_FILE([num.generated],[num.expected])
 ])
 
 dnl Execute a negative test case for a given flag configuration
 dnl $1 -- test case
 dnl $2 -- category
 m4_define([TEST_EVAL_ERROR],[
- m4_define([TESTNAME],[$1])
- m4_define([CATEGORY],[$2])
- m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
- m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
- m4_define([FACTS],[TESTDIR/facts])
- AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [1])
- SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
- SAME_FILE([TESTNAME.err],[TESTDIR/TESTNAME.err])
+  m4_define([TESTNAME],[$1])
+  m4_define([CATEGORY],[$2])
+  m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
+  m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
+  m4_define([FACTS],[TESTDIR/facts])
+  AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [1])
+  SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
+  SAME_FILE([TESTNAME.err],[TESTDIR/TESTNAME.err])
 ])
 
 dnl Execute a negative test case for a given flag configuration
 dnl $1 -- test case
 dnl $2 -- category
 m4_define([TEST_EVAL_ERROR_IN],[
- m4_define([TESTNAME],[$1])
- m4_define([CATEGORY],[$2])
- m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
- m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
- m4_define([FACTS],[TESTDIR/facts])
- AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTDIR/TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [1])
- SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
- SAME_FILE([TESTNAME.err],[TESTDIR/TESTNAME.err])
+  m4_define([TESTNAME],[$1])
+  m4_define([CATEGORY],[$2])
+  m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
+  m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
+  m4_define([FACTS],[TESTDIR/facts])
+  AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 0<TESTDIR/TESTNAME.in 1>TESTNAME.out 2>TESTNAME.err], [1])
+  SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
+  SAME_FILE([TESTNAME.err],[TESTDIR/TESTNAME.err])
 ])
 
 dnl Positive testcase for Souffle
 dnl $1 -- test name
 dnl $2 -- category
 m4_define([POSITIVE_TEST],[
-    TEST_GROUP([$1],[
-        TEST_EVAL([$1],[$2], facts)
-    ])
+  TEST_GROUP([$1],[
+    TEST_EVAL([$1],[$2], facts)
+  ])
 ])
 
 dnl Positive testcase for Souffle
@@ -163,42 +163,42 @@ dnl $1 -- test name
 dnl $2 -- category
 dnl $3 -- facts directories
 m4_define([POSITIVE_MULTI_TEST],[
- m4_foreach([POSITIVE_MULTI_TEST_DIR],[$3],[
-   TEST_GROUP([$1 POSITIVE_MULTI_TEST_DIR],[
-     TEST_EVAL([$1],[$2], POSITIVE_MULTI_TEST_DIR, /POSITIVE_MULTI_TEST_DIR)
-   ])
- ])
+  m4_foreach([POSITIVE_MULTI_TEST_DIR],[$3],[
+    TEST_GROUP([$1 POSITIVE_MULTI_TEST_DIR],[
+      TEST_EVAL([$1],[$2], POSITIVE_MULTI_TEST_DIR, /POSITIVE_MULTI_TEST_DIR)
+    ])
+  ])
 ])
 
 dnl Negative testcase for Souffle
 dnl $1 -- test name
 dnl $2 -- category
 m4_define([NEGATIVE_TEST],[
-    TEST_GROUP([$1],[
-        TEST_EVAL_ERROR([$1],[$2])
-    ])
+  TEST_GROUP([$1],[
+    TEST_EVAL_ERROR([$1],[$2])
+  ])
 ])
 
 dnl Defines most relevant Souffle flag configurations for testing.
 dnl NOTE: This is the default configuration that can be overridden
 dnl using SOUFFLE_CONFS environment variable.
 m4_define([DEFAULT_CONFS], [[],     dnl run interpreter
- [-c],                              dnl compile, then execute
- [-j8],                             dnl run interpreter in parallel
- [-j8 -p profile.log],              dnl run interpreter in parallel, with profiling enabled
- [-c -j8],                          dnl compile, then execute in parallel
- [-c -j8 -p profile.log],           dnl compile, then execute in parallel, with profiling enabled
- [-f -j8],                          dnl run interpreter with fault-tolerance in parallel
- [-f -j8 -p profile.log],           dnl run interpreter with fault-tolerance in parallel, with profiling enabled
- [-c -f -j8],                       dnl compile with fault tolerance enabled, then execute in parallel
- [-c -f -j8 -p profile.log],        dnl compile with fault tolerance enabled, then execute in parallel, with profiling enabled
- [-c -j8 -s-],                      dnl compile to subprograms, then execute each in parallel
- [-c -f -j8 -s-]                    dnl compile to subprograms with fault tolerance enabled, then execute each in parallel
+  [-c],                              dnl compile, then execute
+  [-j8],                             dnl run interpreter in parallel
+  [-j8 -p profile.log],              dnl run interpreter in parallel, with profiling enabled
+  [-c -j8],                          dnl compile, then execute in parallel
+  [-c -j8 -p profile.log],           dnl compile, then execute in parallel, with profiling enabled
+  [-f -j8],                          dnl run interpreter with fault-tolerance in parallel
+  [-f -j8 -p profile.log],           dnl run interpreter with fault-tolerance in parallel, with profiling enabled
+  [-c -f -j8],                       dnl compile with fault tolerance enabled, then execute in parallel
+  [-c -f -j8 -p profile.log],        dnl compile with fault tolerance enabled, then execute in parallel, with profiling enabled
+  [-c -j8 -s-],                      dnl compile to subprograms, then execute each in parallel
+  [-c -f -j8 -s-]                    dnl compile to subprograms with fault tolerance enabled, then execute each in parallel
 ])
 
 dnl Store user-defined souffle flag configuration given by the SOUFFLE_CONFS env (if any)
 m4_define([ENV_CONFS],
-    m4_split(m4_esyscmd_s(echo "[[$SOUFFLE_CONFS]]"),[,]))
+  m4_split(m4_esyscmd_s(echo "[[$SOUFFLE_CONFS]]"),[,]))
 
 dnl Pick a flag configuration for testing giving preference to user-defined flags
 m4_ifblank(m4_join([],ENV_CONFS), [
@@ -208,16 +208,16 @@ m4_ifblank(m4_join([],ENV_CONFS), [
 ])
 
 m4_define([DEFAULT_CATEGORIES], [[Syntactic],
- [Semantic],
- [Evaluation],
- [Interface],
- [Profile],
- [Provenance],
+  [Semantic],
+  [Evaluation],
+  [Interface],
+  [Profile],
+  [Provenance],
 ])
 
 dnl Store user-defined souffle flag configuration given by the SOUFFLE_CONFS env (if any)
 m4_define([ENV_CATEGORIES],
-    m4_split(m4_esyscmd_s(echo "[[$SOUFFLE_CATEGORY]]"),[,]))
+  m4_split(m4_esyscmd_s(echo "[[$SOUFFLE_CATEGORY]]"),[,]))
 
 dnl Set default values if none were given.
 m4_ifblank(m4_join([],ENV_CATEGORIES), [
@@ -250,7 +250,7 @@ m4_foreach(current, [CATEGORIES],
   ])
 
   m4_if(current, Provenance, [
-   m4_include([provenance.at])
+    m4_include([provenance.at])
   ])
 
   m4_if(current, Example, [

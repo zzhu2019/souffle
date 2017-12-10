@@ -11,35 +11,35 @@ dnl $3 -- facts directory relative to the test directory
 dnl $4 -- directory with expected output
 dnl       (relative to the test dir, but starting with '/'), or empty string
 m4_define([TEST_EVAL_SQLITE3],[
- m4_define([TESTNAME],[$1])
- m4_define([CATEGORY],[$2])
- m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
- m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
- m4_define([FACTS],[TESTDIR/$3])
- m4_define([EXPECTEDDIR], [TESTDIR$4])
- # invoke souffle
- AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [0])
- SORTED_SAME_FILES([*.csv],[EXPECTEDDIR])
- # compare all other output files without sorting
- for i in *.output
- do
-  # extract the relation view as csv and compare to the expected values
-  sqlite3 -batch $i -init EXPECTEDDIR/$i.script "" > "$i.unsorted.generated"
-  sort "$i.unsorted.generated" > "$i.sorted.generated"
-  SAME_FILE(["$i.sorted.generated"],["EXPECTEDDIR/$i.sorted.expected"])
- done
- # validate stdout and stderr
- SAME_FILE([TESTNAME.out],[EXPECTEDDIR/TESTNAME.out])
- SAME_FILE([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
+  m4_define([TESTNAME],[$1])
+  m4_define([CATEGORY],[$2])
+  m4_define([TESTDIR],["$TESTS"/CATEGORY/TESTNAME])
+  m4_define([PROGRAM],[TESTDIR/TESTNAME.dl])
+  m4_define([FACTS],[TESTDIR/$3])
+  m4_define([EXPECTEDDIR], [TESTDIR$4])
+  # invoke souffle
+  AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [0])
+  SORTED_SAME_FILES([*.csv],[EXPECTEDDIR])
+  # compare all other output files without sorting
+  for i in *.output
+  do
+    # extract the relation view as csv and compare to the expected values
+    sqlite3 -batch $i -init EXPECTEDDIR/$i.script "" > "$i.unsorted.generated"
+    sort "$i.unsorted.generated" > "$i.sorted.generated"
+    SAME_FILE(["$i.sorted.generated"],["EXPECTEDDIR/$i.sorted.expected"])
+  done
+  # validate stdout and stderr
+  SAME_FILE([TESTNAME.out],[EXPECTEDDIR/TESTNAME.out])
+  SAME_FILE([TESTNAME.err],[EXPECTEDDIR/TESTNAME.err])
 ])
 
 dnl Positive sqlite3 testcase for Souffle
 dnl $1 -- test name
 dnl $2 -- category
 m4_define([POSITIVE_TEST_SQLITE3],[
-    TEST_GROUP([$1],[
-        TEST_EVAL_SQLITE3([$1],[$2], facts)
-    ])
+  TEST_GROUP([$1],[
+    TEST_EVAL_SQLITE3([$1],[$2],facts)
+  ])
 ])
 
 ##########################################################################
