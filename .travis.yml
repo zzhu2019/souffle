@@ -124,10 +124,6 @@ jobs:
   - <<: *osxclang
     env:
     - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -j8 -s-"
-  - <<: *osxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -j8 -s-"
 
 # Testing stage (-f -j8,-c -f -j8)
   - <<: *linuxgcc
@@ -140,10 +136,6 @@ jobs:
     - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8"
   - <<: *osxclang
     env:
-    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8"
-  - <<: *osxgcc
-    env:
-    - *gcc_environment
     - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8"
 
 # Testing stage (-c -f -j8 -s-)
@@ -158,10 +150,6 @@ jobs:
   - <<: *osxclang
     env:
     - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -f -j8 -s-"
-  - <<: *osxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -f -j8 -s-"
 
 # Testing stage (-j8,-c -j8)
   - <<: *linuxgcc
@@ -175,10 +163,6 @@ jobs:
   - <<: *osxclang
     env:
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
-  - <<: *osxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
 
 # Testing stage (-f -j8,-c -f -j8)
   - <<: *linuxgcc
@@ -191,10 +175,6 @@ jobs:
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
   - <<: *osxclang
     env:
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-  - <<: *osxgcc
-    env:
-    - *gcc_environment
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
 
 # TODO (#468): these tests currently time out with travis, due to the significant increase in compilation time incurred by the -s option
