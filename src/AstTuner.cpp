@@ -18,7 +18,9 @@
 #include "AstProgram.h"
 #include "AstTranslator.h"
 #include "AstVisitor.h"
+#include "Global.h"
 #include "RamInterpreter.h"
+#include "RamProgram.h"
 #include "RamStatement.h"
 
 namespace souffle {
