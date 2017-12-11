@@ -17,6 +17,7 @@
 
 #include "AstTransformer.h"
 #include "AstTranslationUnit.h"
+#include "Global.h"
 
 namespace souffle {
 

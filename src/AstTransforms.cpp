@@ -344,6 +344,10 @@ std::unique_ptr<AstClause> ResolveAliasesTransformer::removeTrivialEquality(cons
 void ResolveAliasesTransformer::removeComplexTermsInAtoms(AstClause& clause) {
     // restore temporary variables for expressions in atoms
 
+    if(Global::config().has("magic-transform")) {
+        return;
+    }
+
     // get list of atoms
     std::vector<AstAtom*> atoms;
     for (AstLiteral* cur : clause.getBodyLiterals()) {
@@ -862,7 +866,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
                 // update constant to be the variable created
                 return std::move(newVariable);
-            } else if (AstUnnamedVariable* underscoredVar = dynamic_cast<AstUnnamedVariable*>(node.get())) {
+            } else if (dynamic_cast<AstUnnamedVariable*>(node.get())) {
                 // underscore found
                 changeCount++;
 

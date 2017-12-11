@@ -689,7 +689,7 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     // find atoms that should be ignored
     for (AstRelation* rel : program->getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
-            // ignore atoms that have rules containing functors or aggregators
+            // ignore atoms that have rules containing aggregators
             if (containsAggregators(clause)) {
                 ignoredAtoms.insert(clause->getHead()->getName());
             }
@@ -906,6 +906,48 @@ std::string extractAdornment(AstRelationIdentifier magicRelationName) {
     return adornment;
 }
 
+// returns the constant represented by a variable of the form "+abdulX_variablevalue_X"
+AstArgument* extractConstant(souffle::SymbolTable symbolTable, std::string normalisedConstant) {
+    // strip off the prefix up to (and including) the first underscore
+    size_t argStart = normalisedConstant.find('_');
+    std::string arg = normalisedConstant.substr(argStart + 1, normalisedConstant.size());
+
+    // -- check if string or num constant --
+    char indicatorChar = arg[arg.size() - 1];  // 'n' or 's'
+    std::string stringRep = arg.substr(0, arg.size() - 2);
+
+    if (indicatorChar == 's') {
+        // string argument
+        return new AstStringConstant(symbolTable, stringRep.c_str());
+    } else if (indicatorChar == 'n') {
+        // numeric argument
+        return new AstNumberConstant(stoi(stringRep));
+    } else {
+        // invalid format
+        return nullptr;
+    }
+}
+
+// creates a new magic relation based on a given relation and magic base name
+AstRelation* createMagicRelation(AstRelation* original, AstRelationIdentifier magicPredName) {
+    // get the adornment of this argument
+    std::string adornment = extractAdornment(magicPredName);
+
+    // create the relation
+    AstRelation* newMagicRelation = new AstRelation();
+    newMagicRelation->setName(magicPredName);
+
+    // copy over (bound) attributes from the original relation
+    std::vector<AstAttribute*> attrs = original->getAttributes();
+    for (size_t currentArg = 0; currentArg < original->getArity(); currentArg++) {
+        if (adornment[currentArg] == 'b') {
+            newMagicRelation->addAttribute(std::unique_ptr<AstAttribute>(attrs[currentArg]->clone()));
+        }
+    }
+
+    return newMagicRelation;
+}
+
 // transforms the program so that all underscores previously transformed
 // to a "+underscoreX" are changed back to underscores
 void replaceUnderscores(AstProgram* program) {
@@ -987,7 +1029,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
         // i.e. mN_outputname_ff...f().
         AstClause* outputFact = new AstClause();
         outputFact->setSrcLoc(nextSrcLoc(originalOutputRelation->getSrcLoc()));
-        outputFact->setHead(std::unique_ptr<AstAtom>(new AstAtom(magicOutputName)));
+        outputFact->setHead(std::make_unique<AstAtom>(magicOutputName));
         program->appendClause(std::unique_ptr<AstClause>(outputFact));
 
         // perform the magic transformation based on the adornment for this output query
@@ -1152,27 +1194,13 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
                         // create the relation if it does not exist
                         if (program->getRelation(magPredName) == nullptr) {
-                            // get the adornment of this argument
-                            std::string adornment = extractAdornment(magPredName);
-
-                            // create the relation
-                            AstRelation* newMagRelation = new AstRelation();
-                            newMagRelation->setName(magPredName);
-
-                            // copy over (bound) attributes from the original relation
-                            AstRelation* currentRelation =
+                            AstRelation* originalRelation =
                                     program->getRelation(newClause->getHead()->getName());
-                            std::vector<AstAttribute*> attrs = currentRelation->getAttributes();
-                            for (size_t currentArg = 0; currentArg < currentRelation->getArity();
-                                    currentArg++) {
-                                if (adornment[currentArg] == 'b') {
-                                    newMagRelation->addAttribute(
-                                            std::unique_ptr<AstAttribute>(attrs[currentArg]->clone()));
-                                }
-                            }
+                            AstRelation* newMagicRelation =
+                                    createMagicRelation(originalRelation, magPredName);
 
                             // add the new relation to the prgoram
-                            program->appendRelation(std::unique_ptr<AstRelation>(newMagRelation));
+                            program->appendRelation(std::unique_ptr<AstRelation>(newMagicRelation));
                         }
 
                         // add (bound) arguments to the magic predicate from the clause head
@@ -1192,7 +1220,8 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             magicClause->addToBody(std::unique_ptr<AstLiteral>(body[j]->clone()));
                         }
 
-                        // go through the arguments in the head and bind the bound variables using constraints
+                        // go through the arguments in clause head and bind the bound variables using
+                        // constraints
                         std::vector<const AstArgument*> currArguments;
                         visitDepthFirst(*magicClause,
                                 [&](const AstArgument& argument) { currArguments.push_back(&argument); });
@@ -1203,31 +1232,13 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             // all bound arguments begin with "+abdul" (see AstTransforms.cpp)
                             // +abdulX_variablevalue_s
                             if (hasPrefix(argName, "+abdul")) {
-                                // -- check if string or num constant --
-
-                                // strip off the prefix up to (and including) the first underscore
-                                size_t argStart = argName.find('_');
-                                std::string res = argName.substr(argStart + 1, argName.size());
-
-                                AstArgument* newArgument;
-                                if (res[res.size() - 1] == 's') {
-                                    // string argument
-                                    std::string str = res.substr(0, res.size() - 2);
-                                    newArgument = new AstStringConstant(
-                                            translationUnit.getSymbolTable(), str.c_str());
-                                } else {
-                                    // numeric argument
-                                    size_t argEnd = argName.find('_', argStart + 1);
-                                    std::string startstr =
-                                            argName.substr(argStart + 1, argEnd - argStart - 1);
-                                    newArgument = new AstNumberConstant(stoi(startstr));
-                                }
+                                AstArgument* embeddedConstant =
+                                        extractConstant(translationUnit.getSymbolTable(), argName);
 
                                 // add the constraint to the body of the clause
-                                AstConstraint* newConstraint = new AstConstraint(BinaryConstraintOp::EQ,
+                                magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
                                         std::unique_ptr<AstArgument>(arg->clone()),
-                                        std::unique_ptr<AstArgument>(newArgument));
-                                magicClause->addToBody(std::unique_ptr<AstLiteral>(newConstraint));
+                                        std::unique_ptr<AstArgument>(embeddedConstant)));
                             }
                         }
 
