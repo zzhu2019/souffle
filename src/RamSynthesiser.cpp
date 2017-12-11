@@ -429,7 +429,7 @@ public:
         if (merge.getTargetRelation().isEqRel()) {
             out << getRelationName(merge.getSourceRelation()) << "->"
                 << "extend("
-                << "*" << getRelationName(merge.getSourceRelation()) << ");\n";
+                << "*" << getRelationName(merge.getTargetRelation()) << ");\n";
         }
         out << getRelationName(merge.getTargetRelation()) << "->"
             << "insertAll("
