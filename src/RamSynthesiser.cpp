@@ -426,6 +426,11 @@ public:
 
     void visitMerge(const RamMerge& merge, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
+        if (merge.getTargetRelation().isEqRel()) {
+            out << getRelationName(merge.getSourceRelation()) << "->"
+                << "extend("
+                << "*" << getRelationName(merge.getSourceRelation()) << ");\n";
+        }
         out << getRelationName(merge.getTargetRelation()) << "->"
             << "insertAll("
             << "*" << getRelationName(merge.getSourceRelation()) << ");\n";
