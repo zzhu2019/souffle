@@ -827,6 +827,10 @@ public:
         data.insertAll(other.data);
     }
 
+    void extend(const SingleIndexRelation& other) {
+        data.extend(other.data);
+    }
+
     template <typename Setup, typename... Idxs>
     void insertAll(const Relation<Setup, arity, Idxs...>& other) {
         operation_context ctxt;
