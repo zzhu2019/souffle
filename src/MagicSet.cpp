@@ -311,6 +311,7 @@ std::set<AstRelationIdentifier> addAggregators(
 
 // for a given set of relations, add in all the atoms in their rules
 // TODO (azreika): can be done much more efficiently
+// -- TODO -- FIX THIS UP
 std::set<AstRelationIdentifier> addDependencies(
         const AstProgram* program, std::set<AstRelationIdentifier> relations) {
     bool relationsAdded = false;
@@ -350,11 +351,22 @@ std::set<AstRelationIdentifier> addIgnoredRelations(
         return relations;
     }
 
+    // find all specified relations
+    std::set<AstRelationIdentifier> targetRelations;
+    for (AstRelation* rel : program->getRelations()) {
+        std::string mainName = rel->getName().getNames()[0];
+        if (contains(specifiedRelations, mainName)) {
+            targetRelations.insert(rel->getName());
+        }
+    }
+
+    // add all dependencies to the list of relations to transform
+    targetRelations = addDependencies(program, targetRelations);
+
+    // ignore all relations not specified by the option
     std::set<AstRelationIdentifier> retVal(relations);
     for (AstRelation* rel : program->getRelations()) {
-        // ignore all relations not specified by the option
-        std::string mainName = rel->getName().getNames()[0];
-        if (!contains(specifiedRelations, mainName)) {
+        if (!contains(targetRelations, rel->getName())) {
             retVal.insert(rel->getName());
         }
     }
