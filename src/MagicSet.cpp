@@ -312,30 +312,53 @@ std::set<AstRelationIdentifier> addAggregators(
 // for a given set of relations, add in all the atoms in their rules
 // TODO (azreika): can be done much more efficiently
 // -- TODO -- FIX THIS UP
+//      -- fix up parameters
 std::set<AstRelationIdentifier> addDependencies(
         const AstProgram* program, std::set<AstRelationIdentifier> relations) {
-    bool relationsAdded = false;
-    std::set<AstRelationIdentifier> retVals;
-    for (AstRelationIdentifier relName : relations) {
-        retVals.insert(relName);  // add the relation itself
 
-        for (AstClause* clause : program->getRelation(relName)->getClauses()) {
-            for (AstLiteral* lit : clause->getBodyLiterals()) {
-                if (dynamic_cast<AstAtom*>(lit) || dynamic_cast<AstNegation*>(lit)) {
-                    AstRelationIdentifier addedName = lit->getAtom()->getName();
-                    retVals.insert(addedName);
-                    if (relations.find(addedName) == relations.end()) {
+    bool relationsAdded = false;
+    std::set<AstRelationIdentifier> result;
+    for (AstRelationIdentifier relName : relations) {
+        result.insert(relName); // add the relation itself
+
+        // add in all relations that it needs to use
+        AstRelation* associatedRelation = program->getRelation(relName);
+        for (AstClause* clause : associatedRelation->getClauses()) {
+            visitDepthFirst(*clause, [&](const AstAtom& subatom) {
+                AstRelationIdentifier atomName = subatom.getName();
+                result.insert(atomName);
+                if (!contains(relations, atomName)) {
+                    // hasn't been seen yet, so fixed point not reached
+                    relationsAdded = true;
+                }
+            });
+        }
+    }
+
+    // add in all relations that need to use an ignored relation
+    for (AstRelation* rel : program->getRelations()) {
+        for (AstClause* clause : rel->getClauses()) {
+            AstRelationIdentifier clauseHeadName = clause->getHead()->getName();
+            if (!contains(relations, clauseHeadName)) {
+                visitDepthFirst(*clause, [&](const AstAtom& subatom) {
+                    AstRelationIdentifier atomName = subatom.getName();
+                    if (contains(relations, atomName)) {
+                        result.insert(clauseHeadName);
+                        
+                        // clause name hasn't been seen yet, so fixed point not reached
                         relationsAdded = true;
                     }
-                }
+                });
             }
         }
     }
 
+
     if (relationsAdded) {
-        return addDependencies(program, retVals);
+        // keep going until we reach a fixed point
+        return addDependencies(program, result);
     } else {
-        return retVals;
+        return result;
     }
 }
 
