@@ -919,7 +919,7 @@ std::string extractAdornment(AstRelationIdentifier magicRelationName) {
 }
 
 // returns the constant represented by a variable of the form "+abdulX_variablevalue_X"
-AstArgument* extractConstant(souffle::SymbolTable symbolTable, std::string normalisedConstant) {
+AstArgument* extractConstant(SymbolTable& symbolTable, std::string normalisedConstant) {
     // strip off the prefix up to (and including) the first underscore
     size_t argStart = normalisedConstant.find('_');
     std::string arg = normalisedConstant.substr(argStart + 1, normalisedConstant.size());
