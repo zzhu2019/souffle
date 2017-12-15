@@ -185,13 +185,9 @@ dnl using SOUFFLE_CONFS environment variable.
 m4_define([DEFAULT_CONFS], [[],     dnl run interpreter
   [-c],                              dnl compile, then execute
   [-j8],                             dnl run interpreter in parallel
-  [-j8 -p profile.log],              dnl run interpreter in parallel, with profiling enabled
   [-c -j8],                          dnl compile, then execute in parallel
-  [-c -j8 -p profile.log],           dnl compile, then execute in parallel, with profiling enabled
   [-f -j8],                          dnl run interpreter with fault-tolerance in parallel
-  [-f -j8 -p profile.log],           dnl run interpreter with fault-tolerance in parallel, with profiling enabled
   [-c -f -j8],                       dnl compile with fault tolerance enabled, then execute in parallel
-  [-c -f -j8 -p profile.log],        dnl compile with fault tolerance enabled, then execute in parallel, with profiling enabled
   [-c -j8 -s-],                      dnl compile to subprograms, then execute each in parallel
   [-c -f -j8 -s-]                    dnl compile to subprograms with fault tolerance enabled, then execute each in parallel
 ])
