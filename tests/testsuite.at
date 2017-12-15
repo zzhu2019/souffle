@@ -237,6 +237,10 @@ m4_foreach(current, [CATEGORIES],
     m4_include([evaluation.at])
   ])
 
+  m4_if(current, FastEvaluation, [
+    m4_include([fastevaluation.at])
+  ])
+
   m4_if(current, Interface, [
     m4_include([interface.at])
   ])
