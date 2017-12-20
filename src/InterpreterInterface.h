@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file RamInterface.h
+ * @file InterpreterInterface.h
  *
  * Defines classes that implement the SouffleInterface abstract class
  *
@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "RamInterpreter.h"
+#include "Interpreter.h"
 #include "RamRelation.h"
 #include "SouffleInterface.h"
 
@@ -24,7 +24,7 @@
 
 namespace souffle {
 
-class RamRelationInterface : public Relation {
+class InterpreterInterface : public Relation {
 private:
     InterpreterRelation& ramRelation;
     SymbolTable& symTable;
@@ -36,12 +36,12 @@ private:
 protected:
     class iterator_base : public Relation::iterator_base {
     private:
-        const RamRelationInterface* ramRelationInterface;
+        const InterpreterInterface* ramRelationInterface;
         InterpreterRelation::iterator it;
         tuple tup;
 
     public:
-        iterator_base(uint32_t arg_id, const RamRelationInterface* r, InterpreterRelation::iterator i)
+        iterator_base(uint32_t arg_id, const InterpreterInterface* r, InterpreterRelation::iterator i)
                 : Relation::iterator_base(arg_id), ramRelationInterface(r), it(i), tup(r) {}
         virtual ~iterator_base() {}
 
@@ -58,10 +58,10 @@ protected:
     };
 
 public:
-    RamRelationInterface(InterpreterRelation& r, SymbolTable& s, std::string n, std::vector<std::string> t,
+    InterpreterInterface(InterpreterRelation& r, SymbolTable& s, std::string n, std::vector<std::string> t,
             std::vector<std::string> an, uint32_t i)
             : ramRelation(r), symTable(s), name(n), types(t), attrNames(an), id(i) {}
-    virtual ~RamRelationInterface() {}
+    virtual ~InterpreterInterface() {}
 
     // insert a new tuple into the relation
     void insert(const tuple& t) override;
@@ -95,7 +95,7 @@ private:
     RamInterpreter& exec;
     InterpreterEnvironment& env;
     SymbolTable& symTable;
-    std::vector<RamRelationInterface*> interfaces;
+    std::vector<InterpreterInterface*> interfaces;
 
 public:
     SouffleInterpreterInterface(RamProgram& p, RamInterpreter& e, InterpreterEnvironment& r, SymbolTable& s)
@@ -114,8 +114,8 @@ public:
                 std::string n = rel.getID().getArg(i);
                 attrNames.push_back(n);
             }
-            RamRelationInterface* interface =
-                    new RamRelationInterface(rel, symTable, rel.getID().getName(), types, attrNames, id);
+            InterpreterInterface* interface =
+                    new InterpreterInterface(rel, symTable, rel.getID().getName(), types, attrNames, id);
             interfaces.push_back(interface);
             addRelation(rel.getID().getName(), interface, rel.getID().isInput(), rel.getID().isOutput());
             id++;

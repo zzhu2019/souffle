@@ -21,7 +21,7 @@
 #include "CompiledRamRecord.h"
 #include "CompiledRamRelation.h"
 #include "ParallelUtils.h"
-#include "RamLogger.h"
+#include "Logger.h"
 #include "SignalHandler.h"
 #include "SouffleInterface.h"
 #include "SymbolTable.h"

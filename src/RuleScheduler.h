@@ -16,8 +16,7 @@
 
 #pragma once
 
-#include "RamInterpreter.h"
-#include "RamRelationStats.h"
+#include "Interpreter.h"
 #include "Util.h"
 
 #include <cmath>

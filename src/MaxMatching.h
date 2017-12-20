@@ -34,7 +34,7 @@
 
 namespace souffle {
 
-class RamMaxMatching {
+class MaxMatching {
 public:
     typedef std::map<SearchColumns, SearchColumns, std::greater<SearchColumns>> Matchings;
     typedef std::set<SearchColumns, std::greater<SearchColumns>> Nodes;

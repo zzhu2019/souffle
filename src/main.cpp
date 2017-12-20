@@ -32,10 +32,10 @@
 #include "Global.h"
 #include "ParserDriver.h"
 #include "PrecedenceGraph.h"
-#include "RamInterface.h"
-#include "RamInterpreter.h"
+#include "InterpreterInterface.h"
+#include "Interpreter.h"
 #include "RamStatement.h"
-#include "RamSynthesiser.h"
+#include "Synthesiser.h"
 #include "SymbolTable.h"
 #include "Util.h"
 
@@ -459,12 +459,12 @@ int main(int argc, char** argv) {
         compileCmd += " ";
 
         int index = -1;
-        std::unique_ptr<RamSynthesiser> synthesiser;
+        std::unique_ptr<Synthesiser> synthesiser;
         for (auto&& stratum : strata) {
             if (Global::config().has("stratify")) index++;
 
             // configure compiler
-            synthesiser = std::unique_ptr<RamSynthesiser>(new RamSynthesiser(compileCmd));
+            synthesiser = std::unique_ptr<Synthesiser>(new Synthesiser(compileCmd));
             if (Global::config().has("verbose")) {
                 synthesiser->setReportTarget(std::cout);
             }

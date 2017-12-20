@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file RamIndex.h
+ * @file InterpreterIndex.h
  *
  * An index is implemented either as a hash-index, a double-hash, as a
  * red-black tree or as a b-tree. The choice of the implementation is
@@ -27,22 +27,22 @@ namespace souffle {
 /**
  * A class describing the sorting order of tuples within an index.
  */
-class RamIndexOrder {
+class InterpreterIndexOrder {
     // the order of columns along which fields should be sorted by an index
     std::vector<unsigned char> columns;
 
 public:
     // -- constructors --
 
-    RamIndexOrder(const std::vector<unsigned char>& order = std::vector<unsigned char>()) : columns(order) {}
+    InterpreterIndexOrder(const std::vector<unsigned char>& order = std::vector<unsigned char>()) : columns(order) {}
 
-    RamIndexOrder(const RamIndexOrder&) = default;
-    RamIndexOrder(RamIndexOrder&&) = default;
+    InterpreterIndexOrder(const InterpreterIndexOrder&) = default;
+    InterpreterIndexOrder(InterpreterIndexOrder&&) = default;
 
     // -- assignment operations --
 
-    RamIndexOrder& operator=(const RamIndexOrder&) = default;
-    RamIndexOrder& operator=(RamIndexOrder&&) = default;
+    InterpreterIndexOrder& operator=(const InterpreterIndexOrder&) = default;
+    InterpreterIndexOrder& operator=(InterpreterIndexOrder&&) = default;
 
     // -- other operations --
 
@@ -52,7 +52,7 @@ public:
     }
 
     /** Enables orders to be the key of a set or map */
-    bool operator<(const RamIndexOrder& other) const {
+    bool operator<(const InterpreterIndexOrder& other) const {
         return columns < other.columns;
     }
 
@@ -86,7 +86,7 @@ public:
     }
 
     /** Tests whether this order is a prefix of the given order. */
-    bool isPrefixOf(const RamIndexOrder& other) const {
+    bool isPrefixOf(const InterpreterIndexOrder& other) const {
         // this one must not be longer
         if (columns.size() > other.columns.size()) {
             return false;
@@ -104,7 +104,7 @@ public:
      * order A is compatible with an order B if the first |A| elements
      * of B are a permutation of A.
      */
-    bool isCompatible(const RamIndexOrder& other) const {
+    bool isCompatible(const InterpreterIndexOrder& other) const {
         // this one must be shorter
         if (columns.size() > other.columns.size()) {
             return false;
@@ -123,21 +123,21 @@ public:
         out << "[" << join(columns, ",", [](std::ostream& out, int i) { out << i; }) << "]";
     }
 
-    friend std::ostream& operator<<(std::ostream& out, const RamIndexOrder& order) {
+    friend std::ostream& operator<<(std::ostream& out, const InterpreterIndexOrder& order) {
         order.print(out);
         return out;
     }
 };
 
 /* B-Tree indexes as default implementation for indexes */
-class RamIndex {
+class InterpreterIndex {
 protected:
     /* lexicographical comparison operation on two tuple pointers */
     struct comparator {
-        const RamIndexOrder& order;
+        const InterpreterIndexOrder& order;
 
         /* constructor to initialize state */
-        comparator(const RamIndexOrder& order) : order(order) {}
+        comparator(const InterpreterIndexOrder& order) : order(order) {}
 
         /* comparison function */
         int operator()(const RamDomain* x, const RamDomain* y) const {
@@ -175,13 +175,13 @@ public:
     typedef index_set::iterator iterator;
 
 private:
-    const RamIndexOrder theOrder;  // retain the index order used to construct an object of this class
+    const InterpreterIndexOrder theOrder;  // retain the index order used to construct an object of this class
     index_set set;                 // set storing tuple pointers of table
 
 public:
-    RamIndex(const RamIndexOrder& order) : theOrder(order), set(comparator(theOrder)) {}
+    InterpreterIndex(const InterpreterIndexOrder& order) : theOrder(order), set(comparator(theOrder)) {}
 
-    const RamIndexOrder& order() const {
+    const InterpreterIndexOrder& order() const {
         return theOrder;
     }
 

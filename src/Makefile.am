@@ -93,21 +93,19 @@ souffle_sources = \
               Constraints.h                             \
               GraphUtils.h                              \
               RamValue.h                                \
-              RamIndex.h                                \
+              InterpreterIndex.h                        \
               RamCondition.h                            \
               AstTranslator.cpp     AstTranslator.h     \
-              RamInterpreter.cpp    RamInterpreter.h    \
-              RamSynthesiser.cpp    RamSynthesiser.h    \
+              Interpreter.cpp       Interpreter.h       \
+              Synthesiser.cpp       Synthesiser.h       \
               RamStatement.h                            \
-              RamMaxMatching.cpp    RamMaxMatching.h    \
+              MaxMatching.cpp       MaxMatching.h       \
               RamNode.h                                 \
-              RamData.h                                 \
-              RamAutoIndex.cpp      RamAutoIndex.h      \
+              AutoIndex.cpp         AutoIndex.h         \
               RamOperation.cpp      RamOperation.h      \
               RamProgram.h                              \
               RamRecords.cpp        RamRecords.h        \
               RamRelation.h                             \
-              RamRelationStats.cpp  RamRelationStats.h  \
               RamVisitor.h                              \
               RuleScheduler.h                           \
               SignalHandler.h                           \
@@ -123,7 +121,7 @@ souffle_sources = \
               IODirectives.h                            \
               WriteStreamCSV.h                          \
               IOSystem.h                                \
-              RamInterface.cpp      RamInterface.h      \
+              InterpreterInterface.cpp  InterpreterInterface.h \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h
 
@@ -163,7 +161,7 @@ soufflepublic_HEADERS = CompiledRamOptions.h    \
                         RamTypes.h              \
                         IterUtils.h             \
                         SymbolTable.h           \
-                        RamLogger.h             \
+                        Logger.h                \
                         $(sqlite_sources)       \
                         $(libz_sources)         \
                         IODirectives.h          \

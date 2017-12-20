@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file RamSynthesiser.h
+ * @file Synthesiser.h
  *
  * Declares synthesiser classes to synthesise C++ code from a RAM program.
  *
@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "RamData.h"
 #include "RamProgram.h"
 #include "RamRelation.h"
 #include "SymbolTable.h"
@@ -32,7 +31,7 @@ namespace souffle {
 /**
  * A RAM synthesiser: synthesises a C++ program from a RAM program.
  */
-class RamSynthesiser {
+class Synthesiser {
 private:
     /** An optional stream to print logging information to an output stream */
     std::ostream* report;
@@ -51,7 +50,7 @@ public:
 
 public:
     /** A simple constructor */
-    RamSynthesiser(const std::string& compileCmd) : report(nullptr), compileCmd(compileCmd) {}
+    Synthesiser(const std::string& compileCmd) : report(nullptr), compileCmd(compileCmd) {}
 
     /**
      * Generates the code for the given ram statement.The target file

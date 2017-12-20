@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file RamInterpreter.h
+ * @file Interpreter.h
  *
  * Declares the interpreter class for executing RAM programs.
  *
@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "RamData.h"
+#include "InterpreterIndex.h"
 #include "RamProgram.h"
 #include "RamRelation.h"
 #include "SymbolTable.h"
@@ -57,9 +57,9 @@ class InterpreterRelation {
     /** keep an eye on the implicit tuples we create so that we can remove when dtor is called */
     std::list<RamDomain*> allocatedBlocks;
 
-    mutable std::map<RamIndexOrder, std::unique_ptr<RamIndex>> indices;
+    mutable std::map<InterpreterIndexOrder, std::unique_ptr<InterpreterIndex>> indices;
 
-    mutable RamIndex* totalIndex;
+    mutable InterpreterIndex* totalIndex;
 
     /** lock for parallel execution */
     mutable Lock lock;
@@ -345,7 +345,7 @@ public:
 
     /** get index for a given set of keys using a cached index as a helper. Keys are encoded as bits for each
      * column */
-    RamIndex* getIndex(const SearchColumns& key, RamIndex* cachedIndex) const {
+    InterpreterIndex* getIndex(const SearchColumns& key, InterpreterIndex* cachedIndex) const {
         if (!cachedIndex) {
             return getIndex(key);
         }
@@ -353,13 +353,13 @@ public:
     }
 
     /** get index for a given set of keys. Keys are encoded as bits for each column */
-    RamIndex* getIndex(const SearchColumns& key) const {
+    InterpreterIndex* getIndex(const SearchColumns& key) const {
         // suffix for order, if no matching prefix exists
         std::vector<unsigned char> suffix;
         suffix.reserve(getArity());
 
         // convert to order
-        RamIndexOrder order;
+        InterpreterIndexOrder order;
         for (size_t k = 1, i = 0; i < getArity(); i++, k *= 2) {
             if (key & k) {
                 order.append(i);
@@ -369,7 +369,7 @@ public:
         }
 
         // see whether there is an order with a matching prefix
-        RamIndex* res = nullptr;
+        InterpreterIndex* res = nullptr;
         {
             auto lease = lock.acquire();
             (void)lease;
@@ -395,16 +395,16 @@ public:
     }
 
     /** get index for a given order. Keys are encoded as bits for each column */
-    RamIndex* getIndex(const RamIndexOrder& order) const {
+    InterpreterIndex* getIndex(const InterpreterIndexOrder& order) const {
         // TODO: improve index usage by re-using indices with common prefix
-        RamIndex* res = nullptr;
+        InterpreterIndex* res = nullptr;
         {
             auto lease = lock.acquire();
             (void)lease;
             auto pos = indices.find(order);
             if (pos == indices.end()) {
-                std::unique_ptr<RamIndex>& newIndex = indices[order];
-                newIndex = std::make_unique<RamIndex>(order);
+                std::unique_ptr<InterpreterIndex>& newIndex = indices[order];
+                newIndex = std::make_unique<InterpreterIndex>(order);
                 newIndex->insert(this->begin(), this->end());
                 res = newIndex.get();
             } else {
@@ -685,6 +685,74 @@ extern const QueryExecutionStrategy DirectExecution;
 /** With this strategy queries will be dynamically with profiling */
 extern const QueryExecutionStrategy ScheduledExecution;
 
+/** The type to reference indices */
+typedef unsigned Column;
+
+/**
+ * A summary of statistical properties of a ram relation.
+ */
+class RamRelationStats {
+    /** The arity - accurate */
+    uint8_t arity;
+
+    /** The number of tuples - accurate */
+    uint64_t size;
+
+    /** The sample size estimations are based on */
+    uint32_t sample_size;
+
+    /** The cardinality of the various components of the tuples - estimated */
+    std::vector<uint64_t> cardinalities;
+
+public:
+    RamRelationStats() : arity(0), size(0), sample_size(0) {}
+
+    RamRelationStats(uint64_t size, const std::vector<uint64_t>& cards)
+            : arity(cards.size()), size(size), sample_size(0), cardinalities(cards) {}
+
+    RamRelationStats(const RamRelationStats&) = default;
+    RamRelationStats(RamRelationStats&&) = default;
+
+    RamRelationStats& operator=(const RamRelationStats&) = default;
+    RamRelationStats& operator=(RamRelationStats&&) = default;
+
+    /**
+     * A factory function extracting statistical information form the given relation
+     * base on a given sample size. If the sample size is not specified, the full
+     * relation will be processed.
+     */
+    static RamRelationStats extractFrom(
+            const InterpreterRelation& rel, uint32_t sample_size = std::numeric_limits<uint32_t>::max());
+
+    uint8_t getArity() const {
+        return arity;
+    }
+
+    uint64_t getCardinality() const {
+        return size;
+    }
+
+    uint32_t getSampleSize() const {
+        return sample_size;
+    }
+
+    uint64_t getEstimatedCardinality(Column c) const {
+        if (c >= cardinalities.size()) {
+            return 0;
+        }
+        return cardinalities[c];
+    }
+
+    void print(std::ostream& out) const {
+        out << cardinalities;
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const RamRelationStats& stats) {
+        stats.print(out);
+        return out;
+    }
+};
+
 /**
  * A RAM interpreter. The RAM program will
  * be processed within the callers process. Before every query operation, an
@@ -709,18 +777,7 @@ public:
      */
     std::unique_ptr<InterpreterEnvironment> execute(SymbolTable& table, const RamProgram& prog) const {
         auto env = std::make_unique<InterpreterEnvironment>(table);
-        applyOn(prog, *env, nullptr);
-        return env;
-    }
-
-    /**
-     * Runs the given RAM statement on an empty environment and input data and returns
-     * this environment after the completion of the execution.
-     */
-    std::unique_ptr<InterpreterEnvironment> execute(SymbolTable& table, const RamProgram& prog, RamData* data) const {
-        // Ram env managed by the interface
-        auto env = std::make_unique<InterpreterEnvironment>(table);
-        applyOn(prog, *env, data);
+        applyOn(prog, *env);
         return env;
     }
 
@@ -735,7 +792,7 @@ public:
      * The implementation of the interpreter applying the given program
      * on the given environment.
      */
-    void applyOn(const RamProgram& prog, InterpreterEnvironment& env, RamData* data) const;
+    void applyOn(const RamProgram& prog, InterpreterEnvironment& env) const;
 
     /**
      * Runs a subroutine of a RamProgram

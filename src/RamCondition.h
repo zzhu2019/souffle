@@ -18,7 +18,6 @@
 #pragma once
 
 #include "BinaryConstraintOps.h"
-#include "RamIndex.h"
 #include "RamNode.h"
 #include "RamRelation.h"
 #include "RamValue.h"
@@ -147,15 +146,9 @@ class RamNotExists : public RamCondition {
     /** the restricted fields -- null if undefined */
     std::vector<std::unique_ptr<RamValue>> values;
 
-    /** A reference to the utilized index */
-    mutable RamIndex* index;
-
-    /** Stores the relation name associated with the stored index */
-    mutable std::string indexRelationName;
-
 public:
     RamNotExists(const RamRelation& rel)
-            : RamCondition(RN_NotExists), relation(rel), index(nullptr) {}
+            : RamCondition(RN_NotExists), relation(rel) {}
 
     ~RamNotExists() override = default;
 
@@ -181,25 +174,6 @@ public:
         return level;
     }
 
-    /** Obtains the index utilized by this operation */
-    RamIndex* getIndex() const {
-        return index;
-    }
-
-    /** updates the index utilized by this operation */
-    void setIndex(RamIndex* index) const {
-        this->index = index;
-    }
-
-    /** Obtains the name associated with the stored index */
-    std::string getIndexRelationName() const {
-        return indexRelationName;
-    }
-
-    /** Updates the name associated with the stored index */
-    void setIndexRelationName(std::string n) const {
-        indexRelationName = n;
-    }
 
     void print(std::ostream& os) const override {
         os << "(" << join(values, ",",

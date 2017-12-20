@@ -8,7 +8,7 @@
 
 /***************************************************************************
  *
- * @file RamAutoIndex.h
+ * @file AutoIndex.h
  *
  * Defines classes to automatically compute the minimal indexes for a table
  *
@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "RamMaxMatching.h"
+#include "MaxMatching.h"
 #include "RamTypes.h"
 
 #include <iostream>
@@ -32,7 +32,7 @@
 
 namespace souffle {
 
-class RamAutoIndex {
+class AutoIndex {
 public:
     typedef std::vector<int> LexicographicalOrder;
     typedef std::vector<LexicographicalOrder> OrderCollection;
@@ -46,10 +46,10 @@ protected:
     OrderCollection orders;      // collection of lexicographical orders
     ChainOrderMap chainToOrder;  // maps order index to set of searches covered by chain
 
-    RamMaxMatching matching;  // matching problem for finding minimal number of orders
+    MaxMatching matching;  // matching problem for finding minimal number of orders
 
 public:
-    RamAutoIndex() {}
+    AutoIndex() {}
     /** add new key to an Index Set */
     inline void addSearch(SearchColumns cols) {
         if (cols != 0) {
@@ -145,13 +145,13 @@ protected:
 
     /** given an unmapped node from set A we follow it from set B until it cannot be matched from B
         if not mateched from B then umn is a chain*/
-    Chain getChain(const SearchColumns umn, const RamMaxMatching::Matchings& match);
+    Chain getChain(const SearchColumns umn, const MaxMatching::Matchings& match);
 
     /** get all chains from the matching */
-    const ChainOrderMap getChainsFromMatching(const RamMaxMatching::Matchings& match, const SearchSet& nodes);
+    const ChainOrderMap getChainsFromMatching(const MaxMatching::Matchings& match, const SearchSet& nodes);
 
     /** get all nodes which are unmated from A-> B */
-    const SearchSet getUnmatchedKeys(const RamMaxMatching::Matchings& match, const SearchSet& nodes) {
+    const SearchSet getUnmatchedKeys(const MaxMatching::Matchings& match, const SearchSet& nodes) {
         ASSERT(!nodes.empty());
         SearchSet unmatched;
 

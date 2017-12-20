@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file RamLogger.h
+ * @file Logger.h
  *
  * A logger is the utility utilized by RAM programs to create logs and
  * traces.
@@ -40,7 +40,7 @@ inline Lock& getOutputLock() {
  * To far, only execution times are logged. More events, e.g. the number of
  * processed tuples may be added in the future.
  */
-class RamLogger {
+class Logger {
     // the type of clock to be utilized by this class
     typedef std::chrono::steady_clock clock;
     typedef clock::time_point time;
@@ -55,11 +55,11 @@ class RamLogger {
     std::ostream& out;
 
 public:
-    RamLogger(const char* label, std::ostream& out = std::cout) : label(label), out(out) {
+    Logger(const char* label, std::ostream& out = std::cout) : label(label), out(out) {
         start = clock::now();
     }
 
-    ~RamLogger() {
+    ~Logger() {
         auto duration = clock::now() - start;
 
         auto leas = getOutputLock().acquire();

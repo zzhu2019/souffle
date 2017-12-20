@@ -17,7 +17,6 @@
 #pragma once
 
 #include "RamCondition.h"
-#include "RamIndex.h"
 #include "RamNode.h"
 #include "RamRelation.h"
 
@@ -136,14 +135,11 @@ protected:
      */
     bool pureExistenceCheck;
 
-    /** A reference to the utilized index */
-    mutable RamIndex* index;
-
 public:
     /** constructs a scan operation on the given relation with the given nested operation */
     RamScan(const RamRelation& r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck)
             : RamSearch(RN_Scan, std::move(nested)), relation(r), queryPattern(r.getArity()), keys(0),
-              pureExistenceCheck(pureExistenceCheck), index(nullptr) {}
+              pureExistenceCheck(pureExistenceCheck) {}
 
     ~RamScan() override = default;
 
@@ -176,16 +172,6 @@ public:
     /** Marks this scan step as a pure existence check or not */
     void setPureExistenceCheck(bool value = true) {
         pureExistenceCheck = value;
-    }
-
-    /** Obtains the index utilized by this operation */
-    RamIndex* getIndex() const {
-        return index;
-    }
-
-    /** updates the index utilized by this operation */
-    void setIndex(RamIndex* index) const {
-        this->index = index;
     }
 
     /** print search */
@@ -260,15 +246,12 @@ private:
     /** the columns to be matched when using a range query */
     SearchColumns keys;
 
-    /** A reference to the utilized index */
-    mutable RamIndex* index;
-
 public:
     /** Creates a new instance based on the given parameters */
     RamAggregate(std::unique_ptr<RamOperation> nested, Function fun, std::unique_ptr<RamValue> value,
             const RamRelation& relation)
             : RamSearch(RN_Aggregate, std::move(nested)), fun(fun), value(std::move(value)),
-              relation(relation), pattern(relation.getArity()), keys(0), index(nullptr) {}
+              relation(relation), pattern(relation.getArity()), keys(0) {}
 
     ~RamAggregate() override = default;
 
@@ -297,16 +280,6 @@ public:
      */
     SearchColumns getRangeQueryColumns() const {
         return keys;
-    }
-
-    /** Obtains the index utilized by this operation */
-    RamIndex* getIndex() const {
-        return index;
-    }
-
-    /** updates the index utilized by this operation */
-    void setIndex(RamIndex* index) const {
-        this->index = index;
     }
 
     /** print search */

@@ -8,13 +8,13 @@
 
 /************************************************************************
  *
- * @file RamSynthesiser.cpp
+ * @file Synthesiser.cpp
  *
  * Implementation of the C++ synthesiser for RAM programs.
  *
  ***********************************************************************/
 
-#include "RamSynthesiser.h"
+#include "Synthesiser.h"
 #include "AstRelation.h"
 #include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
@@ -22,9 +22,8 @@
 #include "Global.h"
 #include "IOSystem.h"
 #include "Macro.h"
-#include "RamAutoIndex.h"
-#include "RamData.h"
-#include "RamLogger.h"
+#include "AutoIndex.h"
+#include "Logger.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"
@@ -143,18 +142,18 @@ static const std::string getOpContextName(const RamRelation& rel) {
 }
 
 class IndexMap {
-    typedef std::map<RamRelation, RamAutoIndex> data_t;
+    typedef std::map<RamRelation, AutoIndex> data_t;
     typedef typename data_t::iterator iterator;
 
-    std::map<RamRelation, RamAutoIndex> data;
+    std::map<RamRelation, AutoIndex> data;
 
 public:
-    RamAutoIndex& operator[](const RamRelation& rel) {
+    AutoIndex& operator[](const RamRelation& rel) {
         return data[rel];
     }
 
-    const RamAutoIndex& operator[](const RamRelation& rel) const {
-        const static RamAutoIndex empty;
+    const AutoIndex& operator[](const RamRelation& rel) const {
+        const static AutoIndex empty;
         auto pos = data.find(rel);
         return (pos != data.end()) ? pos->second : empty;
     }
@@ -169,7 +168,7 @@ public:
 };
 
 std::string getRelationType(
-        const RamRelation& rel, std::size_t arity, const RamAutoIndex& indices) {
+        const RamRelation& rel, std::size_t arity, const AutoIndex& indices) {
     std::stringstream res;
     res << "ram::Relation";
     res << "<";
@@ -549,7 +548,7 @@ public:
         out << "{\n";
 
         // create local timer
-        out << "\tRamLogger logger(R\"(" << timer.getLabel() << ")\",profile);\n";
+        out << "\tLogger logger(R\"(" << timer.getLabel() << ")\",profile);\n";
 
         // insert statement to be measured
         visit(timer.getNested(), out);
@@ -1231,7 +1230,7 @@ void genCode(std::ostream& out, const RamStatement& stmt, const IndexMap& indice
 }
 }  // namespace
 
-std::string RamSynthesiser::generateCode(const SymbolTable& symTable, const RamProgram& prog,
+std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProgram& prog,
         const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
@@ -1693,7 +1692,7 @@ std::string RamSynthesiser::generateCode(const SymbolTable& symTable, const RamP
     return sourceFilename;
 }
 
-std::string RamSynthesiser::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
+std::string Synthesiser::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
         const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                       Code Generation
@@ -1730,7 +1729,7 @@ std::string RamSynthesiser::compileToBinary(const SymbolTable& symTable, const R
     return sourceFilename;
 }
 
-std::string RamSynthesiser::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
+std::string Synthesiser::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
         const std::string& filename, const int index) const {
     // compile statement
     std::string sourceFilename = compileToBinary(symTable, prog, filename, index);

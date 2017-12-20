@@ -8,13 +8,13 @@
 
 /************************************************************************
  *
- * @file RamInterpreter.cpp
+ * @file Interpreter.cpp
  *
  * Implementation of the RAM interpreter.
  *
  ***********************************************************************/
 
-#include "RamInterpreter.h"
+#include "Interpreter.h"
 #include "AstRelation.h"
 #include "AstTranslator.h"
 #include "AstVisitor.h"
@@ -23,9 +23,8 @@
 #include "Global.h"
 #include "IOSystem.h"
 #include "Macro.h"
-#include "RamAutoIndex.h"
-#include "RamData.h"
-#include "RamLogger.h"
+#include "AutoIndex.h"
+#include "Logger.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"
@@ -336,14 +335,8 @@ bool eval(const RamCondition& cond, InterpreterEnvironment& env, const EvalConte
             }
 
             // obtain index
-            auto idx = ne.getIndex();
-            auto idxRelationName = ne.getIndexRelationName();
-            if (idxRelationName != rel.getID().getName() || !idx) {
-                idx = rel.getIndex(ne.getKey());
-                ne.setIndex(idx);
-                ne.setIndexRelationName(rel.getID().getName());
-            }
-
+            auto idx = rel.getIndex(ne.getKey());
+            auto idxRelationName = rel.getID().getName();
             auto range = idx->lowerUpperBound(low, high);
             return range.first == range.second;  // if there are none => done
         }
@@ -485,11 +478,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
             }
 
             // obtain index
-            auto idx = scan.getIndex();
-            if (!idx || rel.getID().isTemp()) {
-                idx = rel.getIndex(scan.getRangeQueryColumns(), idx);
-                scan.setIndex(idx);
-            }
+            auto idx = rel.getIndex(scan.getRangeQueryColumns(), nullptr);
 
             // get iterator range
             auto range = idx->lowerUpperBound(low, hig);
@@ -570,11 +559,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
             }
 
             // obtain index
-            auto idx = aggregate.getIndex();
-            if (!idx) {
-                idx = rel.getIndex(aggregate.getRangeQueryColumns());
-                aggregate.setIndex(idx);
-            }
+            auto idx = rel.getIndex(aggregate.getRangeQueryColumns());
 
             // get iterator range
             auto range = idx->lowerUpperBound(low, hig);
@@ -685,7 +670,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
 }
 
 void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostream* profile,
-        const RamStatement& stmt, InterpreterEnvironment& env, RamData* data) {
+        const RamStatement& stmt, InterpreterEnvironment& env) {
     class Interpreter : public RamVisitor<bool> {
         InterpreterEnvironment& env;
         const QueryExecutionStrategy& queryExecutor;
@@ -694,7 +679,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
 
     public:
         Interpreter(InterpreterEnvironment& env, const QueryExecutionStrategy& strategy, std::ostream* report,
-                std::ostream* profile, RamData* data)
+                std::ostream* profile)
                 : env(env), queryExecutor(strategy), report(report), profile(profile) {}
 
         // -- Statements -----------------------------
@@ -745,7 +730,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
         }
 
         bool visitLogTimer(const RamLogTimer& timer) override {
-            RamLogger logger(timer.getLabel().c_str(), *profile);
+            Logger logger(timer.getLabel().c_str(), *profile);
             return visit(timer.getNested());
         }
 
@@ -864,11 +849,11 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
     };
 
     // create and run interpreter
-    Interpreter(env, strategy, report, profile, data).visit(stmt);
+    Interpreter(env, strategy, report, profile).visit(stmt);
 }
 }  // namespace
 
-void RamInterpreter::applyOn(const RamProgram& prog, InterpreterEnvironment& env, RamData* data) const {
+void RamInterpreter::applyOn(const RamProgram& prog, InterpreterEnvironment& env) const {
     SignalHandler::instance()->set();
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
@@ -878,9 +863,9 @@ void RamInterpreter::applyOn(const RamProgram& prog, InterpreterEnvironment& env
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
         os << "@start-debug\n";
-        run(queryStrategy, report, &os, *(prog.getMain()), env, data);
+        run(queryStrategy, report, &os, *(prog.getMain()), env);
     } else {
-        run(queryStrategy, report, nullptr, *(prog.getMain()), env, data);
+        run(queryStrategy, report, nullptr, *(prog.getMain()), env);
     }
     SignalHandler::instance()->reset();
 }
@@ -1063,5 +1048,52 @@ const QueryExecutionStrategy ScheduledExecution = [](
 
     return ExecutionSummary({order, runtime});
 };
+
+RamRelationStats RamRelationStats::extractFrom(const InterpreterRelation& rel, uint32_t sample_size) {
+    // write each column in its own set
+    std::vector<btree_set<RamDomain>> columns(rel.getArity());
+
+    // analyze sample
+    uint32_t count = 0;
+    for (auto it = rel.begin(); it != rel.end() && count < sample_size; ++it, ++count) {
+        const RamDomain* tuple = *it;
+
+        // compute cardinality of columns
+        for (std::size_t i = 0; i < rel.getArity(); ++i) {
+            columns[i].insert(tuple[i]);
+        }
+    }
+
+    // create the resulting statistics object
+    RamRelationStats stats;
+
+    stats.arity = rel.getArity();
+    stats.size = rel.size();
+    stats.sample_size = count;
+
+    for (std::size_t i = 0; i < rel.getArity(); i++) {
+        // estimate the cardinality of the columns
+        uint64_t card = 0;
+        if (count > 0) {
+            // based on the observed probability
+            uint64_t cur = columns[i].size();
+            double p = ((double)cur / (double)count);
+
+            // obtain an estimate of the overall cardinality
+            card = (uint64_t)(p * rel.size());
+
+            // make sure that it is at least what you have seen
+            if (card < cur) {
+                card = cur;
+            }
+        }
+
+        // add result
+        stats.cardinalities.push_back(card);
+    }
+
+    // done
+    return stats;
+}
 
 }  // end of namespace souffle

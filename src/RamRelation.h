@@ -8,22 +8,15 @@
 
 /************************************************************************
  *
- * @file RamTable.h
+ * @file RamRelation.h
  *
- * Defines classes Table, TupleBlock, Index, and HashBlock for implementing
- * an ram relational database. A table consists of a linked list of
- * tuple blocks that contain tuples of the table. An index is a hash-index
- * whose hash table is stored in Index. The entry of a hash table entry
- * refer to HashBlocks that are blocks of pointers that point to tuples
- * in tuple blocks with the same hash.
- *
+ * Defines the class for ram relations
  ***********************************************************************/
 
 #pragma once
 
 #include "IODirectives.h"
 #include "ParallelUtils.h"
-#include "RamIndex.h"
 #include "RamTypes.h"
 #include "SymbolMask.h"
 #include "SymbolTable.h"
@@ -37,6 +30,9 @@
 
 namespace souffle {
 
+/**
+ * A RAM Relation in the RAM intermediate representation.
+ */
 class RamRelation {
     std::string name;
     unsigned arity;
@@ -52,6 +48,7 @@ class RamRelation {
 
     bool isdata;
     bool istemp;
+
     IODirectives inputDirectives;
     std::vector<IODirectives> outputDirectives;
 
