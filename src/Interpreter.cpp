@@ -854,7 +854,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
 }
 }  // namespace
 
-void RamInterpreter::applyOn(const RamProgram& prog, InterpreterEnvironment& env) const {
+void Interpreter::run(const RamProgram& prog, InterpreterEnvironment& env) const {
     SignalHandler::instance()->set();
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
@@ -874,7 +874,7 @@ void RamInterpreter::applyOn(const RamProgram& prog, InterpreterEnvironment& env
 /**
  * Runs a subroutine of a RamProgram
  */
-void RamInterpreter::executeSubroutine(InterpreterEnvironment& env, const RamStatement& stmt,
+void Interpreter::executeSubroutine(InterpreterEnvironment& env, const RamStatement& stmt,
         const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
         std::vector<bool>& returnErrors) const {
     EvalContext ctxt;

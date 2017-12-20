@@ -756,7 +756,7 @@ public:
  * be processed within the callers process. Before every query operation, an
  * optional scheduling step will be conducted.
  */
-class RamInterpreter {
+class Interpreter {
 protected:
     /** An optional stream to print logging information to an output stream */
     std::ostream* report;
@@ -775,7 +775,7 @@ public:
      */
     std::unique_ptr<InterpreterEnvironment> execute(SymbolTable& table, const RamProgram& prog) const {
         auto env = std::make_unique<InterpreterEnvironment>(table);
-        applyOn(prog, *env);
+        run(prog, *env);
         return env;
     }
 
@@ -784,14 +784,11 @@ public:
 
 public:
     /** A constructor accepting a query strategy */
-    RamInterpreter(const QueryExecutionStrategy& queryStrategy)
+    Interpreter(const QueryExecutionStrategy& queryStrategy)
             : report(nullptr), queryStrategy(queryStrategy) {}
 
-    /**
-     * The implementation of the interpreter applying the given program
-     * on the given environment.
-     */
-    void applyOn(const RamProgram& prog, InterpreterEnvironment& env) const;
+    /** run the program for a given interpreter environment */
+    void run(const RamProgram& prog, InterpreterEnvironment& env) const;
 
     /**
      * Runs a subroutine of a RamProgram
