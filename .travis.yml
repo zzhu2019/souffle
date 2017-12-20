@@ -112,32 +112,6 @@ jobs:
     - *gcc_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
 
-# Testing stage (-c -j8 -s-)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-"
-
-# Testing stage (-f -j8,-c -f -j8,-c -f -j8 -s-)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8,-c -f -j8 -s-"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8,-c -f -j8 -s-"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8,-c -f -j8 -s-"
-
 # Testing stage (-j8,-c -j8)
   - <<: *linuxgcc
     env:
@@ -151,6 +125,19 @@ jobs:
     env:
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
 
+# Testing stage (-c -j8 -s-,-c -f -j8 -s-)
+  - <<: *linuxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
+  - <<: *linuxclang
+    env:
+    - *clang_environment
+    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
+  - <<: *osxclang
+    env:
+    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
+
 # Testing stage (-f -j8,-c -f -j8)
   - <<: *linuxgcc
     env:
@@ -163,23 +150,6 @@ jobs:
   - <<: *osxclang
     env:
     - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-
-# TODO (#468): these tests currently time out with travis, due to the significant increase in compilation time incurred by the -s option
-#  - <<: *linuxgcc
-#    env:
-#    - *gcc_environment
-#    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-#  - <<: *linuxclang
-#    env:
-#    - *clang_environment
-#    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-#  - <<: *osxclang
-#    env:
-#    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-#  - <<: *osxgcc
-#    env:
-#    - *gcc_environment
-#    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
 
 # Packaging stage
   # Make the linux deb packages.
