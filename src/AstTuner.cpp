@@ -50,7 +50,8 @@ public:
      * Processes the given query by forwarding the call to the nested strategy an
      * recording its performance.
      */
-    ExecutionSummary operator()(const RamInsert& insert, InterpreterEnvironment& env, std::ostream* report) const {
+    ExecutionSummary operator()(
+            const RamInsert& insert, InterpreterEnvironment& env, std::ostream* report) const {
         // run nested strategy
         auto res = nested(insert, env, report);
 

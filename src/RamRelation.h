@@ -57,13 +57,11 @@ public:
             : arity(0), mask(arity), input(false), computed(false), output(false), btree(false), brie(false),
               eqrel(false), isdata(false), istemp(false) {}
 
-    RamRelation(const std::string& name, unsigned arity, const bool istemp)
-            : RamRelation(name, arity) {
+    RamRelation(const std::string& name, unsigned arity, const bool istemp) : RamRelation(name, arity) {
         this->istemp = istemp;
     }
 
-    RamRelation(const std::string& name, unsigned arity,
-            std::vector<std::string> attributeNames = {},
+    RamRelation(const std::string& name, unsigned arity, std::vector<std::string> attributeNames = {},
             std::vector<std::string> attributeTypeQualifiers = {}, const SymbolMask& mask = SymbolMask(0),
             const bool input = false, const bool computed = false, const bool output = false,
             const bool btree = false, const bool brie = false, const bool eqrel = false,
@@ -170,6 +168,5 @@ public:
         return out;
     }
 };
-
 
 }  // end of namespace souffle

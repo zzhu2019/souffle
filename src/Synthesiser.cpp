@@ -17,13 +17,13 @@
 #include "Synthesiser.h"
 #include "AstRelation.h"
 #include "AstVisitor.h"
+#include "AutoIndex.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
 #include "IOSystem.h"
-#include "Macro.h"
-#include "AutoIndex.h"
 #include "Logger.h"
+#include "Macro.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"
@@ -130,7 +130,6 @@ bool useNoIndex() {
     return flag;
 }
 
-
 // Static wrapper to get relation names without going directly though the CPPIdentifierMap.
 static const std::string getRelationName(const RamRelation& rel) {
     return "rel_" + CPPIdentifierMap::getIdentifier(rel.getName());
@@ -167,8 +166,7 @@ public:
     }
 };
 
-std::string getRelationType(
-        const RamRelation& rel, std::size_t arity, const AutoIndex& indices) {
+std::string getRelationType(const RamRelation& rel, std::size_t arity, const AutoIndex& indices) {
     std::stringstream res;
     res << "ram::Relation";
     res << "<";
@@ -335,8 +333,7 @@ public:
         std::set<RamRelation> input_relations;
         visitDepthFirst(insert, [&](const RamScan& scan) { input_relations.insert(scan.getRelation()); });
         if (!input_relations.empty()) {
-            out << "if (" << join(input_relations, "&&", [&](std::ostream& out,
-                                                                 const RamRelation& rel) {
+            out << "if (" << join(input_relations, "&&", [&](std::ostream& out, const RamRelation& rel) {
                 out << "!" << getRelationName(rel) << "->"
                     << "empty()";
             }) << ") ";
@@ -1607,7 +1604,7 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
                << "subproof_" << subroutineNum << "(const std::vector<RamDomain>* args, "
                                                   "std::vector<RamDomain>* ret, std::vector<bool>* err) {\n";
 
-            const RamStatement * stmt = sub.second;
+            const RamStatement* stmt = sub.second;
             // generate code for body
             genCode(os, *stmt, indices);
 
@@ -1756,6 +1753,5 @@ std::string Synthesiser::executeBinary(const SymbolTable& symTable, const RamPro
     }
     return sourceFilename;
 }
-
 
 }  // end of namespace souffle

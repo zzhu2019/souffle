@@ -147,8 +147,7 @@ class RamNotExists : public RamCondition {
     std::vector<std::unique_ptr<RamValue>> values;
 
 public:
-    RamNotExists(const RamRelation& rel)
-            : RamCondition(RN_NotExists), relation(rel) {}
+    RamNotExists(const RamRelation& rel) : RamCondition(RN_NotExists), relation(rel) {}
 
     ~RamNotExists() override = default;
 
@@ -173,7 +172,6 @@ public:
         }
         return level;
     }
-
 
     void print(std::ostream& os) const override {
         os << "(" << join(values, ",",

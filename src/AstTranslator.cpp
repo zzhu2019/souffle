@@ -48,8 +48,8 @@ std::string getRelationName(const AstRelationIdentifier& id) {
     return toString(join(id.getNames(), "-"));
 }
 
-RamRelation getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv,
-        std::string name, size_t arity, const bool istemp = false, std::string filePath = std::string(),
+RamRelation getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv, std::string name,
+        size_t arity, const bool istemp = false, std::string filePath = std::string(),
         std::string fileExt = std::string()) {
     // avoid name conflicts for temporary identifiers
     if (istemp) {
@@ -152,9 +152,9 @@ RamRelation getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEn
             }
         }
     }
-    return RamRelation(name, arity, attributeNames, attributeTypeQualifiers,
-            getSymbolMask(*rel, *typeEnv), rel->isInput(), rel->isComputed(), rel->isOutput(), rel->isBTree(),
-            rel->isBrie(), rel->isEqRel(), rel->isData(), directives, outputDirectives, istemp);
+    return RamRelation(name, arity, attributeNames, attributeTypeQualifiers, getSymbolMask(*rel, *typeEnv),
+            rel->isInput(), rel->isComputed(), rel->isOutput(), rel->isBTree(), rel->isBrie(), rel->isEqRel(),
+            rel->isData(), directives, outputDirectives, istemp);
 }
 
 RamRelation getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv) {
@@ -822,8 +822,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
     std::unique_ptr<RamStatement> res;
 
     // the ram table reference
-    RamRelation rrel =
-            getRamRelation(&rel, &typeEnv, getRelationName(rel.getName()), rel.getArity());
+    RamRelation rrel = getRamRelation(&rel, &typeEnv, getRelationName(rel.getName()), rel.getArity());
 
     /* iterate over all clauses that belong to the relation */
     for (AstClause* clause : rel.getClauses()) {
@@ -1321,8 +1320,7 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
                 }
                 if (index == schedule.size() - 1) {
                     for (const AstRelation* rel : step.computed()) {
-                        appendStmt(
-                                current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
+                        appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
                     }
                 }
             }

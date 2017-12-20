@@ -23,12 +23,11 @@
 
 #include "RamStatement.h"
 
+#include <functional>
 #include <ostream>
 #include <vector>
-#include <functional>
 
 namespace souffle {
-
 
 class InterpreterRelation {
     static const int BLOCK_SIZE = 1024;
@@ -554,7 +553,6 @@ public:
      * a new, empty relation will be created.
      */
     InterpreterRelation& getRelation(const RamRelation& id) {
-
         InterpreterRelation* res = nullptr;
         auto pos = data.find(id.getName());
         if (pos != data.end()) {
@@ -668,7 +666,7 @@ public:
 };
 
 /**
- * The summary to be returned from a statement 
+ * The summary to be returned from a statement
  */
 struct ExecutionSummary {
     Order order;
@@ -786,7 +784,8 @@ public:
 
 public:
     /** A constructor accepting a query strategy */
-    RamInterpreter(const QueryExecutionStrategy& queryStrategy) : report(nullptr), queryStrategy(queryStrategy) {}
+    RamInterpreter(const QueryExecutionStrategy& queryStrategy)
+            : report(nullptr), queryStrategy(queryStrategy) {}
 
     /**
      * The implementation of the interpreter applying the given program

@@ -23,8 +23,8 @@
 #include "RamStatement.h"
 
 #include <ostream>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace souffle {
 
@@ -40,7 +40,6 @@ private:
     std::string compileCmd;
 
 public:
-
     /**
      * Updates logging stream
      */
@@ -77,7 +76,6 @@ public:
      */
     std::string executeBinary(const SymbolTable& symTable, const RamProgram& prog,
             const std::string& filename = "", const int index = -1) const;
-
 };
 
 }  // end of namespace souffle

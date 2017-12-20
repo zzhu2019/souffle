@@ -30,13 +30,13 @@
 #endif
 #include "AstTranslator.h"
 #include "Global.h"
+#include "Interpreter.h"
+#include "InterpreterInterface.h"
 #include "ParserDriver.h"
 #include "PrecedenceGraph.h"
-#include "InterpreterInterface.h"
-#include "Interpreter.h"
 #include "RamStatement.h"
-#include "Synthesiser.h"
 #include "SymbolTable.h"
+#include "Synthesiser.h"
 #include "Util.h"
 
 #include <chrono>
@@ -410,13 +410,15 @@ int main(int argc, char** argv) {
                 (Global::config().has("auto-schedule"))
                         ? std::unique_ptr<RamInterpreter>(new RamInterpreter(ScheduledExecution))
                         : std::unique_ptr<RamInterpreter>(new RamInterpreter(DirectExecution));
-        std::unique_ptr<InterpreterEnvironment> env = interpreter->execute(translationUnit->getSymbolTable(), *ramProg);
+        std::unique_ptr<InterpreterEnvironment> env =
+                interpreter->execute(translationUnit->getSymbolTable(), *ramProg);
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
         if (Global::config().has("provenance") && env != nullptr) {
             // construct SouffleProgram from env
-            SouffleInterpreterInterface interface(*ramProg, *interpreter, *env, translationUnit->getSymbolTable());
+            SouffleInterpreterInterface interface(
+                    *ramProg, *interpreter, *env, translationUnit->getSymbolTable());
 
             if (Global::config().get("provenance") == "1") {
                 explain(interface, true, false);
@@ -472,13 +474,14 @@ int main(int argc, char** argv) {
                 // check if this is code generation only
                 if (Global::config().has("generate")) {
                     // just generate, no compile, no execute
-                    synthesiser->generateCode(translationUnit->getSymbolTable(), *stratum, Global::config().get("generate"), index);
+                    synthesiser->generateCode(translationUnit->getSymbolTable(), *stratum,
+                            Global::config().get("generate"), index);
 
                     // check if this is a compile only
                 } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
                     // just compile, no execute
                     synthesiser->compileToBinary(translationUnit->getSymbolTable(), *stratum,
-                                    Global::config().get("dl-program"), index);
+                            Global::config().get("dl-program"), index);
                 } else {
                     // run compiled C++ program
                     synthesiser->executeBinary(translationUnit->getSymbolTable(), *stratum);

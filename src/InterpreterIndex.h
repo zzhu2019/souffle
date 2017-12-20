@@ -34,7 +34,8 @@ class InterpreterIndexOrder {
 public:
     // -- constructors --
 
-    InterpreterIndexOrder(const std::vector<unsigned char>& order = std::vector<unsigned char>()) : columns(order) {}
+    InterpreterIndexOrder(const std::vector<unsigned char>& order = std::vector<unsigned char>())
+            : columns(order) {}
 
     InterpreterIndexOrder(const InterpreterIndexOrder&) = default;
     InterpreterIndexOrder(InterpreterIndexOrder&&) = default;
@@ -176,7 +177,7 @@ public:
 
 private:
     const InterpreterIndexOrder theOrder;  // retain the index order used to construct an object of this class
-    index_set set;                 // set storing tuple pointers of table
+    index_set set;                         // set storing tuple pointers of table
 
 public:
     InterpreterIndex(const InterpreterIndexOrder& order) : theOrder(order), set(comparator(theOrder)) {}

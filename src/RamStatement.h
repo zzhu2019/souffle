@@ -60,8 +60,7 @@ class RamRelationStatement : public RamStatement {
 
 public:
     /** Creates a new statement targeting the given table */
-    RamRelationStatement(RamNodeType type, const RamRelation& r)
-            : RamStatement(type), relation(r) {}
+    RamRelationStatement(RamNodeType type, const RamRelation& r) : RamStatement(type), relation(r) {}
 
     /** Obtains a reference on the targeted relation */
     const RamRelation& getRelation() const {
@@ -272,8 +271,7 @@ class RamMerge : public RamStatement {
     RamRelation dest;
 
 public:
-    RamMerge(const RamRelation& d, const RamRelation& s)
-            : RamStatement(RN_Merge), src(s), dest(d) {
+    RamMerge(const RamRelation& d, const RamRelation& s) : RamStatement(RN_Merge), src(s), dest(d) {
         assert(src.getArity() == dest.getArity());
     }
 
@@ -451,8 +449,7 @@ class RamSwap : public RamStatement {
     RamRelation second;
 
 public:
-    RamSwap(const RamRelation& f, const RamRelation& s)
-            : RamStatement(RN_Swap), first(f), second(s) {
+    RamSwap(const RamRelation& f, const RamRelation& s) : RamStatement(RN_Swap), first(f), second(s) {
         assert(first.getArity() == second.getArity());
     }
 

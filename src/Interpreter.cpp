@@ -18,19 +18,19 @@
 #include "AstRelation.h"
 #include "AstTranslator.h"
 #include "AstVisitor.h"
+#include "AutoIndex.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
 #include "IOSystem.h"
-#include "Macro.h"
-#include "AutoIndex.h"
+#include "InterpreterRecords.h"
 #include "Logger.h"
+#include "Macro.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"
 #include "TypeSystem.h"
 #include "UnaryFunctorOps.h"
-#include "InterpreterRecords.h"
 
 #include <algorithm>
 #include <chrono>
