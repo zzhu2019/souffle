@@ -691,7 +691,7 @@ typedef unsigned Column;
 /**
  * A summary of statistical properties of a ram relation.
  */
-class RamRelationStats {
+class RelationStats {
     /** The arity - accurate */
     uint8_t arity;
 
@@ -705,23 +705,23 @@ class RamRelationStats {
     std::vector<uint64_t> cardinalities;
 
 public:
-    RamRelationStats() : arity(0), size(0), sample_size(0) {}
+    RelationStats() : arity(0), size(0), sample_size(0) {}
 
-    RamRelationStats(uint64_t size, const std::vector<uint64_t>& cards)
+    RelationStats(uint64_t size, const std::vector<uint64_t>& cards)
             : arity(cards.size()), size(size), sample_size(0), cardinalities(cards) {}
 
-    RamRelationStats(const RamRelationStats&) = default;
-    RamRelationStats(RamRelationStats&&) = default;
+    RelationStats(const RelationStats&) = default;
+    RelationStats(RelationStats&&) = default;
 
-    RamRelationStats& operator=(const RamRelationStats&) = default;
-    RamRelationStats& operator=(RamRelationStats&&) = default;
+    RelationStats& operator=(const RelationStats&) = default;
+    RelationStats& operator=(RelationStats&&) = default;
 
     /**
      * A factory function extracting statistical information form the given relation
      * base on a given sample size. If the sample size is not specified, the full
      * relation will be processed.
      */
-    static RamRelationStats extractFrom(
+    static RelationStats extractFrom(
             const InterpreterRelation& rel, uint32_t sample_size = std::numeric_limits<uint32_t>::max());
 
     uint8_t getArity() const {
@@ -747,7 +747,7 @@ public:
         out << cardinalities;
     }
 
-    friend std::ostream& operator<<(std::ostream& out, const RamRelationStats& stats) {
+    friend std::ostream& operator<<(std::ostream& out, const RelationStats& stats) {
         stats.print(out);
         return out;
     }

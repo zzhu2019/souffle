@@ -1050,7 +1050,7 @@ const QueryExecutionStrategy ScheduledExecution = [](
     return ExecutionSummary({order, runtime});
 };
 
-RamRelationStats RamRelationStats::extractFrom(const InterpreterRelation& rel, uint32_t sample_size) {
+RelationStats RelationStats::extractFrom(const InterpreterRelation& rel, uint32_t sample_size) {
     // write each column in its own set
     std::vector<btree_set<RamDomain>> columns(rel.getArity());
 
@@ -1066,7 +1066,7 @@ RamRelationStats RamRelationStats::extractFrom(const InterpreterRelation& rel, u
     }
 
     // create the resulting statistics object
-    RamRelationStats stats;
+    RelationStats stats;
 
     stats.arity = rel.getArity();
     stats.size = rel.size();
