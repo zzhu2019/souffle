@@ -131,28 +131,29 @@ bool useNoIndex() {
     return flag;
 }
 
+
 // Static wrapper to get relation names without going directly though the CPPIdentifierMap.
-static const std::string getRelationName(const RamRelationIdentifier& rel) {
+static const std::string getRelationName(const RamRelation& rel) {
     return "rel_" + CPPIdentifierMap::getIdentifier(rel.getName());
 }
 
 // Static wrapper to get op context names without going directly though the CPPIdentifierMap.
-static const std::string getOpContextName(const RamRelationIdentifier& rel) {
+static const std::string getOpContextName(const RamRelation& rel) {
     return getRelationName(rel) + "_op_ctxt";
 }
 
 class IndexMap {
-    typedef std::map<RamRelationIdentifier, RamAutoIndex> data_t;
+    typedef std::map<RamRelation, RamAutoIndex> data_t;
     typedef typename data_t::iterator iterator;
 
-    std::map<RamRelationIdentifier, RamAutoIndex> data;
+    std::map<RamRelation, RamAutoIndex> data;
 
 public:
-    RamAutoIndex& operator[](const RamRelationIdentifier& rel) {
+    RamAutoIndex& operator[](const RamRelation& rel) {
         return data[rel];
     }
 
-    const RamAutoIndex& operator[](const RamRelationIdentifier& rel) const {
+    const RamAutoIndex& operator[](const RamRelation& rel) const {
         const static RamAutoIndex empty;
         auto pos = data.find(rel);
         return (pos != data.end()) ? pos->second : empty;
@@ -168,7 +169,7 @@ public:
 };
 
 std::string getRelationType(
-        const RamRelationIdentifier& rel, std::size_t arity, const RamAutoIndex& indices) {
+        const RamRelation& rel, std::size_t arity, const RamAutoIndex& indices) {
     std::stringstream res;
     res << "ram::Relation";
     res << "<";
@@ -214,8 +215,8 @@ std::string toIndex(SearchColumns key) {
     return tmp.str();
 }
 
-std::set<RamRelationIdentifier> getReferencedRelations(const RamOperation& op) {
-    std::set<RamRelationIdentifier> res;
+std::set<RamRelation> getReferencedRelations(const RamOperation& op) {
+    std::set<RamRelation> res;
     visitDepthFirst(op, [&](const RamNode& node) {
         if (auto scan = dynamic_cast<const RamScan*>(&node)) {
             res.insert(scan->getRelation());
@@ -332,11 +333,11 @@ public:
     void visitInsert(const RamInsert& insert, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
         // enclose operation with a check for an empty relation
-        std::set<RamRelationIdentifier> input_relations;
+        std::set<RamRelation> input_relations;
         visitDepthFirst(insert, [&](const RamScan& scan) { input_relations.insert(scan.getRelation()); });
         if (!input_relations.empty()) {
             out << "if (" << join(input_relations, "&&", [&](std::ostream& out,
-                                                                 const RamRelationIdentifier& rel) {
+                                                                 const RamRelation& rel) {
                 out << "!" << getRelationName(rel) << "->"
                     << "empty()";
             }) << ") ";
@@ -377,7 +378,7 @@ public:
         }
 
         // create operation contexts for this operation
-        for (const RamRelationIdentifier& rel : getReferencedRelations(insert.getOperation())) {
+        for (const RamRelation& rel : getReferencedRelations(insert.getOperation())) {
             // TODO (#467): this causes bugs for subprogram compilation for record types if artificial
             // dependencies are introduces in the precedence graph
             out << "CREATE_OP_CONTEXT(" << getOpContextName(rel) << "," << getRelationName(rel) << "->"
@@ -398,7 +399,7 @@ public:
         }
         if (Global::config().has("profile")) {
             // get target relation
-            RamRelationIdentifier rel;
+            RamRelation rel;
             visitDepthFirst(insert, [&](const RamProject& project) { rel = project.getRelation(); });
 
             // build log message
@@ -426,11 +427,6 @@ public:
 
     void visitMerge(const RamMerge& merge, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
-        if (merge.getTargetRelation().isEqRel()) {
-            out << getRelationName(merge.getSourceRelation()) << "->"
-                << "extend("
-                << "*" << getRelationName(merge.getTargetRelation()) << ");\n";
-        }
         out << getRelationName(merge.getTargetRelation()) << "->"
             << "insertAll("
             << "*" << getRelationName(merge.getSourceRelation()) << ");\n";
@@ -1195,7 +1191,7 @@ public:
     // -- subroutine argument --
 
     void visitArgument(const RamArgument& arg, std::ostream& out) override {
-        out << "args[" << arg.getNumber() << "]";
+        out << "(*args)[" << arg.getNumber() << "]";
     }
 
     // -- subroutine return --
@@ -1590,8 +1586,8 @@ std::string RamSynthesiser::generateCode(const SymbolTable& symTable, const RamP
     // TODO: generate code for subroutines
     if (Global::config().has("provenance")) {
         // generate subroutine adapter
-        os << "void executeSubroutine(std::string name, const std::vector<RamDomain>& args, "
-              "std::vector<RamDomain>& ret, std::vector<bool>& err) override {\n";
+        os << "void executeSubroutine(std::string name, const std::vector<RamDomain>* args, "
+              "std::vector<RamDomain>* ret, std::vector<bool>* err) override {\n";
 
         // subroutine number
         size_t subroutineNum = 0;
@@ -1609,11 +1605,12 @@ std::string RamSynthesiser::generateCode(const SymbolTable& symTable, const RamP
         for (auto& sub : prog.getSubroutines()) {
             // method header
             os << "void "
-               << "subproof_" << subroutineNum << "(const std::vector<RamDomain>& args, "
-                                                  "std::vector<RamDomain>& ret, std::vector<bool>& err) {\n";
+               << "subproof_" << subroutineNum << "(const std::vector<RamDomain>* args, "
+                                                  "std::vector<RamDomain>* ret, std::vector<bool>* err) {\n";
 
+            const RamStatement * stmt = sub.second;
             // generate code for body
-            genCode(os, *sub.second, indices);
+            genCode(os, *stmt, indices);
 
             os << "return;\n";
             os << "}\n";  // end of subroutine
@@ -1761,8 +1758,5 @@ std::string RamSynthesiser::executeBinary(const SymbolTable& symTable, const Ram
     return sourceFilename;
 }
 
-void RamSynthesiser::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
-    executeBinary(env.getSymbolTable(), prog);
-}
 
 }  // end of namespace souffle

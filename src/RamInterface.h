@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "RamExecutor.h"
+#include "RamInterpreter.h"
 #include "RamRelation.h"
 #include "SouffleInterface.h"
 
@@ -26,7 +26,7 @@ namespace souffle {
 
 class RamRelationInterface : public Relation {
 private:
-    RamRelation& ramRelation;
+    InterpreterRelation& ramRelation;
     SymbolTable& symTable;
     std::string name;
     std::vector<std::string> types;
@@ -37,11 +37,11 @@ protected:
     class iterator_base : public Relation::iterator_base {
     private:
         const RamRelationInterface* ramRelationInterface;
-        RamRelation::iterator it;
+        InterpreterRelation::iterator it;
         tuple tup;
 
     public:
-        iterator_base(uint32_t arg_id, const RamRelationInterface* r, RamRelation::iterator i)
+        iterator_base(uint32_t arg_id, const RamRelationInterface* r, InterpreterRelation::iterator i)
                 : Relation::iterator_base(arg_id), ramRelationInterface(r), it(i), tup(r) {}
         virtual ~iterator_base() {}
 
@@ -58,7 +58,7 @@ protected:
     };
 
 public:
-    RamRelationInterface(RamRelation& r, SymbolTable& s, std::string n, std::vector<std::string> t,
+    RamRelationInterface(InterpreterRelation& r, SymbolTable& s, std::string n, std::vector<std::string> t,
             std::vector<std::string> an, uint32_t i)
             : ramRelation(r), symTable(s), name(n), types(t), attrNames(an), id(i) {}
     virtual ~RamRelationInterface() {}
@@ -92,13 +92,13 @@ public:
 class SouffleInterpreterInterface : public SouffleProgram {
 private:
     RamProgram& prog;
-    RamExecutor& exec;
-    RamEnvironment& env;
+    RamInterpreter& exec;
+    InterpreterEnvironment& env;
     SymbolTable& symTable;
     std::vector<RamRelationInterface*> interfaces;
 
 public:
-    SouffleInterpreterInterface(RamProgram& p, RamExecutor& e, RamEnvironment& r, SymbolTable& s)
+    SouffleInterpreterInterface(RamProgram& p, RamInterpreter& e, InterpreterEnvironment& r, SymbolTable& s)
             : prog(p), exec(e), env(r), symTable(s) {
         uint32_t id = 0;
         for (auto& rel_pair : r.getRelationMap()) {

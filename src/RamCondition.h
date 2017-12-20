@@ -142,7 +142,7 @@ public:
 /** check whether a tuple (pattern) does not exist in a relation */
 class RamNotExists : public RamCondition {
     /** the relation to be accessed */
-    RamRelationIdentifier relation;
+    RamRelation relation;
 
     /** the restricted fields -- null if undefined */
     std::vector<std::unique_ptr<RamValue>> values;
@@ -154,12 +154,12 @@ class RamNotExists : public RamCondition {
     mutable std::string indexRelationName;
 
 public:
-    RamNotExists(const RamRelationIdentifier& rel)
+    RamNotExists(const RamRelation& rel)
             : RamCondition(RN_NotExists), relation(rel), index(nullptr) {}
 
     ~RamNotExists() override = default;
 
-    const RamRelationIdentifier& getRelation() const {
+    const RamRelation& getRelation() const {
         return relation;
     }
 
@@ -245,14 +245,14 @@ public:
 /** check whether a given relation is empty or not*/
 class RamEmpty : public RamCondition {
     /** the relation to be accessed */
-    RamRelationIdentifier relation;
+    RamRelation relation;
 
 public:
-    RamEmpty(const RamRelationIdentifier& rel) : RamCondition(RN_Empty), relation(rel) {}
+    RamEmpty(const RamRelation& rel) : RamCondition(RN_Empty), relation(rel) {}
 
     ~RamEmpty() override = default;
 
-    const RamRelationIdentifier& getRelation() const {
+    const RamRelation& getRelation() const {
         return relation;
     }
 

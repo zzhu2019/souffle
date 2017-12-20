@@ -96,7 +96,6 @@ souffle_sources = \
               RamIndex.h                                \
               RamCondition.h                            \
               AstTranslator.cpp     AstTranslator.h     \
-              RamExecutor.h                             \
               RamInterpreter.cpp    RamInterpreter.h    \
               RamSynthesiser.cpp    RamSynthesiser.h    \
               RamStatement.h                            \

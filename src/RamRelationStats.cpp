@@ -15,12 +15,13 @@
  *
  ***********************************************************************/
 
+#include "RamInterpreter.h"
 #include "RamRelationStats.h"
 #include "BTree.h"
 
 namespace souffle {
 
-RamRelationStats RamRelationStats::extractFrom(const RamRelation& rel, uint32_t sample_size) {
+RamRelationStats RamRelationStats::extractFrom(const InterpreterRelation& rel, uint32_t sample_size) {
     // write each column in its own set
     std::vector<btree_set<RamDomain>> columns(rel.getArity());
 

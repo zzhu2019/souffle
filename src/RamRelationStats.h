@@ -61,7 +61,7 @@ public:
      * relation will be processed.
      */
     static RamRelationStats extractFrom(
-            const RamRelation& rel, uint32_t sample_size = std::numeric_limits<uint32_t>::max());
+            const InterpreterRelation& rel, uint32_t sample_size = std::numeric_limits<uint32_t>::max());
 
     uint8_t getArity() const {
         return arity;

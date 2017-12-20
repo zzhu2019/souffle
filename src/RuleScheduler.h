@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "RamInterpreter.h"
 #include "RamRelationStats.h"
 #include "Util.h"
 
