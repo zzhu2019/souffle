@@ -854,7 +854,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
 }
 }  // namespace
 
-void Interpreter::run(const RamProgram& prog, InterpreterEnvironment& env) const {
+void Interpreter::invoke(const RamProgram& prog, InterpreterEnvironment& env) const {
     SignalHandler::instance()->set();
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");

@@ -92,13 +92,13 @@ public:
 class SouffleInterpreterInterface : public SouffleProgram {
 private:
     RamProgram& prog;
-    RamInterpreter& exec;
+    Interpreter& exec;
     InterpreterEnvironment& env;
     SymbolTable& symTable;
     std::vector<InterpreterInterface*> interfaces;
 
 public:
-    SouffleInterpreterInterface(RamProgram& p, RamInterpreter& e, InterpreterEnvironment& r, SymbolTable& s)
+    SouffleInterpreterInterface(RamProgram& p, Interpreter& e, InterpreterEnvironment& r, SymbolTable& s)
             : prog(p), exec(e), env(r), symTable(s) {
         uint32_t id = 0;
         for (auto& rel_pair : r.getRelationMap()) {

@@ -775,7 +775,7 @@ public:
      */
     std::unique_ptr<InterpreterEnvironment> execute(SymbolTable& table, const RamProgram& prog) const {
         auto env = std::make_unique<InterpreterEnvironment>(table);
-        run(prog, *env);
+        invoke(prog, *env);
         return env;
     }
 
@@ -788,7 +788,7 @@ public:
             : report(nullptr), queryStrategy(queryStrategy) {}
 
     /** run the program for a given interpreter environment */
-    void run(const RamProgram& prog, InterpreterEnvironment& env) const;
+    void invoke(const RamProgram& prog, InterpreterEnvironment& env) const;
 
     /**
      * Runs a subroutine of a RamProgram

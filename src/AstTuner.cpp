@@ -122,7 +122,7 @@ bool AutoScheduleTransformer::autotune(AstTranslationUnit& translationUnit, std:
     souffle::SymbolTable table = translationUnit.getSymbolTable();
 
     // create interpreter instance
-    RamInterpreter interpreter(profiler);
+    Interpreter interpreter(profiler);
 
     if (report && verbose) {
         SplitStream splitStream(report, &std::cout);
