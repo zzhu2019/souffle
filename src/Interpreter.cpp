@@ -30,6 +30,7 @@
 #include "SignalHandler.h"
 #include "TypeSystem.h"
 #include "UnaryFunctorOps.h"
+#include "InterpreterRecords.h"
 
 #include <algorithm>
 #include <chrono>

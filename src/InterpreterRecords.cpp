@@ -8,13 +8,13 @@
 
 /************************************************************************
  *
- * @file RamRecords.cpp
+ * @file InterpreterRecords.cpp
  *
  * Utilities for handling records in the interpreter
  *
  ***********************************************************************/
 
-#include "RamRecords.h"
+#include "InterpreterRecords.h"
 #include "Util.h"
 
 #include <iostream>

@@ -104,7 +104,7 @@ souffle_sources = \
               AutoIndex.cpp         AutoIndex.h         \
               RamOperation.cpp      RamOperation.h      \
               RamProgram.h                              \
-              RamRecords.cpp        RamRecords.h        \
+              InterpreterRecords.cpp InterpreterRecords.h \
               RamRelation.h                             \
               RamVisitor.h                              \
               RuleScheduler.h                           \
