@@ -406,10 +406,10 @@ int main(int argc, char** argv) {
         // ------- interpreter -------------
 
         // configure interpreter
-        std::unique_ptr<RamInterpreter> interpreter =
+        std::unique_ptr<Interpreter> interpreter =
                 (Global::config().has("auto-schedule"))
-                        ? std::unique_ptr<RamInterpreter>(new RamInterpreter(ScheduledExecution))
-                        : std::unique_ptr<RamInterpreter>(new RamInterpreter(DirectExecution));
+                        ? std::unique_ptr<Interpreter>(new Interpreter(ScheduledExecution))
+                        : std::unique_ptr<Interpreter>(new Interpreter(DirectExecution));
         std::unique_ptr<InterpreterEnvironment> env =
                 interpreter->execute(translationUnit->getSymbolTable(), *ramProg);
 
