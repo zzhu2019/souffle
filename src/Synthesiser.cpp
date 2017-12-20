@@ -423,6 +423,11 @@ public:
 
     void visitMerge(const RamMerge& merge, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
+        if (merge.getTargetRelation().isEqRel()) {
+            out << getRelationName(merge.getSourceRelation()) << "->"
+                << "extend("
+                << "*" << getRelationName(merge.getTargetRelation()) << ");\n";
+        }
         out << getRelationName(merge.getTargetRelation()) << "->"
             << "insertAll("
             << "*" << getRelationName(merge.getSourceRelation()) << ");\n";
@@ -1604,9 +1609,8 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
                << "subproof_" << subroutineNum << "(const std::vector<RamDomain>* args, "
                                                   "std::vector<RamDomain>* ret, std::vector<bool>* err) {\n";
 
-            const RamStatement* stmt = sub.second;
             // generate code for body
-            genCode(os, *stmt, indices);
+            genCode(os, *sub.second, indices);
 
             os << "return;\n";
             os << "}\n";  // end of subroutine
