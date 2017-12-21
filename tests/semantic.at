@@ -18,6 +18,7 @@ m4_define([TEST_EVAL_SQLITE3],[
   m4_define([FACTS],[TESTDIR/$3])
   m4_define([EXPECTEDDIR], [TESTDIR$4])
   # invoke souffle
+  cp TESTDIR/*sqlite.input . || true
   AT_CHECK(["$SOUFFLE" FLAGS -D. -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [0])
   SORTED_SAME_FILES([*.csv],[EXPECTEDDIR])
   # compare all other output files without sorting
