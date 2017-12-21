@@ -17,7 +17,6 @@
 #pragma once
 
 #include "RamCondition.h"
-#include "RamIndex.h"
 #include "RamNode.h"
 #include "RamRelation.h"
 
@@ -119,7 +118,7 @@ public:
 class RamScan : public RamSearch {
 protected:
     /** the targeted relation */
-    RamRelationIdentifier relation;
+    RamRelation relation;
 
     /** Values of index per column of table (if indexable) */
     std::vector<std::unique_ptr<RamValue>> queryPattern;
@@ -136,19 +135,16 @@ protected:
      */
     bool pureExistenceCheck;
 
-    /** A reference to the utilized index */
-    mutable RamIndex* index;
-
 public:
     /** constructs a scan operation on the given relation with the given nested operation */
-    RamScan(const RamRelationIdentifier& r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck)
+    RamScan(const RamRelation& r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck)
             : RamSearch(RN_Scan, std::move(nested)), relation(r), queryPattern(r.getArity()), keys(0),
-              pureExistenceCheck(pureExistenceCheck), index(nullptr) {}
+              pureExistenceCheck(pureExistenceCheck) {}
 
     ~RamScan() override = default;
 
     /** Obtains the id of the relation scanned by this operation */
-    const RamRelationIdentifier& getRelation() const {
+    const RamRelation& getRelation() const {
         return relation;
     }
 
@@ -176,16 +172,6 @@ public:
     /** Marks this scan step as a pure existence check or not */
     void setPureExistenceCheck(bool value = true) {
         pureExistenceCheck = value;
-    }
-
-    /** Obtains the index utilized by this operation */
-    RamIndex* getIndex() const {
-        return index;
-    }
-
-    /** updates the index utilized by this operation */
-    void setIndex(RamIndex* index) const {
-        this->index = index;
     }
 
     /** print search */
@@ -252,7 +238,7 @@ private:
     std::unique_ptr<RamValue> value;
 
     /** The relation to be scanned */
-    RamRelationIdentifier relation;
+    RamRelation relation;
 
     /** The pattern for filtering relevant tuples */
     std::vector<std::unique_ptr<RamValue>> pattern;
@@ -260,15 +246,12 @@ private:
     /** the columns to be matched when using a range query */
     SearchColumns keys;
 
-    /** A reference to the utilized index */
-    mutable RamIndex* index;
-
 public:
     /** Creates a new instance based on the given parameters */
     RamAggregate(std::unique_ptr<RamOperation> nested, Function fun, std::unique_ptr<RamValue> value,
-            const RamRelationIdentifier& relation)
+            const RamRelation& relation)
             : RamSearch(RN_Aggregate, std::move(nested)), fun(fun), value(std::move(value)),
-              relation(relation), pattern(relation.getArity()), keys(0), index(nullptr) {}
+              relation(relation), pattern(relation.getArity()), keys(0) {}
 
     ~RamAggregate() override = default;
 
@@ -280,7 +263,7 @@ public:
         return value.get();
     }
 
-    const RamRelationIdentifier& getRelation() const {
+    const RamRelation& getRelation() const {
         return relation;
     }
 
@@ -299,16 +282,6 @@ public:
         return keys;
     }
 
-    /** Obtains the index utilized by this operation */
-    RamIndex* getIndex() const {
-        return index;
-    }
-
-    /** updates the index utilized by this operation */
-    void setIndex(RamIndex* index) const {
-        this->index = index;
-    }
-
     /** print search */
     void print(std::ostream& os, int tabpos) const override;
 };
@@ -317,21 +290,21 @@ public:
 class RamProject : public RamOperation {
 protected:
     /** relation */
-    RamRelationIdentifier relation;
+    RamRelation relation;
 
     /** a relation to check that the projected value is not present */
-    std::unique_ptr<RamRelationIdentifier> filter;
+    std::unique_ptr<RamRelation> filter;
 
     /* values for projection */
     std::vector<std::unique_ptr<RamValue>> values;
 
 public:
-    RamProject(const RamRelationIdentifier& relation, size_t level)
+    RamProject(const RamRelation& relation, size_t level)
             : RamOperation(RN_Project, level), relation(relation), filter(nullptr) {}
 
-    RamProject(const RamRelationIdentifier& relation, const RamRelationIdentifier& filter, size_t level)
+    RamProject(const RamRelation& relation, const RamRelation& filter, size_t level)
             : RamOperation(RN_Project, level), relation(relation),
-              filter(std::unique_ptr<RamRelationIdentifier>(new RamRelationIdentifier(filter))) {}
+              filter(std::unique_ptr<RamRelation>(new RamRelation(filter))) {}
 
     ~RamProject() override = default;
 
@@ -343,7 +316,7 @@ public:
     /** add condition to project, needed for different level check */
     void addCondition(std::unique_ptr<RamCondition> c, RamOperation* root) override;
 
-    const RamRelationIdentifier& getRelation() const {
+    const RamRelation& getRelation() const {
         return relation;
     }
 
@@ -351,7 +324,7 @@ public:
         return (bool)filter;
     }
 
-    const RamRelationIdentifier& getFilter() const {
+    const RamRelation& getFilter() const {
         assert(hasFilter());
         return *filter;
     }

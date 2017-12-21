@@ -56,15 +56,14 @@ public:
 
 class RamRelationStatement : public RamStatement {
     /** The referenced ram relation */
-    RamRelationIdentifier relation;
+    RamRelation relation;
 
 public:
     /** Creates a new statement targeting the given table */
-    RamRelationStatement(RamNodeType type, const RamRelationIdentifier& r)
-            : RamStatement(type), relation(r) {}
+    RamRelationStatement(RamNodeType type, const RamRelation& r) : RamStatement(type), relation(r) {}
 
     /** Obtains a reference on the targeted relation */
-    const RamRelationIdentifier& getRelation() const {
+    const RamRelation& getRelation() const {
         return relation;
     }
 
@@ -77,7 +76,7 @@ public:
 /** Creates a new relation */
 class RamCreate : public RamRelationStatement {
 public:
-    RamCreate(const RamRelationIdentifier& relation) : RamRelationStatement(RN_Create, relation) {}
+    RamCreate(const RamRelation& relation) : RamRelationStatement(RN_Create, relation) {}
 
     /** Pretty print statement */
     void print(std::ostream& os, int tabpos) const override {
@@ -101,7 +100,7 @@ protected:
     value_list values;
 
 public:
-    RamFact(const RamRelationIdentifier& rel, value_list&& values)
+    RamFact(const RamRelation& rel, value_list&& values)
             : RamRelationStatement(RN_Fact, rel), values(std::move(values)) {}
 
     ~RamFact() override = default;
@@ -132,7 +131,7 @@ public:
 /** Loads data from a file into a relation */
 class RamLoad : public RamRelationStatement {
 public:
-    RamLoad(const RamRelationIdentifier& relation) : RamRelationStatement(RN_Load, relation) {}
+    RamLoad(const RamRelation& relation) : RamRelationStatement(RN_Load, relation) {}
 
     /** Pretty print statement */
     void print(std::ostream& os, int tabpos) const override {
@@ -147,7 +146,7 @@ public:
 /** Dumps all data from a relation into file */
 class RamStore : public RamRelationStatement {
 public:
-    RamStore(const RamRelationIdentifier& relation) : RamRelationStatement(RN_Store, relation) {}
+    RamStore(const RamRelation& relation) : RamRelationStatement(RN_Store, relation) {}
 
     /** Pretty print statement */
     void print(std::ostream& os, int tabpos) const override {
@@ -165,7 +164,7 @@ public:
 /** Removes all tuples form a relation */
 class RamClear : public RamRelationStatement {
 public:
-    RamClear(const RamRelationIdentifier& rel) : RamRelationStatement(RN_Clear, rel) {}
+    RamClear(const RamRelation& rel) : RamRelationStatement(RN_Clear, rel) {}
 
     void print(std::ostream& os, int tabpos) const override {
         for (int i = 0; i < tabpos; ++i) {
@@ -179,7 +178,7 @@ public:
 /** drop table */
 class RamDrop : public RamRelationStatement {
 public:
-    RamDrop(const RamRelationIdentifier& rel) : RamRelationStatement(RN_Drop, rel) {}
+    RamDrop(const RamRelation& rel) : RamRelationStatement(RN_Drop, rel) {}
 
     void print(std::ostream& os, int tabpos) const override {
         for (int i = 0; i < tabpos; ++i) {
@@ -194,7 +193,7 @@ class RamLogSize : public RamRelationStatement {
     std::string txt;
 
 public:
-    RamLogSize(const RamRelationIdentifier& rel, const std::string& s)
+    RamLogSize(const RamRelation& rel, const std::string& s)
             : RamRelationStatement(RN_LogSize, rel), txt(s) {}
 
     const std::string& getLabel() const {
@@ -215,7 +214,7 @@ class RamPrintSize : public RamRelationStatement {
     std::string txt;
 
 public:
-    RamPrintSize(const RamRelationIdentifier& rel)
+    RamPrintSize(const RamRelation& rel)
             : RamRelationStatement(RN_PrintSize, rel), txt(rel.getName() + "\t") {}
 
     const std::string& getLabel() const {
@@ -268,19 +267,18 @@ public:
 
 /** copy tuples from a source table to a destination table. Uniquness is not checked */
 class RamMerge : public RamStatement {
-    RamRelationIdentifier src;
-    RamRelationIdentifier dest;
+    RamRelation src;
+    RamRelation dest;
 
 public:
-    RamMerge(const RamRelationIdentifier& d, const RamRelationIdentifier& s)
-            : RamStatement(RN_Merge), src(s), dest(d) {
+    RamMerge(const RamRelation& d, const RamRelation& s) : RamStatement(RN_Merge), src(s), dest(d) {
         assert(src.getArity() == dest.getArity());
     }
 
-    const RamRelationIdentifier& getSourceRelation() const {
+    const RamRelation& getSourceRelation() const {
         return src;
     }
-    const RamRelationIdentifier& getTargetRelation() const {
+    const RamRelation& getTargetRelation() const {
         return dest;
     }
 
@@ -447,12 +445,11 @@ public:
 
 /** Swap operation for temporary relations. */
 class RamSwap : public RamStatement {
-    RamRelationIdentifier first;
-    RamRelationIdentifier second;
+    RamRelation first;
+    RamRelation second;
 
 public:
-    RamSwap(const RamRelationIdentifier& f, const RamRelationIdentifier& s)
-            : RamStatement(RN_Swap), first(f), second(s) {
+    RamSwap(const RamRelation& f, const RamRelation& s) : RamStatement(RN_Swap), first(f), second(s) {
         assert(first.getArity() == second.getArity());
     }
 
@@ -465,10 +462,10 @@ public:
         os << "SWAP (" << first.getName() << ", " << second.getName() << ")";
     };
 
-    const RamRelationIdentifier& getFirstRelation() const {
+    const RamRelation& getFirstRelation() const {
         return first;
     }
-    const RamRelationIdentifier& getSecondRelation() const {
+    const RamRelation& getSecondRelation() const {
         return second;
     }
 

@@ -17,9 +17,8 @@
 #pragma once
 
 #include "BinaryFunctorOps.h"
-#include "RamIndex.h"
 #include "RamNode.h"
-#include "RamRecords.h"
+// #include "RamRecords.h"
 #include "RamRelation.h"
 #include "SymbolTable.h"
 #include "TernaryFunctorOps.h"

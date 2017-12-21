@@ -8,23 +8,22 @@
 
 /************************************************************************
  *
- * @file RamSynthesiser.cpp
+ * @file Synthesiser.cpp
  *
  * Implementation of the C++ synthesiser for RAM programs.
  *
  ***********************************************************************/
 
-#include "RamSynthesiser.h"
+#include "Synthesiser.h"
 #include "AstRelation.h"
 #include "AstVisitor.h"
+#include "AutoIndex.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
 #include "IOSystem.h"
+#include "Logger.h"
 #include "Macro.h"
-#include "RamAutoIndex.h"
-#include "RamData.h"
-#include "RamLogger.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"
@@ -132,28 +131,28 @@ bool useNoIndex() {
 }
 
 // Static wrapper to get relation names without going directly though the CPPIdentifierMap.
-static const std::string getRelationName(const RamRelationIdentifier& rel) {
+static const std::string getRelationName(const RamRelation& rel) {
     return "rel_" + CPPIdentifierMap::getIdentifier(rel.getName());
 }
 
 // Static wrapper to get op context names without going directly though the CPPIdentifierMap.
-static const std::string getOpContextName(const RamRelationIdentifier& rel) {
+static const std::string getOpContextName(const RamRelation& rel) {
     return getRelationName(rel) + "_op_ctxt";
 }
 
 class IndexMap {
-    typedef std::map<RamRelationIdentifier, RamAutoIndex> data_t;
+    typedef std::map<RamRelation, AutoIndex> data_t;
     typedef typename data_t::iterator iterator;
 
-    std::map<RamRelationIdentifier, RamAutoIndex> data;
+    std::map<RamRelation, AutoIndex> data;
 
 public:
-    RamAutoIndex& operator[](const RamRelationIdentifier& rel) {
+    AutoIndex& operator[](const RamRelation& rel) {
         return data[rel];
     }
 
-    const RamAutoIndex& operator[](const RamRelationIdentifier& rel) const {
-        const static RamAutoIndex empty;
+    const AutoIndex& operator[](const RamRelation& rel) const {
+        const static AutoIndex empty;
         auto pos = data.find(rel);
         return (pos != data.end()) ? pos->second : empty;
     }
@@ -167,8 +166,7 @@ public:
     }
 };
 
-std::string getRelationType(
-        const RamRelationIdentifier& rel, std::size_t arity, const RamAutoIndex& indices) {
+std::string getRelationType(const RamRelation& rel, std::size_t arity, const AutoIndex& indices) {
     std::stringstream res;
     res << "ram::Relation";
     res << "<";
@@ -214,8 +212,8 @@ std::string toIndex(SearchColumns key) {
     return tmp.str();
 }
 
-std::set<RamRelationIdentifier> getReferencedRelations(const RamOperation& op) {
-    std::set<RamRelationIdentifier> res;
+std::set<RamRelation> getReferencedRelations(const RamOperation& op) {
+    std::set<RamRelation> res;
     visitDepthFirst(op, [&](const RamNode& node) {
         if (auto scan = dynamic_cast<const RamScan*>(&node)) {
             res.insert(scan->getRelation());
@@ -332,11 +330,10 @@ public:
     void visitInsert(const RamInsert& insert, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
         // enclose operation with a check for an empty relation
-        std::set<RamRelationIdentifier> input_relations;
+        std::set<RamRelation> input_relations;
         visitDepthFirst(insert, [&](const RamScan& scan) { input_relations.insert(scan.getRelation()); });
         if (!input_relations.empty()) {
-            out << "if (" << join(input_relations, "&&", [&](std::ostream& out,
-                                                                 const RamRelationIdentifier& rel) {
+            out << "if (" << join(input_relations, "&&", [&](std::ostream& out, const RamRelation& rel) {
                 out << "!" << getRelationName(rel) << "->"
                     << "empty()";
             }) << ") ";
@@ -377,7 +374,7 @@ public:
         }
 
         // create operation contexts for this operation
-        for (const RamRelationIdentifier& rel : getReferencedRelations(insert.getOperation())) {
+        for (const RamRelation& rel : getReferencedRelations(insert.getOperation())) {
             // TODO (#467): this causes bugs for subprogram compilation for record types if artificial
             // dependencies are introduces in the precedence graph
             out << "CREATE_OP_CONTEXT(" << getOpContextName(rel) << "," << getRelationName(rel) << "->"
@@ -398,7 +395,7 @@ public:
         }
         if (Global::config().has("profile")) {
             // get target relation
-            RamRelationIdentifier rel;
+            RamRelation rel;
             visitDepthFirst(insert, [&](const RamProject& project) { rel = project.getRelation(); });
 
             // build log message
@@ -553,7 +550,7 @@ public:
         out << "{\n";
 
         // create local timer
-        out << "\tRamLogger logger(R\"(" << timer.getLabel() << ")\",profile);\n";
+        out << "\tLogger logger(R\"(" << timer.getLabel() << ")\",profile);\n";
 
         // insert statement to be measured
         visit(timer.getNested(), out);
@@ -1195,7 +1192,7 @@ public:
     // -- subroutine argument --
 
     void visitArgument(const RamArgument& arg, std::ostream& out) override {
-        out << "args[" << arg.getNumber() << "]";
+        out << "(args)[" << arg.getNumber() << "]";
     }
 
     // -- subroutine return --
@@ -1235,7 +1232,7 @@ void genCode(std::ostream& out, const RamStatement& stmt, const IndexMap& indice
 }
 }  // namespace
 
-std::string RamSynthesiser::generateCode(const SymbolTable& symTable, const RamProgram& prog,
+std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProgram& prog,
         const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
@@ -1696,7 +1693,7 @@ std::string RamSynthesiser::generateCode(const SymbolTable& symTable, const RamP
     return sourceFilename;
 }
 
-std::string RamSynthesiser::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
+std::string Synthesiser::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
         const std::string& filename, const int index) const {
     // ---------------------------------------------------------------
     //                       Code Generation
@@ -1733,7 +1730,7 @@ std::string RamSynthesiser::compileToBinary(const SymbolTable& symTable, const R
     return sourceFilename;
 }
 
-std::string RamSynthesiser::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
+std::string Synthesiser::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
         const std::string& filename, const int index) const {
     // compile statement
     std::string sourceFilename = compileToBinary(symTable, prog, filename, index);
@@ -1759,10 +1756,6 @@ std::string RamSynthesiser::executeBinary(const SymbolTable& symTable, const Ram
         exit(result);
     }
     return sourceFilename;
-}
-
-void RamSynthesiser::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* /*data*/) const {
-    executeBinary(env.getSymbolTable(), prog);
 }
 
 }  // end of namespace souffle

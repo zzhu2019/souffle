@@ -30,13 +30,13 @@
 #endif
 #include "AstTranslator.h"
 #include "Global.h"
+#include "Interpreter.h"
+#include "InterpreterInterface.h"
 #include "ParserDriver.h"
 #include "PrecedenceGraph.h"
-#include "RamInterface.h"
-#include "RamInterpreter.h"
 #include "RamStatement.h"
-#include "RamSynthesiser.h"
 #include "SymbolTable.h"
+#include "Synthesiser.h"
 #include "Util.h"
 
 #include <chrono>
@@ -91,7 +91,8 @@ int main(int argc, char** argv) {
                     footer << "Version: " << PACKAGE_VERSION << "" << std::endl;
                     footer << "----------------------------------------------------------------------------"
                            << std::endl;
-                    footer << "Copyright (c) 2016 Oracle and/or its affiliates." << std::endl;
+                    footer << "Copyright (c) 2016-17 The Souffle Developers." << std::endl;
+                    footer << "Copyright (c) 2013-16 Oracle and/or its affiliates." << std::endl;
                     footer << "All rights reserved." << std::endl;
                     footer << "============================================================================"
                            << std::endl;
@@ -405,19 +406,19 @@ int main(int argc, char** argv) {
         // ------- interpreter -------------
 
         // configure interpreter
-        std::unique_ptr<RamExecutor> executor =
+        std::unique_ptr<Interpreter> interpreter =
                 (Global::config().has("auto-schedule"))
-                        ? std::unique_ptr<RamExecutor>(new RamInterpreter(ScheduledExecution))
-                        : std::unique_ptr<RamExecutor>(new RamInterpreter(DirectExecution));
-        std::unique_ptr<RamEnvironment> env = executor->execute(translationUnit->getSymbolTable(), *ramProg);
+                        ? std::unique_ptr<Interpreter>(new Interpreter(ScheduledExecution))
+                        : std::unique_ptr<Interpreter>(new Interpreter(DirectExecution));
+        std::unique_ptr<InterpreterEnvironment> env =
+                interpreter->execute(translationUnit->getSymbolTable(), *ramProg);
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
-        if (Global::config().has("provenance") && dynamic_cast<RamInterpreter*>(executor.get()) &&
-                env != nullptr) {
+        if (Global::config().has("provenance") && env != nullptr) {
             // construct SouffleProgram from env
             SouffleInterpreterInterface interface(
-                    *ramProg, *executor, *env, translationUnit->getSymbolTable());
+                    *ramProg, *interpreter, *env, translationUnit->getSymbolTable());
 
             if (Global::config().get("provenance") == "1") {
                 explain(interface, true, false);
@@ -451,7 +452,6 @@ int main(int argc, char** argv) {
                     os, fileExtension(Global::config().get("stratify")));
         }
 
-        // pick executor
         /* Locate souffle-compile script */
         std::string compileCmd = ::findTool("souffle-compile", souffleExecutable, ".");
         /* Fail if a souffle-compile executable is not found */
@@ -461,32 +461,30 @@ int main(int argc, char** argv) {
         compileCmd += " ";
 
         int index = -1;
-        std::unique_ptr<RamExecutor> executor;
+        std::unique_ptr<Synthesiser> synthesiser;
         for (auto&& stratum : strata) {
             if (Global::config().has("stratify")) index++;
 
             // configure compiler
-            executor = std::unique_ptr<RamExecutor>(new RamSynthesiser(compileCmd));
+            synthesiser = std::unique_ptr<Synthesiser>(new Synthesiser(compileCmd));
             if (Global::config().has("verbose")) {
-                executor->setReportTarget(std::cout);
+                synthesiser->setReportTarget(std::cout);
             }
             try {
                 // check if this is code generation only
                 if (Global::config().has("generate")) {
                     // just generate, no compile, no execute
-                    static_cast<const RamSynthesiser*>(executor.get())
-                            ->generateCode(translationUnit->getSymbolTable(), *stratum,
-                                    Global::config().get("generate"), index);
+                    synthesiser->generateCode(translationUnit->getSymbolTable(), *stratum,
+                            Global::config().get("generate"), index);
 
                     // check if this is a compile only
                 } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
                     // just compile, no execute
-                    static_cast<const RamSynthesiser*>(executor.get())
-                            ->compileToBinary(translationUnit->getSymbolTable(), *stratum,
-                                    Global::config().get("dl-program"), index);
+                    synthesiser->compileToBinary(translationUnit->getSymbolTable(), *stratum,
+                            Global::config().get("dl-program"), index);
                 } else {
-                    // run executor
-                    executor->execute(translationUnit->getSymbolTable(), *stratum);
+                    // run compiled C++ program
+                    synthesiser->executeBinary(translationUnit->getSymbolTable(), *stratum);
                 }
 
             } catch (std::exception& e) {

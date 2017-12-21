@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file RamRecords.h
+ * @file InterpreterRecords.h
  *
  * Utilities for handling records in the interpreter
  *

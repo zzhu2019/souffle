@@ -18,8 +18,6 @@
 
 #include "RamOperation.h"
 #include "RamCondition.h"
-#include "RamIndex.h"
-#include "RamRecords.h"
 #include "RamRelation.h"
 
 #include <iostream>

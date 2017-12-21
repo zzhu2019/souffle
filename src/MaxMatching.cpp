@@ -13,7 +13,7 @@
  * Implements classes for the max matching calculation
  ***********************************************************************/
 
-#include "RamMaxMatching.h"
+#include "MaxMatching.h"
 
 namespace souffle {
 
@@ -22,7 +22,7 @@ namespace souffle {
  */
 
 /** implementation of bredth first search */
-bool RamMaxMatching::bfSearch() {
+bool MaxMatching::bfSearch() {
     SearchColumns u;
     std::queue<SearchColumns> bfQueue;
 
@@ -60,7 +60,7 @@ bool RamMaxMatching::bfSearch() {
 }
 
 /** implementation of depth first search */
-bool RamMaxMatching::dfSearch(SearchColumns u) {
+bool MaxMatching::dfSearch(SearchColumns u) {
     if (u != 0) {
         Edges& children = graph[u];
         for (Edges::iterator it = children.begin(); it != children.end(); ++it) {

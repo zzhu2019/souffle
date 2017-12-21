@@ -8,24 +8,24 @@
 
 /************************************************************************
  *
- * @file RamInterpreter.cpp
+ * @file Interpreter.cpp
  *
  * Implementation of the RAM interpreter.
  *
  ***********************************************************************/
 
-#include "RamInterpreter.h"
+#include "Interpreter.h"
 #include "AstRelation.h"
 #include "AstTranslator.h"
 #include "AstVisitor.h"
+#include "AutoIndex.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
 #include "IOSystem.h"
+#include "InterpreterRecords.h"
+#include "Logger.h"
 #include "Macro.h"
-#include "RamAutoIndex.h"
-#include "RamData.h"
-#include "RamLogger.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"
@@ -102,13 +102,13 @@ public:
 
 namespace {
 
-RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ctxt = EvalContext()) {
+RamDomain eval(const RamValue& value, InterpreterEnvironment& env, const EvalContext& ctxt = EvalContext()) {
     class Evaluator : public RamVisitor<RamDomain> {
-        RamEnvironment& env;
+        InterpreterEnvironment& env;
         const EvalContext& ctxt;
 
     public:
-        Evaluator(RamEnvironment& env, const EvalContext& ctxt) : env(env), ctxt(ctxt) {}
+        Evaluator(InterpreterEnvironment& env, const EvalContext& ctxt) : env(env), ctxt(ctxt) {}
 
         // -- basics --
         RamDomain visitNumber(const RamNumber& num) override {
@@ -286,17 +286,17 @@ RamDomain eval(const RamValue& value, RamEnvironment& env, const EvalContext& ct
     return Evaluator(env, ctxt)(value);
 }
 
-RamDomain eval(const RamValue* value, RamEnvironment& env, const EvalContext& ctxt = EvalContext()) {
+RamDomain eval(const RamValue* value, InterpreterEnvironment& env, const EvalContext& ctxt = EvalContext()) {
     return eval(*value, env, ctxt);
 }
 
-bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt = EvalContext()) {
+bool eval(const RamCondition& cond, InterpreterEnvironment& env, const EvalContext& ctxt = EvalContext()) {
     class Evaluator : public RamVisitor<bool> {
-        RamEnvironment& env;
+        InterpreterEnvironment& env;
         const EvalContext& ctxt;
 
     public:
-        Evaluator(RamEnvironment& env, const EvalContext& ctxt) : env(env), ctxt(ctxt) {}
+        Evaluator(InterpreterEnvironment& env, const EvalContext& ctxt) : env(env), ctxt(ctxt) {}
 
         // -- connectors operators --
 
@@ -311,7 +311,7 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
         }
 
         bool visitNotExists(const RamNotExists& ne) override {
-            const RamRelation& rel = env.getRelation(ne.getRelation());
+            const InterpreterRelation& rel = env.getRelation(ne.getRelation());
 
             // construct the pattern tuple
             auto arity = rel.getArity();
@@ -336,14 +336,8 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
             }
 
             // obtain index
-            auto idx = ne.getIndex();
-            auto idxRelationName = ne.getIndexRelationName();
-            if (idxRelationName != rel.getID().getName() || !idx) {
-                idx = rel.getIndex(ne.getKey());
-                ne.setIndex(idx);
-                ne.setIndexRelationName(rel.getID().getName());
-            }
-
+            auto idx = rel.getIndex(ne.getKey());
+            auto idxRelationName = rel.getID().getName();
             auto range = idx->lowerUpperBound(low, high);
             return range.first == range.second;  // if there are none => done
         }
@@ -428,13 +422,13 @@ bool eval(const RamCondition& cond, RamEnvironment& env, const EvalContext& ctxt
     return Evaluator(env, ctxt)(cond);
 }
 
-void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args = EvalContext()) {
+void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContext& args = EvalContext()) {
     class Interpreter : public RamVisitor<void> {
-        RamEnvironment& env;
+        InterpreterEnvironment& env;
         EvalContext& ctxt;
 
     public:
-        Interpreter(RamEnvironment& env, EvalContext& ctxt) : env(env), ctxt(ctxt) {}
+        Interpreter(InterpreterEnvironment& env, EvalContext& ctxt) : env(env), ctxt(ctxt) {}
 
         // -- Operations -----------------------------
 
@@ -451,7 +445,7 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
 
         void visitScan(const RamScan& scan) override {
             // get the targeted relation
-            const RamRelation& rel = env.getRelation(scan.getRelation());
+            const InterpreterRelation& rel = env.getRelation(scan.getRelation());
 
             // process full scan if no index is given
             if (scan.getRangeQueryColumns() == 0) {
@@ -485,11 +479,7 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
             }
 
             // obtain index
-            auto idx = scan.getIndex();
-            if (!idx || rel.getID().isTemp()) {
-                idx = rel.getIndex(scan.getRangeQueryColumns(), idx);
-                scan.setIndex(idx);
-            }
+            auto idx = rel.getIndex(scan.getRangeQueryColumns(), nullptr);
 
             // get iterator range
             auto range = idx->lowerUpperBound(low, hig);
@@ -532,7 +522,7 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
 
         void visitAggregate(const RamAggregate& aggregate) override {
             // get the targeted relation
-            const RamRelation& rel = env.getRelation(aggregate.getRelation());
+            const InterpreterRelation& rel = env.getRelation(aggregate.getRelation());
 
             // initialize result
             RamDomain res = 0;
@@ -570,11 +560,7 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
             }
 
             // obtain index
-            auto idx = aggregate.getIndex();
-            if (!idx) {
-                idx = rel.getIndex(aggregate.getRangeQueryColumns());
-                aggregate.setIndex(idx);
-            }
+            auto idx = rel.getIndex(aggregate.getRangeQueryColumns());
 
             // get iterator range
             auto range = idx->lowerUpperBound(low, hig);
@@ -684,18 +670,18 @@ void apply(const RamOperation& op, RamEnvironment& env, const EvalContext& args 
     Interpreter(env, ctxt).visit(op);
 }
 
-void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostream* profile,
-        const RamStatement& stmt, RamEnvironment& env, RamData* data) {
+void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostream* profile,
+        const RamStatement& stmt, InterpreterEnvironment& env) {
     class Interpreter : public RamVisitor<bool> {
-        RamEnvironment& env;
+        InterpreterEnvironment& env;
         const QueryExecutionStrategy& queryExecutor;
         std::ostream* report;
         std::ostream* profile;
 
     public:
-        Interpreter(RamEnvironment& env, const QueryExecutionStrategy& executor, std::ostream* report,
-                std::ostream* profile, RamData* data)
-                : env(env), queryExecutor(executor), report(report), profile(profile) {}
+        Interpreter(InterpreterEnvironment& env, const QueryExecutionStrategy& strategy, std::ostream* report,
+                std::ostream* profile)
+                : env(env), queryExecutor(strategy), report(report), profile(profile) {}
 
         // -- Statements -----------------------------
 
@@ -745,7 +731,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
         }
 
         bool visitLogTimer(const RamLogTimer& timer) override {
-            RamLogger logger(timer.getLabel().c_str(), *profile);
+            Logger logger(timer.getLabel().c_str(), *profile);
             return visit(timer.getNested());
         }
 
@@ -785,7 +771,7 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 
         bool visitLoad(const RamLoad& load) override {
             try {
-                RamRelation& relation = env.getRelation(load.getRelation());
+                InterpreterRelation& relation = env.getRelation(load.getRelation());
                 std::unique_ptr<ReadStream> reader = IOSystem::getInstance().getReader(
                         load.getRelation().getSymbolMask(), env.getSymbolTable(),
                         load.getRelation().getInputDirectives(), Global::config().has("provenance"));
@@ -833,8 +819,8 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
 
         bool visitMerge(const RamMerge& merge) override {
             // get involved relation
-            RamRelation& src = env.getRelation(merge.getSourceRelation());
-            RamRelation& trg = env.getRelation(merge.getTargetRelation());
+            InterpreterRelation& src = env.getRelation(merge.getSourceRelation());
+            InterpreterRelation& trg = env.getRelation(merge.getTargetRelation());
 
             if (trg.getID().isEqRel()) {
                 // expand src with the new knowledge generated by insertion.
@@ -864,11 +850,11 @@ void run(const QueryExecutionStrategy& executor, std::ostream* report, std::ostr
     };
 
     // create and run interpreter
-    Interpreter(env, executor, report, profile, data).visit(stmt);
+    Interpreter(env, strategy, report, profile).visit(stmt);
 }
 }  // namespace
 
-void RamInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, RamData* data) const {
+void Interpreter::invoke(const RamProgram& prog, InterpreterEnvironment& env) const {
     SignalHandler::instance()->set();
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
@@ -878,9 +864,9 @@ void RamInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, RamDat
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
         os << "@start-debug\n";
-        run(queryStrategy, report, &os, *(prog.getMain()), env, data);
+        run(queryStrategy, report, &os, *(prog.getMain()), env);
     } else {
-        run(queryStrategy, report, nullptr, *(prog.getMain()), env, data);
+        run(queryStrategy, report, nullptr, *(prog.getMain()), env);
     }
     SignalHandler::instance()->reset();
 }
@@ -888,7 +874,7 @@ void RamInterpreter::applyOn(const RamProgram& prog, RamEnvironment& env, RamDat
 /**
  * Runs a subroutine of a RamProgram
  */
-void RamInterpreter::executeSubroutine(RamEnvironment& env, const RamStatement& stmt,
+void Interpreter::executeSubroutine(InterpreterEnvironment& env, const RamStatement& stmt,
         const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
         std::vector<bool>& returnErrors) const {
     EvalContext ctxt;
@@ -905,7 +891,7 @@ namespace {
 
 using namespace scheduler;
 
-Order scheduleByModel(AstClause& clause, RamEnvironment& env, std::ostream* report) {
+Order scheduleByModel(AstClause& clause, InterpreterEnvironment& env, std::ostream* report) {
     assert(!clause.isFact());
 
     // check whether schedule is fixed
@@ -1000,7 +986,7 @@ Order scheduleByModel(AstClause& clause, RamEnvironment& env, std::ostream* repo
 
 /** With this strategy queries will be processed as they are stated by the user */
 const QueryExecutionStrategy DirectExecution = [](
-        const RamInsert& insert, RamEnvironment& env, std::ostream*) -> ExecutionSummary {
+        const RamInsert& insert, InterpreterEnvironment& env, std::ostream*) -> ExecutionSummary {
     // measure the time
     auto start = now();
 
@@ -1015,7 +1001,7 @@ const QueryExecutionStrategy DirectExecution = [](
 
 /** With this strategy queries will be dynamically rescheduled before each execution */
 const QueryExecutionStrategy ScheduledExecution = [](
-        const RamInsert& insert, RamEnvironment& env, std::ostream* report) -> ExecutionSummary {
+        const RamInsert& insert, InterpreterEnvironment& env, std::ostream* report) -> ExecutionSummary {
 
     // Report scheduling
     // TODO: only re-schedule atoms (avoid cloning entire clause)
@@ -1063,5 +1049,52 @@ const QueryExecutionStrategy ScheduledExecution = [](
 
     return ExecutionSummary({order, runtime});
 };
+
+RelationStats RelationStats::extractFrom(const InterpreterRelation& rel, uint32_t sample_size) {
+    // write each column in its own set
+    std::vector<btree_set<RamDomain>> columns(rel.getArity());
+
+    // analyze sample
+    uint32_t count = 0;
+    for (auto it = rel.begin(); it != rel.end() && count < sample_size; ++it, ++count) {
+        const RamDomain* tuple = *it;
+
+        // compute cardinality of columns
+        for (std::size_t i = 0; i < rel.getArity(); ++i) {
+            columns[i].insert(tuple[i]);
+        }
+    }
+
+    // create the resulting statistics object
+    RelationStats stats;
+
+    stats.arity = rel.getArity();
+    stats.size = rel.size();
+    stats.sample_size = count;
+
+    for (std::size_t i = 0; i < rel.getArity(); i++) {
+        // estimate the cardinality of the columns
+        uint64_t card = 0;
+        if (count > 0) {
+            // based on the observed probability
+            uint64_t cur = columns[i].size();
+            double p = ((double)cur / (double)count);
+
+            // obtain an estimate of the overall cardinality
+            card = (uint64_t)(p * rel.size());
+
+            // make sure that it is at least what you have seen
+            if (card < cur) {
+                card = cur;
+            }
+        }
+
+        // add result
+        stats.cardinalities.push_back(card);
+    }
+
+    // done
+    return stats;
+}
 
 }  // end of namespace souffle
