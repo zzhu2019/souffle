@@ -28,13 +28,16 @@ namespace test {
 
 TEST(Ast, CloneAndEquals) {
     // TODO: add test for records
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
 
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                  .decl r(a:number,b:number,c:number,d:number)
                  r(X,Y,Z,W) :- a(X), 10 = Y, Y = Z, 8 + W = 12 + 14. 
-            )");
+            )", sym, e, d);
     AstProgram& program = *tu->getProgram();
 
     EXPECT_EQ(program, program);
@@ -49,12 +52,15 @@ TEST(Ast, CloneAndEquals) {
 TEST(AstUtils, Const) {
     // TODO: add test for records
 
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                  .decl r(a:number,b:number,c:number,d:number)
                  r(X,Y,Z,W) :- a(X), 10 = Y, Y = Z, 8 + W = 12 + 14. 
-            )");
+            )", sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -120,6 +126,9 @@ TEST(AstUtils, Grounded) {
 }
 
 TEST(AstUtils, GroundedRecords) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                  .type N
@@ -131,7 +140,7 @@ TEST(AstUtils, GroundedRecords) {
 
                  s(x) :- r([x,y]). 
 
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -155,6 +164,9 @@ TEST(AstUtils, GroundedRecords) {
 }
 
 TEST(AstUtils, SimpleTypes) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
@@ -173,7 +185,7 @@ TEST(AstUtils, SimpleTypes) {
                  a(X) :- b(X).
                  a(X) :- b(Y).
 
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -198,6 +210,9 @@ TEST(AstUtils, SimpleTypes) {
 }
 
 TEST(AstUtils, NumericTypes) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
@@ -213,7 +228,7 @@ TEST(AstUtils, NumericTypes) {
                  b(X) :- X < 10.
                  u(X) :- X < 10.
 
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -232,6 +247,9 @@ TEST(AstUtils, NumericTypes) {
 }
 
 TEST(AstUtils, SubtypeChain) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
@@ -245,7 +263,7 @@ TEST(AstUtils, SubtypeChain) {
                 .decl R4(x:A) output
             
                 R4(x) :- R2(x,x),R1(x,x).
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -272,6 +290,9 @@ TEST(AstUtils, SubtypeChain) {
 }
 
 TEST(AstUtils, FactTypes) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
@@ -289,7 +310,7 @@ TEST(AstUtils, FactTypes) {
                  b(10).
                  u("World").
 
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -308,6 +329,9 @@ TEST(AstUtils, FactTypes) {
 }
 
 TEST(AstUtils, NestedFunctions) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
@@ -315,7 +339,7 @@ TEST(AstUtils, NestedFunctions) {
                 .decl r(x:D)
             
                 r(x) :- r(y), x=cat(cat(x,x),x).
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -329,6 +353,9 @@ TEST(AstUtils, NestedFunctions) {
 }
 
 TEST(AstUtils, GroundTermPropagation) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
@@ -336,7 +363,7 @@ TEST(AstUtils, GroundTermPropagation) {
                 .decl p(a:D,b:D)
 
                 p(a,b) :- p(x,y), r = [x,y], s = r, s = [w,v], [w,v] = [a,b].
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -357,6 +384,9 @@ TEST(AstUtils, GroundTermPropagation) {
 }
 
 TEST(AstUtils, GroundTermPropagation2) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
@@ -364,7 +394,7 @@ TEST(AstUtils, GroundTermPropagation2) {
                .decl p(a:D,b:D)
 
                p(a,b) :- p(x,y), x = y, x = a, y = b.
-           )");
+           )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -382,13 +412,16 @@ TEST(AstUtils, GroundTermPropagation2) {
 
 TEST(AstUtils, ResolveGroundedAliases) {
     // load some test program
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                 .type D
                 .decl p(a:D,b:D)
 
                 p(a,b) :- p(x,y), r = [x,y], s = r, s = [w,v], [w,v] = [a,b].
-            )");
+            )", sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -402,13 +435,16 @@ TEST(AstUtils, ResolveGroundedAliases) {
 
 TEST(AstUtils, ResolveAliasesWithTermsInAtoms) {
     // load some test program
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                 .type D
                 .decl p(a:D,b:D)
 
                 p(x,c) :- p(x,b), p(b,c), c = b+1, x=c+2.
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -424,6 +460,9 @@ TEST(AstUtils, ResolveAliasesWithTermsInAtoms) {
 }
 
 TEST(AstUtils, RemoveRelationCopies) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
@@ -439,7 +478,7 @@ TEST(AstUtils, RemoveRelationCopies) {
 
                 d(x,y) :- b(x,y), c(y,x).
 
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -451,6 +490,9 @@ TEST(AstUtils, RemoveRelationCopies) {
 }
 
 TEST(AstUtils, RemoveRelationCopiesOutput) {
+    SymbolTable sym;
+    ErrorReport e;
+    DebugReport d;
     // load some test program
     std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
@@ -466,7 +508,7 @@ TEST(AstUtils, RemoveRelationCopiesOutput) {
 
                 d(x,y) :- b(x,y), c(y,x).
 
-            )");
+            )",sym,e,d);
 
     AstProgram& program = *tu->getProgram();
 

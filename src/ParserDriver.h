@@ -30,6 +30,7 @@ class AstRelation;
 class AstType;
 class AstProgram;
 class SymbolTable;
+class DebugReport;
 
 typedef void* yyscan_t;
 
@@ -60,12 +61,12 @@ public:
 
     bool trace_scanning;
 
-    std::unique_ptr<AstTranslationUnit> parse(const std::string& f, FILE* in, bool nowarn = false);
-    std::unique_ptr<AstTranslationUnit> parse(const std::string& code, bool nowarn = false);
+    std::unique_ptr<AstTranslationUnit> parse(const std::string& f, FILE* in, SymbolTable &s, ErrorReport &e, DebugReport &d);
+    std::unique_ptr<AstTranslationUnit> parse(const std::string& code, SymbolTable &s, ErrorReport &e, DebugReport &d); 
     static std::unique_ptr<AstTranslationUnit> parseTranslationUnit(
-            const std::string& f, FILE* in, bool nowarn = false);
+            const std::string& f, FILE* in, SymbolTable &sym, ErrorReport &e, DebugReport &d);
     static std::unique_ptr<AstTranslationUnit> parseTranslationUnit(
-            const std::string& code, bool nowarn = false);
+            const std::string& code, SymbolTable &sym, ErrorReport &e, DebugReport &d);
 
     bool trace_parsing;
 
