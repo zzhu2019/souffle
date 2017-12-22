@@ -233,7 +233,7 @@ public:
         }
         for (const auto* x : dtorLooks) {
             quickInsert(x);
-            delete x;
+            delete[] x;
         }
     }
     /** insert a new tuple to table, possibly more than one tuple depending on relation type */
