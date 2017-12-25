@@ -69,6 +69,7 @@ public:
         os << " and ";
         rhs->print(os);
     }
+
     size_t getLevel() override {
         return std::max(lhs->getLevel(), rhs->getLevel());
     }
