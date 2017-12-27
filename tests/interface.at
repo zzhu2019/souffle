@@ -17,7 +17,7 @@ m4_define([TEST_EVAL_INTERFACE],[
   AT_CHECK(["$SOUFFLE" -D- -o $1 -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [0])
   # remove executable and re-build it from scratch
   AT_CHECK([rm $1 2>>TESTNAME.err],[0])
-  AT_CHECK(["$CXX" "-I$SOUFFLE_INC" $CXXFLAGS -D__EMBEDDED_SOUFFLE__ -o $1 TESTDIR/driver.cpp $1.cpp $LIBS 2>>TESTNAME.err],[0])
+  AT_CHECK(["$CXX" "-I$SOUFFLE_INC" $CXXFLAGS $CPPFLAGS -D__EMBEDDED_SOUFFLE__ -o $1 TESTDIR/driver.cpp $1.cpp $LIBS $LDFLAGS 2>>TESTNAME.err],[0])
   AT_CHECK([./$1 FACTS 1>TESTNAME.out 2>>TESTNAME.err], [0])
   SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
 ])
@@ -35,7 +35,7 @@ m4_define([TEST_EVAL_ERROR_INTERFACE],[
   AT_CHECK(["$SOUFFLE" -D- -g $1.cpp -F FACTS PROGRAM 1>TESTNAME.out 2>TESTNAME.err], [0])
   # remove executable and re-build it from scratch
   AT_CHECK([rm TESTNAME.err],[0])
-  AT_CHECK(["$CXX" "-I$SOUFFLE_INC" $CXXFLAGS -D__EMBEDDED_SOUFFLE__ -o $1 TESTDIR/driver.cpp $1.cpp $LIBS 2>>TESTNAME.err],[0])
+  AT_CHECK(["$CXX" "-I$SOUFFLE_INC" $CXXFLAGS $CPPFLAGS -D__EMBEDDED_SOUFFLE__ -o $1 TESTDIR/driver.cpp $1.cpp $LIBS $LDFLAGS 2>>TESTNAME.err],[0])
   AT_CHECK([rm TESTNAME.err],[0])
   AT_CHECK([./$1 FACTS 1>TESTNAME.out 2>>TESTNAME.err], [1])
   SAME_FILE([TESTNAME.out],[TESTDIR/TESTNAME.out])
