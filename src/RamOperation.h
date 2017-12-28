@@ -25,32 +25,40 @@
 
 namespace souffle {
 
-/** Abstract class for a relational algebra operation */
+/**
+ * Abstract class for a relational algebra operation 
+ */
 class RamOperation : public RamNode {
 protected:
+
     /** the nesting level of this operation */
     size_t level;
 
-    /** conditions that is checked for each obtained tuple */
+    /** 
+     * conditions that is checked for each obtained tuple 
+     *
+     * If condition is nullptr, then no condition applies
+     */
     std::unique_ptr<RamCondition> condition;
 
 public:
-    RamOperation(RamNodeType type, size_t l) : RamNode(type), level(l), condition(nullptr) {}
+    RamOperation(RamNodeType type, size_t l) : 
+        RamNode(type), level(l), condition(nullptr) {}
 
-    ~RamOperation() override = default;
-
-    /** obtains the level of this operation */
+    /** Get level */
+    // TODO: move to analysis
     size_t getLevel() const {
         return level;
     }
 
-    /** get depth of query */
+    /** Get depth */
+    // TODO: move to analysis 
     virtual size_t getDepth() const = 0;
 
-    /** Pretty print output to a given output stream */
+    /** Print */
     virtual void print(std::ostream& os, int tabpos) const = 0;
 
-    /** Pretty print node */
+    /** Pretty print */
     void print(std::ostream& os) const override {
         print(os, 0);
     }
@@ -63,22 +71,49 @@ public:
         addCondition(std::move(c), this);
     }
 
-    /** get the optional condition on this level */
+    /** Get condition */
     RamCondition* getCondition() const {
         return condition.get();
     }
 
-    /** Obtains a list of child nodes */
+    /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
         if (!condition) {
             return toVector<const RamNode*>();
         }
         return {condition.get()};
     }
+
+    /** Create clone */
+    RamOperation* clone() const override = 0;
+
+    /** Apply mapper */
+    void apply(const RamNodeMapper& map) override {
+        if (condition) { 
+           condition = map(std::move(condition));
+        }
+    }
+
+protected:    
+    /** Check equality */
+    bool equal(const RamNode& node) const override {
+        assert(dynamic_cast<const RamOperation*>(&node));
+        const RamOperation& other = static_cast<const RamOperation&>(node);
+        if(getCondition() != nullptr && other.getCondition() != nullptr) { 
+            return getCondition() == other.getCondition();
+        } else if(getCondition() == nullptr && other.getCondition() == nullptr) { 
+            return true;
+        } else {
+            return false;
+        }
+    }
 };
 
-/** Generic super type for scans and lookups */
+/** 
+ * Abstract class for scans and lookups 
+ */
 class RamSearch : public RamOperation {
+
     /** nested operation */
     std::unique_ptr<RamOperation> nestedOperation;
 
@@ -86,16 +121,9 @@ public:
     RamSearch(RamNodeType type, std::unique_ptr<RamOperation> nested)
             : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)) {}
 
-    ~RamSearch() override = default;
-
     /** get nested operation */
     RamOperation* getNestedOperation() const {
         return nestedOperation.get();
-    }
-
-    /** set nested operation */
-    void setNestedOperation(std::unique_ptr<RamOperation> o) {
-        nestedOperation.swap(o);
     }
 
     /** Add condition */
@@ -112,12 +140,34 @@ public:
         res.push_back(nestedOperation.get());
         return res;
     }
+
+    /** Apply mapper */
+    void apply(const RamNodeMapper& map) override {
+        RamOperation::apply(map);
+        if (condition) { 
+           nestedOperation = map(std::move(nestedOperation));
+        }
+    }
+
+protected:    
+    /** Check equality */
+    bool equal(const RamNode& node) const override {
+        assert(dynamic_cast<const RamOperation*>(&node));
+        const RamOperation& other = static_cast<const RamOperation&>(node);
+        if(getCondition() != nullptr && other.getCondition() != nullptr) { 
+            return getCondition() == other.getCondition();
+        } else if(getCondition() == nullptr && other.getCondition() == nullptr) { 
+            return true;
+        } else {
+            return false;
+        }
+    }
 };
 
 /** iterates of a table and checks conditions */
 class RamScan : public RamSearch {
 protected:
-    /** the targeted relation */
+    /** Search relation */
     RamRelation relation;
 
     /** Values of index per column of table (if indexable) */
@@ -140,8 +190,6 @@ public:
     RamScan(const RamRelation& r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck)
             : RamSearch(RN_Scan, std::move(nested)), relation(r), queryPattern(r.getArity()), keys(0),
               pureExistenceCheck(pureExistenceCheck) {}
-
-    ~RamScan() override = default;
 
     /** Obtains the id of the relation scanned by this operation */
     const RamRelation& getRelation() const {
@@ -167,11 +215,6 @@ public:
     /** Determines whether this scan step is merely checking the existence of some value */
     bool isPureExistenceCheck() const {
         return pureExistenceCheck;
-    }
-
-    /** Marks this scan step as a pure existence check or not */
-    void setPureExistenceCheck(bool value = true) {
-        pureExistenceCheck = value;
     }
 
     /** print search */

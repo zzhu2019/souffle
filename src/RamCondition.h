@@ -36,10 +36,12 @@ class RamCondition : public RamNode {
 public:
     RamCondition(RamNodeType type) : RamNode(type) {}
 
-    ~RamCondition() override = default;
-
     /** get level of condition */
     virtual size_t getLevel() = 0;
+
+    /** Create clone */
+    RamCondition* clone() const override = 0;
+
 };
 
 /** class for matching a string with a pattern */
@@ -77,6 +79,12 @@ public:
     /** Obtains a list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
         return {lhs.get(), rhs.get()};
+    }
+
+    /** Mutates this node */
+    void apply(const RamNodeMapper& map) override {
+        lhs = map(std::move(lhs));
+        rhs = map(std::move(rhs));
     }
 };
 
@@ -137,6 +145,11 @@ public:
     std::vector<const RamNode*> getChildNodes() const override {
         return {lhs.get(), rhs.get()};
     }
+    /** Mutates this node */
+    void apply(const RamNodeMapper& map) override {
+        lhs = map(std::move(lhs));
+        rhs = map(std::move(rhs));
+    }
 };
 
 /** check whether a tuple (pattern) does not exist in a relation */
@@ -149,8 +162,6 @@ class RamNotExists : public RamCondition {
 
 public:
     RamNotExists(const RamRelation& rel) : RamCondition(RN_NotExists), relation(rel) {}
-
-    ~RamNotExists() override = default;
 
     const RamRelation& getRelation() const {
         return relation;
@@ -193,6 +204,12 @@ public:
             res.push_back(cur.get());
         }
         return res;
+    }
+    /** Mutates this node */
+    void apply(const RamNodeMapper& map) override {
+        for (auto& val : values) {
+            val = map(std::move(val));
+        }
     }
 
     SearchColumns getKey() const {
@@ -240,6 +257,9 @@ public:
     /** Obtains a list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
         return std::vector<const RamNode*>();
+    }
+    /** Mutates this node */
+    void apply(const RamNodeMapper& map) override {
     }
 };
 
