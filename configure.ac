@@ -149,7 +149,7 @@ if test -n "$SOUFFLE_PACKAGING"; then
       # Check for bison
       AC_CHECK_PROG(LSB_RELEASE, lsb_release, lsb_release)
       AS_IF([test -z "$LSB_RELEASE"], [AC_MSG_ERROR([lsb_release required to detect LINUX distribution not found.])])
-      DISTRIBUTION=m4_esyscmd([lsb_release -i | sed 's/^.*:[ \t]\+//' | tr [A-Z] [a-z]])
+      DISTRIBUTION=[`lsb_release -i | sed 's/^.*:[ \t]\+//' | tr '[A-Z]' '[a-z]'`]
     ;;
     *BSD*)
       DISTRIBUTION=bsd
