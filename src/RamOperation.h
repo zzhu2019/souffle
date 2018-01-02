@@ -120,7 +120,6 @@ class RamSearch : public RamOperation {
 public:
     RamSearch(RamNodeType type, std::unique_ptr<RamOperation> nested)
             : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)) {
-        ASSERT(nested); 
     }
 
     /** get nested operation */

@@ -327,8 +327,8 @@ protected:
     value_list values;
 
 public:
-    RamFact(const RamRelation& rel, value_list&& values)
-            : RamRelationStatement(RN_Fact, rel), values(std::move(values)) {}
+    RamFact(const RamRelation& rel, value_list&& v)
+            : RamRelationStatement(RN_Fact, rel), values(std::move(v)) {}
 
     /** Get arguments of fact */ 
     std::vector<RamValue*> getValues() const {
@@ -388,20 +388,21 @@ protected:
     // TODO: strong dependency to AST do we 
     // need this dependency / better to encapsulate 
     // information here
-    const AstClause &clause;
+    std::unique_ptr<AstClause> clause;
 
     /** RAM operation */
     std::unique_ptr<RamOperation> operation;
 
 public:
     RamInsert(const AstClause& c, std::unique_ptr<RamOperation> o)
-            : RamStatement(RN_Insert), clause(c),
+            : RamStatement(RN_Insert), clause(std::unique_ptr<AstClause>(c.clone())),
               operation(std::move(o)) {}
 
     /** Get AST clause */
     // TODO: remove dependency to AST 
     const AstClause& getOrigin() const {
-        return clause;
+        ASSERT(clause);
+        return *clause;
     }
 
     /** Get RAM operation */
@@ -424,7 +425,7 @@ public:
 
     /** Create clone */
     RamInsert* clone() const override {
-        RamInsert* res = new RamInsert(clause, std::unique_ptr<RamOperation>(operation->clone()));
+        RamInsert* res = new RamInsert(*clause, std::unique_ptr<RamOperation>(operation->clone()));
         return res;
     }
 
