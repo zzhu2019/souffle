@@ -95,48 +95,22 @@ jobs:
         - clang-format-4.0
     script: ".travis/run_test_format.sh"
 
-# Testing stage (-j8,-c -j8,-c -j8 -p profile.log,-j8 -p profile.log)
+# Testing stage (-j8,-c -j8)
   - <<: *linuxgcc
     env:
     - *gcc_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8,-c -p profile.log,-p profile.log"
+    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
   - <<: *linuxclang
     env:
     - *clang_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8,-c -p profile.log,-p profile.log"
+    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
   - <<: *osxclang
     env:
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8,-c -p profile.log,-p profile.log"
+    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
   - <<: *osxgcc
     env:
     - *gcc_environment
-    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8,-c -p profile.log,-p profile.log"
-
-# Testing stage (-c -j8 -s-)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -j8 -s-"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -j8 -s-"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-c -j8 -s-"
-
-# Testing stage (-f -j8,-c -f -j8,-c -f -j8 -s-)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8,-c -f -j8 -s-"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8,-c -f -j8 -s-"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=Syntactic,Semantic SOUFFLE_CONFS="-f -j8,-c -f -j8,-c -f -j8 -s-"
+    - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
 
 # Testing stage (-j8,-c -j8)
   - <<: *linuxgcc
@@ -151,35 +125,31 @@ jobs:
     env:
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
 
+# Testing stage (-c -j8 -s-,-c -f -j8 -s-)
+  - <<: *linuxgcc
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
+  - <<: *linuxclang
+    env:
+    - *clang_environment
+    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
+  - <<: *osxclang
+    env:
+    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
+
 # Testing stage (-f -j8,-c -f -j8)
   - <<: *linuxgcc
     env:
     - *gcc_environment
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
+    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
   - <<: *linuxclang
     env:
     - *clang_environment
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
+    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
   - <<: *osxclang
     env:
-    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-
-# TODO (#468): these tests currently time out with travis, due to the significant increase in compilation time incurred by the -s option
-#  - <<: *linuxgcc
-#    env:
-#    - *gcc_environment
-#    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-#  - <<: *linuxclang
-#    env:
-#    - *clang_environment
-#    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-#  - <<: *osxclang
-#    env:
-#    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-#  - <<: *osxgcc
-#    env:
-#    - *gcc_environment
-#    - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
+    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
 
 # Packaging stage
   # Make the linux deb packages.
