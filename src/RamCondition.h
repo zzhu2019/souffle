@@ -36,12 +36,11 @@ class RamCondition : public RamNode {
 public:
     RamCondition(RamNodeType type) : RamNode(type) {}
 
-    /** get level of condition */
+    /** Get level */
     virtual size_t getLevel() = 0;
 
     /** Create clone */
     RamCondition* clone() const override = 0;
-
 };
 
 /** class for matching a string with a pattern */
