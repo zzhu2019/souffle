@@ -9,7 +9,7 @@
  *
  * @file AstNode.h
  *
- * Abstract class definitions for AST nodes 
+ * Abstract class definitions for AST nodes
  *
  ***********************************************************************/
 
@@ -99,10 +99,10 @@ public:
     virtual ~AstNodeMapper() = default;
 
     /**
-     * Abstract replacement method for a node. 
+     * Abstract replacement method for a node.
      *
-     * If the given nodes is to be replaced, the handed in node 
-     * will be destroyed by the mapper and the returned node 
+     * If the given nodes is to be replaced, the handed in node
+     * will be destroyed by the mapper and the returned node
      * will become owned by the caller.
      */
     virtual std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const = 0;

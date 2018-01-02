@@ -32,11 +32,11 @@ namespace souffle {
 
 /**
  * A RAM Relation in the RAM intermediate representation.
- * TODO: Make RamRelation a sub-class of RAM node.  
- * TODO: Tidy-up interface and attributes  
+ * TODO: Make RamRelation a sub-class of RAM node.
+ * TODO: Tidy-up interface and attributes
  */
 class RamRelation {
-    protected:
+protected:
     /** Name of relation */
     std::string name;
 
@@ -53,17 +53,17 @@ class RamRelation {
     SymbolMask mask;
 
     /** Relation qualifiers */
-    // TODO: Simplify interface 
-    bool input;    // input relation 
-    bool output;   // output relation 
-    bool computed; // either output or printed
+    // TODO: Simplify interface
+    bool input;     // input relation
+    bool output;    // output relation
+    bool computed;  // either output or printed
 
-    bool btree;    // btree data-structure
-    bool brie;     // brie data-structure 
-    bool eqrel;    // equivalence relation 
+    bool btree;  // btree data-structure
+    bool brie;   // brie data-structure
+    bool eqrel;  // equivalence relation
 
-    bool isdata;   // Datalog relation in the program
-    bool istemp;   // Temporary relation for semi-naive evaluation
+    bool isdata;  // Datalog relation in the program
+    bool istemp;  // Temporary relation for semi-naive evaluation
 
     /** I/O directives */
     IODirectives inputDirectives;
@@ -85,10 +85,8 @@ public:
             const bool isdata = false, const IODirectives inputDirectives = IODirectives(),
             const std::vector<IODirectives> outputDirectives = {}, const bool istemp = false)
             : name(name), arity(arity), attributeNames(attributeNames),
-              attributeTypeQualifiers(attributeTypeQualifiers), mask(mask), input(input), 
-              output(output), 
-              computed(computed),
-              btree(btree), brie(brie), eqrel(eqrel), isdata(isdata), istemp(istemp),
+              attributeTypeQualifiers(attributeTypeQualifiers), mask(mask), input(input), output(output),
+              computed(computed), btree(btree), brie(brie), eqrel(eqrel), isdata(isdata), istemp(istemp),
               inputDirectives(inputDirectives), outputDirectives(outputDirectives) {
         assert(this->attributeNames.size() == arity || this->attributeNames.empty());
         assert(this->attributeTypeQualifiers.size() == arity || this->attributeTypeQualifiers.empty());

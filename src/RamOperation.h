@@ -26,24 +26,22 @@
 namespace souffle {
 
 /**
- * Abstract class for a relational algebra operation 
+ * Abstract class for a relational algebra operation
  */
 class RamOperation : public RamNode {
 protected:
-
     /** the nesting level of this operation */
     size_t level;
 
-    /** 
-     * conditions that is checked for each obtained tuple 
+    /**
+     * conditions that is checked for each obtained tuple
      *
      * If condition is nullptr, then no condition applies
      */
     std::unique_ptr<RamCondition> condition;
 
 public:
-    RamOperation(RamNodeType type, size_t l) : 
-        RamNode(type), level(l), condition(nullptr) {}
+    RamOperation(RamNodeType type, size_t l) : RamNode(type), level(l), condition(nullptr) {}
 
     /** Get level */
     // TODO: move to analysis
@@ -52,7 +50,7 @@ public:
     }
 
     /** Get depth */
-    // TODO: move to analysis 
+    // TODO: move to analysis
     virtual size_t getDepth() const = 0;
 
     /** Print */
@@ -89,19 +87,19 @@ public:
 
     /** Apply mapper */
     void apply(const RamNodeMapper& map) override {
-        if (condition) { 
-           condition = map(std::move(condition));
+        if (condition) {
+            condition = map(std::move(condition));
         }
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamOperation*>(&node));
         const RamOperation& other = static_cast<const RamOperation&>(node);
-        if(getCondition() != nullptr && other.getCondition() != nullptr) { 
+        if (getCondition() != nullptr && other.getCondition() != nullptr) {
             return getCondition() == other.getCondition();
-        } else if(getCondition() == nullptr && other.getCondition() == nullptr) { 
+        } else if (getCondition() == nullptr && other.getCondition() == nullptr) {
             return true;
         } else {
             return false;
@@ -109,25 +107,23 @@ protected:
     }
 };
 
-/** 
+/**
  * Abstract class for relation scans and lookups
  */
 class RamSearch : public RamOperation {
-
     /** Nested operation */
     std::unique_ptr<RamOperation> nestedOperation;
 
 public:
     RamSearch(RamNodeType type, std::unique_ptr<RamOperation> nested)
-            : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)) {
-    }
+            : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)) {}
 
     /** get nested operation */
     RamOperation* getNestedOperation() const {
         return nestedOperation.get();
     }
     /** get nested operation */
-    const RamOperation &getOperation() const {
+    const RamOperation& getOperation() const {
         ASSERT(nestedOperation);
         return *nestedOperation;
     }
@@ -153,19 +149,19 @@ public:
         nestedOperation = map(std::move(nestedOperation));
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamSearch*>(&node));
         const RamSearch& other = static_cast<const RamSearch&>(node);
-        return RamOperation::equal(other) && getOperation() == other.getOperation(); 
+        return RamOperation::equal(other) && getOperation() == other.getOperation();
     }
 };
 
 /**
  * Relation Scan
  *
- * Iterate all tuples of a relation and filter them via a condition 
+ * Iterate all tuples of a relation and filter them via a condition
  */
 class RamScan : public RamSearch {
 protected:
@@ -216,7 +212,7 @@ public:
     /** Print */
     void print(std::ostream& os, int tabpos) const override;
 
-    /** Add condition */ 
+    /** Add condition */
     void addCondition(std::unique_ptr<RamCondition> c, RamOperation* root) override;
 
     /** Obtain list of child nodes */
@@ -231,13 +227,14 @@ public:
     }
 
     /** Create clone */
-    RamScan* clone() const override { 
-        RamScan* res = new RamScan(getRelation(), std::unique_ptr<RamOperation>(getNestedOperation()->clone()), pureExistenceCheck);
+    RamScan* clone() const override {
+        RamScan* res = new RamScan(getRelation(),
+                std::unique_ptr<RamOperation>(getNestedOperation()->clone()), pureExistenceCheck);
         res->condition = std::unique_ptr<RamCondition>(condition->clone());
-        res->keys = keys; 
+        res->keys = keys;
         for (auto& cur : queryPattern) {
             if (cur) {
-               res->queryPattern.push_back(std::unique_ptr<RamValue>(cur->clone()));
+                res->queryPattern.push_back(std::unique_ptr<RamValue>(cur->clone()));
             }
         }
         return res;
@@ -248,30 +245,27 @@ public:
         RamSearch::apply(map);
         for (auto& cur : queryPattern) {
             if (cur) {
-               cur = map(std::move(cur));
+                cur = map(std::move(cur));
             }
         }
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamScan*>(&node));
         const RamScan& other = static_cast<const RamScan&>(node);
-        return RamSearch::equal(other) && 
-               getRelation() == other.getRelation() &&
-               equal_targets(queryPattern, other.queryPattern) && 
-               keys == other.keys &&
+        return RamSearch::equal(other) && getRelation() == other.getRelation() &&
+               equal_targets(queryPattern, other.queryPattern) && keys == other.keys &&
                pureExistenceCheck == other.pureExistenceCheck;
     }
 };
 
-/** 
- * Record lookup 
+/**
+ * Record lookup
  */
 // TODO: wrong class hierarchy, no condition in RAMOperation necessary
 class RamLookup : public RamSearch {
-
     /** Level of the tuple containing record reference */
     std::size_t refLevel;
 
@@ -305,8 +299,9 @@ public:
     void print(std::ostream& os, int tabpos) const override;
 
     /** Create clone */
-    RamLookup* clone() const override { 
-        RamLookup* res = new RamLookup(std::unique_ptr<RamOperation>(getNestedOperation()->clone()), refLevel, refPos, arity);
+    RamLookup* clone() const override {
+        RamLookup* res = new RamLookup(
+                std::unique_ptr<RamOperation>(getNestedOperation()->clone()), refLevel, refPos, arity);
         return res;
     }
 
@@ -315,20 +310,18 @@ public:
         RamSearch::apply(map);
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamLookup*>(&node));
         const RamLookup& other = static_cast<const RamLookup&>(node);
-        return RamSearch::equal(other) && 
-               getReferencePosition() == other.getReferencePosition() &&
-               getReferenceLevel() == other.getReferenceLevel() && 
-               getArity() == other.getArity(); 
+        return RamSearch::equal(other) && getReferencePosition() == other.getReferencePosition() &&
+               getReferenceLevel() == other.getReferenceLevel() && getArity() == other.getArity();
     }
 };
 
-/** 
- * Aggregation 
+/**
+ * Aggregation
  */
 class RamAggregate : public RamSearch {
 public:
@@ -353,7 +346,8 @@ private:
     SearchColumns keys;
 
 public:
-    RamAggregate(std::unique_ptr<RamOperation> nested, Function fun, std::unique_ptr<RamValue> value, const RamRelation& relation)
+    RamAggregate(std::unique_ptr<RamOperation> nested, Function fun, std::unique_ptr<RamValue> value,
+            const RamRelation& relation)
             : RamSearch(RN_Aggregate, std::move(nested)), fun(fun), value(std::move(value)),
               relation(relation), pattern(relation.getArity()), keys(0) {}
 
@@ -369,12 +363,12 @@ public:
         return value.get();
     }
 
-    /** Get relation */ 
+    /** Get relation */
     const RamRelation& getRelation() const {
         return relation;
     }
 
-    /** Get pattern */ 
+    /** Get pattern */
     std::vector<RamValue*> getPattern() const {
         return toPtrVector(pattern);
     }
@@ -391,12 +385,13 @@ public:
     void print(std::ostream& os, int tabpos) const override;
 
     /** Create clone */
-    RamAggregate* clone() const override { 
-        RamAggregate* res = new RamAggregate(std::unique_ptr<RamOperation>(getNestedOperation()->clone()), fun, std::unique_ptr<RamValue>(value->clone()), relation);
+    RamAggregate* clone() const override {
+        RamAggregate* res = new RamAggregate(std::unique_ptr<RamOperation>(getNestedOperation()->clone()),
+                fun, std::unique_ptr<RamValue>(value->clone()), relation);
         res->keys = keys;
         for (auto& cur : pattern) {
             if (cur) {
-               res->pattern.push_back(std::unique_ptr<RamValue>(cur->clone()));
+                res->pattern.push_back(std::unique_ptr<RamValue>(cur->clone()));
             }
         }
         return res;
@@ -408,22 +403,19 @@ public:
         value = map(std::move(value));
         for (auto& cur : pattern) {
             if (cur) {
-               cur = map(std::move(cur));
+                cur = map(std::move(cur));
             }
         }
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamAggregate*>(&node));
         const RamAggregate& other = static_cast<const RamAggregate&>(node);
-        return RamSearch::equal(other) && 
-               getRelation() == other.getRelation() &&
-               equal_targets(pattern, other.pattern) && 
-               keys == other.keys &&
-               fun == other.fun &&
-               getTargetExpression() == other.getTargetExpression(); 
+        return RamSearch::equal(other) && getRelation() == other.getRelation() &&
+               equal_targets(pattern, other.pattern) && keys == other.keys && fun == other.fun &&
+               getTargetExpression() == other.getTargetExpression();
     }
 };
 
@@ -472,7 +464,7 @@ public:
         return *filter;
     }
 
-    /** Get values */ 
+    /** Get values */
     std::vector<RamValue*> getValues() const {
         return toPtrVector(values);
     }
@@ -496,7 +488,7 @@ public:
 
     /** Create clone */
     RamProject* clone() const override {
-        RamProject* res = new RamProject(getRelation(),level);
+        RamProject* res = new RamProject(getRelation(), level);
         if (filter != nullptr) {
             res->filter = std::unique_ptr<RamRelation>(new RamRelation(*filter));
         }
@@ -514,21 +506,19 @@ public:
         }
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamProject*>(&node));
         const RamProject& other = static_cast<const RamProject&>(node);
-        bool isFilterEqual=false;
+        bool isFilterEqual = false;
         if (filter == nullptr && other.filter == nullptr) {
-            isFilterEqual=true;
+            isFilterEqual = true;
         } else if (filter != nullptr && other.filter != nullptr) {
-            isFilterEqual=(*filter == *other.filter);
+            isFilterEqual = (*filter == *other.filter);
         }
-        return RamOperation::equal(other) &&
-               getRelation() == other.getRelation() &&
-               equal_targets(values, other.values) &&
-               isFilterEqual;
+        return RamOperation::equal(other) && getRelation() == other.getRelation() &&
+               equal_targets(values, other.values) && isFilterEqual;
     }
 };
 
@@ -577,13 +567,12 @@ public:
         }
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamReturn*>(&node));
         const RamReturn& other = static_cast<const RamReturn&>(node);
-        return RamOperation::equal(other) &&
-               equal_targets(values, other.values);
+        return RamOperation::equal(other) && equal_targets(values, other.values);
     }
 };
 

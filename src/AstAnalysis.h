@@ -22,7 +22,7 @@ namespace souffle {
 class AstTranslationUnit;
 
 /**
- * Abstract class for a AST Analysis. 
+ * Abstract class for a AST Analysis.
  */
 class AstAnalysis {
 public:
@@ -31,7 +31,7 @@ public:
     /** run analysis for a RAM translation unit */
     virtual void run(const AstTranslationUnit& translationUnit) = 0;
 
-    /** print the analysis result in HTML format */ 
+    /** print the analysis result in HTML format */
     virtual void print(std::ostream& os) const {}
 
     /** define output stream operator */

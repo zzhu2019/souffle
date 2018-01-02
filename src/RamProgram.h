@@ -79,9 +79,9 @@ public:
     }
 
     /** Create clone */
-    RamProgram* clone() const override { 
+    RamProgram* clone() const override {
         RamProgram* res = new RamProgram(std::unique_ptr<RamStatement>(main->clone()));
-        for (auto &cur: subroutines) {
+        for (auto& cur : subroutines) {
             res->addSubroutine(cur.first, std::unique_ptr<RamStatement>(cur.second->clone()));
         }
         return res;
@@ -90,29 +90,29 @@ public:
     /** Apply mapper */
     void apply(const RamNodeMapper& map) override {
         main = map(std::move(main));
-        for (auto &cur: subroutines) {
+        for (auto& cur : subroutines) {
             subroutines[cur.first] = map(std::move(cur.second));
         }
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamProgram*>(&node));
         const RamProgram& other = static_cast<const RamProgram&>(node);
         bool areSubroutinesEqual = true;
-        for (auto &cur: subroutines) {
+        for (auto& cur : subroutines) {
             if (other.subroutines.count(cur.first) == 0) {
                 areSubroutinesEqual = false;
                 break;
             } else {
-                if (other.getSubroutine(cur.first) != getSubroutine(cur.first)){
+                if (other.getSubroutine(cur.first) != getSubroutine(cur.first)) {
                     areSubroutinesEqual = false;
                     break;
                 }
             }
         }
-        return getMain() == other.getMain() && areSubroutinesEqual; 
+        return getMain() == other.getMain() && areSubroutinesEqual;
     }
 };
 

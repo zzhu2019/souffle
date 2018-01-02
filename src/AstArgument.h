@@ -39,7 +39,7 @@ class AstVariable;
 class AstLiteral;
 
 /**
- * Intermediate representation of an argument 
+ * Intermediate representation of an argument
  */
 class AstArgument : public AstNode {
 public:

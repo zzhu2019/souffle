@@ -11,7 +11,7 @@
  * @file AstTranslationUnit.h
  *
  * Define AST translation unit class consisting of
- * an symbol table, AST program, error reports, and 
+ * an symbol table, AST program, error reports, and
  * cached analysis results.
  *
  ***********************************************************************/
@@ -28,7 +28,7 @@
 
 namespace souffle {
 
-/** 
+/**
  * AstTranslationUnit class
  */
 
@@ -41,16 +41,17 @@ private:
     std::unique_ptr<AstProgram> program;
 
     /** Symbol table of AST program */
-    SymbolTable &symbolTable;
+    SymbolTable& symbolTable;
 
     /** Error report capturing errors while compiling */
-    ErrorReport &errorReport;
+    ErrorReport& errorReport;
 
     /** HTML debug report */
-    DebugReport &debugReport;
+    DebugReport& debugReport;
 
 public:
-    AstTranslationUnit(std::unique_ptr<AstProgram> program, SymbolTable &s, ErrorReport &e, DebugReport &d, bool nowarn = false)
+    AstTranslationUnit(std::unique_ptr<AstProgram> program, SymbolTable& s, ErrorReport& e, DebugReport& d,
+            bool nowarn = false)
             : program(std::move(program)), symbolTable(s), errorReport(e), debugReport(d) {}
 
     virtual ~AstTranslationUnit() = default;

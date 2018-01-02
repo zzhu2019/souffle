@@ -16,10 +16,10 @@
  ***********************************************************************/
 #pragma once
 
-#include "RamAnalysis.h"
-#include "RamProgram.h"
 #include "DebugReport.h"
 #include "ErrorReport.h"
+#include "RamAnalysis.h"
+#include "RamProgram.h"
 #include "SymbolTable.h"
 
 #include <map>
@@ -38,14 +38,14 @@ private:
     std::unique_ptr<RamProgram> program;
 
     /* The table of symbols encountered in the input program */
-    souffle::SymbolTable &symbolTable;
+    souffle::SymbolTable& symbolTable;
 
-    ErrorReport &errorReport;
+    ErrorReport& errorReport;
 
-    DebugReport &debugReport;
+    DebugReport& debugReport;
 
 public:
-    RamTranslationUnit(std::unique_ptr<RamProgram> program, SymbolTable &sym, ErrorReport &e, DebugReport &d)
+    RamTranslationUnit(std::unique_ptr<RamProgram> program, SymbolTable& sym, ErrorReport& e, DebugReport& d)
             : program(std::move(program)), symbolTable(sym), errorReport(e), debugReport(d) {}
 
     virtual ~RamTranslationUnit() = default;

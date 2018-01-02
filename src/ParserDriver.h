@@ -61,12 +61,14 @@ public:
 
     bool trace_scanning;
 
-    std::unique_ptr<AstTranslationUnit> parse(const std::string& f, FILE* in, SymbolTable &s, ErrorReport &e, DebugReport &d);
-    std::unique_ptr<AstTranslationUnit> parse(const std::string& code, SymbolTable &s, ErrorReport &e, DebugReport &d); 
+    std::unique_ptr<AstTranslationUnit> parse(
+            const std::string& f, FILE* in, SymbolTable& s, ErrorReport& e, DebugReport& d);
+    std::unique_ptr<AstTranslationUnit> parse(
+            const std::string& code, SymbolTable& s, ErrorReport& e, DebugReport& d);
     static std::unique_ptr<AstTranslationUnit> parseTranslationUnit(
-            const std::string& f, FILE* in, SymbolTable &sym, ErrorReport &e, DebugReport &d);
+            const std::string& f, FILE* in, SymbolTable& sym, ErrorReport& e, DebugReport& d);
     static std::unique_ptr<AstTranslationUnit> parseTranslationUnit(
-            const std::string& code, SymbolTable &sym, ErrorReport &e, DebugReport &d);
+            const std::string& code, SymbolTable& sym, ErrorReport& e, DebugReport& d);
 
     bool trace_parsing;
 

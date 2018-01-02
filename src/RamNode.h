@@ -131,10 +131,10 @@ public:
     virtual ~RamNodeMapper() = default;
 
     /**
-     * Abstract replacement method for a node. 
+     * Abstract replacement method for a node.
      *
-     * If the given nodes is to be replaced, the handed in node 
-     * will be destroyed by the mapper and the returned node 
+     * If the given nodes is to be replaced, the handed in node
+     * will be destroyed by the mapper and the returned node
      * will become owned by the caller.
      */
     virtual std::unique_ptr<RamNode> operator()(std::unique_ptr<RamNode> node) const = 0;
@@ -176,6 +176,5 @@ template <typename Lambda>
 detail::LambdaRamNodeMapper<Lambda> makeLambdaMapper(const Lambda& lambda) {
     return detail::LambdaRamNodeMapper<Lambda>(lambda);
 }
-
 
 }  // end of namespace souffle

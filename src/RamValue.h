@@ -79,7 +79,7 @@ public:
     }
 
     /** Get Argument */
-    // TODO: rename to getArgument() 
+    // TODO: rename to getArgument()
     const RamValue* getValue() const {
         return argument.get();
     }
@@ -93,7 +93,7 @@ public:
     }
 
     /** Get level */
-    // TODO: move to an analysis 
+    // TODO: move to an analysis
     size_t getLevel() const override {
         return argument->getLevel();
     }
@@ -104,7 +104,7 @@ public:
     }
 
     /** Create clone */
-    RamUnaryOperator* clone() const override { 
+    RamUnaryOperator* clone() const override {
         RamUnaryOperator* res = new RamUnaryOperator(operation, std::unique_ptr<RamValue>(argument->clone()));
         return res;
     }
@@ -114,7 +114,7 @@ public:
         argument = map(std::move(argument));
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamUnaryOperator*>(&node));
@@ -140,8 +140,8 @@ private:
 
 public:
     RamBinaryOperator(BinaryOp op, std::unique_ptr<RamValue> l, std::unique_ptr<RamValue> r)
-            : RamValue(RN_BinaryOperator, l->isConstant() && r->isConstant()), operation(op), lhsArgument(std::move(l)),
-              rhsArgument(std::move(r)) {}
+            : RamValue(RN_BinaryOperator, l->isConstant() && r->isConstant()), operation(op),
+              lhsArgument(std::move(l)), rhsArgument(std::move(r)) {}
 
     /** Print */
     void print(std::ostream& os) const override {
@@ -168,7 +168,7 @@ public:
     const RamValue* getLHS() const {
         return lhsArgument.get();
     }
-    const RamValue &getLHSArgument() const {
+    const RamValue& getLHSArgument() const {
         ASSERT(lhsArgument);
         return *lhsArgument;
     }
@@ -178,12 +178,12 @@ public:
     const RamValue* getRHS() const {
         return rhsArgument.get();
     }
-    const RamValue &getRHSArgument() const {
+    const RamValue& getRHSArgument() const {
         ASSERT(rhsArgument);
         return *rhsArgument;
     }
 
-    /** Get operator symbol */ 
+    /** Get operator symbol */
     BinaryOp getOperator() const {
         return operation;
     }
@@ -200,8 +200,10 @@ public:
     }
 
     /** Create clone */
-    RamBinaryOperator* clone() const override { 
-        RamBinaryOperator* res = new RamBinaryOperator(operation, std::unique_ptr<RamValue>(lhsArgument->clone()), std::unique_ptr<RamValue>(rhsArgument->clone()));
+    RamBinaryOperator* clone() const override {
+        RamBinaryOperator* res =
+                new RamBinaryOperator(operation, std::unique_ptr<RamValue>(lhsArgument->clone()),
+                        std::unique_ptr<RamValue>(rhsArgument->clone()));
         return res;
     }
 
@@ -211,12 +213,13 @@ public:
         rhsArgument = map(std::move(rhsArgument));
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamBinaryOperator*>(&node));
         const RamBinaryOperator& other = static_cast<const RamBinaryOperator&>(node);
-        return getOperator() == other.getOperator() && getLHSArgument() == other.getLHSArgument() && getRHSArgument() == other.getRHSArgument();
+        return getOperator() == other.getOperator() && getLHSArgument() == other.getLHSArgument() &&
+               getRHSArgument() == other.getRHSArgument();
     }
 };
 
@@ -226,7 +229,6 @@ protected:
 // TODO: have a single n-ary function
 class RamTernaryOperator : public RamValue {
 private:
-
     /** Operation symbol */
     TernaryOp operation;
 
@@ -236,8 +238,8 @@ private:
 public:
     RamTernaryOperator(TernaryOp op, std::unique_ptr<RamValue> a0, std::unique_ptr<RamValue> a1,
             std::unique_ptr<RamValue> a2)
-            : RamValue(RN_TernaryOperator, a0->isConstant() && a1->isConstant() && a2->isConstant()), operation(op),
-              arguments({{std::move(a0), std::move(a1), std::move(a2)}}) {}
+            : RamValue(RN_TernaryOperator, a0->isConstant() && a1->isConstant() && a2->isConstant()),
+              operation(op), arguments({{std::move(a0), std::move(a1), std::move(a2)}}) {}
 
     /** Print */
     void print(std::ostream& os) const override {
@@ -266,10 +268,11 @@ public:
         return operation;
     }
 
-    /** Get level */ 
+    /** Get level */
     // TODO: move to analysis
     size_t getLevel() const override {
-        return std::max(std::max(arguments[0]->getLevel(), arguments[1]->getLevel()), arguments[2]->getLevel());
+        return std::max(
+                std::max(arguments[0]->getLevel(), arguments[1]->getLevel()), arguments[2]->getLevel());
     }
 
     /** Obtain list of child nodes */
@@ -278,38 +281,39 @@ public:
     }
 
     /** Create clone */
-    RamTernaryOperator* clone() const override { 
-        RamTernaryOperator* res = new RamTernaryOperator(operation, std::unique_ptr<RamValue>(arguments[0]->clone()), std::unique_ptr<RamValue>(arguments[1]->clone()), std::unique_ptr<RamValue>(arguments[2]->clone()));
+    RamTernaryOperator* clone() const override {
+        RamTernaryOperator* res =
+                new RamTernaryOperator(operation, std::unique_ptr<RamValue>(arguments[0]->clone()),
+                        std::unique_ptr<RamValue>(arguments[1]->clone()),
+                        std::unique_ptr<RamValue>(arguments[2]->clone()));
         return res;
     }
 
     /** Apply mapper */
     void apply(const RamNodeMapper& map) override {
-        for(int i=0;i<3;i++){ 
-           arguments[i] = map(std::move(arguments[i]));
+        for (int i = 0; i < 3; i++) {
+            arguments[i] = map(std::move(arguments[i]));
         }
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamTernaryOperator*>(&node));
         const RamTernaryOperator& other = static_cast<const RamTernaryOperator&>(node);
-        return getOperator() == other.getOperator() && 
-               getArgument(0) == other.getArgument(0) && 
-               getArgument(1) == other.getArgument(1) && 
-               getArgument(2) == other.getArgument(2);
+        return getOperator() == other.getOperator() && getArgument(0) == other.getArgument(0) &&
+               getArgument(1) == other.getArgument(1) && getArgument(2) == other.getArgument(2);
     }
 };
 
 /**
- * Access element from the current tuple in a tuple environment 
+ * Access element from the current tuple in a tuple environment
  */
 // TODO: add reference to attributes of a relation
 class RamElementAccess : public RamValue {
 private:
     /** Level information */
-    // TODO: move to analysis 
+    // TODO: move to analysis
     size_t level;
 
     /** Element number */
@@ -342,7 +346,7 @@ public:
     }
 
     /** Get name */
-    const std::string &getName() const {
+    const std::string& getName() const {
         return name;
     }
 
@@ -352,28 +356,26 @@ public:
     }
 
     /** Create clone */
-    RamElementAccess* clone() const override { 
+    RamElementAccess* clone() const override {
         RamElementAccess* res = new RamElementAccess(level, element, name);
         return res;
     }
 
     /** Apply mapper */
-    void apply(const RamNodeMapper& map) override {
-    }
+    void apply(const RamNodeMapper& map) override {}
 
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamElementAccess*>(&node));
         const RamElementAccess& other = static_cast<const RamElementAccess&>(node);
-        return getLevel() == other.getLevel() && 
-               getElement() == other.getElement() && 
+        return getLevel() == other.getLevel() && getElement() == other.getElement() &&
                getName() == other.getName();
     }
 };
 
-/** 
- * Number Constant 
+/**
+ * Number Constant
  */
 class RamNumber : public RamValue {
     /** Constant value */
@@ -388,57 +390,12 @@ public:
         return constant;
     }
 
-    /** Print */ 
+    /** Print */
     void print(std::ostream& os) const override {
         os << "number(" << constant << ")";
     }
 
     /** Get level */
-    // TODO: move to analysis 
-    size_t getLevel() const override {
-        return 0;
-    }
-
-    /** Obtain list of child nodes */
-    std::vector<const RamNode*> getChildNodes() const override {
-        return std::vector<const RamNode*>();  // no child nodes
-    }
-
-    /** Create clone */
-    RamNumber* clone() const override { 
-        RamNumber* res = new RamNumber(constant);
-        return res;
-    }
-
-    /** Apply mapper */
-    void apply(const RamNodeMapper& map) override {
-    }
-
-protected:
-    /** Check equality */
-    bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamNumber*>(&node));
-        const RamNumber& other = static_cast<const RamNumber&>(node);
-        return getConstant() == other.getConstant();
-    }
-};
-
-/** 
- * Counter
- *
- * Increment a counter and return its value. Note that
- * there exists a single counter only. 
- */
-class RamAutoIncrement : public RamValue {
-public:
-    RamAutoIncrement() : RamValue(RN_AutoIncrement, false) {}
-
-    /** Print */
-    void print(std::ostream& os) const override {
-        os << "autoinc()";
-    }
-
-    /** Get level */ 
     // TODO: move to analysis
     size_t getLevel() const override {
         return 0;
@@ -450,14 +407,57 @@ public:
     }
 
     /** Create clone */
-    RamAutoIncrement* clone() const override { 
+    RamNumber* clone() const override {
+        RamNumber* res = new RamNumber(constant);
+        return res;
+    }
+
+    /** Apply mapper */
+    void apply(const RamNodeMapper& map) override {}
+
+protected:
+    /** Check equality */
+    bool equal(const RamNode& node) const override {
+        assert(dynamic_cast<const RamNumber*>(&node));
+        const RamNumber& other = static_cast<const RamNumber&>(node);
+        return getConstant() == other.getConstant();
+    }
+};
+
+/**
+ * Counter
+ *
+ * Increment a counter and return its value. Note that
+ * there exists a single counter only.
+ */
+class RamAutoIncrement : public RamValue {
+public:
+    RamAutoIncrement() : RamValue(RN_AutoIncrement, false) {}
+
+    /** Print */
+    void print(std::ostream& os) const override {
+        os << "autoinc()";
+    }
+
+    /** Get level */
+    // TODO: move to analysis
+    size_t getLevel() const override {
+        return 0;
+    }
+
+    /** Obtain list of child nodes */
+    std::vector<const RamNode*> getChildNodes() const override {
+        return std::vector<const RamNode*>();  // no child nodes
+    }
+
+    /** Create clone */
+    RamAutoIncrement* clone() const override {
         RamAutoIncrement* res = new RamAutoIncrement();
         return res;
     }
 
     /** Apply mapper */
-    void apply(const RamNodeMapper& map) override {
-    }
+    void apply(const RamNodeMapper& map) override {}
 
 protected:
     /** Check equality */
@@ -467,24 +467,23 @@ protected:
     }
 };
 
-/** 
- * Record pack operation 
+/**
+ * Record pack operation
  */
 class RamPack : public RamValue {
 private:
-    /** Arguments */ 
+    /** Arguments */
     // TODO: use type for vector-ram-value
     std::vector<std::unique_ptr<RamValue>> arguments;
 
 public:
     RamPack(std::vector<std::unique_ptr<RamValue>> args)
             : RamValue(RN_Pack,
-                      all_of(args,
-                              [](const std::unique_ptr<RamValue>& a) { return a && a->isConstant(); })),
+                      all_of(args, [](const std::unique_ptr<RamValue>& a) { return a && a->isConstant(); })),
               arguments(std::move(args)) {}
 
-    /** Get values */ 
-    // TODO: remove getter 
+    /** Get values */
+    // TODO: remove getter
     std::vector<RamValue*> getValues() const {
         return toPtrVector(arguments);
     }
@@ -527,13 +526,13 @@ public:
     }
 
     /** Create clone */
-    RamPack* clone() const override { 
+    RamPack* clone() const override {
         RamPack* res = new RamPack({});
         for (auto& cur : arguments) {
-            RamValue *arg = nullptr; 
+            RamValue* arg = nullptr;
             if (cur != nullptr) {
-               arg = cur->clone(); 
-            } 
+                arg = cur->clone();
+            }
             res->arguments.push_back(std::unique_ptr<RamValue>(arg));
         }
         return res;
@@ -543,7 +542,7 @@ public:
     void apply(const RamNodeMapper& map) override {
         for (auto& arg : arguments) {
             if (arg != nullptr) {
-               arg = map(std::move(arg));
+                arg = map(std::move(arg));
             }
         }
     }
@@ -553,20 +552,19 @@ protected:
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamPack*>(&node));
         const RamPack& other = static_cast<const RamPack&>(node);
-        return equal_targets(arguments, other.arguments); 
+        return equal_targets(arguments, other.arguments);
     }
 };
 
-/** 
- * Access argument of a subroutine 
+/**
+ * Access argument of a subroutine
  *
- * Arguments are number from zero 0 to n-1 
- * where n is the number of arguments of the 
+ * Arguments are number from zero 0 to n-1
+ * where n is the number of arguments of the
  * subroutine.
  */
 class RamArgument : public RamValue {
-
-    /** Argument number */ 
+    /** Argument number */
     size_t number;
 
 public:
@@ -577,7 +575,7 @@ public:
         return number;
     }
 
-    /** Print */ 
+    /** Print */
     void print(std::ostream& os) const override {
         os << "argument(" << number << ")";
     }
@@ -594,14 +592,13 @@ public:
     }
 
     /** Create clone */
-    RamArgument* clone() const override { 
+    RamArgument* clone() const override {
         RamArgument* res = new RamArgument(getArgNumber());
         return res;
     }
 
     /** Apply mapper */
-    void apply(const RamNodeMapper& map) override {
-    }
+    void apply(const RamNodeMapper& map) override {}
 
 protected:
     /** Check equality */

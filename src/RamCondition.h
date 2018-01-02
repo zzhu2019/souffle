@@ -31,8 +31,8 @@
 
 namespace souffle {
 
-/** 
- * Abstract Class for RAM condition 
+/**
+ * Abstract Class for RAM condition
  */
 class RamCondition : public RamNode {
 public:
@@ -45,8 +45,8 @@ public:
     RamCondition* clone() const override = 0;
 };
 
-/** 
- * Conjunction 
+/**
+ * Conjunction
  */
 // TODO: rename to RAMConjunction
 class RamAnd : public RamCondition {
@@ -91,8 +91,9 @@ public:
     }
 
     /** Create clone */
-    RamAnd* clone() const override { 
-        RamAnd* res = new RamAnd(std::unique_ptr<RamCondition>(lhs->clone()), std::unique_ptr<RamCondition>(rhs->clone()));
+    RamAnd* clone() const override {
+        RamAnd* res = new RamAnd(
+                std::unique_ptr<RamCondition>(lhs->clone()), std::unique_ptr<RamCondition>(rhs->clone()));
         return res;
     }
 
@@ -102,7 +103,7 @@ public:
         rhs = map(std::move(rhs));
     }
 
-protected:    
+protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamAnd*>(&node));
@@ -111,8 +112,8 @@ protected:
     }
 };
 
-/** 
- * Binary constraint 
+/**
+ * Binary constraint
  */
 // TODO: rename to RamConstraint
 class RamBinaryRelation : public RamCondition {
@@ -129,7 +130,6 @@ private:
 public:
     RamBinaryRelation(BinaryConstraintOp op, std::unique_ptr<RamValue> l, std::unique_ptr<RamValue> r)
             : RamCondition(RN_BinaryRelation), op(op), lhs(std::move(l)), rhs(std::move(r)) {}
-
 
     /** Print */
     void print(std::ostream& os) const override {
@@ -182,8 +182,9 @@ public:
     }
 
     /** Create clone */
-    RamBinaryRelation* clone() const override { 
-        RamBinaryRelation* res = new RamBinaryRelation(op,std::unique_ptr<RamValue>(lhs->clone()), std::unique_ptr<RamValue>(rhs->clone()));
+    RamBinaryRelation* clone() const override {
+        RamBinaryRelation* res = new RamBinaryRelation(
+                op, std::unique_ptr<RamValue>(lhs->clone()), std::unique_ptr<RamValue>(rhs->clone()));
         return res;
     }
 
@@ -198,14 +199,14 @@ protected:
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamBinaryRelation*>(&node));
         const RamBinaryRelation& other = static_cast<const RamBinaryRelation&>(node);
-        return getOperator() == other.getOperator() && getLHS() == other.getLHS() && getRHS() == other.getRHS();
+        return getOperator() == other.getOperator() && getLHS() == other.getLHS() &&
+               getRHS() == other.getRHS();
     }
 };
 
 /** Not existence check for a relation */
 class RamNotExists : public RamCondition {
 protected:
-
     /* Relation */
     RamRelation relation;
 
@@ -221,7 +222,7 @@ public:
         return relation;
     }
 
-    /** Get arguments */ 
+    /** Get arguments */
     std::vector<RamValue*> getValues() const {
         return toPtrVector(values);
     }
@@ -286,13 +287,13 @@ public:
     }
 
     /** Create clone */
-    RamNotExists* clone() const override { 
+    RamNotExists* clone() const override {
         RamNotExists* res = new RamNotExists(relation);
         for (auto& cur : values) {
-            RamValue *val = nullptr; 
+            RamValue* val = nullptr;
             if (cur != nullptr) {
-               val = cur->clone(); 
-            } 
+                val = cur->clone();
+            }
             res->values.push_back(std::unique_ptr<RamValue>(val));
         }
         return res;
@@ -302,25 +303,25 @@ public:
     void apply(const RamNodeMapper& map) override {
         for (auto& val : values) {
             if (val != nullptr) {
-               val = map(std::move(val));
+                val = map(std::move(val));
             }
         }
     }
+
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamNotExists*>(&node));
         const RamNotExists& other = static_cast<const RamNotExists&>(node);
-        return getRelation() == other.getRelation() && equal_targets(values,other.values);
+        return getRelation() == other.getRelation() && equal_targets(values, other.values);
     }
 };
 
-/** 
+/**
  * Emptiness check for a relation
  */
 // TODO: Rename to RamEmptyCheck
 class RamEmpty : public RamCondition {
-
     /** Relation */
     RamRelation relation;
 
@@ -337,7 +338,7 @@ public:
         return 0;  // can be in the top level
     }
 
-    /** Print */ 
+    /** Print */
     void print(std::ostream& os) const override {
         os << relation.getName() << " ≠ ∅";
     }
@@ -348,14 +349,13 @@ public:
     }
 
     /** Create clone */
-    RamEmpty* clone() const override { 
+    RamEmpty* clone() const override {
         RamEmpty* res = new RamEmpty(relation);
         return res;
     }
 
     /** Apply */
-    void apply(const RamNodeMapper& map) override {
-    }
+    void apply(const RamNodeMapper& map) override {}
 
 protected:
     /** Check equality */

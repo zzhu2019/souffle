@@ -260,7 +260,7 @@ int main(int argc, char** argv) {
     // ------- parse program -------------
 
     // parse file
-    SymbolTable symTab; 
+    SymbolTable symTab;
     ErrorReport errReport(Global::config().has("no-warn"));
     DebugReport debugReport;
     std::unique_ptr<AstTranslationUnit> translationUnit =
