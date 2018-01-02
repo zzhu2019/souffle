@@ -17,6 +17,8 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
+#include <typeinfo>
 #include <vector>
 
 namespace souffle {
