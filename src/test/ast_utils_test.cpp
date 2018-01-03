@@ -37,7 +37,8 @@ TEST(Ast, CloneAndEquals) {
             R"(
                  .decl r(a:number,b:number,c:number,d:number)
                  r(X,Y,Z,W) :- a(X), 10 = Y, Y = Z, 8 + W = 12 + 14. 
-            )", sym, e, d);
+            )",
+            sym, e, d);
     AstProgram& program = *tu->getProgram();
 
     EXPECT_EQ(program, program);
@@ -60,7 +61,8 @@ TEST(AstUtils, Const) {
             R"(
                  .decl r(a:number,b:number,c:number,d:number)
                  r(X,Y,Z,W) :- a(X), 10 = Y, Y = Z, 8 + W = 12 + 14. 
-            )", sym, e, d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -140,7 +142,8 @@ TEST(AstUtils, GroundedRecords) {
 
                  s(x) :- r([x,y]). 
 
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -185,7 +188,8 @@ TEST(AstUtils, SimpleTypes) {
                  a(X) :- b(X).
                  a(X) :- b(Y).
 
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -228,7 +232,8 @@ TEST(AstUtils, NumericTypes) {
                  b(X) :- X < 10.
                  u(X) :- X < 10.
 
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -263,7 +268,8 @@ TEST(AstUtils, SubtypeChain) {
                 .decl R4(x:A) output
             
                 R4(x) :- R2(x,x),R1(x,x).
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -310,7 +316,8 @@ TEST(AstUtils, FactTypes) {
                  b(10).
                  u("World").
 
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -339,7 +346,8 @@ TEST(AstUtils, NestedFunctions) {
                 .decl r(x:D)
             
                 r(x) :- r(y), x=cat(cat(x,x),x).
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -363,7 +371,8 @@ TEST(AstUtils, GroundTermPropagation) {
                 .decl p(a:D,b:D)
 
                 p(a,b) :- p(x,y), r = [x,y], s = r, s = [w,v], [w,v] = [a,b].
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -394,7 +403,8 @@ TEST(AstUtils, GroundTermPropagation2) {
                .decl p(a:D,b:D)
 
                p(a,b) :- p(x,y), x = y, x = a, y = b.
-           )",sym,e,d);
+           )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -421,7 +431,8 @@ TEST(AstUtils, ResolveGroundedAliases) {
                 .decl p(a:D,b:D)
 
                 p(a,b) :- p(x,y), r = [x,y], s = r, s = [w,v], [w,v] = [a,b].
-            )", sym, e, d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -444,7 +455,8 @@ TEST(AstUtils, ResolveAliasesWithTermsInAtoms) {
                 .decl p(a:D,b:D)
 
                 p(x,c) :- p(x,b), p(b,c), c = b+1, x=c+2.
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -478,7 +490,8 @@ TEST(AstUtils, RemoveRelationCopies) {
 
                 d(x,y) :- b(x,y), c(y,x).
 
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 
@@ -508,7 +521,8 @@ TEST(AstUtils, RemoveRelationCopiesOutput) {
 
                 d(x,y) :- b(x,y), c(y,x).
 
-            )",sym,e,d);
+            )",
+            sym, e, d);
 
     AstProgram& program = *tu->getProgram();
 

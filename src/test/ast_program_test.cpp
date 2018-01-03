@@ -29,7 +29,7 @@ TEST(AstProgram, Parse) {
     ErrorReport e;
     DebugReport d;
     // check the empty program
-    std::unique_ptr<AstTranslationUnit> empty = ParserDriver::parseTranslationUnit("",sym,e,d);
+    std::unique_ptr<AstTranslationUnit> empty = ParserDriver::parseTranslationUnit("", sym, e, d);
 
     EXPECT_TRUE(empty->getProgram()->getTypes().empty());
     EXPECT_TRUE(empty->getProgram()->getRelations().empty());
@@ -43,7 +43,8 @@ TEST(AstProgram, Parse) {
 
                    r(X,Y) :- e(X,Y).
                    r(X,Z) :- r(X,Y), r(Y,Z).
-            )", sym, e, d);
+            )",
+            sym, e, d);
 
     std::cout << prog->getProgram() << "\n";
 
