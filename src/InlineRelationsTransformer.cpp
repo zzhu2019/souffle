@@ -322,6 +322,11 @@ std::vector<std::vector<AstLiteral*>> combineNegatedLiterals(
         std::vector<std::vector<AstLiteral*>> litGroups) {
     std::vector<std::vector<AstLiteral*>> negation;
 
+    // Corner case: !() = ()
+    if (litGroups.empty()) {
+        return negation;
+    }
+
     std::vector<AstLiteral*> litGroup = litGroups[0];
     if (litGroups.size() == 1) {
         // !(a1 ^ a2 ^ a3 ^ ...) --into-> !a1 v !a2 v !a3 v ...
