@@ -1083,6 +1083,57 @@ void AstSemanticChecker::checkInlining(
             }
         });
     });
+
+    // Check 5:
+    // Suppose a relation `a` is inlined, appears negated in a clause, and contains a
+    // (possibly nested) unnamed variable in its arguments. Then, the atom can't be
+    // inlined, as unnamed variables are named during inlining (since they may appear
+    // multiple times in an inlined-clause's body) => ungroundedness!
+
+    // Exception: It's fine if the unnamed variable appears in a nested aggregator, as
+    // the entire aggregator will automatically be grounded.
+
+    // TODO (azreika): special case where all rules defined for `a` use the
+    // underscored-argument exactly once: can workaround by remapping the variable
+    // back to an underscore - involves changes to the actual inlining algo, though
+
+    // Returns the pair (isValid, lastSrcLoc) where:
+    //  - isValid is true if and only if the node contains an invalid underscore, and
+    //  - lastSrcLoc is the source location of the last visited node
+    std::function<std::pair<bool, AstSrcLocation>(const AstNode*)> checkInvalidUnderscore = [&](
+            const AstNode* node) {
+        if (dynamic_cast<const AstUnnamedVariable*>(node)) {
+            // Found an invalid underscore
+            return std::make_pair(true, node->getSrcLoc());
+        } else if (dynamic_cast<const AstAggregator*>(node)) {
+            // Don't care about underscores within aggregators
+            return std::make_pair(false, node->getSrcLoc());
+        }
+
+        // Check if any children nodes use invalid underscores
+        for (const AstNode* child : node->getChildNodes()) {
+            std::pair<bool, AstSrcLocation> childStatus = checkInvalidUnderscore(child);
+            if (childStatus.first) {
+                // Found an invalid underscore
+                return childStatus;
+            }
+        }
+
+        return std::make_pair(false, node->getSrcLoc());
+    };
+
+    // Perform the check
+    visitDepthFirst(program, [&](const AstNegation& negation) {
+        const AstAtom* associatedAtom = negation.getAtom();
+        if (program.getRelation(associatedAtom->getName())->isInline()) {
+            std::pair<bool, AstSrcLocation> atomStatus = checkInvalidUnderscore(associatedAtom);
+            if (atomStatus.first) {
+                report.addError(
+                        "Cannot inline negated atom containing an unnamed variable unless the variable is within an aggregator",
+                        atomStatus.second);
+            }
+        }
+    });
 }
 
 // Check that type, relation, component names are disjoint sets.
