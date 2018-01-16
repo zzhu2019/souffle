@@ -32,8 +32,8 @@ namespace souffle {
 
 /**
  * A RAM Relation in the RAM intermediate representation.
- * TODO: Make RamRelation a sub-class of RAM node.
- * TODO: Tidy-up interface and attributes
+ * TODO (#541): Make RamRelation a sub-class of RAM node.
+ * TODO (#541): Tidy-up interface and attributes
  */
 class RamRelation {
 protected:
@@ -49,7 +49,7 @@ protected:
     /** Type of attributes */
     std::vector<std::string> attributeTypeQualifiers;
 
-    /** TODO: legacy, i.e., duplicated information */
+    /** TODO (#541): legacy, i.e., duplicated information */
     SymbolMask mask;
 
     /** Relation qualifiers */

@@ -25,12 +25,12 @@ YY_DECL;
 namespace souffle {
 
 class AstTranslationUnit;
-class ErrorReport;
 class AstRelation;
 class AstType;
 class AstProgram;
-class SymbolTable;
 class DebugReport;
+class ErrorReport;
+class SymbolTable;
 
 typedef void* yyscan_t;
 
@@ -62,13 +62,13 @@ public:
     bool trace_scanning;
 
     std::unique_ptr<AstTranslationUnit> parse(
-            const std::string& f, FILE* in, SymbolTable& s, ErrorReport& e, DebugReport& d);
+            const std::string& filename, FILE* in, SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport);
     std::unique_ptr<AstTranslationUnit> parse(
-            const std::string& code, SymbolTable& s, ErrorReport& e, DebugReport& d);
+            const std::string& code, SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport);
     static std::unique_ptr<AstTranslationUnit> parseTranslationUnit(
-            const std::string& f, FILE* in, SymbolTable& sym, ErrorReport& e, DebugReport& d);
+            const std::string& filename, FILE* in, SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport);
     static std::unique_ptr<AstTranslationUnit> parseTranslationUnit(
-            const std::string& code, SymbolTable& sym, ErrorReport& e, DebugReport& d);
+            const std::string& code, SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport);
 
     bool trace_parsing;
 

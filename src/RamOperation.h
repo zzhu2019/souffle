@@ -34,9 +34,9 @@ protected:
     size_t level;
 
     /**
-     * conditions that is checked for each obtained tuple
+     * condition that is checked for each obtained tuple
      *
-     * If condition is nullptr, then no condition applies
+     * If condition is a nullptr, then no condition applies
      */
     std::unique_ptr<RamCondition> condition;
 
@@ -44,13 +44,13 @@ public:
     RamOperation(RamNodeType type, size_t l) : RamNode(type), level(l), condition(nullptr) {}
 
     /** Get level */
-    // TODO: move to analysis
+    // TODO (#541): move to analysis
     size_t getLevel() const {
         return level;
     }
 
     /** Get depth */
-    // TODO: move to analysis
+    // TODO (#541): move to analysis
     virtual size_t getDepth() const = 0;
 
     /** Print */
@@ -98,7 +98,7 @@ protected:
         assert(dynamic_cast<const RamOperation*>(&node));
         const RamOperation& other = static_cast<const RamOperation&>(node);
         if (getCondition() != nullptr && other.getCondition() != nullptr) {
-            return getCondition() == other.getCondition();
+            return *getCondition() == *other.getCondition();
         } else if (getCondition() == nullptr && other.getCondition() == nullptr) {
             return true;
         } else {
@@ -204,7 +204,7 @@ public:
     }
 
     /** Check for pure existence check */
-    // TODO: rename pure existence check to complete/whole etc.
+    // TODO (#541): rename pure existence check to complete/whole etc.
     bool isPureExistenceCheck() const {
         return pureExistenceCheck;
     }
@@ -264,7 +264,7 @@ protected:
 /**
  * Record lookup
  */
-// TODO: wrong class hierarchy, no condition in RAMOperation necessary
+// TODO (#541): wrong class hierarchy, no condition in RAMOperation necessary
 class RamLookup : public RamSearch {
     /** Level of the tuple containing record reference */
     std::size_t refLevel;
@@ -333,7 +333,7 @@ private:
     Function fun;
 
     /** Aggregation value */
-    // TODO: rename to target expression
+    // TODO (#541): rename to target expression
     std::unique_ptr<RamValue> value;
 
     /** Aggregation relation */
@@ -357,7 +357,7 @@ public:
     }
 
     /** Get target expression */
-    // TODO: rename to getExpression
+    // TODO (#541): rename to getExpression
     const RamValue* getTargetExpression() const {
         ASSERT(value);
         return value.get();
@@ -426,7 +426,7 @@ protected:
     RamRelation relation;
 
     /** Relation to check whether does not exist */
-    // TODO: rename
+    // TODO (#541): rename
     std::unique_ptr<RamRelation> filter;
 
     /* Values for projection */

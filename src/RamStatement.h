@@ -74,7 +74,7 @@ public:
 
     /** Apply mapper */
     void apply(const RamNodeMapper& map) override {
-        // TODO: apply to relation after making relation an RamNode
+        // TODO (#541): apply to relation after making relation an RamNode
     }
 
 protected:
@@ -95,7 +95,7 @@ public:
 
     /** Pretty print */
     void print(std::ostream& os, int tabpos) const override {
-        // TODO: add type information for attributes
+        // TODO (#541): add type information for attributes
         os << std::string(tabpos, '\t');
         os << "CREATE " << getRelation().getName() << "(";
         os << getRelation().getArg(0);
@@ -210,7 +210,7 @@ protected:
 
 public:
     RamMerge(const RamRelation& t, const RamRelation& s) : RamStatement(RN_Merge), target(t), source(s) {
-        // TODO: check not just for arity also for correct type!!
+        // TODO (#541): check not just for arity also for correct type!!
         assert(source.getArity() == target.getArity());
     }
 
@@ -232,7 +232,7 @@ public:
 
     /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
-        // TODO: apply to target/source relations after making relation an RamNode
+        // TODO (#541): apply to target/source relations after making relation an RamNode
         return std::vector<const RamNode*>();  // no child nodes
     }
 
@@ -244,7 +244,7 @@ public:
 
     /** Apply mapper */
     void apply(const RamNodeMapper& map) override {
-        // TODO: apply to target/source relations after making relation an RamNode
+        // TODO (#541): apply to target/source relations after making relation an RamNode
     }
 
 protected:
@@ -269,7 +269,7 @@ protected:
 
 public:
     RamSwap(const RamRelation& f, const RamRelation& s) : RamStatement(RN_Swap), first(f), second(s) {
-        // TODO: check not just for arity also for correct type!!
+        // TODO (#541): check not just for arity also for correct type!!
         assert(first.getArity() == second.getArity());
     }
 
@@ -302,7 +302,7 @@ public:
 
     /** Apply mapper */
     void apply(const RamNodeMapper& map) override {
-        // TODO: apply to first/second relations after making relation an RamNode
+        // TODO (#541): apply to first/second relations after making relation an RamNode
     }
 
 protected:
@@ -320,7 +320,7 @@ protected:
 class RamFact : public RamRelationStatement {
 protected:
     /** Arguments of fact */
-    // TODO: check whether value_list is used somewhere else
+    // TODO (#541): check whether value_list is used somewhere else
     typedef std::vector<std::unique_ptr<RamValue>> value_list;
     value_list values;
 
@@ -342,7 +342,7 @@ public:
 
     /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
-        // TODO: apply to relation after making relation an RamNode
+        // TODO (#541): apply to relation after making relation an RamNode
         std::vector<const RamNode*> res;
         for (const auto& cur : values) {
             res.push_back(cur.get());
@@ -378,11 +378,11 @@ protected:
 
 /**
  * A relational algebra query
- * TODO: Rename RAM statement: it is used for projection and sub-routines.
+ * TODO (#541): Rename RAM statement: it is used for projection and sub-routines.
  */
 class RamInsert : public RamStatement {
 protected:
-    // TODO: strong dependency to AST do we
+    // TODO (#541): strong dependency to AST do we
     // need this dependency / better to encapsulate
     // information here
     std::unique_ptr<AstClause> clause;
@@ -396,7 +396,7 @@ public:
               operation(std::move(o)) {}
 
     /** Get AST clause */
-    // TODO: remove dependency to AST
+    // TODO (#541): remove dependency to AST
     const AstClause& getOrigin() const {
         ASSERT(clause);
         return *clause;
@@ -477,7 +477,7 @@ public:
         return toPtrVector(statements);
     }
 
-    /** TODO: what's that for ?? */
+    /** TODO (#541): what's that for ?? */
     template <typename T>
     void moveSubprograms(std::vector<std::unique_ptr<T>>& destination) {
         movePtrVector(statements, destination);
