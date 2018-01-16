@@ -89,11 +89,13 @@ std::size_t InterpreterInterface::size() {
 }
 
 bool InterpreterInterface::isOutput() const {
-    return ramRelation.getID().isOutput();
+    // TODO
+    return true;
 }
 
 bool InterpreterInterface::isInput() const {
-    return ramRelation.getID().isInput();
+    // TODO
+    return true;
 }
 
 std::string InterpreterInterface::getName() const {

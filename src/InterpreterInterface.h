@@ -17,7 +17,6 @@
 #pragma once
 
 #include "Interpreter.h"
-#include "RamRelation.h"
 #include "SouffleInterface.h"
 
 #include <array>
@@ -101,6 +100,7 @@ public:
     SouffleInterpreterInterface(RamProgram& p, Interpreter& e, InterpreterEnvironment& r, SymbolTable& s)
             : prog(p), exec(e), env(r), symTable(s) {
         uint32_t id = 0;
+#if 0
         for (auto& rel_pair : r.getRelationMap()) {
             auto& rel = rel_pair.second;
 
@@ -120,6 +120,7 @@ public:
             addRelation(rel.getID().getName(), interface, rel.getID().isInput(), rel.getID().isOutput());
             id++;
         }
+#endif
     }
     virtual ~SouffleInterpreterInterface() {
         for (auto* interface : interfaces) {
