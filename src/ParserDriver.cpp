@@ -31,13 +31,13 @@ ParserDriver::ParserDriver() : trace_scanning(false), trace_parsing(false) {}
 
 ParserDriver::~ParserDriver() = default;
 
-std::unique_ptr<AstTranslationUnit> ParserDriver::parse(
-        const std::string& f, FILE* in, SymbolTable& s, ErrorReport& e, DebugReport& d) {
-    translationUnit = std::unique_ptr<AstTranslationUnit>(
-            new AstTranslationUnit(std::unique_ptr<AstProgram>(new AstProgram()), s, e, d));
+std::unique_ptr<AstTranslationUnit> ParserDriver::parse(const std::string& filename, FILE* in,
+        SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport) {
+    translationUnit = std::unique_ptr<AstTranslationUnit>(new AstTranslationUnit(
+            std::unique_ptr<AstProgram>(new AstProgram()), symbolTable, errorReport, debugReport));
     yyscan_t scanner;
     scanner_data data;
-    data.yyfilename = f.c_str();
+    data.yyfilename = filename.c_str();
     yylex_init_extra(&data, &scanner);
     yyset_in(in, scanner);
 
@@ -52,10 +52,10 @@ std::unique_ptr<AstTranslationUnit> ParserDriver::parse(
     return std::move(translationUnit);
 }
 
-std::unique_ptr<AstTranslationUnit> ParserDriver::parse(
-        const std::string& code, SymbolTable& s, ErrorReport& e, DebugReport& d) {
-    translationUnit = std::unique_ptr<AstTranslationUnit>(
-            new AstTranslationUnit(std::unique_ptr<AstProgram>(new AstProgram()), s, e, d));
+std::unique_ptr<AstTranslationUnit> ParserDriver::parse(const std::string& code, SymbolTable& symbolTable,
+        ErrorReport& errorReport, DebugReport& debugReport) {
+    translationUnit = std::unique_ptr<AstTranslationUnit>(new AstTranslationUnit(
+            std::unique_ptr<AstProgram>(new AstProgram()), symbolTable, errorReport, debugReport));
 
     scanner_data data;
     data.yyfilename = "<in-memory>";
@@ -73,16 +73,16 @@ std::unique_ptr<AstTranslationUnit> ParserDriver::parse(
     return std::move(translationUnit);
 }
 
-std::unique_ptr<AstTranslationUnit> ParserDriver::parseTranslationUnit(
-        const std::string& f, FILE* in, SymbolTable& sym, ErrorReport& e, DebugReport& d) {
+std::unique_ptr<AstTranslationUnit> ParserDriver::parseTranslationUnit(const std::string& filename, FILE* in,
+        SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport) {
     ParserDriver parser;
-    return parser.parse(f, in, sym, e, d);
+    return parser.parse(filename, in, symbolTable, errorReport, debugReport);
 }
 
-std::unique_ptr<AstTranslationUnit> ParserDriver::parseTranslationUnit(
-        const std::string& code, SymbolTable& sym, ErrorReport& e, DebugReport& d) {
+std::unique_ptr<AstTranslationUnit> ParserDriver::parseTranslationUnit(const std::string& code,
+        SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport) {
     ParserDriver parser;
-    return parser.parse(code, sym, e, d);
+    return parser.parse(code, symbolTable, errorReport, debugReport);
 }
 
 void ParserDriver::addPragma(std::unique_ptr<AstPragma> p) {

@@ -24,6 +24,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 
 namespace souffle {
 

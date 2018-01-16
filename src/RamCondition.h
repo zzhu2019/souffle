@@ -48,7 +48,7 @@ public:
 /**
  * Conjunction
  */
-// TODO: rename to RAMConjunction
+// TODO (#541): rename to RAMConjunction
 class RamAnd : public RamCondition {
 protected:
     /** Left-hand side of conjunction */
@@ -115,7 +115,7 @@ protected:
 /**
  * Binary constraint
  */
-// TODO: rename to RamConstraint
+// TODO (#541): rename to RamConstraint
 class RamBinaryRelation : public RamCondition {
 private:
     /** Operator */
@@ -211,7 +211,7 @@ protected:
     RamRelation relation;
 
     /** Pattern -- nullptr if undefined */
-    // TODO: rename to argument
+    // TODO (#541): rename to argument
     std::vector<std::unique_ptr<RamValue>> values;
 
 public:
@@ -320,7 +320,7 @@ protected:
 /**
  * Emptiness check for a relation
  */
-// TODO: Rename to RamEmptyCheck
+// TODO (#541): Rename to RamEmptyCheck
 class RamEmpty : public RamCondition {
     /** Relation */
     RamRelation relation;

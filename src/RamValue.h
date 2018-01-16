@@ -35,7 +35,7 @@ namespace souffle {
 /**
  * Abstract class for describing scalar values in RAM
  */
-// TODO: Remove isConstant() and make an analysis for RAM
+// TODO (#541): Remove isConstant() and make an analysis for RAM
 class RamValue : public RamNode {
 protected:
     bool cnst;
@@ -58,7 +58,7 @@ public:
 /**
  * Unary function
  */
-// TODO: have a single n-ary function
+// TODO (#541): have a single n-ary function
 class RamUnaryOperator : public RamValue {
 private:
     /** Operation symbol */
@@ -79,7 +79,7 @@ public:
     }
 
     /** Get Argument */
-    // TODO: rename to getArgument()
+    // TODO (#541): rename to getArgument()
     const RamValue* getValue() const {
         return argument.get();
     }
@@ -93,7 +93,7 @@ public:
     }
 
     /** Get level */
-    // TODO: move to an analysis
+    // TODO (#541): move to an analysis
     size_t getLevel() const override {
         return argument->getLevel();
     }
@@ -126,7 +126,7 @@ protected:
 /**
  * Binary function
  */
-// TODO: have a single n-ary function
+// TODO (#541): have a single n-ary function
 class RamBinaryOperator : public RamValue {
 private:
     /** Operation symbol */
@@ -189,7 +189,7 @@ public:
     }
 
     /** Get level */
-    // TODO: move to an analysis
+    // TODO (#541): move to an analysis
     size_t getLevel() const override {
         return std::max(lhsArgument->getLevel(), rhsArgument->getLevel());
     }
@@ -226,7 +226,7 @@ protected:
 /**
  * Ternary Function
  */
-// TODO: have a single n-ary function
+// TODO (#541): have a single n-ary function
 class RamTernaryOperator : public RamValue {
 private:
     /** Operation symbol */
@@ -254,7 +254,7 @@ public:
     }
 
     /** Get argument */
-    // TODO: Remove old def
+    // TODO (#541): Remove old def
     const RamValue* getArg(int i) const {
         return arguments[i].get();
     }
@@ -269,7 +269,7 @@ public:
     }
 
     /** Get level */
-    // TODO: move to analysis
+    // TODO (#541): move to analysis
     size_t getLevel() const override {
         return std::max(
                 std::max(arguments[0]->getLevel(), arguments[1]->getLevel()), arguments[2]->getLevel());
@@ -309,11 +309,11 @@ protected:
 /**
  * Access element from the current tuple in a tuple environment
  */
-// TODO: add reference to attributes of a relation
+// TODO (#541): add reference to attributes of a relation
 class RamElementAccess : public RamValue {
 private:
     /** Level information */
-    // TODO: move to analysis
+    // TODO (#541): move to analysis
     size_t level;
 
     /** Element number */
@@ -385,7 +385,7 @@ public:
     RamNumber(RamDomain c) : RamValue(RN_Number, true), constant(c) {}
 
     /** Get constant */
-    // TODO:  move to analysis
+    // TODO (#541):  move to analysis
     RamDomain getConstant() const {
         return constant;
     }
@@ -396,7 +396,7 @@ public:
     }
 
     /** Get level */
-    // TODO: move to analysis
+    // TODO (#541): move to analysis
     size_t getLevel() const override {
         return 0;
     }
@@ -440,7 +440,7 @@ public:
     }
 
     /** Get level */
-    // TODO: move to analysis
+    // TODO (#541): move to analysis
     size_t getLevel() const override {
         return 0;
     }
@@ -473,7 +473,7 @@ protected:
 class RamPack : public RamValue {
 private:
     /** Arguments */
-    // TODO: use type for vector-ram-value
+    // TODO (#541): use type for vector-ram-value
     std::vector<std::unique_ptr<RamValue>> arguments;
 
 public:
@@ -483,7 +483,7 @@ public:
               arguments(std::move(args)) {}
 
     /** Get values */
-    // TODO: remove getter
+    // TODO (#541): remove getter
     std::vector<RamValue*> getValues() const {
         return toPtrVector(arguments);
     }
@@ -503,7 +503,7 @@ public:
     }
 
     /** Get level */
-    // TODO: move to analysis
+    // TODO (#541): move to analysis
     size_t getLevel() const override {
         size_t level = 0;
         for (const auto& arg : arguments) {
@@ -581,7 +581,7 @@ public:
     }
 
     /** Get level */
-    // TODO: move to an analysis
+    // TODO (#541): move to an analysis
     size_t getLevel() const override {
         return 0;
     }
