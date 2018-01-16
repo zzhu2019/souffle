@@ -309,43 +309,30 @@ std::set<AstRelationIdentifier> addAggregators(
     return retVal;
 }
 
-// for a given set of relations, add in all the atoms in their rules
-// TODO (azreika): can be done much more efficiently
-// -- TODO -- FIX THIS UP
-//      -- fix up parameters
-std::set<AstRelationIdentifier> addDependencies(
-        const AstProgram* program, std::set<AstRelationIdentifier> relations) {
-
+// Given a set of relations R, add in all relations that use one of these
+// relations in their clauses. Repeat until a fixed point is reached.
+std::set<AstRelationIdentifier> addBackwardDependencies(const AstProgram* program, std::set<AstRelationIdentifier> relations) {
     bool relationsAdded = false;
     std::set<AstRelationIdentifier> result;
-    for (AstRelationIdentifier relName : relations) {
-        result.insert(relName); // add the relation itself
 
-        // add in all relations that it needs to use
-        AstRelation* associatedRelation = program->getRelation(relName);
-        for (AstClause* clause : associatedRelation->getClauses()) {
-            visitDepthFirst(*clause, [&](const AstAtom& subatom) {
-                AstRelationIdentifier atomName = subatom.getName();
-                result.insert(atomName);
-                if (!contains(relations, atomName)) {
-                    // hasn't been seen yet, so fixed point not reached
-                    relationsAdded = true;
-                }
-            });
-        }
+    for (AstRelationIdentifier relName : relations) {
+        // Add the relation itself
+        result.insert(relName);
     }
 
-    // add in all relations that need to use an ignored relation
+    // Add in all relations that need to use an ignored relation
     for (AstRelation* rel : program->getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
             AstRelationIdentifier clauseHeadName = clause->getHead()->getName();
             if (!contains(relations, clauseHeadName)) {
+                // Clause hasn't been added yet, so check if it needs to be added
                 visitDepthFirst(*clause, [&](const AstAtom& subatom) {
                     AstRelationIdentifier atomName = subatom.getName();
                     if (contains(relations, atomName)) {
+                        // Clause uses one of the given relations
                         result.insert(clauseHeadName);
-                        
-                        // clause name hasn't been seen yet, so fixed point not reached
+
+                        // Clause name hasn't been seen yet, so fixed point not reached
                         relationsAdded = true;
                     }
                 });
@@ -353,10 +340,41 @@ std::set<AstRelationIdentifier> addDependencies(
         }
     }
 
+    if (relationsAdded) {
+        // Keep going until we reach a fixed point
+        return addBackwardDependencies(program, result);
+    } else {
+        return result;
+    }
+}
+
+// Given a set of relations R, add in all relations that they use in their clauses.
+// Repeat until a fixed point is reached.
+std::set<AstRelationIdentifier> addForwardDependencies(const AstProgram* program, std::set<AstRelationIdentifier> relations) {
+    bool relationsAdded = false;
+    std::set<AstRelationIdentifier> result;
+
+    for (AstRelationIdentifier relName : relations) {
+        // Add the relation itself
+        result.insert(relName);
+
+        // Add in all the relations that it needs to use
+        AstRelation* associatedRelation = program->getRelation(relName);
+        for (AstClause* clause : associatedRelation->getClauses()) {
+            visitDepthFirst(*clause, [&](const AstAtom& subatom) {
+                AstRelationIdentifier atomName = subatom.getName();
+                result.insert(atomName);
+                if (!contains(relations, atomName)) {
+                    // Hasn't been seen yet, so fixed point not reached
+                    relationsAdded = true;
+                }
+            });
+        }
+    }
 
     if (relationsAdded) {
-        // keep going until we reach a fixed point
-        return addDependencies(program, result);
+        // Keep going until we reach a fixed point
+        return addForwardDependencies(program, result);
     } else {
         return result;
     }
@@ -383,8 +401,10 @@ std::set<AstRelationIdentifier> addIgnoredRelations(
         }
     }
 
-    // add all dependencies to the list of relations to transform
-    targetRelations = addDependencies(program, targetRelations);
+    // add all backward-dependencies to the list of relations to transform;
+    // if we want to magic transform 'a', then we also have to magic transform
+    // every relation that (directly or indirectly) uses 'a' in its clauses
+    targetRelations = addBackwardDependencies(program, targetRelations);
 
     // ignore all relations not specified by the option
     std::set<AstRelationIdentifier> retVal(relations);
@@ -719,7 +739,7 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     }
 
     // add the relations needed for negated relations to be computed
-    negatedAtoms = addDependencies(program, negatedAtoms);
+    negatedAtoms = addForwardDependencies(program, negatedAtoms);
 
     // find atoms that should be ignored
     for (AstRelation* rel : program->getRelations()) {
@@ -736,7 +756,9 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
 
     // find atoms that should be ignored based on magic-transform option
     ignoredAtoms = addIgnoredRelations(program, ignoredAtoms);
-    ignoredAtoms = addDependencies(program, ignoredAtoms);
+
+    // if a relation is ignored, then all the atoms in its bodies need to be ignored
+    ignoredAtoms = addForwardDependencies(program, ignoredAtoms);
 
     // -----------------
     // --- Adornment ---
