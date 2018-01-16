@@ -24,6 +24,7 @@ class RamProgram : public RamNode {
 private:
     std::unique_ptr<RamStatement> main;
     std::map<std::string, std::unique_ptr<RamStatement>> subroutines;
+    std::map<std::string, std::unique_ptr<RamRelation>> relations;
 
 public:
     RamProgram(std::unique_ptr<RamStatement> main) : RamNode(RN_Program), main(std::move(main)) {}
@@ -43,8 +44,13 @@ public:
 
     /** Print */
     void print(std::ostream& out) const override {
-        out << "PROGRAM " << std::endl;
-        main->print(out);
+        out << "DECLARATION " << std::endl;
+        for (const auto &rel : relations) {
+            rel.second->print(out);    
+        }
+        out << "END DECLARATION " << std::endl;
+        out << "PROGRAM" << std::endl;
+        out << *main;
         out << "END PROGRAM" << std::endl;
         for (auto it = subroutines.begin(); it != subroutines.end(); it++) {
             out << std::endl << "SUBROUTINE " << it->first << std::endl;
@@ -57,6 +63,16 @@ public:
     RamStatement* getMain() const {
         ASSERT(main);
         return main.get();
+    }
+
+    /** Add relation */
+    void addRelation(std::string name, std::unique_ptr<RamRelation> rel) {
+        relations.insert(std::make_pair(name, std::move(rel)));
+    }
+
+    /** Get relation */
+    const RamRelation& getRelation(std::string name) const {
+        return *relations.at(name);
     }
 
     /** Add subroutine */
@@ -72,6 +88,7 @@ public:
         }
         return subroutineRefs;
     }
+
 
     /** Get subroutine */
     const RamStatement& getSubroutine(std::string name) const {

@@ -25,6 +25,7 @@
 #include "Logger.h"
 #include "Macro.h"
 #include "RamVisitor.h"
+#include "RamRelation.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"
 #include "TypeSystem.h"
@@ -395,8 +396,12 @@ public:
         }
         if (Global::config().has("profile")) {
             // get target relation
-            RamRelation rel;
-            visitDepthFirst(insert, [&](const RamProject& project) { rel = project.getRelation(); });
+            const RamRelation *rel = nullptr;
+            visitDepthFirst(insert, 
+                [&](const RamProject& project) { 
+                    rel = &project.getRelation(); 
+                }
+            );
 
             // build log message
             auto& clause = insert.getOrigin();
@@ -405,7 +410,7 @@ public:
             replace(clauseText.begin(), clauseText.end(), '\n', ' ');
 
             std::ostringstream line;
-            line << "p-proof-counter;" << rel.getName() << ";" << clause.getSrcLoc() << ";" << clauseText
+            line << "p-proof-counter;" << rel->getName() << ";" << clause.getSrcLoc() << ";" << clauseText
                  << ";";
             std::string label = line.str();
 
