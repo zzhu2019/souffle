@@ -98,17 +98,17 @@ std::string getString(const AstArgument* arg) {
     return argStream.str();
 }
 
-// checks whether a given functor is bound
-bool isBoundFunctor(const AstVariable* functorVariable, std::set<std::string> boundArgs,
-        std::map<std::string, std::set<std::string>> functorBindings) {
-    if (contains(boundArgs, functorVariable->getName())) {
+// checks whether a given record or functor is bound
+bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string> boundArgs,
+        std::map<std::string, std::set<std::string>> compositeBindings) {
+    if (contains(boundArgs, compositeVariable->getName())) {
         return true;
     }
 
     bool bound = true;
 
-    // a functor bound iff all its subvariables are bound
-    std::set<std::string> bindings = functorBindings[functorVariable->getName()];
+    // a composite argument is bound iff all its subvariables are bound
+    std::set<std::string> bindings = compositeBindings[compositeVariable->getName()];
 
     for (const std::string& var : bindings) {
         if (!contains(boundArgs, var)) {
@@ -120,15 +120,16 @@ bool isBoundFunctor(const AstVariable* functorVariable, std::set<std::string> bo
 }
 
 bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs,
-        std::map<std::string, std::set<std::string>> functorBindings) {
+        std::map<std::string, std::set<std::string>> compositeBindings) {
     if (AstVariable* var = dynamic_cast<AstVariable*>(arg)) {
-        if (hasPrefix(var->getName(), "+functor")) {
-            if (isBoundFunctor(var, boundArgs, functorBindings)) {
+        std::string variableName = var->getName();
+        if (hasPrefix(variableName, "+functor") || hasPrefix(variableName, "+record")) {
+            if (isBoundComposite(var, boundArgs, compositeBindings)) {
                 return true;
             }
         }
 
-        if (contains(boundArgs, var->getName())) {
+        if (contains(boundArgs, variableName)) {
             return true;  // found a bound argument, so can stop
         }
     } else {
@@ -141,9 +142,9 @@ bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs,
 
 // checks whether a given atom has a bound argument
 bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs,
-        std::map<std::string, std::set<std::string>> functorBindings) {
+        std::map<std::string, std::set<std::string>> compositeBindings) {
     for (AstArgument* arg : atom->getArguments()) {
-        if (isBoundArgument(arg, boundArgs, functorBindings)) {
+        if (isBoundArgument(arg, boundArgs, compositeBindings)) {
             return true;
         }
     }
@@ -311,7 +312,8 @@ std::set<AstRelationIdentifier> addAggregators(
 
 // Given a set of relations R, add in all relations that use one of these
 // relations in their clauses. Repeat until a fixed point is reached.
-std::set<AstRelationIdentifier> addBackwardDependencies(const AstProgram* program, std::set<AstRelationIdentifier> relations) {
+std::set<AstRelationIdentifier> addBackwardDependencies(
+        const AstProgram* program, std::set<AstRelationIdentifier> relations) {
     bool relationsAdded = false;
     std::set<AstRelationIdentifier> result;
 
@@ -350,7 +352,8 @@ std::set<AstRelationIdentifier> addBackwardDependencies(const AstProgram* progra
 
 // Given a set of relations R, add in all relations that they use in their clauses.
 // Repeat until a fixed point is reached.
-std::set<AstRelationIdentifier> addForwardDependencies(const AstProgram* program, std::set<AstRelationIdentifier> relations) {
+std::set<AstRelationIdentifier> addForwardDependencies(
+        const AstProgram* program, std::set<AstRelationIdentifier> relations) {
     bool relationsAdded = false;
     std::set<AstRelationIdentifier> result;
 
@@ -457,12 +460,12 @@ std::vector<std::string> reorderAdornment(
 // computes the adornment of a newly chosen atom
 // returns both the adornment and the new list of bound arguments
 std::pair<std::string, std::set<std::string>> bindArguments(AstAtom* currAtom,
-        std::set<std::string> boundArgs, std::map<std::string, std::set<std::string>> functorBindings) {
+        std::set<std::string> boundArgs, std::map<std::string, std::set<std::string>> compositeBindings) {
     std::set<std::string> newlyBoundArgs;
     std::string atomAdornment = "";
 
     for (AstArgument* arg : currAtom->getArguments()) {
-        if (isBoundArgument(arg, boundArgs, functorBindings)) {
+        if (isBoundArgument(arg, boundArgs, compositeBindings)) {
             atomAdornment += "b";  // bound
         } else {
             atomAdornment += "f";  // free
@@ -483,7 +486,7 @@ std::pair<std::string, std::set<std::string>> bindArguments(AstAtom* currAtom,
 // Choose the left-most body atom with at least one bound argument
 // If none exist, prioritise EDB predicates.
 int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs,
-        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> functorBindings) {
+        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> compositeBindings) {
     // find the first available atom with at least one bound argument
     int firstedb = -1;
     int firstidb = -1;
@@ -506,7 +509,7 @@ int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boun
         }
 
         // if it has at least one bound argument, then adorn this atom next
-        if (hasBoundArgument(currAtom, boundArgs, functorBindings)) {
+        if (hasBoundArgument(currAtom, boundArgs, compositeBindings)) {
             return i;
         }
     }
@@ -523,9 +526,9 @@ int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boun
 // SIPS #2:
 // Choose the body atom with the maximum number of bound arguments
 // If equal boundness, prioritise left-most EDB
-// TODO: change all the SIPS to prioritise by EDB -> IDB -> atoms with functors
+// TODO: change all the SIPS to prioritise by EDB -> IDB -> atoms with functors/records
 int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
-        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> functorBindings) {
+        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> compositeBindings) {
     int maxBound = -1;
     int maxIndex = 0;
     bool maxIsEDB = false;  // checks if current max index is an EDB predicate
@@ -539,7 +542,7 @@ int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> 
 
         int numBound = 0;
         for (AstArgument* arg : currAtom->getArguments()) {
-            if (isBoundArgument(arg, boundArgs, functorBindings)) {
+            if (isBoundArgument(arg, boundArgs, compositeBindings)) {
                 numBound++;
             }
         }
@@ -560,7 +563,7 @@ int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> 
 
 // Choose the atom with the maximum ratio of bound arguments to total arguments
 int getNextAtomMaxRatioSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
-        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> functorBindings) {
+        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> compositeBindings) {
     double maxRatio = -1;
     int maxIndex = 0;
 
@@ -578,7 +581,7 @@ int getNextAtomMaxRatioSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> 
 
         int numBound = 0;
         for (AstArgument* arg : currAtom->getArguments()) {
-            if (isBoundArgument(arg, boundArgs, functorBindings)) {
+            if (isBoundArgument(arg, boundArgs, compositeBindings)) {
                 numBound++;
             }
         }
@@ -601,21 +604,22 @@ int getNextAtomMaxRatioSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> 
 // Choose the SIP Strategy to be used
 // Current choice is the max ratio SIPS
 int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
-        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> functorBindings) {
-    return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb, functorBindings);
+        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> compositeBindings) {
+    return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb, compositeBindings);
 }
 
-std::map<std::string, std::set<std::string>> bindFunctors(const AstProgram* program) {
-    std::map<std::string, std::set<std::string>> functorBindings;
+// TODO: comment
+std::map<std::string, std::set<std::string>> bindComposites(const AstProgram* program) {
+    std::map<std::string, std::set<std::string>> compositeBindings;
 
     struct M : public AstNodeMapper {
-        std::map<std::string, std::set<std::string>>& functorBindings;
+        std::map<std::string, std::set<std::string>>& compositeBindings;
         std::set<AstConstraint*>& constraints;
         mutable int changeCount;
 
-        M(std::map<std::string, std::set<std::string>>& functorBindings,
+        M(std::map<std::string, std::set<std::string>>& compositeBindings,
                 std::set<AstConstraint*>& constraints, int changeCount)
-                : functorBindings(functorBindings), constraints(constraints), changeCount(changeCount) {}
+                : compositeBindings(compositeBindings), constraints(constraints), changeCount(changeCount) {}
 
         int getChangeCount() const {
             return changeCount;
@@ -636,27 +640,48 @@ std::map<std::string, std::set<std::string>> bindFunctors(const AstProgram* prog
                 visitDepthFirst(
                         *functor, [&](const AstVariable& var) { requiredVars.insert(var.getName()); });
 
-                // create new constraint (+abdulX = constant)
+                // create new constraint (+functorX = original-functor)
                 auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
-                functorBindings[newVariableName.str()] = requiredVars;
+                compositeBindings[newVariableName.str()] = requiredVars;
                 constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
                         std::unique_ptr<AstArgument>(newVariable->clone()),
                         std::unique_ptr<AstArgument>(functor->clone())));
 
-                // update constant to be the variable created
+                // update functor to be the variable created
+                return std::move(newVariable);
+            } else if (AstRecordInit* record = dynamic_cast<AstRecordInit*>(node.get())) {
+                // record found
+                changeCount++;
+
+                // create new variable name (with appropriate suffix)
+                std::stringstream newVariableName;
+                newVariableName << "+record" << changeCount;
+
+                // get all variables it depends on
+                std::set<std::string> requiredVars;
+                visitDepthFirst(*record, [&](const AstVariable& var) { requiredVars.insert(var.getName()); });
+
+                // create new constraint (+recordX = original-record)
+                auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
+                compositeBindings[newVariableName.str()] = requiredVars;
+                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                        std::unique_ptr<AstArgument>(newVariable->clone()),
+                        std::unique_ptr<AstArgument>(record->clone())));
+
+                // update record to be the variable created
                 return std::move(newVariable);
             }
             return node;
         }
     };
 
-    int changeCount = 0;  // number of functors seen so far
+    int changeCount = 0;  // number of functors/records seen so far
 
     // apply the change to all clauses in the program
     for (AstRelation* rel : program->getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
             std::set<AstConstraint*> constraints;
-            M update(functorBindings, constraints, changeCount);
+            M update(compositeBindings, constraints, changeCount);
             clause->apply(update);
 
             changeCount = update.getChangeCount();
@@ -667,7 +692,7 @@ std::map<std::string, std::set<std::string>> bindFunctors(const AstProgram* prog
         }
     }
 
-    return functorBindings;
+    return compositeBindings;
 }
 
 // runs the adornment algorithm on an input program
@@ -695,7 +720,8 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     // -------------
     const AstProgram* program = translationUnit.getProgram();
 
-    std::map<std::string, std::set<std::string>> functorBindings = bindFunctors(program);
+    // normalises and tracks bindings of composite arguments (namely records and functors)
+    std::map<std::string, std::set<std::string>> compositeBindings = bindComposites(program);
 
     // set up IDB/EDB and the output queries
     std::vector<AstRelationIdentifier> outputQueries;
@@ -835,14 +861,14 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
 
                 while (atomsAdorned < atomsTotal) {
                     // get the next body atom to adorn based on our SIPS
-                    int currIndex = getNextAtomSIPS(atoms, boundArgs, adornmentEdb, functorBindings);
+                    int currIndex = getNextAtomSIPS(atoms, boundArgs, adornmentEdb, compositeBindings);
                     AstAtom* currAtom = atoms[currIndex];
                     AstRelationIdentifier atomName = currAtom->getName();
 
                     // compute the adornment pattern of this atom, and
                     // add all its arguments to the list of bound args
                     std::pair<std::string, std::set<std::string>> result =
-                            bindArguments(currAtom, boundArgs, functorBindings);
+                            bindArguments(currAtom, boundArgs, compositeBindings);
                     std::string atomAdornment = result.first;
                     boundArgs = result.second;
 
