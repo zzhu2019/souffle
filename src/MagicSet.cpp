@@ -15,7 +15,6 @@
  ***********************************************************************/
 
 #include "MagicSet.h"
-#include "AstVisitor.h"
 #include "Global.h"
 #include "IODirectives.h"
 
@@ -99,18 +98,17 @@ std::string getString(const AstArgument* arg) {
 }
 
 // checks whether a given record or functor is bound
-bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string> boundArgs,
-        std::map<std::string, std::set<std::string>> compositeBindings) {
-    if (contains(boundArgs, compositeVariable->getName())) {
+bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string> boundArgs, const BindingStore& compositeBindings) {
+    std::string variableName = compositeVariable->getName();
+    if (contains(boundArgs, variableName)) {
         return true;
     }
 
     bool bound = true;
 
     // a composite argument is bound iff all its subvariables are bound
-    std::set<std::string> bindings = compositeBindings[compositeVariable->getName()];
-
-    for (const std::string& var : bindings) {
+    auto dependencies = compositeBindings.getVariableDependencies(variableName);
+    for (const std::string& var : dependencies) {
         if (!contains(boundArgs, var)) {
             bound = false;
         }
@@ -119,8 +117,7 @@ bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string
     return bound;
 }
 
-bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs,
-        std::map<std::string, std::set<std::string>> compositeBindings) {
+bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs, const BindingStore& compositeBindings) {
     if (AstVariable* var = dynamic_cast<AstVariable*>(arg)) {
         std::string variableName = var->getName();
         if (hasPrefix(variableName, "+functor") || hasPrefix(variableName, "+record")) {
@@ -141,8 +138,7 @@ bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs,
 }
 
 // checks whether a given atom has a bound argument
-bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs,
-        std::map<std::string, std::set<std::string>> compositeBindings) {
+bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs, const BindingStore& compositeBindings) {
     for (AstArgument* arg : atom->getArguments()) {
         if (isBoundArgument(arg, boundArgs, compositeBindings)) {
             return true;
@@ -460,7 +456,7 @@ std::vector<std::string> reorderAdornment(
 // computes the adornment of a newly chosen atom
 // returns both the adornment and the new list of bound arguments
 std::pair<std::string, std::set<std::string>> bindArguments(AstAtom* currAtom,
-        std::set<std::string> boundArgs, std::map<std::string, std::set<std::string>> compositeBindings) {
+        std::set<std::string> boundArgs, const BindingStore& compositeBindings) {
     std::set<std::string> newlyBoundArgs;
     std::string atomAdornment = "";
 
@@ -486,7 +482,7 @@ std::pair<std::string, std::set<std::string>> bindArguments(AstAtom* currAtom,
 // Choose the left-most body atom with at least one bound argument
 // If none exist, prioritise EDB predicates.
 int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs,
-        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> compositeBindings) {
+        std::set<AstRelationIdentifier> edb, const BindingStore& compositeBindings) {
     // find the first available atom with at least one bound argument
     int firstedb = -1;
     int firstidb = -1;
@@ -528,7 +524,7 @@ int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boun
 // If equal boundness, prioritise left-most EDB
 // TODO: change all the SIPS to prioritise by EDB -> IDB -> atoms with functors/records
 int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
-        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> compositeBindings) {
+        std::set<AstRelationIdentifier> edb, const BindingStore& compositeBindings) {
     int maxBound = -1;
     int maxIndex = 0;
     bool maxIsEDB = false;  // checks if current max index is an EDB predicate
@@ -563,7 +559,7 @@ int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> 
 
 // Choose the atom with the maximum ratio of bound arguments to total arguments
 int getNextAtomMaxRatioSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
-        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> compositeBindings) {
+        std::set<AstRelationIdentifier> edb, const BindingStore& compositeBindings) {
     double maxRatio = -1;
     int maxIndex = 0;
 
@@ -604,21 +600,18 @@ int getNextAtomMaxRatioSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> 
 // Choose the SIP Strategy to be used
 // Current choice is the max ratio SIPS
 int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
-        std::set<AstRelationIdentifier> edb, std::map<std::string, std::set<std::string>> compositeBindings) {
+        std::set<AstRelationIdentifier> edb, const BindingStore& compositeBindings) {
     return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb, compositeBindings);
 }
 
 // TODO: comment
-std::map<std::string, std::set<std::string>> bindComposites(const AstProgram* program) {
-    std::map<std::string, std::set<std::string>> compositeBindings;
-
+BindingStore bindComposites(const AstProgram* program) {
     struct M : public AstNodeMapper {
-        std::map<std::string, std::set<std::string>>& compositeBindings;
+        BindingStore& compositeBindings;
         std::set<AstConstraint*>& constraints;
         mutable int changeCount;
 
-        M(std::map<std::string, std::set<std::string>>& compositeBindings,
-                std::set<AstConstraint*>& constraints, int changeCount)
+        M(BindingStore& compositeBindings, std::set<AstConstraint*>& constraints, int changeCount)
                 : compositeBindings(compositeBindings), constraints(constraints), changeCount(changeCount) {}
 
         int getChangeCount() const {
@@ -635,14 +628,11 @@ std::map<std::string, std::set<std::string>> bindComposites(const AstProgram* pr
                 std::stringstream newVariableName;
                 newVariableName << "+functor" << changeCount;
 
-                // get all variables it depends on
-                std::set<std::string> requiredVars;
-                visitDepthFirst(
-                        *functor, [&](const AstVariable& var) { requiredVars.insert(var.getName()); });
+                // add the binding to the BindingStore
+                compositeBindings.addBinding(newVariableName.str(), functor);
 
                 // create new constraint (+functorX = original-functor)
                 auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
-                compositeBindings[newVariableName.str()] = requiredVars;
                 constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
                         std::unique_ptr<AstArgument>(newVariable->clone()),
                         std::unique_ptr<AstArgument>(functor->clone())));
@@ -657,13 +647,11 @@ std::map<std::string, std::set<std::string>> bindComposites(const AstProgram* pr
                 std::stringstream newVariableName;
                 newVariableName << "+record" << changeCount;
 
-                // get all variables it depends on
-                std::set<std::string> requiredVars;
-                visitDepthFirst(*record, [&](const AstVariable& var) { requiredVars.insert(var.getName()); });
+                // add the binding to the BindingStore
+                compositeBindings.addBinding(newVariableName.str(), record);
 
                 // create new constraint (+recordX = original-record)
                 auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
-                compositeBindings[newVariableName.str()] = requiredVars;
                 constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
                         std::unique_ptr<AstArgument>(newVariable->clone()),
                         std::unique_ptr<AstArgument>(record->clone())));
@@ -674,6 +662,8 @@ std::map<std::string, std::set<std::string>> bindComposites(const AstProgram* pr
             return node;
         }
     };
+
+    BindingStore compositeBindings;
 
     int changeCount = 0;  // number of functors/records seen so far
 
@@ -721,7 +711,7 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     const AstProgram* program = translationUnit.getProgram();
 
     // normalises and tracks bindings of composite arguments (namely records and functors)
-    std::map<std::string, std::set<std::string>> compositeBindings = bindComposites(program);
+    BindingStore compositeBindings = bindComposites(program);
 
     // set up IDB/EDB and the output queries
     std::vector<AstRelationIdentifier> outputQueries;
@@ -897,6 +887,8 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
         // add the list of adorned clauses matching the current output relation
         adornmentClauses.push_back(adornedClauses);
     }
+
+    this->bindings = std::move(compositeBindings);
 }
 
 // output the adornment analysis computed
@@ -1072,6 +1064,8 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
     separateDBs(program);  // make EDB int IDB = empty
 
     Adornment* adornment = translationUnit.getAnalysis<Adornment>();  // perform adornment
+
+    const BindingStore& compositeBindings = adornment->getBindings();
 
     // edb/idb handling
     std::vector<std::vector<AdornedClause>> allAdornedClauses = adornment->getAdornedClauses();
@@ -1322,6 +1316,13 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                                 magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
                                         std::unique_ptr<AstArgument>(arg->clone()),
                                         std::unique_ptr<AstArgument>(embeddedConstant)));
+                            }
+
+                            // deal with normalised composite arguments
+                            if (hasPrefix(argName, "+functor") || hasPrefix(argName, "+record")) {
+                                magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                                        std::unique_ptr<AstArgument>(arg->clone()),
+                                        std::unique_ptr<AstArgument>(compositeBindings.cloneOriginalArgument(argName))));
                             }
                         }
 

@@ -17,6 +17,7 @@
 #pragma once
 
 #include "AstTransforms.h"
+#include "AstVisitor.h"
 
 #include <string>
 #include <vector>
@@ -118,6 +119,30 @@ public:
     }
 };
 
+class BindingStore {
+private:
+    std::map<std::string, std::unique_ptr<AstArgument>> originalArguments;
+    std::map<std::string, std::set<std::string>> varDependencies;
+
+public:
+    AstArgument* cloneOriginalArgument(const std::string& argName) const {
+        return originalArguments.at(argName)->clone();
+    }
+
+    const std::set<std::string>& getVariableDependencies(const std::string& argName) const {
+        return varDependencies.at(argName);
+    }
+
+    void addBinding(std::string newVariableName, const AstArgument* arg) {
+        originalArguments[newVariableName] = std::unique_ptr<AstArgument>(arg->clone());
+
+        // find the variable dependencies
+        std::set<std::string> dependencies;
+        visitDepthFirst(*arg, [&](const AstVariable& var) { dependencies.insert(var.getName()); });
+        varDependencies[newVariableName] = dependencies;
+    }
+};
+
 class Adornment : public AstAnalysis {
 private:
     std::vector<std::vector<AdornedClause>> adornmentClauses;
@@ -126,6 +151,7 @@ private:
     std::set<AstRelationIdentifier> adornmentIdb;
     std::set<AstRelationIdentifier> negatedAtoms;
     std::set<AstRelationIdentifier> ignoredAtoms;
+    BindingStore bindings;
 
 public:
     static constexpr const char* name = "adorned-clauses";
@@ -136,28 +162,32 @@ public:
 
     void print(std::ostream& os) const;
 
-    const std::vector<std::vector<AdornedClause>> getAdornedClauses() {
+    const std::vector<std::vector<AdornedClause>>& getAdornedClauses() {
         return adornmentClauses;
     }
 
-    const std::vector<AstRelationIdentifier> getRelations() {
+    const std::vector<AstRelationIdentifier>& getRelations() {
         return adornmentRelations;
     }
 
-    const std::set<AstRelationIdentifier> getEDB() {
+    const std::set<AstRelationIdentifier>& getEDB() {
         return adornmentEdb;
     }
 
-    const std::set<AstRelationIdentifier> getIDB() {
+    const std::set<AstRelationIdentifier>& getIDB() {
         return adornmentIdb;
     }
 
-    const std::set<AstRelationIdentifier> getNegatedAtoms() {
+    const std::set<AstRelationIdentifier>& getNegatedAtoms() {
         return negatedAtoms;
     }
 
-    const std::set<AstRelationIdentifier> getIgnoredAtoms() {
+    const std::set<AstRelationIdentifier>& getIgnoredAtoms() {
         return ignoredAtoms;
+    }
+
+    const BindingStore& getBindings() const {
+        return bindings;
     }
 };
 }  // namespace souffle
