@@ -420,7 +420,7 @@ int main(int argc, char** argv) {
         // only run explain interface if interpreted
         if (Global::config().has("provenance") && env != nullptr) {
             // construct SouffleProgram from env
-            SouffleInterpreterInterface interface(
+            InterpreterProgInterface interface(
                     *ramProg, *interpreter, *env, translationUnit->getSymbolTable());
 
             if (Global::config().get("provenance") == "1") {

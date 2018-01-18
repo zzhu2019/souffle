@@ -93,10 +93,8 @@ souffle_sources = \
               Constraints.h                             \
               GraphUtils.h                              \
               RamValue.h                                \
-              InterpreterIndex.h                        \
               RamCondition.h                            \
               AstTranslator.cpp     AstTranslator.h     \
-              Interpreter.cpp       Interpreter.h       \
               Synthesiser.cpp       Synthesiser.h       \
               RamStatement.h                            \
               MaxMatching.cpp       MaxMatching.h       \
@@ -104,7 +102,6 @@ souffle_sources = \
               AutoIndex.cpp         AutoIndex.h         \
               RamOperation.cpp      RamOperation.h      \
               RamProgram.h                              \
-              InterpreterRecords.cpp InterpreterRecords.h \
               RamRelation.h                             \
               RamVisitor.h                              \
               RuleScheduler.h                           \
@@ -121,7 +118,10 @@ souffle_sources = \
               IODirectives.h                            \
               WriteStreamCSV.h                          \
               IOSystem.h                                \
-              InterpreterInterface.cpp  InterpreterInterface.h \
+              Interpreter.cpp       Interpreter.h       \
+              InterpreterInterface.h                    \
+              InterpreterIndex.h                        \
+              InterpreterRecords.cpp InterpreterRecords.h \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h
 
