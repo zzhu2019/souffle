@@ -208,7 +208,7 @@ protected:
 class RamNotExists : public RamCondition {
 protected:
     /* Relation */
-    RamRelation relation;
+    std::unique_ptr<RamRelation> relation;
 
     /** Pattern -- nullptr if undefined */
     // TODO (#541): rename to argument
@@ -219,7 +219,7 @@ public:
 
     /** Get relation */
     const RamRelation& getRelation() const {
-        return relation;
+        return *relation;
     }
 
     /** Get arguments */
@@ -323,14 +323,14 @@ protected:
 // TODO (#541): Rename to RamEmptyCheck
 class RamEmpty : public RamCondition {
     /** Relation */
-    RamRelation relation;
+    std::unique_ptr<RamRelation> relation;
 
 public:
     RamEmpty(const RamRelation& rel) : RamCondition(RN_Empty), relation(rel) {}
 
     /** Get relation */
     const RamRelation& getRelation() const {
-        return relation;
+        return *relation;
     }
 
     /** Get level */

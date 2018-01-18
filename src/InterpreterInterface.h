@@ -213,13 +213,18 @@ public:
 
         // Retrieve AST Relations and store them in a map
         std::map<std::string, const RamRelation*> map;
-        visitDepthFirst(*(prog.getMain()), [&](const RamRelation& rel) { map[rel.getName()] = &rel; });
+        visitDepthFirst(*(prog.getMain()), [&](const RamRelation& rel) { 
+            std::cout << "AST Relation: " << rel.getName() << "\n";
+            map[rel.getName()] = &rel; }
+        );
 
         // Build wrapper relations for Souffle's interface
         for (auto& rel_pair : r.getRelationMap()) {
             auto& name = rel_pair.first;
             auto& interpreterRel = rel_pair.second;
+            ASSERT(map[name]);
             const RamRelation& rel = *map[name];
+            std::cout << "Interpreter Relation: " << name << "\n";
 
             // construct types and names vectors
             std::vector<std::string> types;

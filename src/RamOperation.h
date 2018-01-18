@@ -166,7 +166,7 @@ protected:
 class RamScan : public RamSearch {
 protected:
     /** Search relation */
-    RamRelation relation;
+    std::unique_ptr<RamRelation> relation;
 
     /** Values of index per column of table (if indexable) */
     std::vector<std::unique_ptr<RamValue>> queryPattern;
