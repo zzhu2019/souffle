@@ -31,11 +31,11 @@ namespace souffle {
 
 /**
  * Interpreter Relation
- */    
+ */
 class InterpreterRelation {
 private:
     /** Arity of relation */
-    size_t arity; 
+    size_t arity;
 
     /** Size of blocks containing tuples */
     static const int BLOCK_SIZE = 1024;
@@ -44,7 +44,7 @@ private:
     struct Block {
         size_t size;
         size_t used;
-        // TODO (#421): replace linked list by STL linked list 
+        // TODO (#421): replace linked list by STL linked list
         // block becomes payload of STL linked list only
         std::unique_ptr<Block> next;
         std::unique_ptr<RamDomain[]> data;
@@ -98,7 +98,7 @@ public:
         for (auto x : allocatedBlocks) delete[] x;
     }
 
-    // TODO (#421): check whether still required 
+    // TODO (#421): check whether still required
     InterpreterRelation& operator=(const InterpreterRelation& other) = delete;
 
     InterpreterRelation& operator=(InterpreterRelation&& other) {
@@ -358,7 +358,7 @@ public:
 };
 
 /**
- * Interpreter Equivalence Relation 
+ * Interpreter Equivalence Relation
  */
 
 class InterpreterEqRelation : public InterpreterRelation {

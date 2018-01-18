@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Interpreter.h"
-#include "SouffleInterface.h"
 #include "RamVisitor.h"
+#include "SouffleInterface.h"
 
 #include <array>
 
@@ -39,7 +39,7 @@ inline RamDomain* convertTupleToNums(const tuple& t) {
 }
 
 /**
- * Wrapper class for interpreter relations 
+ * Wrapper class for interpreter relations
  */
 class InterpreterRelInterface : public Relation {
 private:
@@ -126,7 +126,8 @@ protected:
 public:
     InterpreterRelInterface(InterpreterRelation& r, SymbolTable& s, std::string n, std::vector<std::string> t,
             std::vector<std::string> an, bool rInput, bool rOutput, uint32_t i)
-            : relation(r), symTable(s), name(n), types(t), attrNames(an), relInput(rInput), relOutput(rOutput), id(i) {}
+            : relation(r), symTable(s), name(n), types(t), attrNames(an), relInput(rInput),
+              relOutput(rOutput), id(i) {}
     virtual ~InterpreterRelInterface() {}
 
     /** Insert tuple */
@@ -142,13 +143,13 @@ public:
     /** Iterator to first tuple */
     iterator begin() const override {
         return InterpreterRelInterface::iterator(
-            new InterpreterRelInterface::iterator_base(id, this, relation.begin()));
+                new InterpreterRelInterface::iterator_base(id, this, relation.begin()));
     }
 
     /** Iterator to last tuple */
     iterator end() const override {
         return InterpreterRelInterface::iterator(
-            new InterpreterRelInterface::iterator_base(id, this, relation.end()));
+                new InterpreterRelInterface::iterator_base(id, this, relation.end()));
     }
 
     /** Check whether relation is an output relation */
@@ -211,16 +212,14 @@ public:
         uint32_t id = 0;
 
         // Retrieve AST Relations and store them in a map
-        std::map<std::string, const RamRelation *> map; 
-        visitDepthFirst(*(prog.getMain()), [&](const RamRelation& rel) {
-                map[rel.getName()] = &rel;
-        }); 
+        std::map<std::string, const RamRelation*> map;
+        visitDepthFirst(*(prog.getMain()), [&](const RamRelation& rel) { map[rel.getName()] = &rel; });
 
         // Build wrapper relations for Souffle's interface
         for (auto& rel_pair : r.getRelationMap()) {
             auto& name = rel_pair.first;
             auto& interpreterRel = rel_pair.second;
-            const RamRelation &rel = *map[name];
+            const RamRelation& rel = *map[name];
 
             // construct types and names vectors
             std::vector<std::string> types;
@@ -232,8 +231,8 @@ public:
                 std::string n = rel.getArg(i);
                 attrNames.push_back(n);
             }
-            InterpreterRelInterface* interface =
-                    new InterpreterRelInterface(interpreterRel, symTable, rel.getName(), types, attrNames, rel.isInput(), rel.isOutput(), id);
+            InterpreterRelInterface* interface = new InterpreterRelInterface(interpreterRel, symTable,
+                    rel.getName(), types, attrNames, rel.isInput(), rel.isOutput(), id);
             interfaces.push_back(interface);
             addRelation(rel.getName(), interface, rel.isInput(), rel.isOutput());
             id++;
@@ -245,37 +244,31 @@ public:
         }
     }
 
-    /** Run program instance: not implemented */ 
-    void run() override {
-    }
+    /** Run program instance: not implemented */
+    void run() override {}
 
-    /** Load data, run program instance, store data: not implemented */ 
-    void runAll(std::string, std::string) override {
-    }
+    /** Load data, run program instance, store data: not implemented */
+    void runAll(std::string, std::string) override {}
 
-    /** Load input data: not implemented */ 
-    void loadAll(std::string) override {
-    }
+    /** Load input data: not implemented */
+    void loadAll(std::string) override {}
 
-    /** Print output data: not implemented */ 
-    void printAll(std::string) override {
-    }
+    /** Print output data: not implemented */
+    void printAll(std::string) override {}
 
-    /** Dump inputs: not implemented */ 
-    void dumpInputs(std::ostream&) override {
-    }
+    /** Dump inputs: not implemented */
+    void dumpInputs(std::ostream&) override {}
 
-    /** Dump outputs: not implemented */ 
-    void dumpOutputs(std::ostream&) override {
-    }
+    /** Dump outputs: not implemented */
+    void dumpOutputs(std::ostream&) override {}
 
-    /** Run subroutine */ 
+    /** Run subroutine */
     void executeSubroutine(std::string name, const std::vector<RamDomain>& args, std::vector<RamDomain>& ret,
             std::vector<bool>& err) override {
         exec.executeSubroutine(env, prog.getSubroutine(name), args, ret, err);
     }
 
-    /** Get symbol table */ 
+    /** Get symbol table */
     const SymbolTable& getSymbolTable() const override {
         return symTable;
     }
