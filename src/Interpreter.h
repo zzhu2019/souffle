@@ -355,8 +355,8 @@ public:
     inline iterator end() const {
         return iterator();
     }
-    
-    /** Extend tuple */ 
+
+    /** Extend tuple */
     virtual std::vector<RamDomain*> extend(const RamDomain* tuple) {
         std::vector<RamDomain*> newTuples;
 
@@ -368,9 +368,8 @@ public:
         return newTuples;
     }
 
-    /** Extend relation */ 
-    virtual void extend(const InterpreterRelation& rel) {
-    }
+    /** Extend relation */
+    virtual void extend(const InterpreterRelation& rel) {}
 };
 
 /**
@@ -379,8 +378,7 @@ public:
 
 class InterpreterEqRelation : public InterpreterRelation {
 public:
-    InterpreterEqRelation(size_t relArity)
-            : InterpreterRelation(relArity) { }
+    InterpreterEqRelation(size_t relArity) : InterpreterRelation(relArity) {}
 
     /** Insert tuple */
     void insert(const RamDomain* tuple) override {
@@ -497,10 +495,10 @@ public:
         if (pos != data.end()) {
             res = (pos->second);
         } else {
-            if(!id.isEqRel()) {
-               res = new InterpreterRelation(id.getArity());
+            if (!id.isEqRel()) {
+                res = new InterpreterRelation(id.getArity());
             } else {
-               res = new InterpreterEqRelation(id.getArity());
+                res = new InterpreterEqRelation(id.getArity());
             }
             data[id.getName()] = res;
         }
