@@ -60,7 +60,8 @@ protected:
     std::unique_ptr<RamRelation> relation;
 
 public:
-    RamRelationStatement(RamNodeType type, std::unique_ptr<RamRelation> r) : RamStatement(type), relation(std::move(r)) {}
+    RamRelationStatement(RamNodeType type, std::unique_ptr<RamRelation> r)
+            : RamStatement(type), relation(std::move(r)) {}
 
     /** Get RAM relation */
     const RamRelation& getRelation() const {
@@ -70,7 +71,7 @@ public:
 
     /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
-        return std::vector<const RamNode*>()={relation.get()};  // no child nodes
+        return std::vector<const RamNode*>() = {relation.get()};  // no child nodes
     }
 
     /** Apply mapper */
@@ -210,7 +211,8 @@ protected:
     std::unique_ptr<RamRelation> source;
 
 public:
-    RamMerge(std::unique_ptr<RamRelation> t, std::unique_ptr<RamRelation> s) : RamStatement(RN_Merge), target(std::move(t)), source(std::move(s)) {
+    RamMerge(std::unique_ptr<RamRelation> t, std::unique_ptr<RamRelation> s)
+            : RamStatement(RN_Merge), target(std::move(t)), source(std::move(s)) {
         // TODO (#541): check not just for arity also for correct type!!
         // Introduce an equivalence type-check for two ram relations
         assert(source->getArity() == target->getArity());
@@ -234,12 +236,13 @@ public:
 
     /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
-        return std::vector<const RamNode*>({source.get(), target.get()});  
+        return std::vector<const RamNode*>({source.get(), target.get()});
     }
 
     /** Create clone */
     RamMerge* clone() const override {
-        RamMerge* res = new RamMerge(std::unique_ptr<RamRelation>(target->clone()), std::unique_ptr<RamRelation>(source->clone()));
+        RamMerge* res = new RamMerge(
+                std::unique_ptr<RamRelation>(target->clone()), std::unique_ptr<RamRelation>(source->clone()));
         return res;
     }
 
@@ -254,7 +257,7 @@ protected:
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamMerge*>(&node));
         const RamMerge& other = static_cast<const RamMerge&>(node);
-        return getTargetRelation() == other.getTargetRelation() && 
+        return getTargetRelation() == other.getTargetRelation() &&
                getSourceRelation() == other.getSourceRelation();
     }
 };
@@ -271,7 +274,8 @@ protected:
     std::unique_ptr<RamRelation> second;
 
 public:
-    RamSwap(std::unique_ptr<RamRelation> f, std::unique_ptr<RamRelation> s) : RamStatement(RN_Swap), first(std::move(f)), second(std::move(s)) {
+    RamSwap(std::unique_ptr<RamRelation> f, std::unique_ptr<RamRelation> s)
+            : RamStatement(RN_Swap), first(std::move(f)), second(std::move(s)) {
         // TODO (#541): check not just for arity also for correct type!!
         assert(first->getArity() == second->getArity());
     }
@@ -294,12 +298,13 @@ public:
 
     /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
-        return std::vector<const RamNode*>({first.get(),second.get()});  // no child nodes
+        return std::vector<const RamNode*>({first.get(), second.get()});  // no child nodes
     }
 
     /** Create clone */
     RamSwap* clone() const override {
-        RamSwap* res = new RamSwap(std::unique_ptr<RamRelation>(first->clone()), std::unique_ptr<RamRelation>(second->clone()));
+        RamSwap* res = new RamSwap(
+                std::unique_ptr<RamRelation>(first->clone()), std::unique_ptr<RamRelation>(second->clone()));
         return res;
     }
 
@@ -314,8 +319,8 @@ protected:
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamSwap*>(&node));
         const RamSwap& other = static_cast<const RamSwap&>(node);
-        return getFirstRelation() == other.getFirstRelation() && 
-               getSecondRelation() == other.getSecondRelation(); 
+        return getFirstRelation() == other.getFirstRelation() &&
+               getSecondRelation() == other.getSecondRelation();
     }
 };
 
@@ -325,7 +330,7 @@ protected:
 class RamFact : public RamRelationStatement {
 protected:
     /** Arguments of fact */
-    // TODO (#541): Reoccuring type -> push to RamValue.h 
+    // TODO (#541): Reoccuring type -> push to RamValue.h
     typedef std::vector<std::unique_ptr<RamValue>> value_list;
     value_list values;
 
@@ -440,8 +445,7 @@ protected:
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamInsert*>(&node));
         const RamInsert& other = static_cast<const RamInsert&>(node);
-        return getOperation() == other.getOperation() && 
-               getOrigin() == other.getOrigin();
+        return getOperation() == other.getOperation() && getOrigin() == other.getOrigin();
     }
 };
 

@@ -78,7 +78,7 @@ std::unique_ptr<RamValue> getIndexElement(RamCondition* c, size_t& element, size
 }  // namespace
 
 /** add condition */
-void RamScan::addCondition(std::unique_ptr<RamCondition> c, const RamOperation &root) {
+void RamScan::addCondition(std::unique_ptr<RamCondition> c, const RamOperation& root) {
     // use condition to narrow scan if possible
     if (c->getLevel() == level) {
         size_t element;
@@ -174,7 +174,7 @@ void RamLookup::print(std::ostream& os, int tabpos) const {
 }
 
 /** add condition */
-void RamAggregate::addCondition(std::unique_ptr<RamCondition> c, const RamOperation &root) {
+void RamAggregate::addCondition(std::unique_ptr<RamCondition> c, const RamOperation& root) {
     // use condition to narrow scan if possible
     if (c->getLevel() == level) {
         size_t element;
@@ -273,7 +273,7 @@ void RamProject::print(std::ostream& os, int tabpos) const {
 }
 
 /* add condition */
-void RamProject::addCondition(std::unique_ptr<RamCondition> c, const RamOperation &root) {
+void RamProject::addCondition(std::unique_ptr<RamCondition> c, const RamOperation& root) {
     // we can have condition arguments from lower levels, since the values we project are also from lower
     // levels
     assert(c->getLevel() <= level);

@@ -185,8 +185,8 @@ protected:
 
 public:
     RamScan(std::unique_ptr<RamRelation> r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck)
-            : RamSearch(RN_Scan, std::move(nested)), relation(std::move(r)), queryPattern(r->getArity()), keys(0),
-              pureExistenceCheck(pureExistenceCheck) {}
+            : RamSearch(RN_Scan, std::move(nested)), relation(std::move(r)), queryPattern(r->getArity()),
+              keys(0), pureExistenceCheck(pureExistenceCheck) {}
 
     /** Get search relation */
     const RamRelation& getRelation() const {
@@ -387,7 +387,8 @@ public:
     /** Create clone */
     RamAggregate* clone() const override {
         RamAggregate* res = new RamAggregate(std::unique_ptr<RamOperation>(getNestedOperation()->clone()),
-                fun, std::unique_ptr<RamValue>(value->clone()), std::unique_ptr<RamRelation>(relation->clone()));
+                fun, std::unique_ptr<RamValue>(value->clone()),
+                std::unique_ptr<RamRelation>(relation->clone()));
         res->keys = keys;
         for (auto& cur : pattern) {
             if (cur) {

@@ -279,7 +279,7 @@ public:
 
     /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
-        std::vector<const RamNode*> res = { relation.get() };
+        std::vector<const RamNode*> res = {relation.get()};
         for (const auto& cur : values) {
             res.push_back(cur.get());
         }
@@ -346,7 +346,7 @@ public:
 
     /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
-        return std::vector<const RamNode*>()={relation.get()};
+        return std::vector<const RamNode*>() = {relation.get()};
     }
 
     /** Create clone */

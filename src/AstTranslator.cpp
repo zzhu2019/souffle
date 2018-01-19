@@ -49,8 +49,8 @@ std::string getRelationName(const AstRelationIdentifier& id) {
     return toString(join(id.getNames(), "-"));
 }
 
-std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv, std::string name,
-        size_t arity, const bool istemp = false, std::string filePath = std::string(),
+std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv,
+        std::string name, size_t arity, const bool istemp = false, std::string filePath = std::string(),
         std::string fileExt = std::string()) {
     // avoid name conflicts for temporary identifiers
     if (istemp) {
@@ -588,7 +588,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
 
         op = std::unique_ptr<RamOperation>(returnValue);
     } else {
-        std::unique_ptr<RamProject> project = std::unique_ptr<RamProject>(new RamProject(getRelation(&head), level));
+        std::unique_ptr<RamProject> project =
+                std::unique_ptr<RamProject>(new RamProject(getRelation(&head), level));
 
         for (AstArgument* arg : head.getArguments()) {
             project->addArg(translateValue(arg, valueIndex));
@@ -823,7 +824,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
     std::unique_ptr<RamStatement> res;
 
     // the ram table reference
-    std::unique_ptr<RamRelation> rrel = getRamRelation(&rel, &typeEnv, getRelationName(rel.getName()), rel.getArity());
+    std::unique_ptr<RamRelation> rrel =
+            getRamRelation(&rel, &typeEnv, getRelationName(rel.getName()), rel.getArity());
 
     /* iterate over all clauses that belong to the relation */
     for (AstClause* clause : rel.getClauses()) {
@@ -846,7 +848,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
             rule = std::unique_ptr<RamStatement>(new RamSequence(
                     std::unique_ptr<RamStatement>(new RamLogTimer(std::move(rule), "@t-" + label)),
                     std::make_unique<RamLogSize>(
-                        std::unique_ptr<RamRelation>(rrel->clone()), "@n-" + label)));
+                            std::unique_ptr<RamRelation>(rrel->clone()), "@n-" + label)));
         }
 
         // add debug info
@@ -876,7 +878,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
         res = std::make_unique<RamLogTimer>(std::move(res), "@t-" + label);
 
         // add table size printer
-        appendStmt(res, std::make_unique<RamLogSize>(std::unique_ptr<RamRelation>(rrel->clone()), "@n-" + label));
+        appendStmt(res,
+                std::make_unique<RamLogSize>(std::unique_ptr<RamRelation>(rrel->clone()), "@n-" + label));
     }
 
     // done
@@ -950,28 +953,26 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
         if (Global::config().has("fault-tolerance") && !rel->hasRecordInHead()) {
             appendStmt(updateRelTable,
                     std::unique_ptr<RamStatement>(new RamSequence(
-                            std::unique_ptr<RamStatement>(new RamMerge(
-                                      std::unique_ptr<RamRelation>(rrel[rel]->clone()), 
-                                      std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
+                            std::unique_ptr<RamStatement>(
+                                    new RamMerge(std::unique_ptr<RamRelation>(rrel[rel]->clone()),
+                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
                             // TODO (#466): uncomment the following line to store new recursive
                             // relations immediately upon discovery
                             // std::unique_ptr<RamStatement>(new RamStore(relNew[rel])),
-                            std::unique_ptr<RamStatement>(new RamSwap(
-                                      std::unique_ptr<RamRelation>(relDelta[rel]->clone()), 
-                                      std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
-                            std::make_unique<RamClear>(
-                                      std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
+                            std::unique_ptr<RamStatement>(
+                                    new RamSwap(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
+                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
+                            std::make_unique<RamClear>(std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
         } else {
             appendStmt(updateRelTable,
                     std::unique_ptr<RamStatement>(new RamSequence(
-                            std::unique_ptr<RamStatement>(new RamMerge(
-                                       std::unique_ptr<RamRelation>(rrel[rel]->clone()), 
-                                       std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
-                            std::unique_ptr<RamStatement>(new RamSwap(
-                                       std::unique_ptr<RamRelation>(relDelta[rel]->clone()), 
-                                       std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
-                            std::make_unique<RamClear>(
-                                       std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
+                            std::unique_ptr<RamStatement>(
+                                    new RamMerge(std::unique_ptr<RamRelation>(rrel[rel]->clone()),
+                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
+                            std::unique_ptr<RamStatement>(
+                                    new RamSwap(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
+                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
+                            std::make_unique<RamClear>(std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
         }
 
         /* measure update time for each relation */
@@ -993,8 +994,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
 
         /* Generate merge operation for temp tables */
         appendStmt(preamble, std::unique_ptr<RamStatement>(
-                    new RamMerge(std::unique_ptr<RamRelation>(relDelta[rel]->clone()), 
-                                 std::unique_ptr<RamRelation>(rrel[rel]->clone()))));
+                                     new RamMerge(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
+                                             std::unique_ptr<RamRelation>(rrel[rel]->clone()))));
 
         /* Add update operations of relations to parallel statements */
         updateTable->add(std::move(updateRelTable));
@@ -1067,7 +1068,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                     std::string label = line.str();
                     rule = std::unique_ptr<RamStatement>(new RamSequence(
                             std::unique_ptr<RamStatement>(new RamLogTimer(std::move(rule), "@t-" + label)),
-                            std::unique_ptr<RamLogSize>(new RamLogSize(std::unique_ptr<RamRelation>(relNew[rel]->clone()), "@n-" + label))));
+                            std::unique_ptr<RamLogSize>(new RamLogSize(
+                                    std::unique_ptr<RamRelation>(relNew[rel]->clone()), "@n-" + label))));
                 }
 
                 // add debug info
@@ -1096,8 +1098,9 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
             line << "recursive-relation;" << rel->getName() << ";" << rel->getSrcLoc() << ";";
             std::string label = line.str();
             loopRelSeq = std::make_unique<RamLogTimer>(std::move(loopRelSeq), "@t-" + label);
-            appendStmt(loopRelSeq, std::make_unique<RamLogSize>(
-                        std::unique_ptr<RamRelation>(relNew[rel]->clone()), "@n-" + label));
+            appendStmt(
+                    loopRelSeq, std::make_unique<RamLogSize>(
+                                        std::unique_ptr<RamRelation>(relNew[rel]->clone()), "@n-" + label));
         }
 
         /* add rule computations of a relation to parallel statement */
@@ -1112,8 +1115,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
 
     std::unique_ptr<RamCondition> exitCond;
     for (const AstRelation* rel : scc) {
-        addCondition(exitCond, std::unique_ptr<RamCondition>(new RamEmpty(
-                        std::unique_ptr<RamRelation>(relNew[rel]->clone()))));
+        addCondition(exitCond, std::unique_ptr<RamCondition>(
+                                       new RamEmpty(std::unique_ptr<RamRelation>(relNew[rel]->clone()))));
     }
 
     /* construct fixpoint loop  */
@@ -1187,8 +1190,7 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
             mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
     delete mrel;
     if (rel->isPrintSize()) {
-        appendStmt(current, std::make_unique<RamPrintSize>(
-                    std::unique_ptr<RamRelation>(rrel->clone())));
+        appendStmt(current, std::make_unique<RamPrintSize>(std::unique_ptr<RamRelation>(rrel->clone())));
     }
 
     if (rel->isOutput() || !storeOutputOnly) {
