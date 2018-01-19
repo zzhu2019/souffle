@@ -221,7 +221,7 @@ public:
         // Build wrapper relations for Souffle's interface
         for (auto& rel_pair : r.getRelationMap()) {
             auto& name = rel_pair.first;
-            auto& interpreterRel = rel_pair.second;
+            auto& interpreterRel = *rel_pair.second;
             ASSERT(map[name]);
             const RamRelation& rel = *map[name];
             std::cout << "Interpreter Relation: " << name << "\n";

@@ -379,6 +379,9 @@ public:
 
 class InterpreterEqRelation : public InterpreterRelation {
 public:
+    InterpreterEqRelation(size_t relArity)
+            : InterpreterRelation(relArity) { }
+
     /** Insert tuple */
     void insert(const RamDomain* tuple) override {
         // TODO: (pnappa) an eqrel check here is all that appears to be needed for implicit additions
@@ -447,7 +450,7 @@ public:
  */
 class InterpreterEnvironment {
     /** The type utilized for storing relations */
-    typedef std::map<std::string, InterpreterRelation> relation_map;
+    typedef std::map<std::string, InterpreterRelation*> relation_map;
 
     /** The symbol table to be utilized by an evaluation */
     SymbolTable& symbolTable;
@@ -492,11 +495,15 @@ public:
         InterpreterRelation* res = nullptr;
         auto pos = data.find(id.getName());
         if (pos != data.end()) {
-            res = &(pos->second);
+            res = (pos->second);
         } else {
-            res = &(data.emplace(id.getName(), id.getArity()).first->second);
+            if(!id.isEqRel()) {
+               res = new InterpreterRelation(id.getArity());
+            } else {
+               res = new InterpreterEqRelation(id.getArity());
+            }
+            data[id.getName()] = res;
         }
-
         // return result
         return *res;
     }
@@ -513,7 +520,7 @@ public:
         assert(pos != data.end());
 
         // cache result
-        return pos->second;
+        return *pos->second;
     }
 
     /**
@@ -525,7 +532,7 @@ public:
     const InterpreterRelation& getRelation(const std::string& name) const {
         auto pos = data.find(name);
         assert(pos != data.end());
-        return pos->second;
+        return *pos->second;
     }
 
     /**
