@@ -899,7 +899,7 @@ protected:
 
 public:
     RamPrintSize(std::unique_ptr<RamRelation> rel)
-            : RamRelationStatement(RN_PrintSize, std::move(rel)), message(rel->getName() + "\t") {}
+            : RamRelationStatement(RN_PrintSize, std::move(rel)), message(relation->getName() + "\t") {}
 
     /** Get message */
     const std::string& getMessage() const {
