@@ -215,7 +215,7 @@ protected:
     std::vector<std::unique_ptr<RamValue>> values;
 
 public:
-    RamNotExists(const RamRelation& rel) : RamCondition(RN_NotExists), relation(rel) {}
+    RamNotExists(std::unique_ptr<RamRelation> rel) : RamCondition(RN_NotExists), relation(std::move(rel)) {}
 
     /** Get relation */
     const RamRelation& getRelation() const {
@@ -253,7 +253,7 @@ public:
                                      out << *value;
                                  }
                              })
-           << ") ∉ " << relation.getName();
+           << ") ∉ " << relation->getName();
     }
 
     /** Get key */
@@ -279,7 +279,7 @@ public:
 
     /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
-        std::vector<const RamNode*> res;
+        std::vector<const RamNode*> res = { relation.get() };
         for (const auto& cur : values) {
             res.push_back(cur.get());
         }
@@ -288,7 +288,7 @@ public:
 
     /** Create clone */
     RamNotExists* clone() const override {
-        RamNotExists* res = new RamNotExists(relation);
+        RamNotExists* res = new RamNotExists(std::unique_ptr<RamRelation>(relation->clone()));
         for (auto& cur : values) {
             RamValue* val = nullptr;
             if (cur != nullptr) {
@@ -301,6 +301,7 @@ public:
 
     /** Apply */
     void apply(const RamNodeMapper& map) override {
+        relation = map(std::move(relation));
         for (auto& val : values) {
             if (val != nullptr) {
                 val = map(std::move(val));
@@ -326,7 +327,7 @@ class RamEmpty : public RamCondition {
     std::unique_ptr<RamRelation> relation;
 
 public:
-    RamEmpty(const RamRelation& rel) : RamCondition(RN_Empty), relation(rel) {}
+    RamEmpty(std::unique_ptr<RamRelation> rel) : RamCondition(RN_Empty), relation(std::move(rel)) {}
 
     /** Get relation */
     const RamRelation& getRelation() const {
@@ -340,22 +341,24 @@ public:
 
     /** Print */
     void print(std::ostream& os) const override {
-        os << relation.getName() << " ≠ ∅";
+        os << relation->getName() << " ≠ ∅";
     }
 
     /** Obtain list of child nodes */
     std::vector<const RamNode*> getChildNodes() const override {
-        return std::vector<const RamNode*>();
+        return std::vector<const RamNode*>()={relation.get()};
     }
 
     /** Create clone */
     RamEmpty* clone() const override {
-        RamEmpty* res = new RamEmpty(relation);
+        RamEmpty* res = new RamEmpty(std::unique_ptr<RamRelation>(relation->clone()));
         return res;
     }
 
     /** Apply */
-    void apply(const RamNodeMapper& map) override {}
+    void apply(const RamNodeMapper& map) override {
+        relation = map(std::move(relation));
+    }
 
 protected:
     /** Check equality */
