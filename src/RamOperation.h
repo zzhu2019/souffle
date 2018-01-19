@@ -185,8 +185,8 @@ protected:
 
 public:
     RamScan(std::unique_ptr<RamRelation> r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck)
-            : RamSearch(RN_Scan, std::move(nested)), relation(std::move(r)), queryPattern(relation->getArity()),
-              keys(0), pureExistenceCheck(pureExistenceCheck) {}
+            : RamSearch(RN_Scan, std::move(nested)), relation(std::move(r)),
+              queryPattern(relation->getArity()), keys(0), pureExistenceCheck(pureExistenceCheck) {}
 
     /** Get search relation */
     const RamRelation& getRelation() const {
@@ -347,9 +347,9 @@ private:
 
 public:
     RamAggregate(std::unique_ptr<RamOperation> nested, Function fun, std::unique_ptr<RamValue> value,
-            std::unique_ptr<RamRelation> relation)
+            std::unique_ptr<RamRelation> rel)
             : RamSearch(RN_Aggregate, std::move(nested)), fun(fun), value(std::move(value)),
-              relation(std::move(relation)), pattern(relation->getArity()), keys(0) {}
+              relation(std::move(rel)), pattern(relation->getArity()), keys(0) {}
 
     /** Get aggregation function */
     Function getFunction() const {
