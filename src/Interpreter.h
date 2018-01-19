@@ -462,6 +462,12 @@ class InterpreterEnvironment {
 public:
     InterpreterEnvironment(SymbolTable& symbolTable) : symbolTable(symbolTable), counter(0) {}
 
+    virtual ~InterpreterEnvironment() {
+        for (auto &x : data) {
+            delete x.second;
+        }
+    }
+
     /**
      * Obtains a reference to the enclosed symbol table.
      */
