@@ -691,7 +691,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             }
 
             // add a scan level
-            op = std::unique_ptr<RamOperation>(new RamScan(getRelation(atom), std::move(op), isExistCheck));
+            op = std::make_unique<RamScan>(getRelation(atom), std::move(op), isExistCheck);
 
             // add constraints
             for (size_t pos = 0; pos < atom->argSize(); ++pos) {

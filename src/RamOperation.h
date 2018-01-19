@@ -185,7 +185,7 @@ protected:
 
 public:
     RamScan(std::unique_ptr<RamRelation> r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck)
-            : RamSearch(RN_Scan, std::move(nested)), relation(std::move(r)), queryPattern(r->getArity()),
+            : RamSearch(RN_Scan, std::move(nested)), relation(std::move(r)), queryPattern(relation->getArity()),
               keys(0), pureExistenceCheck(pureExistenceCheck) {}
 
     /** Get search relation */
