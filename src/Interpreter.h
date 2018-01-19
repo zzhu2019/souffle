@@ -463,7 +463,7 @@ public:
     InterpreterEnvironment(SymbolTable& symbolTable) : symbolTable(symbolTable), counter(0) {}
 
     virtual ~InterpreterEnvironment() {
-        for (auto &x : data) {
+        for (auto& x : data) {
             delete x.second;
         }
     }

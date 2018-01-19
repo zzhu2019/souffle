@@ -201,21 +201,13 @@ protected:
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamRelation*>(&node));
         const RamRelation& other = static_cast<const RamRelation&>(node);
-        return name == other.name && 
-               arity == other.arity &&
-               attributeNames == other.attributeNames && 
-               attributeTypeQualifiers == other.attributeTypeQualifiers &&
-               mask == other.mask &&
-               isInput() == other.isInput() &&
-               isOutput() == other.isOutput() &&
-               isComputed() == other.isComputed() && 
-               isBTree() == other.isBTree() && 
-               isBrie() == other.isBrie() && 
-               isEqRel() == other.isEqRel() && 
-               isData() == other.isData() && 
-               isTemp() == other.isTemp() && 
-               inputDirectives == other.inputDirectives && 
-               souffle::equal(outputDirectives,other.outputDirectives);
+        return name == other.name && arity == other.arity && attributeNames == other.attributeNames &&
+               attributeTypeQualifiers == other.attributeTypeQualifiers && mask == other.mask &&
+               isInput() == other.isInput() && isOutput() == other.isOutput() &&
+               isComputed() == other.isComputed() && isBTree() == other.isBTree() &&
+               isBrie() == other.isBrie() && isEqRel() == other.isEqRel() && isData() == other.isData() &&
+               isTemp() == other.isTemp() && inputDirectives == other.inputDirectives &&
+               souffle::equal(outputDirectives, other.outputDirectives);
     }
 };
 
