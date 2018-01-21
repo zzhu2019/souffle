@@ -17,130 +17,260 @@
 #pragma once
 
 #include "Interpreter.h"
-#include "RamRelation.h"
+#include "RamVisitor.h"
 #include "SouffleInterface.h"
 
 #include <array>
 
 namespace souffle {
 
-class InterpreterInterface : public Relation {
+/**
+ * Helper function to convert a tuple to a RamDomain pointer
+ */
+// TODO (#421): Check whether this helper function causes a memory leak
+inline RamDomain* convertTupleToNums(const tuple& t) {
+    RamDomain* newTuple = new RamDomain[t.size()];
+
+    for (size_t i = 0; i < t.size(); i++) {
+        newTuple[i] = t[i];
+    }
+
+    return newTuple;
+}
+
+/**
+ * Wrapper class for interpreter relations
+ */
+class InterpreterRelInterface : public Relation {
 private:
-    InterpreterRelation& ramRelation;
+    /** Wrapped interpreter relation */
+    InterpreterRelation& relation;
+
+    /** Symbol table */
     SymbolTable& symTable;
+
+    /** Name of relation */
     std::string name;
+
+    /** Attribute type */
     std::vector<std::string> types;
+
+    /** Attribute Names */
     std::vector<std::string> attrNames;
+
+    /** Input relation flag */
+    bool relInput;
+
+    /** Output relation flag */
+    bool relOutput;
+
+    /** Unique id for wrapper */
+    // TODO (#421): replace unique id by dynamic type checking for C++
     uint32_t id;
 
 protected:
+    /**
+     * Iterator wrapper class
+     */
     class iterator_base : public Relation::iterator_base {
     private:
-        const InterpreterInterface* ramRelationInterface;
+        const InterpreterRelInterface* ramRelationInterface;
         InterpreterRelation::iterator it;
         tuple tup;
 
     public:
-        iterator_base(uint32_t arg_id, const InterpreterInterface* r, InterpreterRelation::iterator i)
+        iterator_base(uint32_t arg_id, const InterpreterRelInterface* r, InterpreterRelation::iterator i)
                 : Relation::iterator_base(arg_id), ramRelationInterface(r), it(i), tup(r) {}
         virtual ~iterator_base() {}
 
-        // increments iterator to next relation
-        void operator++();
+        /** Increment iterator */
+        void operator++() override {
+            ++it;
+        }
 
-        // gets relation pointed to by iterator
-        tuple& operator*();
+        /** Get current tuple */
+        tuple& operator*() override {
+            // set tuple stream to first element
+            tup.rewind();
 
-        iterator_base* clone() const;
+            // construct the tuple to return
+            for (size_t i = 0; i < ramRelationInterface->getArity(); i++) {
+                if (*(ramRelationInterface->getAttrType(i)) == 's') {
+                    std::string s = ramRelationInterface->getSymbolTable().resolve((*it)[i]);
+                    tup << s;
+                } else {
+                    tup << (*it)[i];
+                }
+            }
+            tup.rewind();
+            return tup;
+        }
+
+        /** Clone iterator */
+        iterator_base* clone() const override {
+            return new InterpreterRelInterface::iterator_base(getId(), ramRelationInterface, it);
+        }
 
     protected:
-        bool equal(const Relation::iterator_base& o) const;
+        /** Check equivalence */
+        bool equal(const Relation::iterator_base& o) const override {
+            try {
+                auto iter = dynamic_cast<const InterpreterRelInterface::iterator_base&>(o);
+                return ramRelationInterface == iter.ramRelationInterface && it == iter.it;
+            } catch (const std::bad_cast& e) {
+                return false;
+            }
+        }
     };
 
 public:
-    InterpreterInterface(InterpreterRelation& r, SymbolTable& s, std::string n, std::vector<std::string> t,
-            std::vector<std::string> an, uint32_t i)
-            : ramRelation(r), symTable(s), name(n), types(t), attrNames(an), id(i) {}
-    virtual ~InterpreterInterface() {}
+    InterpreterRelInterface(InterpreterRelation& r, SymbolTable& s, std::string n, std::vector<std::string> t,
+            std::vector<std::string> an, bool rInput, bool rOutput, uint32_t i)
+            : relation(r), symTable(s), name(n), types(t), attrNames(an), relInput(rInput),
+              relOutput(rOutput), id(i) {}
+    virtual ~InterpreterRelInterface() {}
 
-    // insert a new tuple into the relation
-    void insert(const tuple& t) override;
+    /** Insert tuple */
+    void insert(const tuple& t) override {
+        relation.insert(convertTupleToNums(t));
+    }
 
-    // check whether a tuple exists in the relation
-    bool contains(const tuple& t) const override;
+    /** Check whether tuple exists */
+    bool contains(const tuple& t) const override {
+        return relation.exists(convertTupleToNums(t));
+    }
 
-    // begin and end iterator
-    iterator begin() const override;
-    iterator end() const override;
+    /** Iterator to first tuple */
+    iterator begin() const override {
+        return InterpreterRelInterface::iterator(
+                new InterpreterRelInterface::iterator_base(id, this, relation.begin()));
+    }
 
-    // number of tuples in relation
-    std::size_t size() override;
+    /** Iterator to last tuple */
+    iterator end() const override {
+        return InterpreterRelInterface::iterator(
+                new InterpreterRelInterface::iterator_base(id, this, relation.end()));
+    }
 
-    // properties
-    bool isOutput() const override;
-    bool isInput() const override;
-    std::string getName() const override;
-    const char* getAttrType(size_t) const override;
-    const char* getAttrName(size_t) const override;
-    size_t getArity() const override;
-    SymbolTable& getSymbolTable() const override;
+    /** Check whether relation is an output relation */
+    bool isOutput() const override {
+        return relOutput;
+    }
+
+    /** Check whether relation is an input relation */
+    bool isInput() const override {
+        return relInput;
+    }
+
+    /** Get name */
+    std::string getName() const override {
+        return name;
+    }
+
+    /** Get arity */
+    size_t getArity() const override {
+        return relation.getArity();
+    }
+
+    /** Get symbol table */
+    SymbolTable& getSymbolTable() const override {
+        return symTable;
+    }
+
+    /** Get attribute type */
+    const char* getAttrType(size_t idx) const override {
+        assert(idx < getArity() && "exceeded tuple size");
+        return types[idx].c_str();
+    }
+
+    /** Get attribute name */
+    const char* getAttrName(size_t idx) const override {
+        assert(idx < getArity() && "exceeded tuple size");
+        return attrNames[idx].c_str();
+    }
+
+    /** Get number of tuples in relation */
+    std::size_t size() override {
+        return relation.size();
+    }
 };
 
 /**
- * Implementation of SouffleProgram interface for ram programs
+ * Implementation of SouffleProgram interface for an interpreter instance
  */
-class SouffleInterpreterInterface : public SouffleProgram {
+class InterpreterProgInterface : public SouffleProgram {
 private:
     RamProgram& prog;
     Interpreter& exec;
     InterpreterEnvironment& env;
     SymbolTable& symTable;
-    std::vector<InterpreterInterface*> interfaces;
+    std::vector<InterpreterRelInterface*> interfaces;
 
 public:
-    SouffleInterpreterInterface(RamProgram& p, Interpreter& e, InterpreterEnvironment& r, SymbolTable& s)
+    InterpreterProgInterface(RamProgram& p, Interpreter& e, InterpreterEnvironment& r, SymbolTable& s)
             : prog(p), exec(e), env(r), symTable(s) {
         uint32_t id = 0;
+
+        // Retrieve AST Relations and store them in a map
+        std::map<std::string, const RamRelation*> map;
+        visitDepthFirst(*(prog.getMain()), [&](const RamRelation& rel) { map[rel.getName()] = &rel; });
+
+        // Build wrapper relations for Souffle's interface
         for (auto& rel_pair : r.getRelationMap()) {
-            auto& rel = rel_pair.second;
+            auto& name = rel_pair.first;
+            auto& interpreterRel = *rel_pair.second;
+            ASSERT(map[name]);
+            const RamRelation& rel = *map[name];
 
             // construct types and names vectors
             std::vector<std::string> types;
             std::vector<std::string> attrNames;
             for (size_t i = 0; i < rel.getArity(); i++) {
-                std::string t = rel.getID().getArgTypeQualifier(i);
+                std::string t = rel.getArgTypeQualifier(i);
                 types.push_back(t);
 
-                std::string n = rel.getID().getArg(i);
+                std::string n = rel.getArg(i);
                 attrNames.push_back(n);
             }
-            InterpreterInterface* interface =
-                    new InterpreterInterface(rel, symTable, rel.getID().getName(), types, attrNames, id);
+            InterpreterRelInterface* interface = new InterpreterRelInterface(interpreterRel, symTable,
+                    rel.getName(), types, attrNames, rel.isInput(), rel.isOutput(), id);
             interfaces.push_back(interface);
-            addRelation(rel.getID().getName(), interface, rel.getID().isInput(), rel.getID().isOutput());
+            addRelation(rel.getName(), interface, rel.isInput(), rel.isOutput());
             id++;
         }
     }
-    virtual ~SouffleInterpreterInterface() {
+    virtual ~InterpreterProgInterface() {
         for (auto* interface : interfaces) {
             delete interface;
         }
     }
 
-    void run() {}
-    void runAll(std::string, std::string) {}
-    void loadAll(std::string) {}
-    void printAll(std::string) {}
-    void dumpInputs(std::ostream&) {}
-    void dumpOutputs(std::ostream&) {}
+    /** Run program instance: not implemented */
+    void run() override {}
 
-    // run subroutine
+    /** Load data, run program instance, store data: not implemented */
+    void runAll(std::string, std::string) override {}
+
+    /** Load input data: not implemented */
+    void loadAll(std::string) override {}
+
+    /** Print output data: not implemented */
+    void printAll(std::string) override {}
+
+    /** Dump inputs: not implemented */
+    void dumpInputs(std::ostream&) override {}
+
+    /** Dump outputs: not implemented */
+    void dumpOutputs(std::ostream&) override {}
+
+    /** Run subroutine */
     void executeSubroutine(std::string name, const std::vector<RamDomain>& args, std::vector<RamDomain>& ret,
-            std::vector<bool>& err) {
+            std::vector<bool>& err) override {
         exec.executeSubroutine(env, prog.getSubroutine(name), args, ret, err);
     }
 
-    const SymbolTable& getSymbolTable() const {
+    /** Get symbol table */
+    const SymbolTable& getSymbolTable() const override {
         return symTable;
     }
 };

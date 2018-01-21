@@ -25,6 +25,7 @@
 #include "BinaryConstraintOps.h"
 #include "Global.h"
 #include "PrecedenceGraph.h"
+#include "RamRelation.h"
 #include "RamStatement.h"
 #include "RamVisitor.h"
 
@@ -48,8 +49,8 @@ std::string getRelationName(const AstRelationIdentifier& id) {
     return toString(join(id.getNames(), "-"));
 }
 
-RamRelation getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv, std::string name,
-        size_t arity, const bool istemp = false, std::string filePath = std::string(),
+std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv,
+        std::string name, size_t arity, const bool istemp = false, std::string filePath = std::string(),
         std::string fileExt = std::string()) {
     // avoid name conflicts for temporary identifiers
     if (istemp) {
@@ -57,7 +58,7 @@ RamRelation getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEn
     }
 
     if (!rel) {
-        return RamRelation(name, arity, istemp);
+        return std::unique_ptr<RamRelation>(new RamRelation(name, arity, istemp));
     }
 
     assert(arity == rel->getArity());
@@ -152,12 +153,12 @@ RamRelation getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEn
             }
         }
     }
-    return RamRelation(name, arity, attributeNames, attributeTypeQualifiers, getSymbolMask(*rel, *typeEnv),
-            rel->isInput(), rel->isComputed(), rel->isOutput(), rel->isBTree(), rel->isBrie(), rel->isEqRel(),
-            rel->isData(), directives, outputDirectives, istemp);
+    return std::unique_ptr<RamRelation>(new RamRelation(name, arity, attributeNames, attributeTypeQualifiers,
+            getSymbolMask(*rel, *typeEnv), rel->isInput(), rel->isComputed(), rel->isOutput(), rel->isBTree(),
+            rel->isBrie(), rel->isEqRel(), rel->isData(), directives, outputDirectives, istemp));
 }
 
-RamRelation getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv) {
+std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv) {
     return getRamRelation(rel, typeEnv, getRelationName(rel->getName()), rel->getArity());
 }
 }  // namespace
@@ -447,7 +448,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
     // handle facts
     if (clause.isFact()) {
         // translate arguments
-        std::vector<std::unique_ptr<const RamValue>> values;
+        std::vector<std::unique_ptr<RamValue>> values;
         for (auto& arg : clause.getHead()->getArguments()) {
             values.push_back(translateValue(*arg));
         }
@@ -500,7 +501,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
         level++;
 
         // relation
-        RamRelation relation = getRelation(atom);
+        std::unique_ptr<RamRelation> relation = getRelation(atom);
 
         std::function<void(const AstNode*)> indexValues = [&](const AstNode* curNode) {
             arg_list* cur = getArgList(curNode);
@@ -510,8 +511,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
 
                 // check for variable references
                 if (auto var = dynamic_cast<const AstVariable*>(arg)) {
-                    if (pos < relation.getArity()) {
-                        valueIndex.addVarReference(*var, arg_level[cur], pos, relation.getArg(pos));
+                    if (pos < relation->getArity()) {
+                        valueIndex.addVarReference(*var, arg_level[cur], pos, relation->getArg(pos));
                     } else {
                         valueIndex.addVarReference(*var, arg_level[cur], pos);
                     }
@@ -554,7 +555,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
         const AstAtom& atom = static_cast<const AstAtom&>(*cur.getBodyLiterals()[0]);
         for (size_t pos = 0; pos < atom.getArguments().size(); ++pos) {
             if (const AstVariable* var = dynamic_cast<const AstVariable*>(atom.getArgument(pos))) {
-                valueIndex.addVarReference(*var, aggLoc, (int)pos, getRelation(&atom).getArg(pos));
+                valueIndex.addVarReference(*var, aggLoc, (int)pos, getRelation(&atom)->getArg(pos));
             }
         };
 
@@ -587,7 +588,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
 
         op = std::unique_ptr<RamOperation>(returnValue);
     } else {
-        RamProject* project = new RamProject(getRelation(&head), level);
+        std::unique_ptr<RamProject> project =
+                std::unique_ptr<RamProject>(new RamProject(getRelation(&head), level));
 
         for (AstArgument* arg : head.getArguments()) {
             project->addArg(translateValue(arg, valueIndex));
@@ -617,12 +619,12 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             uniquenessEnforcement->addArg(nullptr);
 
             if (add) {
-                project->addCondition(std::move(uniquenessEnforcement), project);
+                project->addCondition(std::move(uniquenessEnforcement), *project);
             }
         }
 
         // build up insertion call
-        op = std::unique_ptr<RamOperation>(project);  // start with innermost
+        op = std::move(project);  // start with innermost
     }
 
     // add aggregator levels
@@ -664,7 +666,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             if (AstConstant* c = dynamic_cast<AstConstant*>(atom->getArgument(pos))) {
                 op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(BinaryConstraintOp::EQ,
                         std::unique_ptr<RamValue>(
-                                new RamElementAccess(level, pos, getRelation(atom).getArg(pos))),
+                                new RamElementAccess(level, pos, getRelation(atom)->getArg(pos))),
                         std::unique_ptr<RamValue>(new RamNumber(c->getIndex())))));
             }
         }
@@ -689,20 +691,20 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             }
 
             // add a scan level
-            op = std::unique_ptr<RamOperation>(new RamScan(getRelation(atom), std::move(op), isExistCheck));
+            op = std::make_unique<RamScan>(getRelation(atom), std::move(op), isExistCheck);
 
             // add constraints
             for (size_t pos = 0; pos < atom->argSize(); ++pos) {
                 if (AstConstant* c = dynamic_cast<AstConstant*>(atom->getArgument(pos))) {
                     op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(
                             BinaryConstraintOp::EQ, std::unique_ptr<RamValue>(new RamElementAccess(
-                                                            level, pos, getRelation(atom).getArg(pos))),
+                                                            level, pos, getRelation(atom)->getArg(pos))),
                             std::unique_ptr<RamValue>(new RamNumber(c->getIndex())))));
                 } else if (AstAggregator* agg = dynamic_cast<AstAggregator*>(atom->getArgument(pos))) {
                     auto loc = valueIndex.getAggregatorLocation(*agg);
                     op->addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(
                             BinaryConstraintOp::EQ, std::unique_ptr<RamValue>(new RamElementAccess(
-                                                            level, pos, getRelation(atom).getArg(pos))),
+                                                            level, pos, getRelation(atom)->getArg(pos))),
                             std::unique_ptr<RamValue>(
                                     new RamElementAccess(loc.level, loc.component, loc.name)))));
                 }
@@ -822,7 +824,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
     std::unique_ptr<RamStatement> res;
 
     // the ram table reference
-    RamRelation rrel = getRamRelation(&rel, &typeEnv, getRelationName(rel.getName()), rel.getArity());
+    std::unique_ptr<RamRelation> rrel =
+            getRamRelation(&rel, &typeEnv, getRelationName(rel.getName()), rel.getArity());
 
     /* iterate over all clauses that belong to the relation */
     for (AstClause* clause : rel.getClauses()) {
@@ -844,7 +847,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
             std::string label = line.str();
             rule = std::unique_ptr<RamStatement>(new RamSequence(
                     std::unique_ptr<RamStatement>(new RamLogTimer(std::move(rule), "@t-" + label)),
-                    std::make_unique<RamLogSize>(rrel, "@n-" + label)));
+                    std::make_unique<RamLogSize>(
+                            std::unique_ptr<RamRelation>(rrel->clone()), "@n-" + label)));
         }
 
         // add debug info
@@ -874,7 +878,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
         res = std::make_unique<RamLogTimer>(std::move(res), "@t-" + label);
 
         // add table size printer
-        appendStmt(res, std::make_unique<RamLogSize>(rrel, "@n-" + label));
+        appendStmt(res,
+                std::make_unique<RamLogSize>(std::unique_ptr<RamRelation>(rrel->clone()), "@n-" + label));
     }
 
     // done
@@ -929,9 +934,9 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
     // --- create preamble ---
 
     // mappings for temporary relations
-    std::map<const AstRelation*, RamRelation> rrel;
-    std::map<const AstRelation*, RamRelation> relDelta;
-    std::map<const AstRelation*, RamRelation> relNew;
+    std::map<const AstRelation*, std::unique_ptr<RamRelation>> rrel;
+    std::map<const AstRelation*, std::unique_ptr<RamRelation>> relDelta;
+    std::map<const AstRelation*, std::unique_ptr<RamRelation>> relNew;
 
     /* Compute non-recursive clauses for relations in scc and push
        the results in their delta tables. */
@@ -948,18 +953,26 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
         if (Global::config().has("fault-tolerance") && !rel->hasRecordInHead()) {
             appendStmt(updateRelTable,
                     std::unique_ptr<RamStatement>(new RamSequence(
-                            std::unique_ptr<RamStatement>(new RamMerge(rrel[rel], relNew[rel])),
+                            std::unique_ptr<RamStatement>(
+                                    new RamMerge(std::unique_ptr<RamRelation>(rrel[rel]->clone()),
+                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
                             // TODO (#466): uncomment the following line to store new recursive
                             // relations immediately upon discovery
                             // std::unique_ptr<RamStatement>(new RamStore(relNew[rel])),
-                            std::unique_ptr<RamStatement>(new RamSwap(relDelta[rel], relNew[rel])),
-                            std::make_unique<RamClear>(relNew[rel]))));
+                            std::unique_ptr<RamStatement>(
+                                    new RamSwap(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
+                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
+                            std::make_unique<RamClear>(std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
         } else {
             appendStmt(updateRelTable,
                     std::unique_ptr<RamStatement>(new RamSequence(
-                            std::unique_ptr<RamStatement>(new RamMerge(rrel[rel], relNew[rel])),
-                            std::unique_ptr<RamStatement>(new RamSwap(relDelta[rel], relNew[rel])),
-                            std::make_unique<RamClear>(relNew[rel]))));
+                            std::unique_ptr<RamStatement>(
+                                    new RamMerge(std::unique_ptr<RamRelation>(rrel[rel]->clone()),
+                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
+                            std::unique_ptr<RamStatement>(
+                                    new RamSwap(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
+                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
+                            std::make_unique<RamClear>(std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
         }
 
         /* measure update time for each relation */
@@ -971,14 +984,18 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
 
         /* drop temporary tables after recursion */
         appendStmt(postamble, std::unique_ptr<RamStatement>(new RamSequence(
-                                      std::unique_ptr<RamStatement>(new RamDrop(relDelta[rel])),
-                                      std::make_unique<RamDrop>(relNew[rel]))));
+                                      std::unique_ptr<RamStatement>(new RamDrop(
+                                              std::unique_ptr<RamRelation>(relDelta[rel]->clone()))),
+                                      std::unique_ptr<RamStatement>(new RamDrop(
+                                              std::unique_ptr<RamRelation>(relNew[rel]->clone()))))));
 
         /* Generate code for non-recursive part of relation */
         appendStmt(preamble, translateNonRecursiveRelation(*rel, program, recursiveClauses, typeEnv));
 
         /* Generate merge operation for temp tables */
-        appendStmt(preamble, std::make_unique<RamMerge>(relDelta[rel], rrel[rel]));
+        appendStmt(preamble, std::unique_ptr<RamStatement>(
+                                     new RamMerge(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
+                                             std::unique_ptr<RamRelation>(rrel[rel]->clone()))));
 
         /* Add update operations of relations to parallel statements */
         updateTable->add(std::move(updateRelTable));
@@ -1019,8 +1036,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
 
                 // modify the processed rule to use relDelta and write to relNew
                 std::unique_ptr<AstClause> r1(cl->clone());
-                r1->getHead()->setName(relNew[rel].getName());
-                r1->getAtoms()[j]->setName(relDelta[atomRelation].getName());
+                r1->getHead()->setName(relNew[rel]->getName());
+                r1->getAtoms()[j]->setName(relDelta[atomRelation]->getName());
                 r1->addToBody(std::unique_ptr<AstLiteral>(
                         new AstNegation(std::unique_ptr<AstAtom>(cl->getHead()->clone()))));
 
@@ -1032,7 +1049,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                 for (size_t k = j + 1; k < atoms.size(); k++) {
                     if (isInSameSCC(getAtomRelation(atoms[k], program))) {
                         AstAtom* cur = r1->getAtoms()[k]->clone();
-                        cur->setName(relDelta[getAtomRelation(atoms[k], program)].getName());
+                        cur->setName(relDelta[getAtomRelation(atoms[k], program)]->getName());
                         r1->addToBody(
                                 std::unique_ptr<AstLiteral>(new AstNegation(std::unique_ptr<AstAtom>(cur))));
                     }
@@ -1051,7 +1068,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                     std::string label = line.str();
                     rule = std::unique_ptr<RamStatement>(new RamSequence(
                             std::unique_ptr<RamStatement>(new RamLogTimer(std::move(rule), "@t-" + label)),
-                            std::make_unique<RamLogSize>(relNew[rel], "@n-" + label)));
+                            std::unique_ptr<RamLogSize>(new RamLogSize(
+                                    std::unique_ptr<RamRelation>(relNew[rel]->clone()), "@n-" + label))));
                 }
 
                 // add debug info
@@ -1080,7 +1098,9 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
             line << "recursive-relation;" << rel->getName() << ";" << rel->getSrcLoc() << ";";
             std::string label = line.str();
             loopRelSeq = std::make_unique<RamLogTimer>(std::move(loopRelSeq), "@t-" + label);
-            appendStmt(loopRelSeq, std::make_unique<RamLogSize>(relNew[rel], "@n-" + label));
+            appendStmt(
+                    loopRelSeq, std::make_unique<RamLogSize>(
+                                        std::unique_ptr<RamRelation>(relNew[rel]->clone()), "@n-" + label));
         }
 
         /* add rule computations of a relation to parallel statement */
@@ -1095,7 +1115,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
 
     std::unique_ptr<RamCondition> exitCond;
     for (const AstRelation* rel : scc) {
-        addCondition(exitCond, std::unique_ptr<RamCondition>(new RamEmpty(relNew[rel])));
+        addCondition(exitCond, std::unique_ptr<RamCondition>(
+                                       new RamEmpty(std::unique_ptr<RamRelation>(relNew[rel]->clone()))));
     }
 
     /* construct fixpoint loop  */
@@ -1136,14 +1157,14 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
         directive->addKVP("intermediate", "true");
         mrel->addIODirectives(std::move(directive));
     }
-    RamRelation rrel = getRamRelation(
+    std::unique_ptr<RamRelation> rrel = getRamRelation(
             mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
     delete mrel;
     // create and load the relation at the start
-    appendStmt(current, std::make_unique<RamCreate>(rrel));
+    appendStmt(current, std::make_unique<RamCreate>(std::unique_ptr<RamRelation>(rrel->clone())));
 
     if (rel->isInput() || !loadInputOnly) {
-        appendStmt(current, std::make_unique<RamLoad>(rrel));
+        appendStmt(current, std::make_unique<RamLoad>(std::unique_ptr<RamRelation>(rrel->clone())));
     }
 
     // create delta and new relations for recursive relations at the start
@@ -1165,15 +1186,15 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
         directive->setAsOutput();
         mrel->addIODirectives(std::move(directive));
     }
-    RamRelation rrel = getRamRelation(
+    std::unique_ptr<RamRelation> rrel = getRamRelation(
             mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
     delete mrel;
     if (rel->isPrintSize()) {
-        appendStmt(current, std::make_unique<RamPrintSize>(rrel));
+        appendStmt(current, std::make_unique<RamPrintSize>(std::unique_ptr<RamRelation>(rrel->clone())));
     }
 
     if (rel->isOutput() || !storeOutputOnly) {
-        appendStmt(current, std::make_unique<RamStore>(rrel));
+        appendStmt(current, std::make_unique<RamStore>(std::unique_ptr<RamRelation>(rrel->clone())));
     }
 }
 

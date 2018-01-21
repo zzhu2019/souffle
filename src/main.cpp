@@ -260,8 +260,11 @@ int main(int argc, char** argv) {
     // ------- parse program -------------
 
     // parse file
+    SymbolTable symTab;
+    ErrorReport errReport(Global::config().has("no-warn"));
+    DebugReport debugReport;
     std::unique_ptr<AstTranslationUnit> translationUnit =
-            ParserDriver::parseTranslationUnit("<stdin>", in, Global::config().has("no-warn"));
+            ParserDriver::parseTranslationUnit("<stdin>", in, symTab, errReport, debugReport);
 
     // close input pipe
     int preprocessor_status = pclose(in);
@@ -417,7 +420,7 @@ int main(int argc, char** argv) {
         // only run explain interface if interpreted
         if (Global::config().has("provenance") && env != nullptr) {
             // construct SouffleProgram from env
-            SouffleInterpreterInterface interface(
+            InterpreterProgInterface interface(
                     *ramProg, *interpreter, *env, translationUnit->getSymbolTable());
 
             if (Global::config().get("provenance") == "1") {
