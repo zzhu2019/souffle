@@ -59,6 +59,7 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
     checkComponents(report, program, componentLookup);
     checkNamespaces(report, program);
     checkIODirectives(report, program);
+    checkWitnessProblem(report, program);
     checkInlining(report, program, precedenceGraph);
 
     // get the list of components to be checked
@@ -847,6 +848,168 @@ void AstSemanticChecker::checkIODirectives(ErrorReport& report, const AstProgram
             report.addError("Undefined relation " + toString(directive->getName()), directive->getSrcLoc());
         }
     }
+}
+
+static std::pair<bool, AstSrcLocation> usesInvalidWitness(const std::vector<AstLiteral*>& literals,
+        const std::set<std::unique_ptr<AstArgument>>& groundedArguments) {
+    // Node-mapper that replaces aggregators with new (unique) variables
+    struct M : public AstNodeMapper {
+        // Variables introduced to replace aggregators
+        mutable std::set<std::string> aggregatorVariables;
+
+        const std::set<std::string>& getAggregatorVariables() {
+            return aggregatorVariables;
+        }
+
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            static int numReplaced = 0;
+
+            if (AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
+                // Replace the aggregator with a variable
+                std::stringstream newVariableName;
+                newVariableName << "+aggr_var_" << numReplaced++;
+
+                // Keep track of which variables are bound to aggregators
+                aggregatorVariables.insert(newVariableName.str());
+
+                return std::make_unique<AstVariable>(newVariableName.str());
+            }
+
+            node->apply(*this);
+            return node;
+        }
+    };
+
+    // Create two versions of the original clause
+
+    // Clause 1 - will remain equivalent to the original clause in terms of variable groundedness
+    auto originalClause = std::make_unique<AstClause>();
+    originalClause->setHead(std::make_unique<AstAtom>("*"));
+
+    // Clause 2 - will have aggregators replaced with intrinsically grounded variables
+    auto aggregatorlessClause = std::make_unique<AstClause>();
+    aggregatorlessClause->setHead(std::make_unique<AstAtom>("*"));
+
+    // Construct both clauses in the same manner to match the original clause
+    // Must keep track of the subnode in Clause 1 that each subnode in Clause 2 matches to
+    std::map<const AstArgument*, const AstArgument*> identicalSubnodeMap;
+    for (const AstLiteral* lit : literals) {
+        auto firstClone = std::unique_ptr<AstLiteral>(lit->clone());
+        auto secondClone = std::unique_ptr<AstLiteral>(lit->clone());
+
+        // Construct the mapping between equivalent literal subnodes
+        std::vector<const AstArgument*> firstCloneArguments;
+        visitDepthFirst(*firstClone, [&](const AstArgument& arg) { firstCloneArguments.push_back(&arg); });
+
+        std::vector<const AstArgument*> secondCloneArguments;
+        visitDepthFirst(*secondClone, [&](const AstArgument& arg) { secondCloneArguments.push_back(&arg); });
+
+        for (int i = 0; i < firstCloneArguments.size(); i++) {
+            identicalSubnodeMap[secondCloneArguments[i]] = firstCloneArguments[i];
+        }
+
+        // Actually add the literal clones to each clause
+        originalClause->addToBody(std::move(firstClone));
+        aggregatorlessClause->addToBody(std::move(secondClone));
+    }
+
+    // Replace the aggregators in Clause 2 with variables
+    M update;
+    aggregatorlessClause->apply(update);
+
+    // Create a dummy atom to force certain arguments to be grounded in the aggregatorlessClause
+    auto groundingAtomAggregatorless = std::make_unique<AstAtom>("grounding_atom");
+    auto groundingAtomOriginal = std::make_unique<AstAtom>("grounding_atom");
+
+    // Force the new aggregator variables to be grounded in the aggregatorless clause
+    const std::set<std::string>& aggregatorVariables = update.getAggregatorVariables();
+    for (const std::string& str : aggregatorVariables) {
+        groundingAtomAggregatorless->addArgument(std::make_unique<AstVariable>(str));
+    }
+
+    // Force the given grounded arguments to be grounded in both clauses
+    for (const std::unique_ptr<AstArgument>& arg : groundedArguments) {
+        groundingAtomAggregatorless->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+        groundingAtomOriginal->addArgument(std::unique_ptr<AstArgument>(arg->clone()));
+    }
+
+    aggregatorlessClause->addToBody(std::move(groundingAtomAggregatorless));
+    originalClause->addToBody(std::move(groundingAtomOriginal));
+
+    // Compare the grounded analysis of both generated clauses
+    // All added arguments in Clause 2 were forced to be grounded, so if an ungrounded argument
+    // appears in Clause 2, it must also appear in Clause 1. Consequently, have two cases:
+    //   - The argument is also ungrounded in Clause 1 - handled by another check
+    //   - The argument is grounded in Clause 1 => the argument was grounded in the
+    //     first clause somewhere along the line by an aggregator-body - not allowed!
+    std::set<std::unique_ptr<AstArgument>> newlyGroundedArguments;
+    std::map<const AstArgument*, bool> originalGrounded = getGroundedTerms(*originalClause);
+    std::map<const AstArgument*, bool> aggregatorlessGrounded = getGroundedTerms(*aggregatorlessClause);
+    for (auto pair : aggregatorlessGrounded) {
+        if (!pair.second && originalGrounded[identicalSubnodeMap[pair.first]]) {
+            return std::make_pair(true, pair.first->getSrcLoc());
+        }
+
+        // Otherwise, it can now be considered grounded
+        newlyGroundedArguments.insert(std::unique_ptr<AstArgument>(pair.first->clone()));
+    }
+
+    // All previously grounded are still grounded
+    for (const std::unique_ptr<AstArgument>& arg : groundedArguments) {
+        newlyGroundedArguments.insert(std::unique_ptr<AstArgument>(arg->clone()));
+    }
+
+    // Everything on this level is fine, check subaggregators of each literal
+    for (const AstLiteral* lit : literals) {
+        bool violated = false;
+        std::pair<bool, AstSrcLocation> violatedResult;
+
+        visitDepthFirst(*lit, [&](const AstAggregator& aggr) {
+            // Check recursively if an invalid witness is used
+            std::vector<AstLiteral*> aggrBodyLiterals = aggr.getBodyLiterals();
+            std::pair<bool, AstSrcLocation> result =
+                    usesInvalidWitness(aggrBodyLiterals, newlyGroundedArguments);
+            if (result.first) {
+                violated = true;
+                violatedResult = result;
+            }
+        });
+
+        if (violated) {
+            return violatedResult;
+        }
+    }
+
+    // No part of the clause uses an invalid witness!
+    return std::make_pair(false, AstSrcLocation());
+}
+
+void AstSemanticChecker::checkWitnessProblem(ErrorReport& report, const AstProgram& program) {
+    // Visit each clause to check if an invalid aggregator witness is used
+    visitDepthFirst(program, [&](const AstClause& clause) {
+        // Body literals of the clause to check
+        std::vector<AstLiteral*> bodyLiterals = clause.getBodyLiterals();
+
+        // Add in all head variables as new ungrounded body literals
+        auto headVariables = std::make_unique<AstAtom>("*");
+        visitDepthFirst(*clause.getHead(), [&](const AstVariable& var) {
+            headVariables->addArgument(std::unique_ptr<AstVariable>(var.clone()));
+        });
+        AstNegation* headNegation = new AstNegation(std::move(headVariables));
+        bodyLiterals.push_back(headNegation);
+
+        // Perform the check
+        std::set<std::unique_ptr<AstArgument>> groundedArguments;
+        std::pair<bool, AstSrcLocation> result = usesInvalidWitness(bodyLiterals, groundedArguments);
+        if (result.first) {
+            report.addError(
+                    "Witness problem: argument grounded by an aggregator's inner scope is used ungrounded in "
+                    "outer scope",
+                    result.second);
+        }
+
+        delete headNegation;
+    });
 }
 
 /**
