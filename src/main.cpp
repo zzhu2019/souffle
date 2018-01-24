@@ -455,16 +455,14 @@ int main(int argc, char** argv) {
 
         std::vector<std::unique_ptr<RamProgram>> strata;
         if (Global::config().has("stratify")) {
-            std::unique_ptr<RamProgram> ramProg =
-                    std::unique_ptr<RamProgram>(ramTranslationUnit->getProgram()->clone());
+            std::unique_ptr<RamProgram> ramProg = std::move(ramTranslationUnit->getProg());
             if (RamSequence* sequence = dynamic_cast<RamSequence*>(ramProg->getMain())) {
                 sequence->moveSubprograms(strata);
             } else {
                 strata.push_back(std::move(ramProg));
             }
         } else {
-            std::unique_ptr<RamProgram> ramProg =
-                    std::unique_ptr<RamProgram>(ramTranslationUnit->getProgram()->clone());
+            std::unique_ptr<RamProgram> ramProg = std::move(ramTranslationUnit->getProg());
             strata.push_back(std::move(ramProg));
         }
 
