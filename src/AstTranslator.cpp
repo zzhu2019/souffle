@@ -838,7 +838,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
         std::unique_ptr<RamStatement> rule = translateClause(*clause, program, &typeEnv);
 
         // add logging
-        if (logging) {
+        if (Global::config().has("profile")) {
             std::string clauseText = stringify(toString(*clause));
             std::ostringstream line;
             line << "nonrecursive-rule;" << rel.getName() << ";";
@@ -867,7 +867,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
     }
 
     // add logging for entire relation
-    if (logging) {
+    if (Global::config().has("profile")) {
         // compute label
         std::ostringstream line;
         line << "nonrecursive-relation;" << rel.getName() << ";";
@@ -976,7 +976,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
         }
 
         /* measure update time for each relation */
-        if (logging) {
+        if (Global::config().has("profile")) {
             std::ostringstream ost, osn;
             ost << "@c-recursive-relation;" << rel->getName() << ";" << rel->getSrcLoc() << ";";
             updateRelTable = std::make_unique<RamLogTimer>(std::move(updateRelTable), ost.str());
@@ -1058,7 +1058,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                 std::unique_ptr<RamStatement> rule = translateClause(*r1, program, &typeEnv, version);
 
                 /* add logging */
-                if (logging) {
+                if (Global::config().has("profile")) {
                     std::string clauseText = stringify(toString(*cl));
                     std::ostringstream line;
                     line << "recursive-rule;" << rel->getName() << ";";
@@ -1093,7 +1093,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
         }
 
         // label all versions
-        if (logging) {
+        if (Global::config().has("profile")) {
             std::ostringstream line;
             line << "recursive-relation;" << rel->getName() << ";" << rel->getSrcLoc() << ";";
             std::string label = line.str();
@@ -1355,7 +1355,7 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
         }
     }
 
-    if (res && logging) {
+    if (res && Global::config().has("profile")) {
         res = std::make_unique<RamLogTimer>(std::move(res), "@runtime;");
     }
 

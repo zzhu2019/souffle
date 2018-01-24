@@ -200,15 +200,15 @@ public:
  */
 class InterpreterProgInterface : public SouffleProgram {
 private:
-    RamProgram& prog;
+    const RamProgram& prog;
     Interpreter& exec;
     InterpreterEnvironment& env;
     SymbolTable& symTable;
     std::vector<InterpreterRelInterface*> interfaces;
 
 public:
-    InterpreterProgInterface(RamProgram& p, Interpreter& e, InterpreterEnvironment& r, SymbolTable& s)
-            : prog(p), exec(e), env(r), symTable(s) {
+    InterpreterProgInterface(const RamTranslationUnit &tu, Interpreter& e, InterpreterEnvironment& r)
+            : prog(*tu.getProgram()), exec(e), env(r), symTable(tu.getSymbolTable()) {
         uint32_t id = 0;
 
         // Retrieve AST Relations and store them in a map

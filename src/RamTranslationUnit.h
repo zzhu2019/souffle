@@ -71,11 +71,7 @@ public:
         return program.get();
     }
 
-    souffle::SymbolTable& getSymbolTable() {
-        return symbolTable;
-    }
-
-    const souffle::SymbolTable& getSymbolTable() const {
+    souffle::SymbolTable& getSymbolTable() const {
         return symbolTable;
     }
 
