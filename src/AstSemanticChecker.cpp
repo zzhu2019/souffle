@@ -850,7 +850,7 @@ void AstSemanticChecker::checkIODirectives(ErrorReport& report, const AstProgram
     }
 }
 
-static std::pair<bool, AstSrcLocation> usesInvalidWitness(const std::vector<AstLiteral*>& literals,
+static const std::vector<AstSrcLocation> usesInvalidWitness(const std::vector<AstLiteral*>& literals,
         const std::set<std::unique_ptr<AstArgument>>& groundedArguments) {
     // Node-mapper that replaces aggregators with new (unique) variables
     struct M : public AstNodeMapper {
@@ -863,7 +863,6 @@ static std::pair<bool, AstSrcLocation> usesInvalidWitness(const std::vector<AstL
 
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
             static int numReplaced = 0;
-
             if (AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
                 // Replace the aggregator with a variable
                 std::stringstream newVariableName;
@@ -874,11 +873,12 @@ static std::pair<bool, AstSrcLocation> usesInvalidWitness(const std::vector<AstL
 
                 return std::make_unique<AstVariable>(newVariableName.str());
             }
-
             node->apply(*this);
             return node;
         }
     };
+
+    std::vector<AstSrcLocation> result;
 
     // Create two versions of the original clause
 
@@ -947,7 +947,7 @@ static std::pair<bool, AstSrcLocation> usesInvalidWitness(const std::vector<AstL
     std::map<const AstArgument*, bool> aggregatorlessGrounded = getGroundedTerms(*aggregatorlessClause);
     for (auto pair : aggregatorlessGrounded) {
         if (!pair.second && originalGrounded[identicalSubnodeMap[pair.first]]) {
-            return std::make_pair(true, pair.first->getSrcLoc());
+            result.push_back(pair.first->getSrcLoc());
         }
 
         // Otherwise, it can now be considered grounded
@@ -961,27 +961,18 @@ static std::pair<bool, AstSrcLocation> usesInvalidWitness(const std::vector<AstL
 
     // Everything on this level is fine, check subaggregators of each literal
     for (const AstLiteral* lit : literals) {
-        bool violated = false;
-        std::pair<bool, AstSrcLocation> violatedResult;
-
         visitDepthFirst(*lit, [&](const AstAggregator& aggr) {
             // Check recursively if an invalid witness is used
             std::vector<AstLiteral*> aggrBodyLiterals = aggr.getBodyLiterals();
-            std::pair<bool, AstSrcLocation> result =
+            std::vector<AstSrcLocation> subresult =
                     usesInvalidWitness(aggrBodyLiterals, newlyGroundedArguments);
-            if (result.first) {
-                violated = true;
-                violatedResult = result;
+            for (AstSrcLocation argloc : subresult) {
+                result.push_back(argloc);
             }
         });
-
-        if (violated) {
-            return violatedResult;
-        }
     }
 
-    // No part of the clause uses an invalid witness!
-    return std::make_pair(false, AstSrcLocation());
+    return result;
 }
 
 void AstSemanticChecker::checkWitnessProblem(ErrorReport& report, const AstProgram& program) {
@@ -1000,12 +991,12 @@ void AstSemanticChecker::checkWitnessProblem(ErrorReport& report, const AstProgr
 
         // Perform the check
         std::set<std::unique_ptr<AstArgument>> groundedArguments;
-        std::pair<bool, AstSrcLocation> result = usesInvalidWitness(bodyLiterals, groundedArguments);
-        if (result.first) {
+        std::vector<AstSrcLocation> invalidArguments = usesInvalidWitness(bodyLiterals, groundedArguments);
+        for (AstSrcLocation invalidArgument : invalidArguments) {
             report.addError(
                     "Witness problem: argument grounded by an aggregator's inner scope is used ungrounded in "
                     "outer scope",
-                    result.second);
+                    invalidArgument);
         }
 
         delete headNegation;
