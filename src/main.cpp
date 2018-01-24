@@ -23,10 +23,10 @@
 #include "AstTranslationUnit.h"
 #include "AstTuner.h"
 #include "AstUtils.h"
-#include "RamTransformer.h"
-#include "RamTranslationUnit.h"
 #include "BddbddbBackend.h"
 #include "ComponentModel.h"
+#include "RamTransformer.h"
+#include "RamTranslationUnit.h"
 #ifdef USE_PROVENANCE
 #include "Explain.h"
 #endif
@@ -287,7 +287,7 @@ int main(int argc, char** argv) {
 
     // ------- rewriting / optimizations -------------
 
-    /** Execute pragmas in the source code */ 
+    /** Execute pragmas in the source code */
     (std::unique_ptr<AstTransformer>(new AstPragmaChecker()))->apply(*astTranslationUnit);
 
     std::vector<std::unique_ptr<AstTransformer>> astTransforms;
@@ -329,14 +329,15 @@ int main(int argc, char** argv) {
     }
 #endif
 
-    // Enable debug reports for the AST transforms 
+    // Enable debug reports for the AST transforms
     if (!Global::config().get("debug-report").empty()) {
         auto parser_end = std::chrono::high_resolution_clock::now();
         std::string runtimeStr =
                 "(" + std::to_string(std::chrono::duration<double>(parser_end - parser_start).count()) + "s)";
         DebugReporter::generateDebugReport(*astTranslationUnit, "Parsing", "After Parsing " + runtimeStr);
         for (unsigned int i = 0; i < astTransforms.size(); i++) {
-            astTransforms[i] = std::unique_ptr<AstTransformer>(new DebugReporter(std::move(astTransforms[i])));
+            astTransforms[i] =
+                    std::unique_ptr<AstTransformer>(new DebugReporter(std::move(astTransforms[i])));
         }
     }
 
@@ -433,8 +434,7 @@ int main(int argc, char** argv) {
                 (Global::config().has("auto-schedule"))
                         ? std::unique_ptr<Interpreter>(new Interpreter(ScheduledExecution))
                         : std::unique_ptr<Interpreter>(new Interpreter(DirectExecution));
-        std::unique_ptr<InterpreterEnvironment> env =
-                interpreter->execute(*ramTranslationUnit);
+        std::unique_ptr<InterpreterEnvironment> env = interpreter->execute(*ramTranslationUnit);
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
@@ -455,18 +455,16 @@ int main(int argc, char** argv) {
 
         std::vector<std::unique_ptr<RamProgram>> strata;
         if (Global::config().has("stratify")) {
-            std::unique_ptr<RamProgram> ramProg = std::unique_ptr<RamProgram>(
-                    ramTranslationUnit->getProgram()->clone()
-                    );
+            std::unique_ptr<RamProgram> ramProg =
+                    std::unique_ptr<RamProgram>(ramTranslationUnit->getProgram()->clone());
             if (RamSequence* sequence = dynamic_cast<RamSequence*>(ramProg->getMain())) {
                 sequence->moveSubprograms(strata);
             } else {
                 strata.push_back(std::move(ramProg));
             }
         } else {
-            std::unique_ptr<RamProgram> ramProg = std::unique_ptr<RamProgram>(
-                    ramTranslationUnit->getProgram()->clone()
-                    );
+            std::unique_ptr<RamProgram> ramProg =
+                    std::unique_ptr<RamProgram>(ramTranslationUnit->getProgram()->clone());
             strata.push_back(std::move(ramProg));
         }
 
@@ -519,7 +517,6 @@ int main(int argc, char** argv) {
                 std::cerr << e.what() << std::endl;
             }
         }
-
     }
 
     /* Report overall run-time in verbose mode */

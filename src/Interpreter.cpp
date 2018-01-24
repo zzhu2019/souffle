@@ -1033,8 +1033,7 @@ const QueryExecutionStrategy ScheduledExecution = [](
     }
 
     // create operation
-    std::unique_ptr<RamStatement> stmt =
-            AstTranslator().translateClause(*clause, nullptr, nullptr);
+    std::unique_ptr<RamStatement> stmt = AstTranslator().translateClause(*clause, nullptr, nullptr);
     assert(dynamic_cast<RamInsert*>(stmt.get()));
 
     // run rescheduled node

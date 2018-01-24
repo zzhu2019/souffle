@@ -80,14 +80,13 @@ public:
     /** Translate AST to RamProgram */
     std::unique_ptr<RamProgram> translateProgram(const AstTranslationUnit& translationUnit);
 
-
     /** translates AST to translation unit  */
     std::unique_ptr<RamTranslationUnit> translateUnit(AstTranslationUnit& tu) {
-        std::unique_ptr<RamProgram> ramProg = translateProgram(tu); 
-        SymbolTable &symTab = tu.getSymbolTable(); 
-        ErrorReport &errReport = tu.getErrorReport();
-        DebugReport &debugReport = tu.getDebugReport(); 
-        return std::make_unique<RamTranslationUnit>(std::move(ramProg),symTab, errReport, debugReport); 
+        std::unique_ptr<RamProgram> ramProg = translateProgram(tu);
+        SymbolTable& symTab = tu.getSymbolTable();
+        ErrorReport& errReport = tu.getErrorReport();
+        DebugReport& debugReport = tu.getDebugReport();
+        return std::make_unique<RamTranslationUnit>(std::move(ramProg), symTab, errReport, debugReport);
     }
 };
 
