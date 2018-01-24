@@ -1,0 +1,4 @@
+Error: Witness problem: argument grounded by an aggregator's inner scope is used ungrounded in outer scope in file witness_check.dl at line 7
+countA(x,y) :- x = sum z : { A(z,y) }.
+---------^-----------------------------
+1 errors generated, evaluation aborted

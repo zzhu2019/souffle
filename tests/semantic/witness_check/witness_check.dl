@@ -1,0 +1,9 @@
+.decl A(x:number, y:symbol)
+A(1,"x").
+A(10,"y").
+A(100,"z").
+
+.decl countA(x:number, y:symbol)
+countA(x,y) :- x = sum z : { A(z,y) }.
+
+.output countA()
