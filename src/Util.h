@@ -1224,7 +1224,6 @@ public:
 
 /* end http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2406.html#shared_mutex */
 
-
 /**
  * A utility function to set the maximum number of retries for a transaction
  * if Intel RTM is enabled (default 15);

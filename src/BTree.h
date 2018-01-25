@@ -1153,7 +1153,7 @@ private:
     struct tdata_t {
         // the counter for transaction operations
         int nb_transactions;
-        
+
         // the counter for total aborts
         int nb_aborts;
 
@@ -1175,7 +1175,7 @@ private:
 
     // the transaction statistic of this b-tree instance
     tdata_t tdata;
-    tdata_t *tdata_p = &tdata;
+    tdata_t* tdata_p = &tdata;
 
     /* -------------- operator hint statistics ----------------- */
 
@@ -1215,7 +1215,7 @@ public:
         tdata_p->nb_aborts_fallback_locked = 0;
         tdata_p->nb_aborts_unknown = 0;
         tdata_p->nb_fallbacks = 0;
-}
+    }
 
     // a constructor creating a tree from the given iterator range
     template <typename Iter>
