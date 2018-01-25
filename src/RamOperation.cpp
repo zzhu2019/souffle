@@ -32,7 +32,7 @@ void RamOperation::addCondition(std::unique_ptr<RamCondition> c, const RamOperat
     assert(c->getLevel() == level);
 
     if (condition) {
-        condition = std::unique_ptr<RamCondition>(new RamAnd(std::move(condition), std::move(c)));
+        condition = std::make_unique<RamAnd>(std::move(condition), std::move(c));
     } else {
         condition.swap(c);
     }
@@ -87,9 +87,9 @@ void RamScan::addCondition(std::unique_ptr<RamCondition> c, const RamOperation& 
             if (queryPattern[element] == nullptr) {
                 queryPattern[element] = std::move(value);
             } else {
-                std::unique_ptr<RamValue> field(new RamElementAccess(level, element));
-                RamSearch::addCondition(std::unique_ptr<RamCondition>(new RamBinaryRelation(
-                                                BinaryConstraintOp::EQ, std::move(field), std::move(value))),
+                std::unique_ptr<RamValue> field = std::make_unique<RamElementAccess>(level, element);
+                RamSearch::addCondition(std::make_unique<RamBinaryRelation>(
+                                                BinaryConstraintOp::EQ, std::move(field), std::move(value)),
                         root);
             }
             return;

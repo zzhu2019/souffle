@@ -79,7 +79,7 @@ private:
 
 public:
     InterpreterRelation(size_t relArity)
-            : arity(relArity), num_tuples(0), head(std::unique_ptr<Block>(new Block())), tail(head.get()),
+            : arity(relArity), num_tuples(0), head(std::make_unique<Block>()), tail(head.get()),
               totalIndex(nullptr) {}
 
     InterpreterRelation(const InterpreterRelation& other) = delete;
@@ -148,7 +148,7 @@ public:
 
         // prepare tail
         if (tail->getFreeSpace() < arity || arity == 0) {
-            tail->next = std::unique_ptr<Block>(new Block());
+            tail->next = std::make_unique<Block>();
             tail = tail->next.get();
         }
 
@@ -185,7 +185,7 @@ public:
 
     /** Purge table */
     void purge() {
-        std::unique_ptr<Block> newHead(new Block());
+        std::unique_ptr<Block> newHead = std::make_unique<Block>();
         head.swap(newHead);
         tail = head.get();
         for (const auto& cur : indices) {
@@ -360,10 +360,8 @@ public:
     virtual std::vector<RamDomain*> extend(const RamDomain* tuple) {
         std::vector<RamDomain*> newTuples;
 
-        newTuples.push_back(new RamDomain[2]{tuple[0], tuple[0]});
+        // A standard relation does not generate extra new knowledge on insertion.
         newTuples.push_back(new RamDomain[2]{tuple[0], tuple[1]});
-        newTuples.push_back(new RamDomain[2]{tuple[1], tuple[0]});
-        newTuples.push_back(new RamDomain[2]{tuple[1], tuple[1]});
 
         return newTuples;
     }
@@ -404,7 +402,10 @@ public:
     std::vector<RamDomain*> extend(const RamDomain* tuple) override {
         std::vector<RamDomain*> newTuples;
 
-        newTuples = InterpreterRelation::extend(tuple);
+        newTuples.push_back(new RamDomain[2]{tuple[0], tuple[0]});
+        newTuples.push_back(new RamDomain[2]{tuple[0], tuple[1]});
+        newTuples.push_back(new RamDomain[2]{tuple[1], tuple[0]});
+        newTuples.push_back(new RamDomain[2]{tuple[1], tuple[1]});
 
         std::vector<const RamDomain*> relevantStored;
         for (const RamDomain* vals : *this) {

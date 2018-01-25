@@ -375,7 +375,7 @@ void ResolveAliasesTransformer::removeComplexTermsInAtoms(AstClause& clause) {
     int var_counter = 0;
     for (const AstArgument* arg : terms) {
         map.push_back(std::make_pair(std::unique_ptr<AstArgument>(arg->clone()),
-                std::unique_ptr<AstVariable>(new AstVariable(" _tmp_" + toString(var_counter++)))));
+                std::make_unique<AstVariable>(" _tmp_" + toString(var_counter++))));
     }
 
     // apply mapping to replace terms with variables
@@ -578,7 +578,7 @@ bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
             head->setName(relName);
             std::vector<bool> symbolArguments;
             for (const auto& cur : vars) {
-                head->addArgument(std::unique_ptr<AstArgument>(new AstVariable(cur)));
+                head->addArgument(std::make_unique<AstVariable>(cur));
             }
 
             AstClause* aggClause = new AstClause();
@@ -653,7 +653,7 @@ bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
                 if (AstVariable* var = dynamic_cast<AstVariable*>(aggAtom->getArgument(i))) {
                     // replace local variable by underscore if local
                     if (varCtr[var->getName()] == 0) {
-                        aggAtom->setArgument(i, std::unique_ptr<AstArgument>(new AstUnnamedVariable()));
+                        aggAtom->setArgument(i, std::make_unique<AstUnnamedVariable>());
                     }
                 }
             }

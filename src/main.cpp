@@ -61,7 +61,7 @@ namespace souffle {
 
 static void wrapPassesForDebugReporting(std::vector<std::unique_ptr<AstTransformer>>& transforms) {
     for (unsigned int i = 0; i < transforms.size(); i++) {
-        transforms[i] = std::unique_ptr<AstTransformer>(new DebugReporter(std::move(transforms[i])));
+        transforms[i] = std::make_unique<DebugReporter>(std::move(transforms[i]));
     }
 }
 
@@ -292,43 +292,43 @@ int main(int argc, char** argv) {
     // ------- rewriting / optimizations -------------
 
     /* set up additional global options based on pragma declaratives */
-    (std::unique_ptr<AstTransformer>(new AstPragmaChecker()))->apply(*translationUnit);
+    (std::make_unique<AstPragmaChecker>())->apply(*translationUnit);
     std::vector<std::unique_ptr<AstTransformer>> transforms;
 
-    transforms.push_back(std::unique_ptr<AstTransformer>(new ComponentInstantiationTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new UniqueAggregationVariablesTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new AstSemanticChecker()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new InlineRelationsTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new ExtractDisconnectedLiteralsTransformer()));
+    transforms.push_back(std::make_unique<ComponentInstantiationTransformer>());
+    transforms.push_back(std::make_unique<UniqueAggregationVariablesTransformer>());
+    transforms.push_back(std::make_unique<AstSemanticChecker>());
+    transforms.push_back(std::make_unique<InlineRelationsTransformer>());
+    transforms.push_back(std::make_unique<ExtractDisconnectedLiteralsTransformer>());
     if (Global::config().get("bddbddb").empty()) {
-        transforms.push_back(std::unique_ptr<AstTransformer>(new ResolveAliasesTransformer()));
+        transforms.push_back(std::make_unique<ResolveAliasesTransformer>());
     }
-    transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRelationCopiesTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new MaterializeAggregationQueriesTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveEmptyRelationsTransformer()));
-    transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRedundantRelationsTransformer()));
+    transforms.push_back(std::make_unique<RemoveRelationCopiesTransformer>());
+    transforms.push_back(std::make_unique<MaterializeAggregationQueriesTransformer>());
+    transforms.push_back(std::make_unique<RemoveEmptyRelationsTransformer>());
+    transforms.push_back(std::make_unique<RemoveRedundantRelationsTransformer>());
 
     if (Global::config().has("magic-transform")) {
-        transforms.push_back(std::unique_ptr<AstTransformer>(new NormaliseConstraintsTransformer()));
-        transforms.push_back(std::unique_ptr<AstTransformer>(new MagicSetTransformer()));
+        transforms.push_back(std::make_unique<NormaliseConstraintsTransformer>());
+        transforms.push_back(std::make_unique<MagicSetTransformer>());
 
         if (Global::config().get("bddbddb").empty()) {
-            transforms.push_back(std::unique_ptr<AstTransformer>(new ResolveAliasesTransformer()));
+            transforms.push_back(std::make_unique<ResolveAliasesTransformer>());
         }
-        transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRelationCopiesTransformer()));
-        transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveEmptyRelationsTransformer()));
-        transforms.push_back(std::unique_ptr<AstTransformer>(new RemoveRedundantRelationsTransformer()));
+        transforms.push_back(std::make_unique<RemoveRelationCopiesTransformer>());
+        transforms.push_back(std::make_unique<RemoveEmptyRelationsTransformer>());
+        transforms.push_back(std::make_unique<RemoveRedundantRelationsTransformer>());
     }
 
-    transforms.push_back(std::unique_ptr<AstTransformer>(new AstExecutionPlanChecker()));
+    transforms.push_back(std::make_unique<AstExecutionPlanChecker>());
 
     if (Global::config().has("auto-schedule")) {
-        transforms.push_back(std::unique_ptr<AstTransformer>(new AutoScheduleTransformer()));
+        transforms.push_back(std::make_unique<AutoScheduleTransformer>());
     }
 #ifdef USE_PROVENANCE
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
-        transforms.push_back(std::unique_ptr<AstTransformer>(new ProvenanceTransformer()));
+        transforms.push_back(std::make_unique<ProvenanceTransformer>());
     }
 #endif
     if (!Global::config().get("debug-report").empty()) {
@@ -409,10 +409,9 @@ int main(int argc, char** argv) {
         // ------- interpreter -------------
 
         // configure interpreter
-        std::unique_ptr<Interpreter> interpreter =
-                (Global::config().has("auto-schedule"))
-                        ? std::unique_ptr<Interpreter>(new Interpreter(ScheduledExecution))
-                        : std::unique_ptr<Interpreter>(new Interpreter(DirectExecution));
+        std::unique_ptr<Interpreter> interpreter = (Global::config().has("auto-schedule"))
+                                                           ? std::make_unique<Interpreter>(ScheduledExecution)
+                                                           : std::make_unique<Interpreter>(DirectExecution);
         std::unique_ptr<InterpreterEnvironment> env =
                 interpreter->execute(translationUnit->getSymbolTable(), *ramProg);
 
@@ -469,7 +468,7 @@ int main(int argc, char** argv) {
             if (Global::config().has("stratify")) index++;
 
             // configure compiler
-            synthesiser = std::unique_ptr<Synthesiser>(new Synthesiser(compileCmd));
+            synthesiser = std::make_unique<Synthesiser>(compileCmd);
             if (Global::config().has("verbose")) {
                 synthesiser->setReportTarget(std::cout);
             }
