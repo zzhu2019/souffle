@@ -150,6 +150,7 @@ soufflepublic_HEADERS = CompiledRamOptions.h    \
                         SouffleInterface.h      \
                         ParallelUtils.h         \
                         BTree.h                 \
+                        htmx86.h                \
                         Trie.h                  \
                         UnionFind.h             \
                         BinaryRelation.h        \
