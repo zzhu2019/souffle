@@ -440,7 +440,7 @@ public:
 
     RamProject(std::unique_ptr<RamRelation> rel, const RamRelation& filter, size_t level)
             : RamOperation(RN_Project, level), relation(std::move(rel)),
-              filter(std::unique_ptr<RamRelation>(new RamRelation(filter))) {}
+              filter(std::make_unique<RamRelation>(filter)) {}
 
     /** Add value for a column */
     void addArg(std::unique_ptr<RamValue> v) {
@@ -493,7 +493,7 @@ public:
     RamProject* clone() const override {
         RamProject* res = new RamProject(std::unique_ptr<RamRelation>(relation->clone()), level);
         if (filter != nullptr) {
-            res->filter = std::unique_ptr<RamRelation>(new RamRelation(*filter));
+            res->filter = std::make_unique<RamRelation>(*filter);
         }
         for (auto& cur : values) {
             res->values.push_back(std::unique_ptr<RamValue>(cur->clone()));
