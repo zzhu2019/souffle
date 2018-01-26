@@ -1181,15 +1181,9 @@ private:
         // the counter for number of software fallbacks
         std::atomic<int> nb_fallbacks;
 
-        tdata_t() :
-            nb_transactions(0),
-            nb_aborts(0),
-            nb_aborts_conflict(0),
-            nb_aborts_capacity(0),
-            nb_aborts_fallback_locked(0),
-            nb_aborts_unknown(0),
-            nb_fallbacks(0)
-         {}
+        tdata_t()
+                : nb_transactions(0), nb_aborts(0), nb_aborts_conflict(0), nb_aborts_capacity(0),
+                  nb_aborts_fallback_locked(0), nb_aborts_unknown(0), nb_fallbacks(0) {}
     };
 
     // the transaction statistic of this b-tree instance
@@ -1224,9 +1218,7 @@ public:
     // -- ctors / dtors --
 
     // the default constructor creating an empty tree
-    btree(const Comparator& comp = Comparator())
-            : comp(comp), root(nullptr), leftmost(nullptr) {
-    }
+    btree(const Comparator& comp = Comparator()) : comp(comp), root(nullptr), leftmost(nullptr) {}
 
     // a constructor creating a tree from the given iterator range
     template <typename Iter>
@@ -1235,8 +1227,7 @@ public:
     }
 
     // a move constructor
-    btree(btree&& other)
-            : comp(other.comp), root(other.root), leftmost(other.leftmost) {
+    btree(btree&& other) : comp(other.comp), root(other.root), leftmost(other.leftmost) {
         other.root = nullptr;
         other.leftmost = nullptr;
     }
@@ -1252,8 +1243,7 @@ protected:
      * An internal constructor enabling the specific creation of a tree
      * based on internal parameters.
      */
-    btree(size_type size, node* root, leaf_node* leftmost)
-            : root(root), leftmost(leftmost) {}
+    btree(size_type size, node* root, leaf_node* leftmost) : root(root), leftmost(leftmost) {}
 
 public:
     // the destructor freeing all contained nodes
