@@ -772,8 +772,8 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
             try {
                 InterpreterRelation& relation = env.getRelation(load.getRelation());
                 std::unique_ptr<ReadStream> reader = IOSystem::getInstance().getReader(
-                        load.getRelation().getSymbolMask(), env.getSymbolTable(),
-                        load.getRelation().getInputDirectives(), Global::config().has("provenance"));
+                        load.getRelation().getSymbolMask(), env.getSymbolTable(), load.getIODirectives(),
+                        Global::config().has("provenance"));
                 reader->readAll(relation);
             } catch (std::exception& e) {
                 std::cerr << e.what();
@@ -783,7 +783,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
         }
 
         bool visitStore(const RamStore& store) override {
-            for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
+            for (IODirectives ioDirectives : store.getIODirectives()) {
                 try {
                     IOSystem::getInstance()
                             .getWriter(store.getRelation().getSymbolMask(), env.getSymbolTable(),

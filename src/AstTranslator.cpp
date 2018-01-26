@@ -49,49 +49,21 @@ std::string getRelationName(const AstRelationIdentifier& id) {
     return toString(join(id.getNames(), "-"));
 }
 
-std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv,
-        std::string name, size_t arity, const bool istemp = false, std::string filePath = std::string(),
-        std::string fileExt = std::string()) {
-    // avoid name conflicts for temporary identifiers
-    if (istemp) {
-        name.insert(0, "@");
-    }
-
-    if (!rel) {
-        return std::make_unique<RamRelation>(name, arity, istemp);
-    }
-
-    assert(arity == rel->getArity());
-    std::vector<std::string> attributeNames;
-    std::vector<std::string> attributeTypeQualifiers;
-    for (unsigned int i = 0; i < arity; i++) {
-        attributeNames.push_back(rel->getAttribute(i)->getAttributeName());
-        if (typeEnv) {
-            attributeTypeQualifiers.push_back(
-                    getTypeQualifier(typeEnv->getType(rel->getAttribute(i)->getTypeName())));
-        }
-    }
+IODirectives getInputIODirectives(
+        const AstRelation* rel, std::string filePath = std::string(), std::string fileExt = std::string()) {
+    const std::string inputFilePath = (filePath.empty()) ? Global::config().get("fact-dir") : filePath;
+    const std::string inputFileExt = (fileExt.empty()) ? ".facts" : fileExt;
 
     IODirectives directives;
-    std::vector<IODirectives> outputDirectives;
-    // If IO directives have been specified then set them up
     for (const auto& current : rel->getIODirectives()) {
         if (current->isInput()) {
             for (const auto& currentPair : current->getIODirectiveMap()) {
                 directives.set(currentPair.first, currentPair.second);
             }
-        } else if (current->isOutput()) {
-            IODirectives ioDirectives;
-            for (const auto& currentPair : current->getIODirectiveMap()) {
-                ioDirectives.set(currentPair.first, currentPair.second);
-            }
-            outputDirectives.push_back(ioDirectives);
         }
     }
-    // handle defaults
+
     if (rel->isInput()) {
-        const std::string inputFilePath = (filePath.empty()) ? Global::config().get("fact-dir") : filePath;
-        const std::string inputFileExt = (fileExt.empty()) ? ".facts" : fileExt;
         directives.setRelationName(getRelationName(rel->getName()));
         // Set a default IO type of file and a default filename if not supplied.
         if (!directives.has("IO")) {
@@ -107,6 +79,23 @@ std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEn
         // if filename is not an absolute path, concat with cmd line facts directory
         if (directives.getIOType() == "file" && directives.getFileName().front() != '/') {
             directives.setFileName(inputFilePath + "/" + directives.getFileName());
+        }
+    }
+
+    return directives;
+}
+
+std::vector<IODirectives> getOutputIODirectives(const AstRelation* rel, const TypeEnvironment* typeEnv,
+        std::string filePath = std::string(), std::string fileExt = std::string()) {
+    std::vector<IODirectives> outputDirectives;
+    // If IO directives have been specified then set them up
+    for (const auto& current : rel->getIODirectives()) {
+        if (current->isOutput()) {
+            IODirectives ioDirectives;
+            for (const auto& currentPair : current->getIODirectiveMap()) {
+                ioDirectives.set(currentPair.first, currentPair.second);
+            }
+            outputDirectives.push_back(ioDirectives);
         }
     }
     if (rel->isOutput()) {
@@ -141,9 +130,12 @@ std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEn
                 if (ioDirectives.has("delimiter")) {
                     delimiter = ioDirectives.get("delimiter");
                 }
+                std::vector<std::string> attributeNames;
+                for (unsigned int i = 0; i < rel->getArity(); i++) {
+                    attributeNames.push_back(rel->getAttribute(i)->getAttributeName());
+                }
 
                 if (Global::config().has("provenance")) {
-                    assert(attributeNames.size() >= 2);
                     std::vector<std::string> originalAttributeNames(
                             attributeNames.begin(), attributeNames.end() - 2);
                     ioDirectives.set("attributeNames", toString(join(originalAttributeNames, delimiter)));
@@ -153,9 +145,35 @@ std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEn
             }
         }
     }
+    return outputDirectives;
+}
+
+std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv,
+        std::string name, size_t arity, const bool istemp = false, std::string filePath = std::string(),
+        std::string fileExt = std::string()) {
+    // avoid name conflicts for temporary identifiers
+    if (istemp) {
+        name.insert(0, "@");
+    }
+
+    if (!rel) {
+        return std::make_unique<RamRelation>(name, arity, istemp);
+    }
+
+    assert(arity == rel->getArity());
+    std::vector<std::string> attributeNames;
+    std::vector<std::string> attributeTypeQualifiers;
+    for (unsigned int i = 0; i < arity; i++) {
+        attributeNames.push_back(rel->getAttribute(i)->getAttributeName());
+        if (typeEnv) {
+            attributeTypeQualifiers.push_back(
+                    getTypeQualifier(typeEnv->getType(rel->getAttribute(i)->getTypeName())));
+        }
+    }
+
     return std::unique_ptr<RamRelation>(new RamRelation(name, arity, attributeNames, attributeTypeQualifiers,
             getSymbolMask(*rel, *typeEnv), rel->isInput(), rel->isComputed(), rel->isOutput(), rel->isBTree(),
-            rel->isBrie(), rel->isEqRel(), rel->isData(), directives, outputDirectives, istemp));
+            rel->isBrie(), rel->isEqRel(), rel->isData(), istemp));
 }
 
 std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv) {
@@ -1126,7 +1144,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
         if (Global::config().has("fault-tolerance")) {
             for (const AstRelation* rel : scc) {
                 if (!rel->hasRecordInHead()) {
-                    appendStmt(res, std::make_unique<RamStore>(getRamRelation(rel, &typeEnv)));
+                    appendStmt(res, std::make_unique<RamStore>(getRamRelation(rel, &typeEnv),
+                                            getOutputIODirectives(rel, &typeEnv)));
                 }
             }
         }
@@ -1155,12 +1174,12 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
     }
     std::unique_ptr<RamRelation> rrel = getRamRelation(
             mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
-    delete mrel;
     // create and load the relation at the start
     appendStmt(current, std::make_unique<RamCreate>(std::unique_ptr<RamRelation>(rrel->clone())));
 
     if (rel->isInput() || !loadInputOnly) {
-        appendStmt(current, std::make_unique<RamLoad>(std::unique_ptr<RamRelation>(rrel->clone())));
+        appendStmt(current, std::make_unique<RamLoad>(std::unique_ptr<RamRelation>(rrel->clone()),
+                                    getInputIODirectives(mrel, dir, ext)));
     }
 
     // create delta and new relations for recursive relations at the start
@@ -1170,6 +1189,7 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
         appendStmt(current, std::make_unique<RamCreate>(getRamRelation(rel, &typeEnv,
                                     "new_" + getRelationName(rel->getName()), rel->getArity(), true)));
     }
+    delete mrel;
 }
 
 void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* rel,
@@ -1184,14 +1204,15 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
     }
     std::unique_ptr<RamRelation> rrel = getRamRelation(
             mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
-    delete mrel;
     if (rel->isPrintSize()) {
         appendStmt(current, std::make_unique<RamPrintSize>(std::unique_ptr<RamRelation>(rrel->clone())));
     }
 
     if (rel->isOutput() || !storeOutputOnly) {
-        appendStmt(current, std::make_unique<RamStore>(std::unique_ptr<RamRelation>(rrel->clone())));
+        appendStmt(current, std::make_unique<RamStore>(std::unique_ptr<RamRelation>(rrel->clone()),
+                                    getOutputIODirectives(mrel, &typeEnv, dir, ext)));
     }
+    delete mrel;
 }
 
 /** make a subroutine to search for subproofs */
