@@ -139,25 +139,23 @@ AS_IF([test "x$enable_sqlite" != "xno"], [
 ])
 AM_CONDITIONAL([SQLITE], [test "x$enable_sqlite" != "xno"])
 
-# Get the name of the distribution
-case $host_os in
-  darwin* )
-    DISTRIBUTION=osx
-  ;;
-  linux*)
-    # Check for bison
-    AC_CHECK_PROG(LSB_RELEASE, lsb_release, lsb_release)
-    AS_IF([test -z "$LSB_RELEASE"], [AC_MSG_ERROR([lsb_release required to detect LINUX distribution not found.])])
-    DISTRIBUTION=[`lsb_release -i | sed 's/^.*:[ \t]\+//' | tr '[A-Z]' '[a-z]'`]
-  ;;
-  *BSD*)
-    DISTRIBUTION=bsd
-  ;;
-  *)
-    AC_MSG_ERROR([Unsupported platform])
-  ;;
-esac
 if test -n "$SOUFFLE_PACKAGING"; then
+  case $host_os in
+    darwin* )
+      DISTRIBUTION=osx
+    ;;
+    linux*)
+      AC_CHECK_PROG(LSB_RELEASE, lsb_release, lsb_release)
+      AS_IF([test -z "$LSB_RELEASE"], [AC_MSG_ERROR([lsb_release required to detect LINUX distribution not found.])])
+      DISTRIBUTION=[`lsb_release -i | sed 's/^.*:[ \t]\+//' | tr '[A-Z]' '[a-z]'`]
+    ;;
+    *BSD* | *bsd* )
+      DISTRIBUTION=bsd
+    ;;
+    *)
+      AC_MSG_ERROR([Unsupported platform])
+    ;;
+  esac
   echo "Enable packaging for: $DISTRIBUTION"
 fi
 
@@ -167,7 +165,21 @@ AC_ARG_ENABLE(
   [AS_HELP_STRING([--enable-intel-rtm], [Enable usage of Intel Restricted Transactional Memory])]
 )
 AS_IF([test "x$enable_intel_rtm" = "xyes"], [
-  AS_IF([test "x$DISTRIBUTION" = "xosx"], [TSX=[`sysctl machdep.cpu.features | tr A-Z a-z | grep -o rtm`]], [TSX=[`lscpu | grep -o rtm`]])
+  case $host_os in
+    darwin* )
+      TSX=[`sysctl machdep.cpu.features | tr A-x a-x | grep -o rtm`]
+    ;;
+    linux*)
+      TSX=[`lscpu | grep -o rtm`]
+    ;;
+    *BSD* |*bsd*)
+      TSX=[`dmesg -a |grep Features | tr A-x a-x | grep -o rtm`]
+    ;;
+    *)
+      TSX=""
+    ;;
+  esac
+
   AS_IF([test "x$TSX" != "xrtm"], [AC_MSG_ERROR([Intel Restricted Transactional Memory is not supported on this machine.])])
   AS_VAR_APPEND(CXXFLAGS, [" -mrtm -DHAS_TSX"])
 ])
