@@ -19,7 +19,9 @@
 
 #include "ParallelUtils.h"
 #include "Util.h"
-
+#ifdef HAS_TSX
+#include "htmx86.h"
+#endif
 #include <cassert>
 #include <iostream>
 #include <iterator>
@@ -271,7 +273,7 @@ private:
      * book-keeping information.
      */
     struct base {
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
 
         // the parent node
         node* volatile parent;
@@ -504,7 +506,7 @@ private:
          * @param idx  .. the position of the insert causing the split
          */
         void split(node** root, lock_type& root_lock, int idx) {
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
             assert(this->lock.is_write_locked());
             assert(!this->parent || this->parent->lock.is_write_locked());
             assert((this->parent != nullptr) || root_lock.is_write_locked());
@@ -518,7 +520,7 @@ private:
             node* sibling = (this->inner) ? static_cast<node*>(new inner_node())
                                           : static_cast<node*>(new leaf_node());
 
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
             // lock sibling
             sibling->lock.start_write();
 #endif
@@ -546,14 +548,14 @@ private:
             // update parent
             grow_parent(root, root_lock, sibling);
 
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
             // unlock sibling
             sibling->lock.end_write();
 #endif
         }
 
         /**
-         * Moves keys from the this node to one of its siblings or splits
+         * Moves keys from this node to one of its siblings or splits
          * this node to make some space for the insertion of an element at
          * position idx.
          *
@@ -565,7 +567,7 @@ private:
          */
         // TODO: remove root_lock ... no longer needed
         int rebalance_or_split(node** root, lock_type& root_lock, int idx) {
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
             assert(this->lock.is_write_locked());
             assert(!this->parent || this->parent->lock.is_write_locked());
             assert((this->parent != nullptr) || root_lock.is_write_locked());
@@ -582,7 +584,7 @@ private:
             if (parent && pos > 0) {
                 node* left = parent->getChild(pos - 1);
 
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
                 // lock access to left sibling
                 if (!left->lock.try_start_write()) {
                     // left node is currently updated => skip balancing and split
@@ -642,7 +644,7 @@ private:
                     left->numElements += num;
                     this->numElements -= num;
 
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
                     left->lock.end_write();
 #endif
 
@@ -650,7 +652,7 @@ private:
                     return num;
                 }
 
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
                 left->lock.abort_write();
 #endif
             }
@@ -670,7 +672,7 @@ private:
          * @param sibling .. the new right-sibling to be add to the parent node
          */
         void grow_parent(node** root, lock_type& root_lock, node* sibling) {
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
             assert(this->lock.is_write_locked());
             assert(!this->parent || this->parent->lock.is_write_locked());
             assert((this->parent != nullptr) || root_lock.is_write_locked());
@@ -714,13 +716,13 @@ private:
          */
         void insert_inner(node** root, lock_type& root_lock, unsigned pos, node* predecessor, const Key& key,
                 node* newNode) {
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
             assert(this->lock.is_write_locked());
 #endif
 
             // check capacity
             if (this->numElements >= maxKeys) {
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
                 assert(!this->parent || this->parent->lock.is_write_locked());
                 assert((this->parent) || root_lock.is_write_locked());
 #endif
@@ -736,7 +738,7 @@ private:
                     // get new sibling
                     auto other = this->parent->getChild(this->position + 1);
 
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
                     // lock other side
                     other->lock.start_write();
 
@@ -748,7 +750,7 @@ private:
                     pos = (i > other->numElements) ? 0 : i;
 #endif
                     other->insert_inner(root, root_lock, pos, predecessor, key, newNode);
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
                     other->lock.end_write();
 #endif
                     return;
@@ -806,7 +808,7 @@ private:
                 out << "]";
             }
 
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
             // print the lock state
             if (this->lock.is_write_locked()) std::cout << " locked";
 #endif
@@ -1124,7 +1126,7 @@ public:
     };
 
 private:
-#ifdef IS_PARALLEL
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
     // the total number of elements in this tree
     volatile size_type numElements;
 
@@ -1146,6 +1148,34 @@ private:
 
     // a pointer to the left-most node of this tree (initial note for iteration)
     leaf_node* leftmost;
+
+    // an aggregation of statistical values for hardware transactions, if enabled
+    struct tdata_t {
+        // the counter for transaction operations
+        int nb_transactions;
+
+        // the counter for total aborts
+        int nb_aborts;
+
+        // the counter for aborts caused by thread conflicts
+        int nb_aborts_conflict;
+
+        // the counter for aborts caused by exceeding capacity of hardware
+        int nb_aborts_capacity;
+
+        // the counter for explicit aborts
+        int nb_aborts_fallback_locked;
+
+        // the counter for aborts caused by other factors
+        int nb_aborts_unknown;
+
+        // the counter for number of software fallbacks
+        int nb_fallbacks;
+    };
+
+    // the transaction statistic of this b-tree instance
+    tdata_t tdata;
+    tdata_t* tdata_p = &tdata;
 
     /* -------------- operator hint statistics ----------------- */
 
@@ -1177,17 +1207,39 @@ public:
 
     // the default constructor creating an empty tree
     btree(const Comparator& comp = Comparator())
-            : comp(comp), numElements(0), root(nullptr), leftmost(nullptr) {}
+            : comp(comp), numElements(0), root(nullptr), leftmost(nullptr) {
+        tdata_p->nb_transactions = 0;
+        tdata_p->nb_aborts = 0;
+        tdata_p->nb_aborts_conflict = 0;
+        tdata_p->nb_aborts_capacity = 0;
+        tdata_p->nb_aborts_fallback_locked = 0;
+        tdata_p->nb_aborts_unknown = 0;
+        tdata_p->nb_fallbacks = 0;
+    }
 
     // a constructor creating a tree from the given iterator range
     template <typename Iter>
     btree(const Iter& a, const Iter& b) : numElements(0), root(nullptr), leftmost(nullptr) {
+        tdata_p->nb_transactions = 0;
+        tdata_p->nb_aborts = 0;
+        tdata_p->nb_aborts_conflict = 0;
+        tdata_p->nb_aborts_capacity = 0;
+        tdata_p->nb_aborts_fallback_locked = 0;
+        tdata_p->nb_aborts_unknown = 0;
+        tdata_p->nb_fallbacks = 0;
         insert(a, b);
     }
 
     // a move constructor
     btree(btree&& other)
             : comp(other.comp), numElements(other.numElements), root(other.root), leftmost(other.leftmost) {
+        tdata_p->nb_transactions = 0;
+        tdata_p->nb_aborts = 0;
+        tdata_p->nb_aborts_conflict = 0;
+        tdata_p->nb_aborts_capacity = 0;
+        tdata_p->nb_aborts_fallback_locked = 0;
+        tdata_p->nb_aborts_unknown = 0;
+        tdata_p->nb_fallbacks = 0;
         other.numElements = 0;
         other.root = nullptr;
         other.leftmost = nullptr;
@@ -1197,6 +1249,13 @@ public:
     btree(const btree& set) : comp(set.comp), numElements(0), root(nullptr), leftmost(nullptr) {
         // use assignment operator for a deep copy
         *this = set;
+        tdata_p->nb_transactions = 0;
+        tdata_p->nb_aborts = 0;
+        tdata_p->nb_aborts_conflict = 0;
+        tdata_p->nb_aborts_capacity = 0;
+        tdata_p->nb_aborts_fallback_locked = 0;
+        tdata_p->nb_aborts_unknown = 0;
+        tdata_p->nb_fallbacks = 0;
     }
 
 protected:
@@ -1238,7 +1297,119 @@ public:
      */
     bool insert(const Key& k, operation_hints& hints) {
 #ifdef IS_PARALLEL
+#ifdef HAS_TSX
+        // set retry parameter
+        TX_RETRIES(maxRetries());
+        // begin hardware transactionm, enabling transaction logging if enabled
+        if (isTransactionProfilingEnabled()) {
+            TX_START_INST(NL, tdata_p);
+        } else {
+            TX_START(NL);
+        }
+        // special handling for inserting first element
+        if (empty()) {
+            // create new node
+            leftmost = new leaf_node();
+            leftmost->numElements = 1;
+            leftmost->keys[0] = k;
+            root = leftmost;
 
+            // increment number of elements
+            ++numElements;
+
+            hints.last_insert = leftmost;
+
+            // end hardware transaction
+            TX_END;
+
+            return true;
+        }
+
+        // insert using iterative implementation
+        node* cur = nullptr;
+
+        // test last insert
+        if (hints.last_insert && covers(hints.last_insert, k)) {
+            cur = hints.last_insert;
+            hint_stats.inserts.addHit();
+        } else {
+            hint_stats.inserts.addMiss();
+        }
+
+        if (!cur) {
+            cur = root;
+        }
+
+        while (true) {
+            // handle inner nodes
+            if (cur->inner) {
+                auto a = &(cur->keys[0]);
+                auto b = &(cur->keys[cur->numElements]);
+
+                auto pos = search.lower_bound(k, a, b, comp);
+                auto idx = pos - a;
+
+                // early exit for sets
+                if (isSet && pos != b && equal(*pos, k)) {
+                    TX_END;
+                    return false;
+                }
+
+                cur = cur->getChild(idx);
+                continue;
+            }
+
+            // the rest is for leaf nodes
+            assert(!cur->inner);
+
+            // -- insert node in leaf node --
+
+            auto a = &(cur->keys[0]);
+            auto b = &(cur->keys[cur->numElements]);
+
+            auto pos = search.upper_bound(k, a, b, comp);
+            auto idx = pos - a;
+
+            // early exit for sets
+            if (isSet && pos != a && equal(*(pos - 1), k)) {
+                TX_END;
+                return false;
+            }
+
+            if (cur->numElements >= node::maxKeys) {
+                // split this node
+                idx -= cur->rebalance_or_split(&root, root_lock, idx);
+
+                // insert element in right fragment
+                if (((size_type)idx) > cur->numElements) {
+                    idx -= cur->numElements + 1;
+                    cur = cur->parent->getChild(cur->position + 1);
+                }
+            }
+
+            // ok - no split necessary
+            assert(cur->numElements < node::maxKeys && "Split required!");
+
+            // move keys
+            for (int j = cur->numElements; j > idx; --j) {
+                cur->keys[j] = cur->keys[j - 1];
+            }
+
+            // insert new element
+            cur->keys[idx] = k;
+            cur->numElements++;
+
+            // new element has been inserted
+            ++numElements;
+
+            // remember last insertion position
+            hints.last_insert = cur;
+
+            // end hardware transaction
+            TX_END;
+            return true;
+        }
+#else
         // special handling for inserting first element
         while (numElements == 0) {
             // try obtaining root-lock
@@ -1474,7 +1645,7 @@ public:
             hints.last_insert = cur;
             return true;
         }
-
+#endif
 #else
         // special handling for inserting first element
         if (empty()) {
@@ -1946,6 +2117,16 @@ public:
         out << "  avg keys / node:  " << (size() / (double)nodes) << "\n";
         out << "  avg filling rate: " << ((size() / (double)nodes) / node::maxKeys) << "\n";
         out << "---------------------------------\n";
+        if (isTransactionProfilingEnabled()) {
+            out << "  Transactions: " << tdata.nb_transactions << "\n";
+            out << "  Aborts: " << tdata.nb_aborts << "\n";
+            out << "    Capacity: " << tdata.nb_aborts_capacity << "\n";
+            out << "    Conflict: " << tdata.nb_aborts_conflict << "\n";
+            out << "    Fallback: " << tdata.nb_aborts_fallback_locked << "\n";
+            out << "    Unknown:  " << tdata.nb_aborts_unknown << "\n";
+            out << "  Fallback: " << tdata.nb_fallbacks << "\n";
+            out << "---------------------------------\n";
+        }
         if (isHintsProfilingEnabled()) {
             out << "         insert hint hits: " << hint_stats.inserts.getHits() << "\n";
             out << "       insert hint misses: " << hint_stats.inserts.getMisses() << "\n";

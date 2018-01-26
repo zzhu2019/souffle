@@ -621,8 +621,8 @@ public:
 
     template <typename... Stmts>
     RamLoop(std::unique_ptr<RamStatement> f, std::unique_ptr<RamStatement> s, std::unique_ptr<Stmts>... rest)
-            : RamStatement(RN_Loop), body(std::unique_ptr<RamStatement>(new RamSequence(
-                                             std::move(f), std::move(s), std::move(rest)...))) {}
+            : RamStatement(RN_Loop),
+              body(std::make_unique<RamSequence>(std::move(f), std::move(s), std::move(rest)...)) {}
 
     /** Get loop body */
     const RamStatement& getBody() const {

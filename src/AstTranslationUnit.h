@@ -63,7 +63,7 @@ public:
         auto it = analyses.find(name);
         if (it == analyses.end()) {
             // analysis does not exist yet, create instance and run it.
-            analyses[name] = std::unique_ptr<AstAnalysis>(new Analysis());
+            analyses[name] = std::make_unique<Analysis>();
             analyses[name]->run(*this);
         }
         return dynamic_cast<Analysis*>(analyses[name].get());
