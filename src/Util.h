@@ -1238,7 +1238,8 @@ inline int maxRetries() {
  * disabled;
  */
 inline bool isTransactionProfilingEnabled() {
-    return std::getenv("SOUFFLE_PROFILE_TRANSACTIONS");
+    const static bool res = std::getenv("SOUFFLE_PROFILE_TRANSACTIONS");
+    return res;
 }
 
 // -------------------------------------------------------------------------------
