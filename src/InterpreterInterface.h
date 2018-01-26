@@ -207,7 +207,7 @@ private:
     std::vector<InterpreterRelInterface*> interfaces;
 
 public:
-    InterpreterProgInterface(const RamTranslationUnit &tu, Interpreter& e, InterpreterEnvironment& r)
+    InterpreterProgInterface(const RamTranslationUnit& tu, Interpreter& e, InterpreterEnvironment& r)
             : prog(*tu.getProgram()), exec(e), env(r), symTable(tu.getSymbolTable()) {
         uint32_t id = 0;
 
