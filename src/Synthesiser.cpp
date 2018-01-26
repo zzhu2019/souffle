@@ -289,7 +289,7 @@ public:
         // get some table details
         out << "try {";
         out << "std::map<std::string, std::string> directiveMap(";
-        out << load.getRelation().getInputDirectives() << ");\n";
+        out << load.getIODirectives() << ");\n";
         out << "if (!inputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
         out << "directiveMap[\"filename\"].front() != '/') {";
         out << "directiveMap[\"filename\"] = inputDirectory + \"/\" + directiveMap[\"filename\"];";
@@ -309,7 +309,7 @@ public:
     void visitStore(const RamStore& store, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
         out << "if (performIO) {\n";
-        for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
+        for (IODirectives ioDirectives : store.getIODirectives()) {
             out << "try {";
             out << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
             out << "if (!outputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
@@ -1493,7 +1493,7 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
     os << "void printAll(std::string outputDirectory = \".\") {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) {
         if (auto store = dynamic_cast<const RamStore*>(&node)) {
-            for (IODirectives ioDirectives : store->getRelation().getOutputDirectives()) {
+            for (IODirectives ioDirectives : store->getIODirectives()) {
                 os << "try {";
                 os << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
                 os << "if (!outputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
@@ -1523,11 +1523,10 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
     os << "public:\n";
     os << "void loadAll(std::string inputDirectory = \".\") {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamLoad& load) {
-        IODirectives ioDirectives = load.getRelation().getInputDirectives();
         // get some table details
         os << "try {";
         os << "std::map<std::string, std::string> directiveMap(";
-        os << load.getRelation().getInputDirectives() << ");\n";
+        os << load.getIODirectives() << ");\n";
         os << "if (!inputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
         os << "directiveMap[\"filename\"].front() != '/') {";
         os << "directiveMap[\"filename\"] = inputDirectory + \"/\" + directiveMap[\"filename\"];";

@@ -120,20 +120,27 @@ public:
  */
 class RamLoad : public RamRelationStatement {
 public:
-    RamLoad(std::unique_ptr<RamRelation> rel) : RamRelationStatement(RN_Load, std::move(rel)) {}
+    RamLoad(std::unique_ptr<RamRelation> rel, IODirectives ioDirectives)
+            : RamRelationStatement(RN_Load, std::move(rel)), ioDirectives(std::move(ioDirectives)) {}
+
+    const IODirectives& getIODirectives() const {
+        return ioDirectives;
+    }
 
     /** Pretty print */
     void print(std::ostream& os, int tabpos) const override {
         os << std::string(tabpos, '\t');
-        os << "LOAD DATA FOR " << getRelation().getName() << " FROM {" << getRelation().getInputDirectives()
-           << "}";
+        os << "LOAD DATA FOR " << getRelation().getName() << " FROM {" << ioDirectives << "}";
     };
 
     /** Create clone */
     RamLoad* clone() const override {
-        RamLoad* res = new RamLoad(std::unique_ptr<RamRelation>(relation->clone()));
+        RamLoad* res = new RamLoad(std::unique_ptr<RamRelation>(relation->clone()), ioDirectives);
         return res;
     }
+
+private:
+    const IODirectives ioDirectives;
 };
 
 /**
@@ -141,23 +148,30 @@ public:
  */
 class RamStore : public RamRelationStatement {
 public:
-    RamStore(std::unique_ptr<RamRelation> rel) : RamRelationStatement(RN_Store, std::move(rel)) {}
+    RamStore(std::unique_ptr<RamRelation> rel, std::vector<IODirectives> ioDirectives)
+            : RamRelationStatement(RN_Store, std::move(rel)), ioDirectives(std::move(ioDirectives)) {}
+
+    const std::vector<IODirectives>& getIODirectives() const {
+        return ioDirectives;
+    }
 
     /** Pretty print */
     void print(std::ostream& os, int tabpos) const override {
-        const auto& outputDirectives = getRelation().getOutputDirectives();
         os << std::string(tabpos, '\t');
         os << "STORE DATA FOR " << getRelation().getName() << " TO {";
-        os << join(outputDirectives, "], [",
+        os << join(ioDirectives, "], [",
                 [](std::ostream& out, const IODirectives& directives) { out << directives; });
         os << "}";
     };
 
     /** Create clone */
     RamStore* clone() const override {
-        RamStore* res = new RamStore(std::unique_ptr<RamRelation>(relation->clone()));
+        RamStore* res = new RamStore(std::unique_ptr<RamRelation>(relation->clone()), ioDirectives);
         return res;
     }
+
+private:
+    const std::vector<IODirectives> ioDirectives;
 };
 
 /**

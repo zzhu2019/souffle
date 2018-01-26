@@ -65,10 +65,6 @@ protected:
     bool isdata;  // Datalog relation in the program
     bool istemp;  // Temporary relation for semi-naive evaluation
 
-    /** I/O directives */
-    IODirectives inputDirectives;
-    std::vector<IODirectives> outputDirectives;
-
 public:
     RamRelation()
             : RamNode(RN_Relation), arity(0), mask(arity), input(false), output(false), computed(false),
@@ -82,12 +78,10 @@ public:
             std::vector<std::string> attributeTypeQualifiers = {}, const SymbolMask& mask = SymbolMask(0),
             const bool input = false, const bool computed = false, const bool output = false,
             const bool btree = false, const bool brie = false, const bool eqrel = false,
-            const bool isdata = false, const IODirectives inputDirectives = IODirectives(),
-            const std::vector<IODirectives> outputDirectives = {}, const bool istemp = false)
+            const bool isdata = false, const bool istemp = false)
             : RamNode(RN_Relation), name(name), arity(arity), attributeNames(attributeNames),
               attributeTypeQualifiers(attributeTypeQualifiers), mask(mask), input(input), output(output),
-              computed(computed), btree(btree), brie(brie), eqrel(eqrel), isdata(isdata), istemp(istemp),
-              inputDirectives(inputDirectives), outputDirectives(outputDirectives) {
+              computed(computed), btree(btree), brie(brie), eqrel(eqrel), isdata(isdata), istemp(istemp) {
         assert(this->attributeNames.size() == arity || this->attributeNames.empty());
         assert(this->attributeTypeQualifiers.size() == arity || this->attributeTypeQualifiers.empty());
     }
@@ -150,14 +144,6 @@ public:
         return arity;
     }
 
-    const IODirectives& getInputDirectives() const {
-        return inputDirectives;
-    }
-
-    const std::vector<IODirectives>& getOutputDirectives() const {
-        return outputDirectives;
-    }
-
     bool operator==(const RamRelation& other) const {
         return name == other.name;
     }
@@ -189,7 +175,7 @@ public:
     /** Create clone */
     RamRelation* clone() const override {
         RamRelation* res = new RamRelation(name, arity, attributeNames, attributeTypeQualifiers, mask, input,
-                computed, output, btree, brie, eqrel, isdata, inputDirectives, outputDirectives, istemp);
+                computed, output, btree, brie, eqrel, isdata, istemp);
         return res;
     }
 
@@ -206,8 +192,7 @@ protected:
                isInput() == other.isInput() && isOutput() == other.isOutput() &&
                isComputed() == other.isComputed() && isBTree() == other.isBTree() &&
                isBrie() == other.isBrie() && isEqRel() == other.isEqRel() && isData() == other.isData() &&
-               isTemp() == other.isTemp() && inputDirectives == other.inputDirectives &&
-               souffle::equal(outputDirectives, other.outputDirectives);
+               isTemp() == other.isTemp();
     }
 };
 
