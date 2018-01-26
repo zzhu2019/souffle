@@ -429,8 +429,7 @@ int main(int argc, char** argv) {
         std::unique_ptr<Interpreter> interpreter = (Global::config().has("auto-schedule"))
                                                            ? std::make_unique<Interpreter>(ScheduledExecution)
                                                            : std::make_unique<Interpreter>(DirectExecution);
-        std::unique_ptr<InterpreterEnvironment> env =
-                interpreter->execute(*ramTranslationUnit);
+        std::unique_ptr<InterpreterEnvironment> env = interpreter->execute(*ramTranslationUnit);
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
