@@ -37,5 +37,4 @@ public:
     }
 };
 
-
 }  // end of namespace souffle

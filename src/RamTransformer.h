@@ -22,7 +22,7 @@ namespace souffle {
 class RamTranslationUnit;
 
 /**
- * Abstract Transformer Class for RAM 
+ * Abstract Transformer Class for RAM
  */
 
 class RamTransformer {
