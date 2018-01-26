@@ -436,6 +436,21 @@ private:
         }
 
         /**
+         * Counts the number of entries contained in the sub-tree rooted
+         * by this node.
+         */
+        size_type countEntries() const {
+            if (this->isLeaf()) {
+                return this->numElements;
+            }
+            size_type sum = this->numElements;
+            for (unsigned i = 0; i <= this->numElements; ++i) {
+                sum += getChild(i)->countEntries();
+            }
+            return sum;
+        }
+
+        /**
          * Determines the amount of memory used by the sub-tree rooted
          * by this node.
          */
@@ -1127,18 +1142,12 @@ public:
 
 private:
 #if defined(IS_PARALLEL) && !defined(HAS_TSX)
-    // the total number of elements in this tree
-    volatile size_type numElements;
-
     // a pointer to the root node of this tree
     node* volatile root;
 
     // a lock to synchronize update operations on the root pointer
     lock_type root_lock;
 #else
-    // the total number of elements in this tree
-    size_type numElements;
-
     // a pointer to the root node of this tree
     node* root;
 
@@ -1152,30 +1161,33 @@ private:
     // an aggregation of statistical values for hardware transactions, if enabled
     struct tdata_t {
         // the counter for transaction operations
-        int nb_transactions;
+        std::atomic<int> nb_transactions;
 
         // the counter for total aborts
-        int nb_aborts;
+        std::atomic<int> nb_aborts;
 
         // the counter for aborts caused by thread conflicts
-        int nb_aborts_conflict;
+        std::atomic<int> nb_aborts_conflict;
 
         // the counter for aborts caused by exceeding capacity of hardware
-        int nb_aborts_capacity;
+        std::atomic<int> nb_aborts_capacity;
 
         // the counter for explicit aborts
-        int nb_aborts_fallback_locked;
+        std::atomic<int> nb_aborts_fallback_locked;
 
         // the counter for aborts caused by other factors
-        int nb_aborts_unknown;
+        std::atomic<int> nb_aborts_unknown;
 
         // the counter for number of software fallbacks
-        int nb_fallbacks;
+        std::atomic<int> nb_fallbacks;
+
+        tdata_t()
+                : nb_transactions(0), nb_aborts(0), nb_aborts_conflict(0), nb_aborts_capacity(0),
+                  nb_aborts_fallback_locked(0), nb_aborts_unknown(0), nb_fallbacks(0) {}
     };
 
     // the transaction statistic of this b-tree instance
     tdata_t tdata;
-    tdata_t* tdata_p = &tdata;
 
     /* -------------- operator hint statistics ----------------- */
 
@@ -1206,56 +1218,24 @@ public:
     // -- ctors / dtors --
 
     // the default constructor creating an empty tree
-    btree(const Comparator& comp = Comparator())
-            : comp(comp), numElements(0), root(nullptr), leftmost(nullptr) {
-        tdata_p->nb_transactions = 0;
-        tdata_p->nb_aborts = 0;
-        tdata_p->nb_aborts_conflict = 0;
-        tdata_p->nb_aborts_capacity = 0;
-        tdata_p->nb_aborts_fallback_locked = 0;
-        tdata_p->nb_aborts_unknown = 0;
-        tdata_p->nb_fallbacks = 0;
-    }
+    btree(const Comparator& comp = Comparator()) : comp(comp), root(nullptr), leftmost(nullptr) {}
 
     // a constructor creating a tree from the given iterator range
     template <typename Iter>
-    btree(const Iter& a, const Iter& b) : numElements(0), root(nullptr), leftmost(nullptr) {
-        tdata_p->nb_transactions = 0;
-        tdata_p->nb_aborts = 0;
-        tdata_p->nb_aborts_conflict = 0;
-        tdata_p->nb_aborts_capacity = 0;
-        tdata_p->nb_aborts_fallback_locked = 0;
-        tdata_p->nb_aborts_unknown = 0;
-        tdata_p->nb_fallbacks = 0;
+    btree(const Iter& a, const Iter& b) : root(nullptr), leftmost(nullptr) {
         insert(a, b);
     }
 
     // a move constructor
-    btree(btree&& other)
-            : comp(other.comp), numElements(other.numElements), root(other.root), leftmost(other.leftmost) {
-        tdata_p->nb_transactions = 0;
-        tdata_p->nb_aborts = 0;
-        tdata_p->nb_aborts_conflict = 0;
-        tdata_p->nb_aborts_capacity = 0;
-        tdata_p->nb_aborts_fallback_locked = 0;
-        tdata_p->nb_aborts_unknown = 0;
-        tdata_p->nb_fallbacks = 0;
-        other.numElements = 0;
+    btree(btree&& other) : comp(other.comp), root(other.root), leftmost(other.leftmost) {
         other.root = nullptr;
         other.leftmost = nullptr;
     }
 
     // a copy constructor
-    btree(const btree& set) : comp(set.comp), numElements(0), root(nullptr), leftmost(nullptr) {
+    btree(const btree& set) : comp(set.comp), root(nullptr), leftmost(nullptr) {
         // use assignment operator for a deep copy
         *this = set;
-        tdata_p->nb_transactions = 0;
-        tdata_p->nb_aborts = 0;
-        tdata_p->nb_aborts_conflict = 0;
-        tdata_p->nb_aborts_capacity = 0;
-        tdata_p->nb_aborts_fallback_locked = 0;
-        tdata_p->nb_aborts_unknown = 0;
-        tdata_p->nb_fallbacks = 0;
     }
 
 protected:
@@ -1263,8 +1243,7 @@ protected:
      * An internal constructor enabling the specific creation of a tree
      * based on internal parameters.
      */
-    btree(size_type size, node* root, leaf_node* leftmost)
-            : numElements(size), root(root), leftmost(leftmost) {}
+    btree(size_type size, node* root, leaf_node* leftmost) : root(root), leftmost(leftmost) {}
 
 public:
     // the destructor freeing all contained nodes
@@ -1276,12 +1255,12 @@ public:
 
     // emptiness check
     bool empty() const {
-        return numElements == 0;
+        return root == nullptr;
     }
 
     // determines the number of elements in this tree
     size_type size() const {
-        return numElements;
+        return (root) ? root->countEntries() : 0;
     }
 
     /**
@@ -1302,7 +1281,7 @@ public:
         TX_RETRIES(maxRetries());
         // begin hardware transactionm, enabling transaction logging if enabled
         if (isTransactionProfilingEnabled()) {
-            TX_START_INST(NL, tdata_p);
+            TX_START_INST(NL, (&tdata));
         } else {
             TX_START(NL);
         }
@@ -1313,9 +1292,6 @@ public:
             leftmost->numElements = 1;
             leftmost->keys[0] = k;
             root = leftmost;
-
-            // increment number of elements
-            ++numElements;
 
             hints.last_insert = leftmost;
 
@@ -1399,9 +1375,6 @@ public:
             cur->keys[idx] = k;
             cur->numElements++;
 
-            // new element has been inserted
-            ++numElements;
-
             // remember last insertion position
             hints.last_insert = cur;
 
@@ -1411,7 +1384,7 @@ public:
         }
 #else
         // special handling for inserting first element
-        while (numElements == 0) {
+        while (root == nullptr) {
             // try obtaining root-lock
             if (!root_lock.try_start_write()) {
                 // somebody else was faster => re-check
@@ -1419,7 +1392,7 @@ public:
             }
 
             // check loop condition again
-            if (numElements != 0) {
+            if (root != nullptr) {
                 // somebody else was faster => normal insert
                 root_lock.end_write();
                 break;
@@ -1430,9 +1403,6 @@ public:
             leftmost->numElements = 1;
             leftmost->keys[0] = k;
             root = leftmost;
-
-            // increment number of elements (atomically)
-            __sync_fetch_and_add(&numElements, 1);
 
             // operation complete => we can release the root lock
             root_lock.end_write();
@@ -1638,9 +1608,6 @@ public:
             // release lock on current node
             cur->lock.end_write();
 
-            // new element has been inserted
-            __sync_fetch_and_add(&numElements, 1);
-
             // remember last insertion position
             hints.last_insert = cur;
             return true;
@@ -1654,9 +1621,6 @@ public:
             leftmost->numElements = 1;
             leftmost->keys[0] = k;
             root = leftmost;
-
-            // increment number of elements
-            ++numElements;
 
             hints.last_insert = leftmost;
 
@@ -1730,9 +1694,6 @@ public:
             // insert new element
             cur->keys[idx] = k;
             cur->numElements++;
-
-            // new element has been inserted
-            ++numElements;
 
             // remember last insertion position
             hints.last_insert = cur;
@@ -1983,7 +1944,6 @@ public:
      * Clears this tree.
      */
     void clear() {
-        numElements = 0;
         if (root) {
             delete root;
         }
@@ -1998,7 +1958,6 @@ public:
      */
     void swap(btree& other) {
         // swap the content
-        std::swap(numElements, other.numElements);
         std::swap(root, other.root);
         std::swap(leftmost, other.leftmost);
     }
@@ -2017,7 +1976,6 @@ public:
         }
 
         // clone content (deep copy)
-        numElements = other.size();
         root = other.root->clone();
 
         // update leftmost reference
@@ -2119,12 +2077,12 @@ public:
         out << "---------------------------------\n";
         if (isTransactionProfilingEnabled()) {
             out << "  Transactions: " << tdata.nb_transactions << "\n";
-            out << "  Aborts: " << tdata.nb_aborts << "\n";
-            out << "    Capacity: " << tdata.nb_aborts_capacity << "\n";
-            out << "    Conflict: " << tdata.nb_aborts_conflict << "\n";
-            out << "    Fallback: " << tdata.nb_aborts_fallback_locked << "\n";
-            out << "    Unknown:  " << tdata.nb_aborts_unknown << "\n";
-            out << "  Fallback: " << tdata.nb_fallbacks << "\n";
+            out << "  Aborts:       " << tdata.nb_aborts << "\n";
+            out << "    Capacity:   " << tdata.nb_aborts_capacity << "\n";
+            out << "    Conflict:   " << tdata.nb_aborts_conflict << "\n";
+            out << "    Fallback:   " << tdata.nb_aborts_fallback_locked << "\n";
+            out << "    Unknown:    " << tdata.nb_aborts_unknown << "\n";
+            out << "  Fallback:     " << tdata.nb_fallbacks << "\n";
             out << "---------------------------------\n";
         }
         if (isHintsProfilingEnabled()) {
