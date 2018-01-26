@@ -27,9 +27,7 @@
 #include "ComponentModel.h"
 #include "RamTransformer.h"
 #include "RamTranslationUnit.h"
-#ifdef USE_PROVENANCE
-#include "Explain.h"
-#endif
+#include "RamSemanticChecker.h"
 #include "AstTranslator.h"
 #include "Global.h"
 #include "Interpreter.h"
@@ -40,6 +38,10 @@
 #include "SymbolTable.h"
 #include "Synthesiser.h"
 #include "Util.h"
+
+#ifdef USE_PROVENANCE
+#include "Explain.h"
+#endif
 
 #include <chrono>
 #include <fstream>
@@ -382,7 +384,7 @@ int main(int argc, char** argv) {
             AstTranslator().translateUnit(*astTranslationUnit);
 
     std::vector<std::unique_ptr<RamTransformer>> ramTransforms;
-    // ramTransforms.push_back(std::unique_ptr<RamTransformer>(new RamSemanticChecker()));
+    ramTransforms.push_back(std::unique_ptr<RamTransformer>(new RamSemanticChecker()));
 
     for (const auto& transform : ramTransforms) {
         transform->apply(*ramTranslationUnit);
@@ -450,14 +452,14 @@ int main(int argc, char** argv) {
 
         std::vector<std::unique_ptr<RamProgram>> strata;
         if (Global::config().has("stratify")) {
-            std::unique_ptr<RamProgram> ramProg = std::move(ramTranslationUnit->getProg());
+            std::unique_ptr<RamProgram> ramProg = ramTranslationUnit->getProg();
             if (RamSequence* sequence = dynamic_cast<RamSequence*>(ramProg->getMain())) {
                 sequence->moveSubprograms(strata);
             } else {
                 strata.push_back(std::move(ramProg));
             }
         } else {
-            std::unique_ptr<RamProgram> ramProg = std::move(ramTranslationUnit->getProg());
+            std::unique_ptr<RamProgram> ramProg = ramTranslationUnit->getProg();
             strata.push_back(std::move(ramProg));
         }
 

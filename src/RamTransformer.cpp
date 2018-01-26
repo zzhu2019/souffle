@@ -8,36 +8,23 @@
 
 /************************************************************************
  *
- * @file RamTransformer.h
+ * @file RamTransformer.cpp
  *
  * Defines the interface for RAM transformation passes.
  *
  ***********************************************************************/
-#pragma once
 
-#include <string>
+#include "RamTransformer.h"
+#include "RamTranslationUnit.h"
 
 namespace souffle {
 
-class RamTranslationUnit;
-
-/**
- * Abstract Transformer Class for RAM 
- */
-
-class RamTransformer {
-private:
-    /** Transform RAM translation unit */
-    virtual bool transform(RamTranslationUnit& translationUnit) = 0;
-
-public:
-    virtual ~RamTransformer() = default;
-
-    /** Apply transformer */
-    bool apply(RamTranslationUnit& translationUnit);
-
-    /** Get name of transformer */
-    virtual std::string getName() const = 0;
-};
+bool RamTransformer::apply(RamTranslationUnit& translationUnit) {
+    bool changed = transform(translationUnit);
+    if (changed) {
+        translationUnit.invalidateAnalyses();
+    }
+    return changed;
+}
 
 }  // end of namespace souffle
