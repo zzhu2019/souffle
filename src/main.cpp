@@ -352,9 +352,6 @@ int main(int argc, char** argv) {
             exit(1);
         }
     }
-    if (astTranslationUnit->getErrorReport().getNumIssues() != 0) {
-        std::cerr << astTranslationUnit->getErrorReport();
-    }
 
     // ------- (optional) conversions -------------
 
