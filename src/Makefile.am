@@ -92,17 +92,22 @@ souffle_sources = \
               BinaryConstraintOps.h                     \
               Constraints.h                             \
               GraphUtils.h                              \
-              RamValue.h                                \
-              RamCondition.h                            \
               AstTranslator.cpp     AstTranslator.h     \
               Synthesiser.cpp       Synthesiser.h       \
-              RamStatement.h                            \
               MaxMatching.cpp       MaxMatching.h       \
-              RamNode.h                                 \
               AutoIndex.cpp         AutoIndex.h         \
+              RamAnalysis.h                             \
+              RamCondition.h                            \
+              RamNode.h                                 \
               RamOperation.cpp      RamOperation.h      \
               RamProgram.h                              \
               RamRelation.h                             \
+			  RamSemanticChecker.h                      \
+              RamStatement.h                            \
+              RamTransformer.cpp    RamTransformer.h    \
+              RamTranslationUnit.h                      \
+              RamTypes.h                                \
+              RamValue.h                                \
               RamVisitor.h                              \
               RuleScheduler.h                           \
               SignalHandler.h                           \
@@ -159,7 +164,6 @@ soufflepublic_HEADERS = CompiledRamOptions.h    \
                         Util.h                  \
                         Macro.h                 \
                         AstTypes.h              \
-                        RamTypes.h              \
                         IterUtils.h             \
                         SymbolTable.h           \
                         Logger.h                \

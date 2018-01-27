@@ -21,23 +21,27 @@
 #include "AstTransformer.h"
 #include "AstTransforms.h"
 #include "AstTranslationUnit.h"
+#include "AstTranslator.h"
 #include "AstTuner.h"
 #include "AstUtils.h"
 #include "BddbddbBackend.h"
 #include "ComponentModel.h"
-#ifdef USE_PROVENANCE
-#include "Explain.h"
-#endif
-#include "AstTranslator.h"
 #include "Global.h"
 #include "Interpreter.h"
 #include "InterpreterInterface.h"
 #include "ParserDriver.h"
 #include "PrecedenceGraph.h"
+#include "RamSemanticChecker.h"
 #include "RamStatement.h"
+#include "RamTransformer.h"
+#include "RamTranslationUnit.h"
 #include "SymbolTable.h"
 #include "Synthesiser.h"
 #include "Util.h"
+
+#ifdef USE_PROVENANCE
+#include "Explain.h"
+#endif
 
 #include <chrono>
 #include <fstream>
@@ -58,12 +62,6 @@
 #include <unistd.h>
 
 namespace souffle {
-
-static void wrapPassesForDebugReporting(std::vector<std::unique_ptr<AstTransformer>>& transforms) {
-    for (unsigned int i = 0; i < transforms.size(); i++) {
-        transforms[i] = std::make_unique<DebugReporter>(std::move(transforms[i]));
-    }
-}
 
 int main(int argc, char** argv) {
     /* Time taking for overall runtime */
@@ -91,7 +89,7 @@ int main(int argc, char** argv) {
                     footer << "Version: " << PACKAGE_VERSION << "" << std::endl;
                     footer << "----------------------------------------------------------------------------"
                            << std::endl;
-                    footer << "Copyright (c) 2016-17 The Souffle Developers." << std::endl;
+                    footer << "Copyright (c) 2016-18 The Souffle Developers." << std::endl;
                     footer << "Copyright (c) 2013-16 Oracle and/or its affiliates." << std::endl;
                     footer << "All rights reserved." << std::endl;
                     footer << "============================================================================"
@@ -263,7 +261,7 @@ int main(int argc, char** argv) {
     SymbolTable symTab;
     ErrorReport errReport(Global::config().has("no-warn"));
     DebugReport debugReport;
-    std::unique_ptr<AstTranslationUnit> translationUnit =
+    std::unique_ptr<AstTranslationUnit> astTranslationUnit =
             ParserDriver::parseTranslationUnit("<stdin>", in, symTab, errReport, debugReport);
 
     // close input pipe
@@ -281,9 +279,9 @@ int main(int argc, char** argv) {
     }
 
     // ------- check for parse errors -------------
-    if (translationUnit->getErrorReport().getNumErrors() != 0) {
-        std::cerr << translationUnit->getErrorReport();
-        std::cerr << std::to_string(translationUnit->getErrorReport().getNumErrors()) +
+    if (astTranslationUnit->getErrorReport().getNumErrors() != 0) {
+        std::cerr << astTranslationUnit->getErrorReport();
+        std::cerr << std::to_string(astTranslationUnit->getErrorReport().getNumErrors()) +
                              " errors generated, evaluation aborted"
                   << std::endl;
         exit(1);
@@ -292,67 +290,69 @@ int main(int argc, char** argv) {
     // ------- rewriting / optimizations -------------
 
     /* set up additional global options based on pragma declaratives */
-    (std::make_unique<AstPragmaChecker>())->apply(*translationUnit);
-    std::vector<std::unique_ptr<AstTransformer>> transforms;
+    (std::make_unique<AstPragmaChecker>())->apply(*astTranslationUnit);
+    std::vector<std::unique_ptr<AstTransformer>> astTransforms;
 
-    transforms.push_back(std::make_unique<ComponentInstantiationTransformer>());
-    transforms.push_back(std::make_unique<UniqueAggregationVariablesTransformer>());
-    transforms.push_back(std::make_unique<AstSemanticChecker>());
-    transforms.push_back(std::make_unique<InlineRelationsTransformer>());
-    transforms.push_back(std::make_unique<ExtractDisconnectedLiteralsTransformer>());
+    astTransforms.push_back(std::make_unique<ComponentInstantiationTransformer>());
+    astTransforms.push_back(std::make_unique<UniqueAggregationVariablesTransformer>());
+    astTransforms.push_back(std::make_unique<AstSemanticChecker>());
+    astTransforms.push_back(std::make_unique<InlineRelationsTransformer>());
+    astTransforms.push_back(std::make_unique<ExtractDisconnectedLiteralsTransformer>());
     if (Global::config().get("bddbddb").empty()) {
-        transforms.push_back(std::make_unique<ResolveAliasesTransformer>());
+        astTransforms.push_back(std::make_unique<ResolveAliasesTransformer>());
     }
-    transforms.push_back(std::make_unique<RemoveRelationCopiesTransformer>());
-    transforms.push_back(std::make_unique<MaterializeAggregationQueriesTransformer>());
-    transforms.push_back(std::make_unique<RemoveEmptyRelationsTransformer>());
-    transforms.push_back(std::make_unique<RemoveRedundantRelationsTransformer>());
+    astTransforms.push_back(std::make_unique<RemoveRelationCopiesTransformer>());
+    astTransforms.push_back(std::make_unique<MaterializeAggregationQueriesTransformer>());
+    astTransforms.push_back(std::make_unique<RemoveEmptyRelationsTransformer>());
+    astTransforms.push_back(std::make_unique<RemoveRedundantRelationsTransformer>());
 
     if (Global::config().has("magic-transform")) {
-        transforms.push_back(std::make_unique<NormaliseConstraintsTransformer>());
-        transforms.push_back(std::make_unique<MagicSetTransformer>());
+        astTransforms.push_back(std::make_unique<NormaliseConstraintsTransformer>());
+        astTransforms.push_back(std::make_unique<MagicSetTransformer>());
 
         if (Global::config().get("bddbddb").empty()) {
-            transforms.push_back(std::make_unique<ResolveAliasesTransformer>());
+            astTransforms.push_back(std::make_unique<ResolveAliasesTransformer>());
         }
-        transforms.push_back(std::make_unique<RemoveRelationCopiesTransformer>());
-        transforms.push_back(std::make_unique<RemoveEmptyRelationsTransformer>());
-        transforms.push_back(std::make_unique<RemoveRedundantRelationsTransformer>());
+        astTransforms.push_back(std::make_unique<RemoveRelationCopiesTransformer>());
+        astTransforms.push_back(std::make_unique<RemoveEmptyRelationsTransformer>());
+        astTransforms.push_back(std::make_unique<RemoveRedundantRelationsTransformer>());
     }
 
-    transforms.push_back(std::make_unique<AstExecutionPlanChecker>());
+    astTransforms.push_back(std::make_unique<AstExecutionPlanChecker>());
 
     if (Global::config().has("auto-schedule")) {
-        transforms.push_back(std::make_unique<AutoScheduleTransformer>());
+        astTransforms.push_back(std::make_unique<AutoScheduleTransformer>());
     }
 #ifdef USE_PROVENANCE
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
-        transforms.push_back(std::make_unique<ProvenanceTransformer>());
+        astTransforms.push_back(std::make_unique<ProvenanceTransformer>());
     }
 #endif
+
+    // Enable debug reports for the AST astTransforms
     if (!Global::config().get("debug-report").empty()) {
         auto parser_end = std::chrono::high_resolution_clock::now();
         std::string runtimeStr =
                 "(" + std::to_string(std::chrono::duration<double>(parser_end - parser_start).count()) + "s)";
-        DebugReporter::generateDebugReport(*translationUnit, "Parsing", "After Parsing " + runtimeStr);
-        wrapPassesForDebugReporting(transforms);
+        DebugReporter::generateDebugReport(*astTranslationUnit, "Parsing", "After Parsing " + runtimeStr);
+        for (unsigned int i = 0; i < astTransforms.size(); i++) {
+            astTransforms[i] =
+                    std::unique_ptr<AstTransformer>(new DebugReporter(std::move(astTransforms[i])));
+        }
     }
 
-    for (const auto& transform : transforms) {
-        transform->apply(*translationUnit);
+    for (const auto& transform : astTransforms) {
+        transform->apply(*astTranslationUnit);
 
         /* Abort evaluation of the program if errors were encountered */
-        if (translationUnit->getErrorReport().getNumErrors() != 0) {
-            std::cerr << translationUnit->getErrorReport();
-            std::cerr << std::to_string(translationUnit->getErrorReport().getNumErrors()) +
+        if (astTranslationUnit->getErrorReport().getNumErrors() != 0) {
+            std::cerr << astTranslationUnit->getErrorReport();
+            std::cerr << std::to_string(astTranslationUnit->getErrorReport().getNumErrors()) +
                                  " errors generated, evaluation aborted"
                       << std::endl;
             exit(1);
         }
-    }
-    if (translationUnit->getErrorReport().getNumIssues() != 0) {
-        std::cerr << translationUnit->getErrorReport();
     }
 
     // ------- (optional) conversions -------------
@@ -362,11 +362,11 @@ int main(int argc, char** argv) {
         try {
             if (Global::config().get("bddbddb") == "-") {
                 // use STD-OUT
-                toBddbddb(std::cout, *translationUnit);
+                toBddbddb(std::cout, *astTranslationUnit);
             } else {
                 // create an output file
                 std::ofstream out(Global::config().get("bddbddb").c_str());
-                toBddbddb(out, *translationUnit);
+                toBddbddb(out, *astTranslationUnit);
             }
         } catch (const UnsupportedConstructException& uce) {
             ERROR("failed to convert input specification into bddbddb syntax because " +
@@ -380,27 +380,46 @@ int main(int argc, char** argv) {
     auto ram_start = std::chrono::high_resolution_clock::now();
 
     /* translate AST to RAM */
-    std::unique_ptr<RamProgram> ramProg =
-            AstTranslator(Global::config().has("profile")).translateProgram(*translationUnit);
+    std::unique_ptr<RamTranslationUnit> ramTranslationUnit =
+            AstTranslator().translateUnit(*astTranslationUnit);
+
+    std::vector<std::unique_ptr<RamTransformer>> ramTransforms;
+    ramTransforms.push_back(std::unique_ptr<RamTransformer>(new RamSemanticChecker()));
+
+    for (const auto& transform : ramTransforms) {
+        transform->apply(*ramTranslationUnit);
+
+        /* Abort evaluation of the program if errors were encountered */
+        if (ramTranslationUnit->getErrorReport().getNumErrors() != 0) {
+            std::cerr << ramTranslationUnit->getErrorReport();
+            std::cerr << std::to_string(ramTranslationUnit->getErrorReport().getNumErrors()) +
+                                 " errors generated, evaluation aborted"
+                      << std::endl;
+            exit(1);
+        }
+    }
+    if (ramTranslationUnit->getErrorReport().getNumIssues() != 0) {
+        std::cerr << ramTranslationUnit->getErrorReport();
+    }
 
     if (!Global::config().get("debug-report").empty()) {
-        if (ramProg) {
+        if (ramTranslationUnit->getProgram()) {
             auto ram_end = std::chrono::high_resolution_clock::now();
             std::string runtimeStr =
                     "(" + std::to_string(std::chrono::duration<double>(ram_end - ram_start).count()) + "s)";
             std::stringstream ramProgStr;
-            ramProgStr << *ramProg;
-            translationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
+            ramProgStr << ramTranslationUnit->getProgram();
+            astTranslationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
                     "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
         }
 
-        if (!translationUnit->getDebugReport().empty()) {
+        if (!ramTranslationUnit->getDebugReport().empty()) {
             std::ofstream debugReportStream(Global::config().get("debug-report"));
-            debugReportStream << translationUnit->getDebugReport();
+            debugReportStream << ramTranslationUnit->getDebugReport();
         }
     }
 
-    if (!ramProg->getMain()) {
+    if (!ramTranslationUnit->getProgram()->getMain()) {
         return 0;
     };
 
@@ -412,15 +431,13 @@ int main(int argc, char** argv) {
         std::unique_ptr<Interpreter> interpreter = (Global::config().has("auto-schedule"))
                                                            ? std::make_unique<Interpreter>(ScheduledExecution)
                                                            : std::make_unique<Interpreter>(DirectExecution);
-        std::unique_ptr<InterpreterEnvironment> env =
-                interpreter->execute(translationUnit->getSymbolTable(), *ramProg);
+        std::unique_ptr<InterpreterEnvironment> env = interpreter->execute(*ramTranslationUnit);
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
         if (Global::config().has("provenance") && env != nullptr) {
             // construct SouffleProgram from env
-            InterpreterProgInterface interface(
-                    *ramProg, *interpreter, *env, translationUnit->getSymbolTable());
+            InterpreterProgInterface interface(*ramTranslationUnit, *interpreter, *env);
 
             if (Global::config().get("provenance") == "1") {
                 explain(interface, true, false);
@@ -435,12 +452,14 @@ int main(int argc, char** argv) {
 
         std::vector<std::unique_ptr<RamProgram>> strata;
         if (Global::config().has("stratify")) {
+            std::unique_ptr<RamProgram> ramProg = ramTranslationUnit->getProg();
             if (RamSequence* sequence = dynamic_cast<RamSequence*>(ramProg->getMain())) {
                 sequence->moveSubprograms(strata);
             } else {
                 strata.push_back(std::move(ramProg));
             }
         } else {
+            std::unique_ptr<RamProgram> ramProg = ramTranslationUnit->getProg();
             strata.push_back(std::move(ramProg));
         }
 
@@ -450,7 +469,7 @@ int main(int argc, char** argv) {
             if (!os.is_open()) {
                 ERROR("could not open '" + filePath + "' for writing.");
             }
-            translationUnit->getAnalysis<SCCGraph>()->print(
+            astTranslationUnit->getAnalysis<SCCGraph>()->print(
                     os, fileExtension(Global::config().get("stratify")));
         }
 
@@ -476,17 +495,17 @@ int main(int argc, char** argv) {
                 // check if this is code generation only
                 if (Global::config().has("generate")) {
                     // just generate, no compile, no execute
-                    synthesiser->generateCode(translationUnit->getSymbolTable(), *stratum,
+                    synthesiser->generateCode(astTranslationUnit->getSymbolTable(), *stratum,
                             Global::config().get("generate"), index);
 
                     // check if this is a compile only
                 } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
                     // just compile, no execute
-                    synthesiser->compileToBinary(translationUnit->getSymbolTable(), *stratum,
+                    synthesiser->compileToBinary(astTranslationUnit->getSymbolTable(), *stratum,
                             Global::config().get("dl-program"), index);
                 } else {
                     // run compiled C++ program
-                    synthesiser->executeBinary(translationUnit->getSymbolTable(), *stratum);
+                    synthesiser->executeBinary(astTranslationUnit->getSymbolTable(), *stratum);
                 }
 
             } catch (std::exception& e) {
