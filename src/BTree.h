@@ -1275,114 +1275,7 @@ public:
      * Inserts the given key into this tree.
      */
     bool insert(const Key& k, operation_hints& hints) {
-#ifdef IS_PARALLEL
-#ifdef HAS_TSX
-        // set retry parameter
-        TX_RETRIES(maxRetries());
-        // begin hardware transactionm, enabling transaction logging if enabled
-        if (isTransactionProfilingEnabled()) {
-            TX_START_INST(NL, (&tdata));
-        } else {
-            TX_START(NL);
-        }
-        // special handling for inserting first element
-        if (empty()) {
-            // create new node
-            leftmost = new leaf_node();
-            leftmost->numElements = 1;
-            leftmost->keys[0] = k;
-            root = leftmost;
-
-            hints.last_insert = leftmost;
-
-            // end hardware transaction
-            TX_END;
-
-            return true;
-        }
-
-        // insert using iterative implementation
-        node* cur = nullptr;
-
-        // test last insert
-        if (hints.last_insert && covers(hints.last_insert, k)) {
-            cur = hints.last_insert;
-            hint_stats.inserts.addHit();
-        } else {
-            hint_stats.inserts.addMiss();
-        }
-
-        if (!cur) {
-            cur = root;
-        }
-
-        while (true) {
-            // handle inner nodes
-            if (cur->inner) {
-                auto a = &(cur->keys[0]);
-                auto b = &(cur->keys[cur->numElements]);
-
-                auto pos = search.lower_bound(k, a, b, comp);
-                auto idx = pos - a;
-
-                // early exit for sets
-                if (isSet && pos != b && equal(*pos, k)) {
-                    TX_END;
-                    return false;
-                }
-
-                cur = cur->getChild(idx);
-                continue;
-            }
-
-            // the rest is for leaf nodes
-            assert(!cur->inner);
-
-            // -- insert node in leaf node --
-
-            auto a = &(cur->keys[0]);
-            auto b = &(cur->keys[cur->numElements]);
-
-            auto pos = search.upper_bound(k, a, b, comp);
-            auto idx = pos - a;
-
-            // early exit for sets
-            if (isSet && pos != a && equal(*(pos - 1), k)) {
-                TX_END;
-                return false;
-            }
-
-            if (cur->numElements >= node::maxKeys) {
-                // split this node
-                idx -= cur->rebalance_or_split(&root, root_lock, idx);
-
-                // insert element in right fragment
-                if (((size_type)idx) > cur->numElements) {
-                    idx -= cur->numElements + 1;
-                    cur = cur->parent->getChild(cur->position + 1);
-                }
-            }
-
-            // ok - no split necessary
-            assert(cur->numElements < node::maxKeys && "Split required!");
-
-            // move keys
-            for (int j = cur->numElements; j > idx; --j) {
-                cur->keys[j] = cur->keys[j - 1];
-            }
-
-            // insert new element
-            cur->keys[idx] = k;
-            cur->numElements++;
-
-            // remember last insertion position
-            hints.last_insert = cur;
-
-            // end hardware transaction
-            TX_END;
-            return true;
-        }
-#else
+#if defined(IS_PARALLEL) && !defined(HAS_TSX)
         // special handling for inserting first element
         while (root == nullptr) {
             // try obtaining root-lock
@@ -1612,8 +1505,17 @@ public:
             hints.last_insert = cur;
             return true;
         }
-#endif
 #else
+#ifdef HAS_TSX
+        // set retry parameter
+        TX_RETRIES(maxRetries());
+        // begin hardware transactionm, enabling transaction logging if enabled
+        if (isTransactionProfilingEnabled()) {
+            TX_START_INST(NL, (&tdata));
+        } else {
+            TX_START(NL);
+        }
+#endif
         // special handling for inserting first element
         if (empty()) {
             // create new node
@@ -1624,6 +1526,10 @@ public:
 
             hints.last_insert = leftmost;
 
+#ifdef HAS_TSX
+            // end hardware transaction
+            TX_END;
+#endif
             return true;
         }
 
@@ -1649,6 +1555,10 @@ public:
 
                 // early exit for sets
                 if (isSet && pos != b && equal(*pos, k)) {
+#ifdef HAS_TSX
+                    // end hardware transaction
+                    TX_END;
+#endif
                     return false;
                 }
 
@@ -1669,6 +1579,10 @@ public:
 
             // early exit for sets
             if (isSet && pos != a && equal(*(pos - 1), k)) {
+#ifdef HAS_TSX
+                // end hardware transaction
+                TX_END;
+#endif
                 return false;
             }
 
@@ -1697,6 +1611,11 @@ public:
 
             // remember last insertion position
             hints.last_insert = cur;
+
+#ifdef HAS_TSX
+            // end hardware transaction
+            TX_END;
+#endif
             return true;
         }
 #endif
