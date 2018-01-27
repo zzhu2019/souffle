@@ -19,6 +19,7 @@
 #include "InterpreterIndex.h"
 #include "RamProgram.h"
 #include "RamRelation.h"
+#include "RamTranslationUnit.h"
 #include "SymbolTable.h"
 
 #include "RamStatement.h"
@@ -725,6 +726,14 @@ public:
         auto env = std::make_unique<InterpreterEnvironment>(table);
         invoke(prog, *env);
         return env;
+    }
+
+    /**
+     * Runs the given RAM statement on an empty environment and returns
+     * this environment after the completion of the execution.
+     */
+    std::unique_ptr<InterpreterEnvironment> execute(const RamTranslationUnit& tu) const {
+        return execute(tu.getSymbolTable(), *tu.getProgram());
     }
 
     /** An execution strategy for the interpreter */
