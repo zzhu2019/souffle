@@ -959,13 +959,34 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
     bool changed = false;
     AstProgram& program = *translationUnit.getProgram();
 
-    // Find all relations used in a purely existential manner
-    std::set<AstRelationIdentifier> existentialRelations;
+    auto isRecursive = [&](const AstClause& clause) {
+        AstRelationIdentifier relationName = clause.getHead()->getName();
+        bool recursive = false;
+        visitDepthFirst(clause.getBodyLiterals(), [&](const AstAtom& atom) {
+            if (atom.getName() == relationName) {
+                recursive = true;
+            }
+        });
+        return recursive;
+    };
+
+    // Create the dependency graph
+    // construct the graph
+    Graph<AstRelationIdentifier> relationGraph = Graph<AstRelationIdentifier>();
+
+    // add in its nodes
     for (AstRelation* relation : program.getRelations()) {
-        if (relation->isComputed() || relation->isInput()) {
+        relationGraph.insert(relation->getName());
+    }
+
+    // Find all relations used in a purely existential manner (and conditional ones)
+    std::set<AstRelationIdentifier> minimalExistentialRelations;
+    for (AstRelation* relation : program.getRelations()) {
+        if (relation->isComputed() || relation->isInput() || relation->getClauses().empty()) {
             continue;
         }
         bool existential = true;
+        std::set<AstRelationIdentifier> dependencies;
         visitDepthFirst(program, [&](const AstClause& clause) {
             if (clause.getHead()->getName() == relation->getName()) {
                 return;
@@ -975,18 +996,36 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
                 if (atom.getName() == relation->getName()) {
                     for (AstArgument* arg : atom.getArguments()) {
                         if (!dynamic_cast<AstUnnamedVariable*>(arg)) {
-                            existential = false;
-                            break;
+                            if (isRecursive(clause)) {
+                                dependencies.insert(clause.getHead()->getName());
+                            } else {
+                                existential = false;
+                                break;
+                            }
                         }
                     }
                 }
             });
         });
 
+        if (existential && !dependencies.empty()) {
+            for (auto dependency : dependencies) {
+                relationGraph.insert(dependency, relation->getName());
+            }
+        }
+
         if (existential) {
             changed = true;
-            existentialRelations.insert(relation->getName());
+            minimalExistentialRelations.insert(relation->getName());
         }
+    }
+
+    // Run a DFS from each source
+    std::set<AstRelationIdentifier> existentialRelations;
+    for (AstRelationIdentifier relationName : minimalExistentialRelations) {
+        relationGraph.visitDepthFirst(relationName, [&](const AstRelationIdentifier& subRel) {
+            existentialRelations.insert(subRel);
+        });
     }
 
     // Reduce the existential relations
@@ -1002,14 +1041,7 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
         newRelation->setQualifier(originalRelation->getQualifier()); // TODO: careful
 
         for (AstClause* clause : originalRelation->getClauses()) {
-            bool isRecursive = false;
-            visitDepthFirst(clause->getBodyLiterals(), [&](const AstAtom& atom) {
-                if (atom.getName() == relationName) {
-                    isRecursive = true;
-                }
-            });
-
-            if (!isRecursive) {
+            if (!isRecursive(*clause)) {
                 auto newClause = std::make_unique<AstClause>();
                 newClause->setSrcLoc(clause->getSrcLoc());
                 // TODO: execution plan?
