@@ -955,6 +955,106 @@ bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& trans
     return changed;
 }
 
+bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUnit) {
+    bool changed = false;
+    AstProgram& program = *translationUnit.getProgram();
+
+    // Find all relations used in a purely existential manner
+    std::set<AstRelationIdentifier> existentialRelations;
+    for (AstRelation* relation : program.getRelations()) {
+        if (relation->isComputed() || relation->isInput()) {
+            continue;
+        }
+        bool existential = true;
+        visitDepthFirst(program, [&](const AstClause& clause) {
+            if (clause.getHead()->getName() == relation->getName()) {
+                return;
+            }
+
+            visitDepthFirst(clause, [&](const AstAtom& atom) {
+                if (atom.getName() == relation->getName()) {
+                    for (AstArgument* arg : atom.getArguments()) {
+                        if (!dynamic_cast<AstUnnamedVariable*>(arg)) {
+                            existential = false;
+                            break;
+                        }
+                    }
+                }
+            });
+        });
+
+        if (existential) {
+            changed = true;
+            existentialRelations.insert(relation->getName());
+        }
+    }
+
+    // Reduce the existential relations
+    for (AstRelationIdentifier relationName : existentialRelations) {
+        AstRelation* originalRelation = program.getRelation(relationName);
+
+        std::stringstream newRelationName;
+        newRelationName << "+?exists_" << relationName;
+
+        auto newRelation = std::make_unique<AstRelation>();
+        newRelation->setName(newRelationName.str());
+        newRelation->setSrcLoc(originalRelation->getSrcLoc());
+        newRelation->setQualifier(originalRelation->getQualifier()); // TODO: careful
+
+        for (AstClause* clause : originalRelation->getClauses()) {
+            bool isRecursive = false;
+            visitDepthFirst(clause->getBodyLiterals(), [&](const AstAtom& atom) {
+                if (atom.getName() == relationName) {
+                    isRecursive = true;
+                }
+            });
+
+            if (!isRecursive) {
+                auto newClause = std::make_unique<AstClause>();
+                newClause->setSrcLoc(clause->getSrcLoc());
+                // TODO: execution plan?
+
+                newClause->setHead(std::make_unique<AstAtom>(newRelationName.str()));
+
+                for(AstLiteral* lit : clause->getBodyLiterals()) {
+                    newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+                }
+
+                newRelation->addClause(std::move(newClause));
+            }
+        }
+
+        program.appendRelation(std::move(newRelation));
+    }
+
+    struct M : public AstNodeMapper {
+        const std::set<AstRelationIdentifier>& relations;
+
+        M(std::set<AstRelationIdentifier>& relations) : relations(relations) {}
+
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            if (AstClause* clause = dynamic_cast<AstClause*>(node.get())) {
+                if (relations.find(clause->getHead()->getName()) != relations.end()) {
+                    return node;
+                }
+            } else if (AstAtom* atom = dynamic_cast<AstAtom*>(node.get())) {
+                if (relations.find(atom->getName()) != relations.end()) {
+                    std::stringstream newName;
+                    newName << "+?exists_" << atom->getName();
+                    return std::make_unique<AstAtom>(newName.str());
+                }
+            }
+            node->apply(*this);
+            return node;
+        }
+    };
+
+    M update(existentialRelations);
+    program.apply(update);
+
+    return changed;
+}
+
 bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationUnit) {
     bool changed = false;
 

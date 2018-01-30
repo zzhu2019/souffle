@@ -221,6 +221,16 @@ public:
     }
 };
 
+class ReduceExistentialsTransformer : public AstTransformer {
+private:
+    bool transform(AstTranslationUnit& translationUnit) override;
+
+public:
+    std::string getName() const override {
+        return "ReduceExistentialsTransformer";
+    }
+};
+
 /**
  * Transformation pass to normalise constraints.
  * E.g.: a(x) :- b(x, 1). -> a(x) :- b(x, tmp0), tmp0=1.
