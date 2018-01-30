@@ -795,15 +795,23 @@ NullableVector<std::vector<AstLiteral*>> getInlinedLiteral(AstProgram& program, 
             // The atom can be inlined
             inlined = true;
 
-            // Suppose an atom a(x) is inlined and has the following rules:
-            //  - a(x) :- a11(x), a12(x).
-            //  - a(x) :- a21(x), a22(x).
-            // Then, a(x) <- (a11(x) ^ a12(x)) v (a21(x) ^ a22(x))
-            //  => !a(x) <- (!a11(x) v !a12(x)) ^ (!a21(x) v !a22(x))
-            //  => !a(x) <- (!a11(x) ^ !a21(x)) v (!a11(x) ^ !a22(x)) v ...
-            // Essentially, produce every combination (m_1 ^ m_2 ^ ...) where m_i is a
-            // negated literal in the ith rule of a.
-            addedBodyLiterals = formNegatedLiterals(program, atom);
+            if (atomVersions.getVector().empty()) {
+                // No clauses associated with the atom, so just becomes a true literal
+                std::vector<AstLiteral*> trueBody;
+                trueBody.push_back(new AstConstraint(BinaryConstraintOp::EQ,
+                        std::make_unique<AstNumberConstant>(1), std::make_unique<AstNumberConstant>(1)));
+                addedBodyLiterals.push_back(trueBody);
+            } else {
+                // Suppose an atom a(x) is inlined and has the following rules:
+                //  - a(x) :- a11(x), a12(x).
+                //  - a(x) :- a21(x), a22(x).
+                // Then, a(x) <- (a11(x) ^ a12(x)) v (a21(x) ^ a22(x))
+                //  => !a(x) <- (!a11(x) v !a12(x)) ^ (!a21(x) v !a22(x))
+                //  => !a(x) <- (!a11(x) ^ !a21(x)) v (!a11(x) ^ !a22(x)) v ...
+                // Essentially, produce every combination (m_1 ^ m_2 ^ ...) where m_i is a
+                // negated literal in the ith rule of a.
+                addedBodyLiterals = formNegatedLiterals(program, atom);
+            }
         }
     } else {
         AstConstraint* constraint = dynamic_cast<AstConstraint*>(lit);
@@ -903,17 +911,19 @@ std::vector<AstClause*> getInlinedClause(AstProgram& program, const AstClause& c
                 // The literal may be replaced with several different bodies.
                 // Create a new clause for each possible version.
                 std::vector<std::vector<AstLiteral*>> bodyVersions = litVersions.getVector();
-                for (std::vector<AstLiteral*> body : bodyVersions) {
-                    AstClause* replacementClause = clause.cloneHead();
 
-                    // Add in all body literals from the original except the literal being inlined
-                    for (AstLiteral* oldLit : bodyLiterals) {
-                        if (currLit != oldLit) {
-                            replacementClause->addToBody(std::unique_ptr<AstLiteral>(oldLit->clone()));
-                        }
+                // Create the base clause with the current literal removed
+                auto baseClause = std::unique_ptr<AstClause>(clause.cloneHead());
+                for (AstLiteral* oldLit : bodyLiterals) {
+                    if (currLit != oldLit) {
+                        baseClause->addToBody(std::unique_ptr<AstLiteral>(oldLit->clone()));
                     }
+                }
 
-                    // Add in the current set of literals replacing the literal
+                for (std::vector<AstLiteral*> body : bodyVersions) {
+                    AstClause* replacementClause = baseClause->clone();
+
+                    // Add in the current set of literals replacing the inlined literal
                     // In Case 2, each body contains exactly one literal
                     for (AstLiteral* newLit : body) {
                         replacementClause->addToBody(std::unique_ptr<AstLiteral>(newLit));
