@@ -16,14 +16,12 @@
 
 #include "AstSemanticChecker.h"
 #include "AstClause.h"
-#include "AstComponent.h"
 #include "AstProgram.h"
 #include "AstRelation.h"
 #include "AstTranslationUnit.h"
 #include "AstTypeAnalysis.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
-#include "ComponentModel.h"
 #include "Global.h"
 #include "GraphUtils.h"
 #include "PrecedenceGraph.h"
@@ -40,23 +38,20 @@ bool AstSemanticChecker::transform(AstTranslationUnit& translationUnit) {
     const TypeEnvironment& typeEnv =
             translationUnit.getAnalysis<TypeEnvironmentAnalysis>()->getTypeEnvironment();
     TypeAnalysis* typeAnalysis = translationUnit.getAnalysis<TypeAnalysis>();
-    ComponentLookup* componentLookup = translationUnit.getAnalysis<ComponentLookup>();
     PrecedenceGraph* precedenceGraph = translationUnit.getAnalysis<PrecedenceGraph>();
     RecursiveClauses* recursiveClauses = translationUnit.getAnalysis<RecursiveClauses>();
-    checkProgram(translationUnit.getErrorReport(), *translationUnit.getProgram(), typeEnv, *typeAnalysis,
-            *componentLookup, *precedenceGraph, *recursiveClauses);
+    checkProgram(translationUnit.getErrorReport(), *translationUnit.getProgram(), typeEnv, *typeAnalysis, *precedenceGraph, *recursiveClauses);
     return false;
 }
 
 void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& program,
         const TypeEnvironment& typeEnv, const TypeAnalysis& typeAnalysis,
-        const ComponentLookup& componentLookup, const PrecedenceGraph& precedenceGraph,
+        const PrecedenceGraph& precedenceGraph,
         const RecursiveClauses& recursiveClauses) {
     // -- conduct checks --
     // TODO: re-write to use visitors
     checkTypes(report, program);
     checkRules(report, typeEnv, program, recursiveClauses);
-    checkComponents(report, program, componentLookup);
     checkNamespaces(report, program);
     checkIODirectives(report, program);
     checkWitnessProblem(report, program);
@@ -639,153 +634,6 @@ void AstSemanticChecker::checkRules(ErrorReport& report, const TypeEnvironment& 
     }
 }
 
-// ----- components --------
-
-const AstComponent* AstSemanticChecker::checkComponentNameReference(ErrorReport& report,
-        const AstComponent* enclosingComponent, const ComponentLookup& componentLookup,
-        const std::string& name, const AstSrcLocation& loc, const TypeBinding& binding) {
-    const AstTypeIdentifier& forwarded = binding.find(name);
-    if (!forwarded.empty()) {
-        // for forwarded types we do not check anything, because we do not know,
-        // what the actual type will be
-        return nullptr;
-    }
-
-    const AstComponent* c = componentLookup.getComponent(enclosingComponent, name, binding);
-    if (!c) {
-        report.addError("Referencing undefined component " + name, loc);
-        return nullptr;
-    }
-
-    return c;
-}
-
-void AstSemanticChecker::checkComponentReference(ErrorReport& report, const AstComponent* enclosingComponent,
-        const ComponentLookup& componentLookup, const AstComponentType& type, const AstSrcLocation& loc,
-        const TypeBinding& binding) {
-    // check whether targeted component exists
-    const AstComponent* c = checkComponentNameReference(
-            report, enclosingComponent, componentLookup, type.getName(), loc, binding);
-    if (!c) {
-        return;
-    }
-
-    // check number of type parameters
-    if (c->getComponentType().getTypeParameters().size() != type.getTypeParameters().size()) {
-        report.addError("Invalid number of type parameters for component " + type.getName(), loc);
-    }
-}
-
-void AstSemanticChecker::checkComponentInit(ErrorReport& report, const AstComponent* enclosingComponent,
-        const ComponentLookup& componentLookup, const AstComponentInit& init, const TypeBinding& binding) {
-    checkComponentReference(
-            report, enclosingComponent, componentLookup, init.getComponentType(), init.getSrcLoc(), binding);
-
-    // Note: actual parameters can be atomic types like number, or anything declared with .type
-    // The original semantic check permitted any identifier (existing or non-existing) to be actual parameter
-    // In order to maintain the compatibility, we do not check the actual parameters
-
-    // check the actual parameters:
-    // const auto& actualParams = init.getComponentType().getTypeParameters();
-    // for (const auto& param : actualParams) {
-    //    checkComponentNameReference(report, scope, param, init.getSrcLoc(), binding);
-    //}
-}
-
-void AstSemanticChecker::checkComponent(ErrorReport& report, const AstComponent* enclosingComponent,
-        const ComponentLookup& componentLookup, const AstComponent& component, const TypeBinding& binding) {
-    // -- inheritance --
-
-    // Update type binding:
-    // Since we are not compiling, i.e. creating concrete instance of the
-    // components with type parameters, we are only interested in whether
-    // component references refer to existing components or some type parameter.
-    // Type parameter for us here is unknown type that will be bound at the template
-    // instantiation time.
-    auto parentTypeParameters = component.getComponentType().getTypeParameters();
-    std::vector<AstTypeIdentifier> actualParams(parentTypeParameters.size(), "<type parameter>");
-    TypeBinding activeBinding = binding.extend(parentTypeParameters, actualParams);
-
-    // check parents of component
-    for (const auto& cur : component.getBaseComponents()) {
-        checkComponentReference(
-                report, enclosingComponent, componentLookup, cur, component.getSrcLoc(), activeBinding);
-
-        // Note: type parameters can also be atomic types like number, or anything defined through .type
-        // The original semantic check permitted any identifier (existing or non-existing) to be actual
-        // parameter
-        // In order to maintain the compatibility, we do not check the actual parameters
-
-        // for (const std::string& param : cur.getTypeParameters()) {
-        //    checkComponentNameReference(report, scope, param, component.getSrcLoc(), activeBinding);
-        //}
-    }
-
-    // get all parents
-    std::set<const AstComponent*> parents;
-    std::function<void(const AstComponent&)> collectParents = [&](const AstComponent& cur) {
-        for (const auto& base : cur.getBaseComponents()) {
-            auto c = componentLookup.getComponent(enclosingComponent, base.getName(), binding);
-            if (!c) {
-                continue;
-            }
-            if (parents.insert(c).second) {
-                collectParents(*c);
-            }
-        }
-    };
-    collectParents(component);
-
-    // check overrides
-    for (const AstRelation* relation : component.getRelations()) {
-        if (component.getOverridden().count(relation->getName().getNames()[0])) {
-            report.addError("Override of non-inherited relation " + relation->getName().getNames()[0] +
-                                    " in component " + component.getComponentType().getName(),
-                    component.getSrcLoc());
-        }
-    }
-    for (const AstComponent* parent : parents) {
-        for (const AstRelation* relation : parent->getRelations()) {
-            if (component.getOverridden().count(relation->getName().getNames()[0]) &&
-                    !relation->isOverridable()) {
-                report.addError("Override of non-overridable relation " + relation->getName().getNames()[0] +
-                                        " in component " + component.getComponentType().getName(),
-                        component.getSrcLoc());
-            }
-        }
-    }
-
-    // check for a cycle
-    if (parents.find(&component) != parents.end()) {
-        report.addError(
-                "Invalid cycle in inheritance for component " + component.getComponentType().getName(),
-                component.getSrcLoc());
-    }
-
-    // -- nested components --
-
-    // check nested components
-    for (const auto& cur : component.getComponents()) {
-        checkComponent(report, &component, componentLookup, *cur, activeBinding);
-    }
-
-    // check nested instantiations
-    for (const auto& cur : component.getInstantiations()) {
-        checkComponentInit(report, &component, componentLookup, *cur, activeBinding);
-    }
-}
-
-void AstSemanticChecker::checkComponents(
-        ErrorReport& report, const AstProgram& program, const ComponentLookup& componentLookup) {
-    for (AstComponent* cur : program.getComponents()) {
-        checkComponent(report, nullptr, componentLookup, *cur, TypeBinding());
-    }
-
-    for (AstComponentInit* cur : program.getComponentInstantiations()) {
-        checkComponentInit(report, nullptr, componentLookup, *cur, TypeBinding());
-    }
-}
-
 // ----- types --------
 
 void AstSemanticChecker::checkUnionType(
@@ -1239,7 +1087,7 @@ void AstSemanticChecker::checkInlining(
     });
 }
 
-// Check that type, relation, component names are disjoint sets.
+// Check that type and relation names are disjoint sets.
 void AstSemanticChecker::checkNamespaces(ErrorReport& report, const AstProgram& program) {
     std::map<std::string, AstSrcLocation> names;
 
@@ -1259,25 +1107,6 @@ void AstSemanticChecker::checkNamespaces(ErrorReport& report, const AstProgram& 
             report.addError("Name clash on relation " + name, rel->getSrcLoc());
         } else {
             names[name] = rel->getSrcLoc();
-        }
-    }
-
-    // Note: Nested component and instance names are not obtained.
-    for (const auto& comp : program.getComponents()) {
-        const std::string name = toString(comp->getComponentType().getName());
-        if (names.count(name)) {
-            report.addError("Name clash on component " + name, comp->getSrcLoc());
-        } else {
-            names[name] = comp->getSrcLoc();
-        }
-    }
-
-    for (const auto& inst : program.getComponentInstantiations()) {
-        const std::string name = toString(inst->getInstanceName());
-        if (names.count(name)) {
-            report.addError("Name clash on instantiation " + name, inst->getSrcLoc());
-        } else {
-            names[name] = inst->getSrcLoc();
         }
     }
 }

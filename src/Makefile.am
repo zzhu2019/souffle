@@ -85,6 +85,8 @@ souffle_sources = \
               ComponentModel.cpp    ComponentModel.h    \
               AstSemanticChecker.cpp                    \
               AstSemanticChecker.h                      \
+              AstComponentChecker.cpp                   \
+              AstComponentChecker.h	                    \
               AstTransforms.cpp     AstTransforms.h     \
               UnaryFunctorOps.h                         \
               BinaryFunctorOps.h                        \
@@ -102,7 +104,7 @@ souffle_sources = \
               RamOperation.cpp      RamOperation.h      \
               RamProgram.h                              \
               RamRelation.h                             \
-			  RamSemanticChecker.h                      \
+              RamSemanticChecker.h                      \
               RamStatement.h                            \
               RamTransformer.cpp    RamTransformer.h    \
               RamTranslationUnit.h                      \

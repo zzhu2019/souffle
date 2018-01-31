@@ -18,6 +18,7 @@
 #include "AstPragma.h"
 #include "AstProgram.h"
 #include "AstSemanticChecker.h"
+#include "AstComponentChecker.h"
 #include "AstTransformer.h"
 #include "AstTransforms.h"
 #include "AstTranslationUnit.h"
@@ -293,6 +294,7 @@ int main(int argc, char** argv) {
     (std::make_unique<AstPragmaChecker>())->apply(*astTranslationUnit);
     std::vector<std::unique_ptr<AstTransformer>> astTransforms;
 
+    astTransforms.push_back(std::make_unique<AstComponentChecker>());
     astTransforms.push_back(std::make_unique<ComponentInstantiationTransformer>());
     astTransforms.push_back(std::make_unique<UniqueAggregationVariablesTransformer>());
     astTransforms.push_back(std::make_unique<AstSemanticChecker>());
@@ -344,15 +346,15 @@ int main(int argc, char** argv) {
 
     for (const auto& transform : astTransforms) {
         transform->apply(*astTranslationUnit);
+    }
 
-        /* Abort evaluation of the program if errors were encountered */
-        if (astTranslationUnit->getErrorReport().getNumErrors() != 0) {
-            std::cerr << astTranslationUnit->getErrorReport();
-            std::cerr << std::to_string(astTranslationUnit->getErrorReport().getNumErrors()) +
-                                 " errors generated, evaluation aborted"
-                      << std::endl;
-            exit(1);
-        }
+    /* Abort evaluation of the program if errors were encountered */
+    if (astTranslationUnit->getErrorReport().getNumErrors() != 0) {
+        std::cerr << astTranslationUnit->getErrorReport();
+        std::cerr << std::to_string(astTranslationUnit->getErrorReport().getNumErrors()) +
+                             " errors generated, evaluation aborted"
+                  << std::endl;
+        exit(1);
     }
 
     // ------- (optional) conversions -------------
