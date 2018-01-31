@@ -86,7 +86,7 @@ souffle_sources = \
               AstSemanticChecker.cpp                    \
               AstSemanticChecker.h                      \
               AstComponentChecker.cpp                   \
-              AstComponentChecker.h	                    \
+              AstComponentChecker.h                     \
               AstTransforms.cpp     AstTransforms.h     \
               UnaryFunctorOps.h                         \
               BinaryFunctorOps.h                        \

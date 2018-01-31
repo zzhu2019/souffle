@@ -20,6 +20,8 @@
 #include "AstTranslationUnit.h"
 #include "ComponentModel.h"
 
+#include <functional>
+
 namespace souffle {
 
 class AstTranslationUnit;

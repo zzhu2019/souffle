@@ -346,15 +346,15 @@ int main(int argc, char** argv) {
 
     for (const auto& transform : astTransforms) {
         transform->apply(*astTranslationUnit);
-    }
 
-    /* Abort evaluation of the program if errors were encountered */
-    if (astTranslationUnit->getErrorReport().getNumErrors() != 0) {
-        std::cerr << astTranslationUnit->getErrorReport();
-        std::cerr << std::to_string(astTranslationUnit->getErrorReport().getNumErrors()) +
-                             " errors generated, evaluation aborted"
-                  << std::endl;
-        exit(1);
+        /* Abort evaluation of the program if errors were encountered */
+        if (astTranslationUnit->getErrorReport().getNumErrors() != 0) {
+            std::cerr << astTranslationUnit->getErrorReport();
+            std::cerr << std::to_string(astTranslationUnit->getErrorReport().getNumErrors()) +
+                                 " errors generated, evaluation aborted"
+                      << std::endl;
+            exit(1);
+        }
     }
 
     // ------- (optional) conversions -------------
