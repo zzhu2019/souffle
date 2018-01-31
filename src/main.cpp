@@ -15,10 +15,10 @@
  ***********************************************************************/
 
 #include "AstAnalysis.h"
+#include "AstComponentChecker.h"
 #include "AstPragma.h"
 #include "AstProgram.h"
 #include "AstSemanticChecker.h"
-#include "AstComponentChecker.h"
 #include "AstTransformer.h"
 #include "AstTransforms.h"
 #include "AstTranslationUnit.h"

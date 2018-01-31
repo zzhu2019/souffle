@@ -4,6 +4,8 @@
 // - https://opensource.org/licenses/UPL
 // - <souffle root>/licenses/SOUFFLE-UPL.txt
 
+// Testcase to test interference of high-level optimizations with components
+
 .comp C {
  .decl A(x:number) 
   A(1).

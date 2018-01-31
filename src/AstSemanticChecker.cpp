@@ -40,14 +40,14 @@ bool AstSemanticChecker::transform(AstTranslationUnit& translationUnit) {
     TypeAnalysis* typeAnalysis = translationUnit.getAnalysis<TypeAnalysis>();
     PrecedenceGraph* precedenceGraph = translationUnit.getAnalysis<PrecedenceGraph>();
     RecursiveClauses* recursiveClauses = translationUnit.getAnalysis<RecursiveClauses>();
-    checkProgram(translationUnit.getErrorReport(), *translationUnit.getProgram(), typeEnv, *typeAnalysis, *precedenceGraph, *recursiveClauses);
+    checkProgram(translationUnit.getErrorReport(), *translationUnit.getProgram(), typeEnv, *typeAnalysis,
+            *precedenceGraph, *recursiveClauses);
     return false;
 }
 
 void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& program,
         const TypeEnvironment& typeEnv, const TypeAnalysis& typeAnalysis,
-        const PrecedenceGraph& precedenceGraph,
-        const RecursiveClauses& recursiveClauses) {
+        const PrecedenceGraph& precedenceGraph, const RecursiveClauses& recursiveClauses) {
     // -- conduct checks --
     // TODO: re-write to use visitors
     checkTypes(report, program);
@@ -1134,10 +1134,10 @@ bool AstExecutionPlanChecker::transform(AstTranslationUnit& translationUnit) {
                 if (version <= clause->getExecutionPlan()->getMaxVersion()) {
                     for (const auto& cur : clause->getExecutionPlan()->getOrders()) {
                         if (cur.first >= version) {
-                            translationUnit.getErrorReport().addDiagnostic(Diagnostic(Diagnostic::ERROR,
-                                    DiagnosticMessage(
-                                            "execution plan for version " + std::to_string(cur.first),
-                                            cur.second->getSrcLoc()),
+                            translationUnit.getErrorReport().addDiagnostic(Diagnostic(
+                                    Diagnostic::ERROR, DiagnosticMessage("execution plan for version " +
+                                                                                 std::to_string(cur.first),
+                                                               cur.second->getSrcLoc()),
                                     {DiagnosticMessage("only versions 0.." + std::to_string(version - 1) +
                                                        " permitted")}));
                         }

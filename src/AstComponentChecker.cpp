@@ -218,5 +218,4 @@ void AstComponentChecker::checkComponentNamespaces(ErrorReport& report, const As
         }
     }
 }
-
 }
