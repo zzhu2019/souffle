@@ -78,7 +78,7 @@ aliases:
     stage: Packaging
     before_script: ".travis/init_make_package.sh"
     script: ".travis/osx/make_package.sh"
-  - &gcc_environment CC=gcc-7 CXX=g++-7
+  - &gcc_environment CC=gcc-7 CXX=g++-7 CXXFLAGS=--coverage
   - &clang_environment CC=clang-4.0 CXX=clang++-4.0
 
 jobs:
