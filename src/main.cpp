@@ -15,6 +15,7 @@
  ***********************************************************************/
 
 #include "AstAnalysis.h"
+#include "AstComponentChecker.h"
 #include "AstPragma.h"
 #include "AstProgram.h"
 #include "AstSemanticChecker.h"
@@ -293,6 +294,7 @@ int main(int argc, char** argv) {
     (std::make_unique<AstPragmaChecker>())->apply(*astTranslationUnit);
     std::vector<std::unique_ptr<AstTransformer>> astTransforms;
 
+    astTransforms.push_back(std::make_unique<AstComponentChecker>());
     astTransforms.push_back(std::make_unique<ComponentInstantiationTransformer>());
     astTransforms.push_back(std::make_unique<UniqueAggregationVariablesTransformer>());
     astTransforms.push_back(std::make_unique<AstSemanticChecker>());
@@ -408,7 +410,7 @@ int main(int argc, char** argv) {
             std::string runtimeStr =
                     "(" + std::to_string(std::chrono::duration<double>(ram_end - ram_start).count()) + "s)";
             std::stringstream ramProgStr;
-            ramProgStr << ramTranslationUnit->getProgram();
+            ramProgStr << *ramTranslationUnit->getProgram();
             astTranslationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
                     "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
         }
