@@ -47,7 +47,7 @@ protected:
     ChainOrderMap chainToOrder;  // maps order index to set of searches covered by chain
 
     MaxMatching matching;  // matching problem for finding minimal number of orders
-    bool isHashmap; 
+    bool isHashmap;
 
 public:
     AutoIndex() : isHashmap(false) {}
@@ -59,7 +59,7 @@ public:
     }
 
     /** Set Hashmap */
-    void setHashmap(bool flag) { 
+    void setHashmap(bool flag) {
         isHashmap = flag;
     }
 

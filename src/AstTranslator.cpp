@@ -172,8 +172,8 @@ std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEn
     }
 
     return std::unique_ptr<RamRelation>(new RamRelation(name, arity, attributeNames, attributeTypeQualifiers,
-            getSymbolMask(*rel, *typeEnv), rel->isInput(), rel->isComputed(), rel->isOutput(), rel->isBTree(), rel->isHashmap(), 
-            rel->isBrie(), rel->isEqRel(), rel->isData(), istemp));
+            getSymbolMask(*rel, *typeEnv), rel->isInput(), rel->isComputed(), rel->isOutput(), rel->isBTree(),
+            rel->isHashmap(), rel->isBrie(), rel->isEqRel(), rel->isData(), istemp));
 }
 
 std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv) {
