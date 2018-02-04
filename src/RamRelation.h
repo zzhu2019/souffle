@@ -59,6 +59,7 @@ protected:
     bool computed;  // either output or printed
 
     bool btree;  // btree data-structure
+    bool hashmap;// hashmap data-structure
     bool brie;   // brie data-structure
     bool eqrel;  // equivalence relation
 
@@ -68,7 +69,7 @@ protected:
 public:
     RamRelation()
             : RamNode(RN_Relation), arity(0), mask(arity), input(false), output(false), computed(false),
-              btree(false), brie(false), eqrel(false), isdata(false), istemp(false) {}
+              btree(false), hashmap(false), brie(false), eqrel(false), isdata(false), istemp(false) {}
 
     RamRelation(const std::string& name, unsigned arity, const bool istemp) : RamRelation(name, arity) {
         this->istemp = istemp;
@@ -77,11 +78,11 @@ public:
     RamRelation(const std::string& name, unsigned arity, std::vector<std::string> attributeNames = {},
             std::vector<std::string> attributeTypeQualifiers = {}, const SymbolMask& mask = SymbolMask(0),
             const bool input = false, const bool computed = false, const bool output = false,
-            const bool btree = false, const bool brie = false, const bool eqrel = false,
+            const bool btree = false, const bool hashmap = false, const bool brie = false, const bool eqrel = false,
             const bool isdata = false, const bool istemp = false)
             : RamNode(RN_Relation), name(name), arity(arity), attributeNames(attributeNames),
               attributeTypeQualifiers(attributeTypeQualifiers), mask(mask), input(input), output(output),
-              computed(computed), btree(btree), brie(brie), eqrel(eqrel), isdata(isdata), istemp(istemp) {
+              computed(computed), btree(btree), hashmap(hashmap), brie(brie), eqrel(eqrel), isdata(isdata), istemp(istemp) {
         assert(this->attributeNames.size() == arity || this->attributeNames.empty());
         assert(this->attributeTypeQualifiers.size() == arity || this->attributeTypeQualifiers.empty());
     }
@@ -122,6 +123,10 @@ public:
 
     const bool isBTree() const {
         return btree;
+    }
+
+    const bool isHashmap() const {
+        return hashmap;
     }
 
     const bool isBrie() const {
@@ -190,7 +195,7 @@ protected:
         return name == other.name && arity == other.arity && attributeNames == other.attributeNames &&
                attributeTypeQualifiers == other.attributeTypeQualifiers && mask == other.mask &&
                isInput() == other.isInput() && isOutput() == other.isOutput() &&
-               isComputed() == other.isComputed() && isBTree() == other.isBTree() &&
+               isComputed() == other.isComputed() && isBTree() == other.isBTree() && isHashmap() == other.isHashmap() &&
                isBrie() == other.isBrie() && isEqRel() == other.isEqRel() && isData() == other.isData() &&
                isTemp() == other.isTemp();
     }

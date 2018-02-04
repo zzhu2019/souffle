@@ -174,6 +174,8 @@ std::string getRelationType(const RamRelation& rel, std::size_t arity, const Aut
 
     if (rel.isBTree()) {
         res << "BTree,";
+    } else if (rel.isHashmap()) {
+        res << "Hashmap,";
     } else if (rel.isBrie()) {
         res << "Brie,";
     } else if (rel.isEqRel()) {
