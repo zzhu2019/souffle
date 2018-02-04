@@ -51,11 +51,11 @@ public:
         out << "END DECLARATION " << std::endl;
         out << "PROGRAM" << std::endl;
         out << *main;
-        out << "END PROGRAM" << std::endl;
+        out << "\nEND PROGRAM" << std::endl;
         for (auto it = subroutines.begin(); it != subroutines.end(); it++) {
             out << std::endl << "SUBROUTINE " << it->first << std::endl;
-            it->second->print(out);
-            out << "END SUBROUTINE" << std::endl;
+            out << *it->second;
+            out << "\nEND SUBROUTINE" << std::endl;
         }
     }
 

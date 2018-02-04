@@ -64,6 +64,11 @@ struct Auto;
 struct BTree;
 
 /**
+ * A setup utilizing direct hashmaps for relations exclusively.
+ */
+struct Hashmap;
+
+/**
  * A setup utilizing bries for relations exclusively.
  */
 struct Brie;
@@ -118,6 +123,21 @@ class SingleIndexTypeRelation;
  * A setup utilizing direct b-trees for relations exclusively.
  */
 struct BTree {
+    // a index factory selecting in any case a BTree index
+    template <typename Tuple, typename Index, bool>
+    struct btree_index_factory {
+        using type = typename index_utils::DirectIndex<Tuple, Index>;
+    };
+
+    // determines the relation implementation for a given use case
+    template <unsigned arity, typename... Indices>
+    using relation = detail::SingleIndexTypeRelation<btree_index_factory, arity, Indices...>;
+};
+
+/**
+ * A setup utilizing direct hashmaps for relations exclusively.
+ */
+struct Hashmap {
     // a index factory selecting in any case a BTree index
     template <typename Tuple, typename Index, bool>
     struct btree_index_factory {
