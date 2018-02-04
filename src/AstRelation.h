@@ -49,19 +49,19 @@
 #define DATA_RELATION (0x10)
 
 /* Relation is inlined */
-#define INLINE_RELATION (0x200)
+#define INLINE_RELATION (0x20)
 
 /* Relation uses a brie data structure */
-#define BRIE_RELATION (0x20)
+#define BRIE_RELATION (0x40)
 
 /* Relation uses a btree data structure */
-#define BTREE_RELATION (0x40)
+#define BTREE_RELATION (0x80)
 
 /* Relation uses a union relation */
-#define EQREL_RELATION (0x80)
+#define EQREL_RELATION (0x100)
 
 /* Relation uses a hashmap */
-#define HASHMAP_RELATION (0x100)
+#define HASHMAP_RELATION (0x200)
 
 namespace souffle {
 
@@ -175,11 +175,6 @@ public:
         return (qualifier & HASHMAP_RELATION) != 0;
     }
 
-    /** Check whether implementation has been specified */ 
-    bool isSpecified() const {
-        return isBrie() || isBTree() || isEqRel() || isHashmap(); 
-    }
-
     /** Check whether relation is an input relation */
     bool isPrintSize() const {
         return (qualifier & PRINTSIZE_RELATION) != 0;
@@ -261,6 +256,9 @@ public:
         }
         if (isHashmap()) {
             os << "hashmap ";
+        }
+        if (isEqRel()) {
+            os << "eqrel ";
         }
     }
 

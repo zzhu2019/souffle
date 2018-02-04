@@ -149,14 +149,6 @@ public:
         return arity;
     }
 
-    bool operator==(const RamRelation& other) const {
-        return name == other.name;
-    }
-
-    bool operator!=(const RamRelation& other) const {
-        return name != other.name;
-    }
-
     bool operator<(const RamRelation& other) const {
         return name < other.name;
     }
@@ -170,6 +162,15 @@ public:
             out << getArg(i);
         }
         out << ")";
+
+        if (isBTree()) 
+            out << " btree"; 
+        if (isHashmap()) 
+            out << " hashmap"; 
+        if (isBrie()) 
+            out << " brie"; 
+        if (isEqRel()) 
+            out << " eqrel"; 
     }
 
     /** Obtain list of child nodes */
@@ -180,7 +181,7 @@ public:
     /** Create clone */
     RamRelation* clone() const override {
         RamRelation* res = new RamRelation(name, arity, attributeNames, attributeTypeQualifiers, mask, input,
-                computed, output, btree, brie, eqrel, isdata, istemp);
+                computed, output, btree, hashmap, brie, eqrel, isdata, istemp);
         return res;
     }
 
