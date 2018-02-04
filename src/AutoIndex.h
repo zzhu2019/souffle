@@ -47,14 +47,20 @@ protected:
     ChainOrderMap chainToOrder;  // maps order index to set of searches covered by chain
 
     MaxMatching matching;  // matching problem for finding minimal number of orders
+    bool isHashmap; 
 
 public:
-    AutoIndex() {}
+    AutoIndex() : isHashmap(false) {}
     /** add new key to an Index Set */
     inline void addSearch(SearchColumns cols) {
         if (cols != 0) {
             searches.insert(cols);
         }
+    }
+
+    /** Set Hashmap */
+    void setHashmap(bool flag) { 
+        isHashmap = flag;
     }
 
     /** obtains access to the internally stored keys **/

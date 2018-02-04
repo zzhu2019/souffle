@@ -1245,12 +1245,15 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
     IndexMap indices;
     visitDepthFirst(prog, [&](const RamNode& node) {
         if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
+            indices[scan->getRelation()].setHashmap(scan->getRelation().isHashmap());
             indices[scan->getRelation()].addSearch(scan->getRangeQueryColumns());
         }
         if (const RamAggregate* agg = dynamic_cast<const RamAggregate*>(&node)) {
+            indices[agg->getRelation()].setHashmap(agg->getRelation().isHashmap());
             indices[agg->getRelation()].addSearch(agg->getRangeQueryColumns());
         }
         if (const RamNotExists* ne = dynamic_cast<const RamNotExists*>(&node)) {
+            indices[ne->getRelation()].setHashmap(ne->getRelation().isHashmap());
             indices[ne->getRelation()].addSearch(ne->getKey());
         }
     });
