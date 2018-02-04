@@ -58,10 +58,10 @@ protected:
     bool output;    // output relation
     bool computed;  // either output or printed
 
-    bool btree;  // btree data-structure
-    bool hashmap;// hashmap data-structure
-    bool brie;   // brie data-structure
-    bool eqrel;  // equivalence relation
+    bool btree;    // btree data-structure
+    bool hashmap;  // hashmap data-structure
+    bool brie;     // brie data-structure
+    bool eqrel;    // equivalence relation
 
     bool isdata;  // Datalog relation in the program
     bool istemp;  // Temporary relation for semi-naive evaluation
@@ -78,11 +78,12 @@ public:
     RamRelation(const std::string& name, unsigned arity, std::vector<std::string> attributeNames = {},
             std::vector<std::string> attributeTypeQualifiers = {}, const SymbolMask& mask = SymbolMask(0),
             const bool input = false, const bool computed = false, const bool output = false,
-            const bool btree = false, const bool hashmap = false, const bool brie = false, const bool eqrel = false,
-            const bool isdata = false, const bool istemp = false)
+            const bool btree = false, const bool hashmap = false, const bool brie = false,
+            const bool eqrel = false, const bool isdata = false, const bool istemp = false)
             : RamNode(RN_Relation), name(name), arity(arity), attributeNames(attributeNames),
               attributeTypeQualifiers(attributeTypeQualifiers), mask(mask), input(input), output(output),
-              computed(computed), btree(btree), hashmap(hashmap), brie(brie), eqrel(eqrel), isdata(isdata), istemp(istemp) {
+              computed(computed), btree(btree), hashmap(hashmap), brie(brie), eqrel(eqrel), isdata(isdata),
+              istemp(istemp) {
         assert(this->attributeNames.size() == arity || this->attributeNames.empty());
         assert(this->attributeTypeQualifiers.size() == arity || this->attributeTypeQualifiers.empty());
     }
@@ -163,14 +164,10 @@ public:
         }
         out << ")";
 
-        if (isBTree()) 
-            out << " btree"; 
-        if (isHashmap()) 
-            out << " hashmap"; 
-        if (isBrie()) 
-            out << " brie"; 
-        if (isEqRel()) 
-            out << " eqrel"; 
+        if (isBTree()) out << " btree";
+        if (isHashmap()) out << " hashmap";
+        if (isBrie()) out << " brie";
+        if (isEqRel()) out << " eqrel";
     }
 
     /** Obtain list of child nodes */
@@ -196,9 +193,9 @@ protected:
         return name == other.name && arity == other.arity && attributeNames == other.attributeNames &&
                attributeTypeQualifiers == other.attributeTypeQualifiers && mask == other.mask &&
                isInput() == other.isInput() && isOutput() == other.isOutput() &&
-               isComputed() == other.isComputed() && isBTree() == other.isBTree() && isHashmap() == other.isHashmap() &&
-               isBrie() == other.isBrie() && isEqRel() == other.isEqRel() && isData() == other.isData() &&
-               isTemp() == other.isTemp();
+               isComputed() == other.isComputed() && isBTree() == other.isBTree() &&
+               isHashmap() == other.isHashmap() && isBrie() == other.isBrie() &&
+               isEqRel() == other.isEqRel() && isData() == other.isData() && isTemp() == other.isTemp();
     }
 };
 
