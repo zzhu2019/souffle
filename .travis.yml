@@ -158,6 +158,25 @@ jobs:
     - *gcc_environment
   # Make the OSX packages.
   - <<: *osxpackage
+  # Generate doxygen html
+  - stage: Packaging
+    os: linux
+    sudo: false
+    addons:
+      apt:
+        packages:
+        - *linux_deps
+        - doxygen
+        - graphviz
+    script: "./bootstrap && ./configure && make doxygen-doc"
+    deploy:
+      provider: pages
+      skip-cleanup: true
+      github-token: $GHPAGES_TOKEN
+      keep-history: false
+      local-dir: doc/html
+      on:
+        branch: master
 
 after_failure:
   - ".travis/after_failure.sh"
