@@ -221,6 +221,10 @@ public:
     }
 };
 
+/**
+* Transformation pass to reduce unnecessary computation for
+* relations that only appear in the form A(_,...,_).
+*/
 class ReduceExistentialsTransformer : public AstTransformer {
 private:
     bool transform(AstTranslationUnit& translationUnit) override;
