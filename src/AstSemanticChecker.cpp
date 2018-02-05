@@ -112,7 +112,7 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
         }
         AstDomain idx = cnst.getIndex();
         if (idx > MAX_AST_DOMAIN || idx < MIN_AST_DOMAIN) {
-            report.addError("Number constant not in range [-2^31, 2^31-1]", cnst.getSrcLoc());
+            report.addError("Number constant out of range", cnst.getSrcLoc());
         }
     });
 
