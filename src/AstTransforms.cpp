@@ -1027,15 +1027,15 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
     // also an irreducible node
     std::set<AstRelationIdentifier> irreducibleRelations;
     for (AstRelationIdentifier relationName : minimalIrreducibleRelations) {
-        relationGraph.visitDepthFirst(relationName, [&](const AstRelationIdentifier& subRel) {
-            irreducibleRelations.insert(subRel);
-        });
+        relationGraph.visitDepthFirst(relationName,
+                [&](const AstRelationIdentifier& subRel) { irreducibleRelations.insert(subRel); });
     }
 
     // All other relations are necessarily existential
     std::set<AstRelationIdentifier> existentialRelations;
     for (AstRelation* relation : program.getRelations()) {
-        if (!relation->getClauses().empty() && irreducibleRelations.find(relation->getName()) == irreducibleRelations.end()) {
+        if (!relation->getClauses().empty() &&
+                irreducibleRelations.find(relation->getName()) == irreducibleRelations.end()) {
             existentialRelations.insert(relation->getName());
         }
     }
@@ -1060,11 +1060,12 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
                 auto newClause = std::make_unique<AstClause>();
 
                 newClause->setSrcLoc(clause->getSrcLoc());
-                newClause->setExecutionPlan(std::unique_ptr<AstExecutionPlan>(clause->getExecutionPlan()->clone()));
+                newClause->setExecutionPlan(
+                        std::unique_ptr<AstExecutionPlan>(clause->getExecutionPlan()->clone()));
                 newClause->setGenerated(clause->isGenerated());
                 newClause->setFixedExecutionPlan(clause->hasFixedExecutionPlan());
                 newClause->setHead(std::make_unique<AstAtom>(newRelationName.str()));
-                for(AstLiteral* lit : clause->getBodyLiterals()) {
+                for (AstLiteral* lit : clause->getBodyLiterals()) {
                     newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
                 }
 
