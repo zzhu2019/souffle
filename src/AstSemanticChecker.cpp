@@ -111,7 +111,7 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
             report.addError("Number constant (type mismatch)", cnst.getSrcLoc());
         }
         AstDomain idx = cnst.getIndex();
-        if (idx > 2147483647 || idx < -2147483648) {
+        if (idx > MAX_AST_DOMAIN || idx < MIN_AST_DOMAIN) {
             report.addError("Number constant not in range [-2^31, 2^31-1]", cnst.getSrcLoc());
         }
     });
