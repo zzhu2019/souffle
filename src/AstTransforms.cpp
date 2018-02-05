@@ -956,10 +956,10 @@ bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& trans
 }
 
 bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUnit) {
-    bool changed = false;
     AstProgram& program = *translationUnit.getProgram();
 
-    auto isRecursive = [&](const AstClause& clause) {
+    // Checks whether a given clause is recursive
+    auto isRecursiveClause = [&](const AstClause& clause) {
         AstRelationIdentifier relationName = clause.getHead()->getName();
         bool recursive = false;
         visitDepthFirst(clause.getBodyLiterals(), [&](const AstAtom& atom) {
@@ -970,62 +970,74 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
         return recursive;
     };
 
-    // Create the dependency graph
-    // construct the graph
+    // Checks whether an atom is of the form a(_,_,...,_)
+    auto isExistentialAtom = [&](const AstAtom& atom) {
+        for (AstArgument* arg : atom.getArguments()) {
+            if (!dynamic_cast<AstUnnamedVariable*>(arg)) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    // Construct a dependency graph G where:
+    // - Each relation is a node
+    // - An edge (a,b) exists iff a uses b "non-existentially" in one of its *recursive* clauses
+    // This way, a relation can be transformed into an existential form
+    // if and only if all its predecessors can also be transformed.
     Graph<AstRelationIdentifier> relationGraph = Graph<AstRelationIdentifier>();
 
-    // add in its nodes
+    // Add in the nodes
     for (AstRelation* relation : program.getRelations()) {
         relationGraph.insert(relation->getName());
     }
 
-    // Find all relations used in a purely existential manner (and conditional ones)
-    std::set<AstRelationIdentifier> minimalExistentialRelations;
-    for (AstRelation* relation : program.getRelations()) {
-        if (relation->isComputed() || relation->isInput() || relation->getClauses().empty()) {
-            continue;
-        }
-        bool existential = true;
-        std::set<AstRelationIdentifier> dependencies;
-        visitDepthFirst(program, [&](const AstClause& clause) {
-            if (clause.getHead()->getName() == relation->getName()) {
-                return;
-            }
+    // Keep track of all relations that cannot be transformed
+    std::set<AstRelationIdentifier> minimalIrreducibleRelations;
 
-            visitDepthFirst(clause, [&](const AstAtom& atom) {
-                if (atom.getName() == relation->getName()) {
-                    for (AstArgument* arg : atom.getArguments()) {
-                        if (!dynamic_cast<AstUnnamedVariable*>(arg)) {
-                            if (isRecursive(clause)) {
-                                dependencies.insert(clause.getHead()->getName());
-                            } else {
-                                existential = false;
-                                break;
-                            }
-                        }
+    for (AstRelation* relation : program.getRelations()) {
+        if (relation->isComputed() || relation->isInput()) {
+            // No I/O relations can be transformed
+            minimalIrreducibleRelations.insert(relation->getName());
+        }
+
+        for (AstClause* clause : relation->getClauses()) {
+            bool recursive = isRecursiveClause(*clause);
+            visitDepthFirst(*clause, [&](const AstAtom& atom) {
+                if (atom.getName() == clause->getHead()->getName()) {
+                    return;
+                }
+
+                if (!isExistentialAtom(atom)) {
+                    if (recursive) {
+                        // Clause is recursive, so add an edge to the dependency graph
+                        relationGraph.insert(clause->getHead()->getName(), atom.getName());
+                    } else {
+                        // Non-existential apperance in a non-recursive clause, so
+                        // it's out of the picture
+                        minimalIrreducibleRelations.insert(atom.getName());
                     }
                 }
             });
-        });
-
-        if (existential && !dependencies.empty()) {
-            for (auto dependency : dependencies) {
-                relationGraph.insert(dependency, relation->getName());
-            }
-        }
-
-        if (existential) {
-            changed = true;
-            minimalExistentialRelations.insert(relation->getName());
         }
     }
 
-    // Run a DFS from each source
-    std::set<AstRelationIdentifier> existentialRelations;
-    for (AstRelationIdentifier relationName : minimalExistentialRelations) {
+    // Run a DFS from each 'bad' source
+    // A node is reachable in a DFS from an irreducible node if and only if it is
+    // also an irreducible node
+    std::set<AstRelationIdentifier> irreducibleRelations;
+    for (AstRelationIdentifier relationName : minimalIrreducibleRelations) {
         relationGraph.visitDepthFirst(relationName, [&](const AstRelationIdentifier& subRel) {
-            existentialRelations.insert(subRel);
+            irreducibleRelations.insert(subRel);
         });
+    }
+
+    // All other relations are necessarily existential
+    std::set<AstRelationIdentifier> existentialRelations;
+    for (AstRelation* relation : program.getRelations()) {
+        if (!relation->getClauses().empty() && irreducibleRelations.find(relation->getName()) == irreducibleRelations.end()) {
+            existentialRelations.insert(relation->getName());
+        }
     }
 
     // Reduce the existential relations
@@ -1038,16 +1050,20 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
         auto newRelation = std::make_unique<AstRelation>();
         newRelation->setName(newRelationName.str());
         newRelation->setSrcLoc(originalRelation->getSrcLoc());
-        newRelation->setQualifier(originalRelation->getQualifier()); // TODO: careful
 
+        // EqRel relations require two arguments, so remove it from the qualifier
+        newRelation->setQualifier(originalRelation->getQualifier() & ~(EQREL_RELATION));
+
+        // Keep all non-recursive clauses
         for (AstClause* clause : originalRelation->getClauses()) {
-            if (!isRecursive(*clause)) {
+            if (!isRecursiveClause(*clause)) {
                 auto newClause = std::make_unique<AstClause>();
+
                 newClause->setSrcLoc(clause->getSrcLoc());
-                // TODO: execution plan?
-
+                newClause->setExecutionPlan(std::unique_ptr<AstExecutionPlan>(clause->getExecutionPlan()->clone()));
+                newClause->setGenerated(clause->isGenerated());
+                newClause->setFixedExecutionPlan(clause->hasFixedExecutionPlan());
                 newClause->setHead(std::make_unique<AstAtom>(newRelationName.str()));
-
                 for(AstLiteral* lit : clause->getBodyLiterals()) {
                     newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
                 }
@@ -1059,6 +1075,8 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
         program.appendRelation(std::move(newRelation));
     }
 
+    // Mapper that renames the occurrences of marked relations with their existential
+    // counterparts
     struct M : public AstNodeMapper {
         const std::set<AstRelationIdentifier>& relations;
 
@@ -1067,10 +1085,12 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
             if (AstClause* clause = dynamic_cast<AstClause*>(node.get())) {
                 if (relations.find(clause->getHead()->getName()) != relations.end()) {
+                    // Clause is going to be removed, so don't rename it
                     return node;
                 }
             } else if (AstAtom* atom = dynamic_cast<AstAtom*>(node.get())) {
                 if (relations.find(atom->getName()) != relations.end()) {
+                    // Relation is now existential, so rename it
                     std::stringstream newName;
                     newName << "+?exists_" << atom->getName();
                     return std::make_unique<AstAtom>(newName.str());
@@ -1084,6 +1104,7 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
     M update(existentialRelations);
     program.apply(update);
 
+    bool changed = !existentialRelations.empty();
     return changed;
 }
 
