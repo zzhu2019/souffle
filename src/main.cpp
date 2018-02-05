@@ -297,8 +297,8 @@ int main(int argc, char** argv) {
     astTransforms.push_back(std::make_unique<UniqueAggregationVariablesTransformer>());
     astTransforms.push_back(std::make_unique<AstSemanticChecker>());
     astTransforms.push_back(std::make_unique<InlineRelationsTransformer>());
-    astTransforms.push_back(std::make_unique<ExtractDisconnectedLiteralsTransformer>());
     astTransforms.push_back(std::make_unique<ReduceExistentialsTransformer>());
+    astTransforms.push_back(std::make_unique<ExtractDisconnectedLiteralsTransformer>());
     if (Global::config().get("bddbddb").empty()) {
         astTransforms.push_back(std::make_unique<ResolveAliasesTransformer>());
     }

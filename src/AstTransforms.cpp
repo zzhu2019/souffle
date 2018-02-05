@@ -1060,8 +1060,9 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
                 auto newClause = std::make_unique<AstClause>();
 
                 newClause->setSrcLoc(clause->getSrcLoc());
-                newClause->setExecutionPlan(
-                        std::unique_ptr<AstExecutionPlan>(clause->getExecutionPlan()->clone()));
+                if (const AstExecutionPlan* plan = clause->getExecutionPlan()) {
+                    newClause->setExecutionPlan(std::unique_ptr<AstExecutionPlan>(plan->clone()));
+                }
                 newClause->setGenerated(clause->isGenerated());
                 newClause->setFixedExecutionPlan(clause->hasFixedExecutionPlan());
                 newClause->setHead(std::make_unique<AstAtom>(newRelationName.str()));
