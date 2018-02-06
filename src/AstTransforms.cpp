@@ -1025,9 +1025,8 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
     // TODO (see issue #564): Don't transform relations appearing in aggregators
     //                        due to aggregator issues with unnamed variables.
     visitDepthFirst(program, [&](const AstAggregator& aggr) {
-        visitDepthFirst(aggr, [&](const AstAtom& atom) {
-            minimalIrreducibleRelations.insert(atom.getName());
-        });
+        visitDepthFirst(
+                aggr, [&](const AstAtom& atom) { minimalIrreducibleRelations.insert(atom.getName()); });
     });
 
     // Run a DFS from each 'bad' source
