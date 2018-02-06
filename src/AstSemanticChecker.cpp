@@ -1131,7 +1131,8 @@ void AstSemanticChecker::checkInlining(
             std::pair<bool, AstSrcLocation> atomStatus = checkInvalidUnderscore(associatedAtom);
             if (atomStatus.first) {
                 report.addError(
-                        "Cannot inline negated atom containing an unnamed variable unless the variable is within an aggregator",
+                        "Cannot inline negated atom containing an unnamed variable unless the variable is "
+                        "within an aggregator",
                         atomStatus.second);
             }
         }
