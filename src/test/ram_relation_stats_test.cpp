@@ -28,8 +28,7 @@ namespace test {
 
 TEST(Stats, Basic) {
     // create a table
-    RamRelation id("a", 3);
-    InterpreterRelation rel(id);
+    InterpreterRelation rel(3);
 
     // add some values
     rel.insert(1, 1, 1);
@@ -46,8 +45,7 @@ TEST(Stats, Basic) {
 
 TEST(Stats, Function) {
     // create a table
-    RamRelation id("a", 2);
-    InterpreterRelation rel(id);
+    InterpreterRelation rel(2);
 
     // add some values
     for (int i = 0; i < 10000; i++) {
@@ -65,8 +63,7 @@ TEST(Stats, Function) {
 
 TEST(Stats, Convergence) {
     // load a table
-    RamRelation id("a", 2);
-    InterpreterRelation rel(id);
+    InterpreterRelation rel(2);
 
     SymbolTable symTable;
 
@@ -90,8 +87,7 @@ TEST(Stats, Convergence) {
 
     std::cout << rel.size() << "\n";
 
-    RamRelation id2("b", 3);
-    InterpreterRelation rel2(id2);
+    InterpreterRelation rel2(3);
 
     for (const auto& cur : rel) {
         rel2.insert(cur[0], cur[1], 1);

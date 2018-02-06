@@ -24,6 +24,7 @@
 #include "IOSystem.h"
 #include "Logger.h"
 #include "Macro.h"
+#include "RamRelation.h"
 #include "RamVisitor.h"
 #include "RuleScheduler.h"
 #include "SignalHandler.h"
@@ -288,7 +289,7 @@ public:
         // get some table details
         out << "try {";
         out << "std::map<std::string, std::string> directiveMap(";
-        out << load.getRelation().getInputDirectives() << ");\n";
+        out << load.getIODirectives() << ");\n";
         out << "if (!inputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
         out << "directiveMap[\"filename\"].front() != '/') {";
         out << "directiveMap[\"filename\"] = inputDirectory + \"/\" + directiveMap[\"filename\"];";
@@ -308,7 +309,7 @@ public:
     void visitStore(const RamStore& store, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
         out << "if (performIO) {\n";
-        for (IODirectives ioDirectives : store.getRelation().getOutputDirectives()) {
+        for (IODirectives ioDirectives : store.getIODirectives()) {
             out << "try {";
             out << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
             out << "if (!outputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
@@ -395,8 +396,8 @@ public:
         }
         if (Global::config().has("profile")) {
             // get target relation
-            RamRelation rel;
-            visitDepthFirst(insert, [&](const RamProject& project) { rel = project.getRelation(); });
+            const RamRelation* rel = nullptr;
+            visitDepthFirst(insert, [&](const RamProject& project) { rel = &project.getRelation(); });
 
             // build log message
             auto& clause = insert.getOrigin();
@@ -405,7 +406,7 @@ public:
             replace(clauseText.begin(), clauseText.end(), '\n', ' ');
 
             std::ostringstream line;
-            line << "p-proof-counter;" << rel.getName() << ";" << clause.getSrcLoc() << ";" << clauseText
+            line << "p-proof-counter;" << rel->getName() << ";" << clause.getSrcLoc() << ";" << clauseText
                  << ";";
             std::string label = line.str();
 
@@ -454,7 +455,7 @@ public:
         out << "if (performIO) {\n";
         out << "{ auto lease = getOutputLock().acquire(); \n";
         out << "(void)lease;\n";
-        out << "std::cout << R\"(" << print.getLabel() << ")\" <<  ";
+        out << "std::cout << R\"(" << print.getMessage() << ")\" <<  ";
         out << getRelationName(print.getRelation()) << "->"
             << "size() << std::endl;\n";
         out << "}";
@@ -466,7 +467,7 @@ public:
         PRINT_BEGIN_COMMENT(out);
         out << "{ auto lease = getOutputLock().acquire(); \n";
         out << "(void)lease;\n";
-        out << "profile << R\"(" << print.getLabel() << ")\" <<  ";
+        out << "profile << R\"(" << print.getMessage() << ")\" <<  ";
         out << getRelationName(print.getRelation());
         out << "->"
             << "size() << std::endl;\n"
@@ -550,10 +551,10 @@ public:
         out << "{\n";
 
         // create local timer
-        out << "\tLogger logger(R\"(" << timer.getLabel() << ")\",profile);\n";
+        out << "\tLogger logger(R\"(" << timer.getMessage() << ")\",profile);\n";
 
         // insert statement to be measured
-        visit(timer.getNested(), out);
+        visit(timer.getStatement(), out);
 
         // done
         out << "}\n";
@@ -563,11 +564,11 @@ public:
     void visitDebugInfo(const RamDebugInfo& dbg, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
         out << "SignalHandler::instance()->setMsg(R\"_(";
-        out << dbg.getLabel();
+        out << dbg.getMessage();
         out << ")_\");\n";
 
         // insert statements of the rule
-        visit(dbg.getNested(), out);
+        visit(dbg.getStatement(), out);
         PRINT_END_COMMENT(out);
     }
 
@@ -1192,7 +1193,7 @@ public:
     // -- subroutine argument --
 
     void visitArgument(const RamArgument& arg, std::ostream& out) override {
-        out << "(args)[" << arg.getNumber() << "]";
+        out << "(args)[" << arg.getArgNumber() << "]";
     }
 
     // -- subroutine return --
@@ -1492,7 +1493,7 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
     os << "void printAll(std::string outputDirectory = \".\") {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) {
         if (auto store = dynamic_cast<const RamStore*>(&node)) {
-            for (IODirectives ioDirectives : store->getRelation().getOutputDirectives()) {
+            for (IODirectives ioDirectives : store->getIODirectives()) {
                 os << "try {";
                 os << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
                 os << "if (!outputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
@@ -1510,7 +1511,7 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
         } else if (auto print = dynamic_cast<const RamPrintSize*>(&node)) {
             os << "{ auto lease = getOutputLock().acquire(); \n";
             os << "(void)lease;\n";
-            os << "std::cout << R\"(" << print->getLabel() << ")\" <<  ";
+            os << "std::cout << R\"(" << print->getMessage() << ")\" <<  ";
             os << getRelationName(print->getRelation()) << "->"
                << "size() << std::endl;\n";
             os << "}";
@@ -1522,11 +1523,10 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
     os << "public:\n";
     os << "void loadAll(std::string inputDirectory = \".\") {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamLoad& load) {
-        IODirectives ioDirectives = load.getRelation().getInputDirectives();
         // get some table details
         os << "try {";
         os << "std::map<std::string, std::string> directiveMap(";
-        os << load.getRelation().getInputDirectives() << ");\n";
+        os << load.getIODirectives() << ");\n";
         os << "if (!inputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
         os << "directiveMap[\"filename\"].front() != '/') {";
         os << "directiveMap[\"filename\"] = inputDirectory + \"/\" + directiveMap[\"filename\"];";

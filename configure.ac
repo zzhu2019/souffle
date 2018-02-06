@@ -22,7 +22,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_MACRO_DIR([m4])
 
 dnl Do not set default CFLAGS and CXXFLAGS
-CXXFLAGS=" -Wall -std=c++11  $CXXFLAGS"
+CXXFLAGS=" -Wall -std=c++11 $CXXFLAGS"
 
 # Disable provenance
 AC_ARG_ENABLE(
@@ -139,19 +139,17 @@ AS_IF([test "x$enable_sqlite" != "xno"], [
 ])
 AM_CONDITIONAL([SQLITE], [test "x$enable_sqlite" != "xno"])
 
-# Get the name of the distribution
 if test -n "$SOUFFLE_PACKAGING"; then
   case $host_os in
     darwin* )
       DISTRIBUTION=osx
     ;;
     linux*)
-      # Check for bison
       AC_CHECK_PROG(LSB_RELEASE, lsb_release, lsb_release)
       AS_IF([test -z "$LSB_RELEASE"], [AC_MSG_ERROR([lsb_release required to detect LINUX distribution not found.])])
       DISTRIBUTION=[`lsb_release -i | sed 's/^.*:[ \t]\+//' | tr '[A-Z]' '[a-z]'`]
     ;;
-    *BSD*)
+    *BSD* | *bsd* )
       DISTRIBUTION=bsd
     ;;
     *)
@@ -160,6 +158,31 @@ if test -n "$SOUFFLE_PACKAGING"; then
   esac
   echo "Enable packaging for: $DISTRIBUTION"
 fi
+
+# Enable Intel Restricted Transactional Memory
+AC_ARG_ENABLE(
+  [intel-rtm],
+  [AS_HELP_STRING([--enable-intel-rtm], [Enable usage of Intel Restricted Transactional Memory])]
+)
+AS_IF([test "x$enable_intel_rtm" = "xyes"], [
+  case $host_os in
+    darwin* )
+      TSX=[`sysctl machdep.cpu.features | tr A-x a-x | grep -o rtm`]
+    ;;
+    linux*)
+      TSX=[`lscpu | grep -o rtm`]
+    ;;
+    *BSD* |*bsd*)
+      TSX=[`dmesg -a |grep Features | tr A-x a-x | grep -o rtm`]
+    ;;
+    *)
+      TSX=""
+    ;;
+  esac
+
+  AS_IF([test "x$TSX" != "xrtm"], [AC_MSG_ERROR([Intel Restricted Transactional Memory is not supported on this machine.])])
+  AS_VAR_APPEND(CXXFLAGS, [" -mrtm -DHAS_TSX"])
+])
 
 dnl Check for the program(s), define a variable and perform substitution in the
 dnl Makefiles if found.  Bail with an error message otherwise
@@ -233,6 +256,7 @@ AC_CONFIG_LINKS([include/souffle/ParallelUtils.h:src/ParallelUtils.h])
 AC_CONFIG_LINKS([include/souffle/RamTypes.h:src/RamTypes.h])
 AC_CONFIG_LINKS([include/souffle/AstTypes.h:src/AstTypes.h])
 AC_CONFIG_LINKS([include/souffle/BTree.h:src/BTree.h])
+AC_CONFIG_LINKS([include/souffle/htmx86.h:src/htmx86.h])
 AC_CONFIG_LINKS([include/souffle/Trie.h:src/Trie.h])
 AC_CONFIG_LINKS([include/souffle/BinaryRelation.h:src/BinaryRelation.h])
 AC_CONFIG_LINKS([include/souffle/BlockList.h:src/BlockList.h])

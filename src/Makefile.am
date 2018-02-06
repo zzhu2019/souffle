@@ -85,6 +85,8 @@ souffle_sources = \
               ComponentModel.cpp    ComponentModel.h    \
               AstSemanticChecker.cpp                    \
               AstSemanticChecker.h                      \
+              AstComponentChecker.cpp                   \
+              AstComponentChecker.h                     \
               AstTransforms.cpp     AstTransforms.h     \
               UnaryFunctorOps.h                         \
               BinaryFunctorOps.h                        \
@@ -92,20 +94,22 @@ souffle_sources = \
               BinaryConstraintOps.h                     \
               Constraints.h                             \
               GraphUtils.h                              \
-              RamValue.h                                \
-              InterpreterIndex.h                        \
-              RamCondition.h                            \
               AstTranslator.cpp     AstTranslator.h     \
-              Interpreter.cpp       Interpreter.h       \
               Synthesiser.cpp       Synthesiser.h       \
-              RamStatement.h                            \
               MaxMatching.cpp       MaxMatching.h       \
-              RamNode.h                                 \
               AutoIndex.cpp         AutoIndex.h         \
+              RamAnalysis.h                             \
+              RamCondition.h                            \
+              RamNode.h                                 \
               RamOperation.cpp      RamOperation.h      \
               RamProgram.h                              \
-              InterpreterRecords.cpp InterpreterRecords.h \
               RamRelation.h                             \
+              RamSemanticChecker.h                      \
+              RamStatement.h                            \
+              RamTransformer.cpp    RamTransformer.h    \
+              RamTranslationUnit.h                      \
+              RamTypes.h                                \
+              RamValue.h                                \
               RamVisitor.h                              \
               RuleScheduler.h                           \
               SignalHandler.h                           \
@@ -121,7 +125,10 @@ souffle_sources = \
               IODirectives.h                            \
               WriteStreamCSV.h                          \
               IOSystem.h                                \
-              InterpreterInterface.cpp  InterpreterInterface.h \
+              Interpreter.cpp       Interpreter.h       \
+              InterpreterInterface.h                    \
+              InterpreterIndex.h                        \
+              InterpreterRecords.cpp InterpreterRecords.h \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h
 
@@ -150,6 +157,7 @@ soufflepublic_HEADERS = CompiledRamOptions.h    \
                         SouffleInterface.h      \
                         ParallelUtils.h         \
                         BTree.h                 \
+                        htmx86.h                \
                         Trie.h                  \
                         UnionFind.h             \
                         BinaryRelation.h        \
@@ -158,7 +166,6 @@ soufflepublic_HEADERS = CompiledRamOptions.h    \
                         Util.h                  \
                         Macro.h                 \
                         AstTypes.h              \
-                        RamTypes.h              \
                         IterUtils.h             \
                         SymbolTable.h           \
                         Logger.h                \
