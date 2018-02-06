@@ -1060,7 +1060,8 @@ void AstSemanticChecker::checkInlining(
     // Check that these relations never appear negated
     visitDepthFirst(program, [&](const AstNegation& neg) {
         AstRelation* associatedRelation = program.getRelation(neg.getAtom()->getName());
-        if (nonNegatableRelations.find(associatedRelation) != nonNegatableRelations.end()) {
+        if (associatedRelation != nullptr &&
+                nonNegatableRelations.find(associatedRelation) != nonNegatableRelations.end()) {
             report.addError(
                     "Cannot inline negated relation which may introduce new variables", neg.getSrcLoc());
         }
@@ -1127,7 +1128,8 @@ void AstSemanticChecker::checkInlining(
     // Perform the check
     visitDepthFirst(program, [&](const AstNegation& negation) {
         const AstAtom* associatedAtom = negation.getAtom();
-        if (program.getRelation(associatedAtom->getName())->isInline()) {
+        const AstRelation* associatedRelation = program.getRelation(associatedAtom->getName());
+        if (associatedRelation != nullptr && associatedRelation->isInline()) {
             std::pair<bool, AstSrcLocation> atomStatus = checkInvalidUnderscore(associatedAtom);
             if (atomStatus.first) {
                 report.addError(
