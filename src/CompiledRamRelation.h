@@ -1118,16 +1118,16 @@ public:
 
     template <typename Index>
     typename std::enable_if<!index_utils::is_permutation<First, Index>::value,
-            typename std::remove_reference<decltype(nested.get<Index>())>::type>::type&
+            typename std::remove_reference<decltype(nested.template get<Index>())>::type>::type&
     get() {
-        return nested.get<Index>();
+        return nested.template get<Index>();
     }
 
     template <typename Index>
     const typename std::enable_if<!index_utils::is_permutation<First, Index>::value,
-            typename std::remove_reference<decltype(nested.get<Index>())>::type>::type&
+            typename std::remove_reference<decltype(nested.template get<Index>())>::type>::type&
     get() const {
-        return nested.get<Index>();
+        return nested.template get<Index>();
     }
 
     template <typename Index>
@@ -1139,9 +1139,9 @@ public:
 
     template <typename Index>
     typename std::enable_if<!index_utils::is_permutation<First, Index>::value,
-            decltype(nested.equal_range<Index>(tuple_type()))>::type
+            decltype(nested.template equal_range<Index>(tuple_type()))>::type
     equal_range(const tuple_type& t) const {
-        return nested.equal_range<Index>(t);
+        return nested.template equal_range<Index>(t);
     }
 
     bool empty() const {
