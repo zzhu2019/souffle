@@ -156,6 +156,15 @@ jobs:
   - <<: *linuxpackage
     env:
     - *gcc_environment
+    before_deploy: .travis/bintray_json.sh unstable
+    deploy:
+      provider: bintray
+      skip-cleanup: true
+      file: .travis/bintray-unstable.json
+      user: souffle-lang
+      key: $BINTRAY_KEY
+      on:
+        branch: master
   # Make the OSX packages.
   - <<: *osxpackage
   # Generate doxygen html
