@@ -106,6 +106,10 @@ public:
             os << getRelation().getArg(i);
         }
         os << ")";
+        if (getRelation().isBTree()) os << " btree";
+        if (getRelation().isHashmap()) os << " hashmap";
+        if (getRelation().isBrie()) os << " brie";
+        if (getRelation().isEqRel()) os << " eqrel";
     };
 
     /** Create clone */

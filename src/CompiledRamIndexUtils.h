@@ -467,6 +467,13 @@ struct is_compatible_with<index<C1...>, index<C2...>> {
     enum { value = detail::is_compatible_with_aux<index<>, index<C1...>, index<>, index<C2...>>::value };
 };
 
+// -- checks whether an index is a full index --
+
+template <unsigned arity, typename Index>
+struct is_full_index {
+    enum { value = Index::size == arity };
+};
+
 // -- check whether there is a full index in a list of indices --
 
 template <unsigned arity, typename... Indices>
@@ -474,7 +481,7 @@ struct contains_full_index;
 
 template <unsigned arity, typename First, typename... Rest>
 struct contains_full_index<arity, First, Rest...> {
-    enum { value = First::size == arity || contains_full_index<arity, Rest...>::value };
+    enum { value = is_full_index<arity, First>::value || contains_full_index<arity, Rest...>::value };
 };
 
 template <unsigned arity>
