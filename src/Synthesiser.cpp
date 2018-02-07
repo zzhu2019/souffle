@@ -1287,16 +1287,21 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
     //                      Code Generation
     // ---------------------------------------------------------------
 
-    // generate class name
+    std::string sourceFilename = filename;
+    // trim .cpp extension if it exists
+    if (sourceFilename.size() >= 4 && sourceFilename.substr(sourceFilename.size() - 4) == ".cpp") {
+        sourceFilename = sourceFilename.substr(0, sourceFilename.size() - 4);
+    }
 
-    const std::string nameNoExtension = simpleName((filename != "") ? filename : tempFile());
+    // generate class name by stripping extensions and renaming if empty
+    const std::string nameNoExtension = simpleName((sourceFilename != "") ? sourceFilename : tempFile());
     const std::string indexStr = ((index != -1) ? "_" + std::to_string(index) : "");
     const std::string id = identifier(baseName(nameNoExtension));
 
     std::string classname = "Sf_" + id + indexStr;
 
-    // add filename extension
-    std::string sourceFilename = nameNoExtension + indexStr + ".cpp";
+    // Add index, if any, and .cpp extension
+    sourceFilename = (sourceFilename == "" ? nameNoExtension : sourceFilename) + indexStr + ".cpp";
 
     // open output stream for header file
     std::ofstream os(sourceFilename);
@@ -1734,7 +1739,7 @@ std::string Synthesiser::executeBinary(const SymbolTable& symTable, const RamPro
         const std::string& filename, const int index) const {
     // compile statement
     std::string sourceFilename = compileToBinary(symTable, prog, filename, index);
-    std::string binaryFilename = "./" + simpleName(sourceFilename);
+    std::string binaryFilename = filename == "" ? simpleName(sourceFilename) : sourceFilename;
 
     // separate souffle output form executable output
     if (Global::config().has("profile")) {
