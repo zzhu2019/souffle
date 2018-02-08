@@ -111,8 +111,8 @@ protected:
                 } catch (...) {
                     if (!error) {
                         std::stringstream errorMessage;
-                        errorMessage << "Error converting number in column " << column + 1 << " in line "
-                                     << lineNumber << "; ";
+                        errorMessage << "Error converting number <" + element + "> in column " << column + 1
+                                     << " in line " << lineNumber << "; ";
                         throw std::invalid_argument(errorMessage.str());
                     }
                 }
