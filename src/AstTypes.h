@@ -20,14 +20,15 @@
 
 namespace souffle {
 
-/** ast domain to mimic ram domain */
+/** ast domain that contains ram domain */
 #ifdef AST_DOMAIN_TYPE
 typedef AST_DOMAIN_TYPE AstDomain;
 #else
 typedef int64_t AstDomain;
 #endif
 
-/** lower and upper boundaries for the ast domain **/
-#define MIN_AST_DOMAIN (std::numeric_limits<AstDomain>::min())
-#define MAX_AST_DOMAIN (std::numeric_limits<AstDomain>::max())
+/** Lower and upper boundaries for the AST domain. The range must be able to be stored in a RamDomain. By
+ *  default, RamDomain is uint32_t and the allowed AstDomain range is that of a int32_t. **/
+#define MIN_AST_DOMAIN (std::numeric_limits<int32_t>::min())
+#define MAX_AST_DOMAIN (std::numeric_limits<int32_t>::max())
 }  // namespace souffle

@@ -47,6 +47,7 @@
     #include "AstParserUtils.h"
 
     #include "AstSrcLocation.h"
+    #include "AstTypes.h"
 
     using namespace souffle;
 
@@ -171,7 +172,7 @@
 %token LOG                       "log"
 %token EXP                       "exp"
 
-%type <int>                              qualifiers
+%type <uint32_t>                         qualifiers
 %type <AstTypeIdentifier *>              type_id
 %type <AstRelationIdentifier *>          rel_id
 %type <AstType *>                        type

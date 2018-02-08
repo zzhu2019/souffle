@@ -112,7 +112,9 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
         }
         AstDomain idx = cnst.getIndex();
         if (idx > MAX_AST_DOMAIN || idx < MIN_AST_DOMAIN) {
-            report.addError("Number constant out of range", cnst.getSrcLoc());
+            report.addError("Number constant not in range [" + std::to_string(MIN_AST_DOMAIN) + ", " +
+                                    std::to_string(MAX_AST_DOMAIN) + "]",
+                    cnst.getSrcLoc());
         }
     });
 
