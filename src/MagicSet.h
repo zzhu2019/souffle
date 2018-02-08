@@ -48,10 +48,11 @@ public:
     }
 
     friend bool operator<(const AdornedPredicate& p1, const AdornedPredicate& p2) {
-        std::stringstream comp1, comp2;
-        comp1 << p1.getName() << "+ _ADD_ +" << p1.getAdornment();
-        comp2 << p2.getName() << "+ _ADD_ +" << p2.getAdornment();
-        return (comp1.str() < comp2.str());
+        if (p1.getName() != p2.getName()) {
+            return p1.getName() < p2.getName();
+        } else {
+            return p1.getAdornment() < p2.getAdornment();
+        }
     }
 };
 

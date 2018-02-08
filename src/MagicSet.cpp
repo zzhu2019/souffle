@@ -98,7 +98,8 @@ std::string getString(const AstArgument* arg) {
 }
 
 // checks whether a given record or functor is bound
-bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string> boundArgs, const BindingStore& compositeBindings) {
+bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string> boundArgs,
+        const BindingStore& compositeBindings) {
     std::string variableName = compositeVariable->getName();
     if (contains(boundArgs, variableName)) {
         return true;
@@ -117,7 +118,8 @@ bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string
     return bound;
 }
 
-bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs, const BindingStore& compositeBindings) {
+bool isBoundArgument(
+        AstArgument* arg, std::set<std::string> boundArgs, const BindingStore& compositeBindings) {
     if (AstVariable* var = dynamic_cast<AstVariable*>(arg)) {
         std::string variableName = var->getName();
         if (hasPrefix(variableName, "+functor") || hasPrefix(variableName, "+record")) {
@@ -455,8 +457,8 @@ std::vector<std::string> reorderAdornment(
 
 // computes the adornment of a newly chosen atom
 // returns both the adornment and the new list of bound arguments
-std::pair<std::string, std::set<std::string>> bindArguments(AstAtom* currAtom,
-        std::set<std::string> boundArgs, const BindingStore& compositeBindings) {
+std::pair<std::string, std::set<std::string>> bindArguments(
+        AstAtom* currAtom, std::set<std::string> boundArgs, const BindingStore& compositeBindings) {
     std::set<std::string> newlyBoundArgs;
     std::string atomAdornment = "";
 
@@ -619,7 +621,6 @@ BindingStore bindComposites(const AstProgram* program) {
         }
 
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-            node->apply(*this);
             if (AstFunctor* functor = dynamic_cast<AstFunctor*>(node.get())) {
                 // functor found
                 changeCount++;
@@ -659,6 +660,7 @@ BindingStore bindComposites(const AstProgram* program) {
                 // update record to be the variable created
                 return std::move(newVariable);
             }
+            node->apply(*this);
             return node;
         }
     };
@@ -744,15 +746,8 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     }
 
     // find all negated literals
-    for (AstRelation* rel : program->getRelations()) {
-        for (AstClause* clause : rel->getClauses()) {
-            for (AstLiteral* lit : clause->getBodyLiterals()) {
-                if (dynamic_cast<AstNegation*>(lit)) {
-                    negatedAtoms.insert(lit->getAtom()->getName());
-                }
-            }
-        }
-    }
+    visitDepthFirst(*program,
+            [&](const AstNegation& negation) { negatedAtoms.insert(negation.getAtom()->getName()); });
 
     // add the relations needed for negated relations to be computed
     negatedAtoms = addForwardDependencies(program, negatedAtoms);
@@ -1064,7 +1059,6 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
     separateDBs(program);  // make EDB int IDB = empty
 
     Adornment* adornment = translationUnit.getAnalysis<Adornment>();  // perform adornment
-
     const BindingStore& compositeBindings = adornment->getBindings();
 
     // edb/idb handling
@@ -1297,32 +1291,41 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             magicClause->addToBody(std::unique_ptr<AstLiteral>(body[j]->clone()));
                         }
 
-                        // go through the arguments in clause head and bind the bound variables using
-                        // constraints
-                        std::vector<const AstArgument*> currArguments;
+                        // restore memorised bindings for all composite arguments
+                        std::vector<const AstArgument*> compositeArguments;
+                        visitDepthFirst(*magicClause, [&](const AstArgument& argument) {
+                            std::string argName = getString(&argument);
+                            if (hasPrefix(argName, "+functor") || hasPrefix(argName, "+record")) {
+                                compositeArguments.push_back(&argument);
+                            }
+                        });
+
+                        for (const AstArgument* compositeArgument : compositeArguments) {
+                            std::string argName = getString(compositeArgument);
+                            AstArgument* originalArgument = compositeBindings.cloneOriginalArgument(argName);
+                            magicClause->addToBody(std::make_unique<AstConstraint>(
+                                    BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(compositeArgument->clone()),
+                                    std::unique_ptr<AstArgument>(originalArgument)));
+                        }
+
+                        // restore bindings for normalised constants
+                        std::vector<const AstVariable*> clauseVariables;
                         visitDepthFirst(*magicClause,
-                                [&](const AstArgument& argument) { currArguments.push_back(&argument); });
+                                [&](const AstVariable& variable) { clauseVariables.push_back(&variable); });
 
-                        for (const AstArgument* arg : currArguments) {
-                            std::string argName = getString(arg);
+                        for (const AstVariable* var : clauseVariables) {
+                            std::string varName = getString(var);
 
-                            // all bound arguments begin with "+abdul" (see AstTransforms.cpp)
-                            // +abdulX_variablevalue_s
-                            if (hasPrefix(argName, "+abdul")) {
+                            // all normalised constants begin with "+abdul" (see AstTransforms.cpp)
+                            // +abdulX_variablevalue_Y
+                            if (hasPrefix(varName, "+abdul")) {
                                 AstArgument* embeddedConstant =
-                                        extractConstant(translationUnit.getSymbolTable(), argName);
+                                        extractConstant(translationUnit.getSymbolTable(), varName);
 
                                 // add the constraint to the body of the clause
                                 magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
-                                        std::unique_ptr<AstArgument>(arg->clone()),
+                                        std::unique_ptr<AstArgument>(var->clone()),
                                         std::unique_ptr<AstArgument>(embeddedConstant)));
-                            }
-
-                            // deal with normalised composite arguments
-                            if (hasPrefix(argName, "+functor") || hasPrefix(argName, "+record")) {
-                                magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
-                                        std::unique_ptr<AstArgument>(arg->clone()),
-                                        std::unique_ptr<AstArgument>(compositeBindings.cloneOriginalArgument(argName))));
                             }
                         }
 
