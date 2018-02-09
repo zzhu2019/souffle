@@ -28,8 +28,11 @@ namespace souffle {
  * Default type is int32_t; may be overridden by user
  * defining RAM_DOMAIN_TYPE.
  */
-#ifdef RAM_DOMAIN_TYPE
-typedef RAM_DOMAIN_TYPE RamDomain;
+
+#define RAM_DOMAIN_SIZE 32
+
+#if RAM_DOMAIN_SIZE == 64
+typedef int64_t RamDomain;
 #else
 typedef int32_t RamDomain;
 #endif

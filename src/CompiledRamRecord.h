@@ -18,8 +18,10 @@
 
 #include "CompiledRamTuple.h"
 #include "ParallelUtils.h"
+#include "Util.h"
 
 #include <limits>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -77,7 +79,6 @@ template <typename Tuple>
 class RecordMap {
     // create blocks of a million entries
     static const std::size_t BLOCK_SIZE = 1 << 20;
-    static const std::size_t NUM_BLOCKS = 1 << (sizeof(RamDomain) * 8 - 20);
 
     /** The definition of the tuple type handled by this instance */
     using tuple_type = Tuple;
@@ -86,7 +87,7 @@ class RecordMap {
     using block_type = std::array<tuple_type, BLOCK_SIZE>;
 
     /** The type utilized for the block index */
-    using block_index_type = std::array<std::unique_ptr<block_type>, NUM_BLOCKS>;
+    using block_index_type = std::vector<std::unique_ptr<block_type>>;
 
     /** The mapping from tuples to references/indices */
     std::unordered_map<tuple_type, RamDomain> r2i;
@@ -124,11 +125,12 @@ public:
                 // assert that new index is smaller than the range
                 assert(index != std::numeric_limits<RamDomain>::max());
 
+                if (index / BLOCK_SIZE == i2r.size()) {
+                    i2r.push_back(std::make_unique<block_type>());
+                }
+
                 // create entry for unpacking
                 auto& list = i2r[index / BLOCK_SIZE];
-                if (!list) {
-                    list = std::make_unique<block_type>();
-                }
 
                 // insert tuple
                 (*list)[index % BLOCK_SIZE] = tuple;
