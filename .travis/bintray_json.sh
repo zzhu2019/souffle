@@ -1,27 +1,19 @@
 #!/bin/bash
 
-DATE=`date --iso-8601`
-if [ -z $1 ]
-then
-  echo "No distribution name was given"
-  exit 1
-else
-  DIST=$1
-fi
-if [ -z $2 ]
-then
-  REPO=deb
-  VERSION=`git describe --abbrev=0 --tags`
-else
-  REPO=deb-unstable
-  VERSION="`git describe --abbrev=0 --tags`-`git rev-parse --short HEAD`" 
-fi
+# Set the distribution name
+DIST=xenial,yakkety,zesty,artful,bionic
 
-cat > bintray.json <<EOF
+#$1 = Repository
+#$2 = Version
+#$3 = Output filename
+print_json () {
+DATE=`date --iso-8601`
+
+cat > ${3} <<EOF
 {
     "package": {
         "name": "souffle",
-        "repo": "$REPO",
+        "repo": "$1",
         "subject": "souffle-lang",
         "website_url": "http://souffle-lang.org/",
         "issue_tracker_url": "https://github.com/souffle-lang/souffle/issues",
@@ -34,10 +26,8 @@ cat > bintray.json <<EOF
     },
 
     "version": {
-        "name": "$VERSION",
-        "desc": "HEAD from development branch",
-        "released": "$DATE",
-        "gpgSign": false
+        "name": "$2",
+        "released": "$DATE"
     },
 
     "files":
@@ -51,4 +41,7 @@ cat > bintray.json <<EOF
     "publish": true
 }
 EOF
+}
 
+print_json "deb"  "`git describe --tags --always`" "bintray-stable.json"
+print_json "deb-unstable" "`git describe --tags --always`" "bintray-unstable.json"

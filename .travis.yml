@@ -156,15 +156,26 @@ jobs:
   - <<: *linuxpackage
     env:
     - *gcc_environment
-    before_deploy: .travis/bintray_json.sh xenial,yakkety,zesty,artful,bionic unstable
+    before_deploy:
+      - .travis/bintray_json.sh
     deploy:
-      provider: bintray
-      skip-cleanup: true
-      file: bintray.json
-      user: souffle-lang
-      key: $BINTRAY_KEY
-      on:
-        branch: master
+      - provider: bintray
+        skip-cleanup: true
+        file: bintray-unstable.json
+        user: souffle-lang
+        key: $BINTRAY_KEY
+        on:
+          branch: master
+          repo: souffle-lang/souffle
+      - provider: bintray
+        skip-cleanup: true
+        file: bintray-stable.json
+        user: souffle-lang
+        key: $BINTRAY_KEY
+        on:
+          branch: master
+          repo: souffle-lang/souffle
+          tags: true
   # Make the OSX packages.
   - <<: *osxpackage
   # Generate doxygen html
