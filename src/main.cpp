@@ -138,6 +138,7 @@ int main(int argc, char** argv) {
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information via guided SLD."},
 #endif
+                            {"data-structure", 'd', "type", "", false, "Specify data structure (brie/btree/eqrel/hashmap)."},
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
