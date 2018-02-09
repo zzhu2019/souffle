@@ -4,6 +4,8 @@
 // - https://opensource.org/licenses/UPL
 // - <souffle root>/licenses/SOUFFLE-UPL.txt
 
+// Dedicated test for hashmaps to ensure relations are being stored/accessed correctly.
+
 .decl C(x:number, y:number, z:number) hashmap 
 C(1,1,1).
 C(1,1,2).
