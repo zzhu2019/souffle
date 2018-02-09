@@ -30,7 +30,6 @@ public:
     template <typename T>
     void readAll(T& relation) {
         auto lease = symbolTable.acquireLock();
-        (void)lease;
         while (const auto next = readNextTuple()) {
             const RamDomain* ramDomain = next.get();
             relation.insert(ramDomain);

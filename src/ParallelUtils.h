@@ -144,27 +144,9 @@ class Lock {
     std::mutex mux;
 
 public:
-    struct Lease {
-        Lease(std::mutex& mux) : mux(&mux) {
-            mux.lock();
-        }
-        Lease(Lease&& other) : mux(other.mux) {
-            other.mux = nullptr;
-        }
-        Lease(const Lease& other) = delete;
-        ~Lease() {
-            if (mux) {
-                mux->unlock();
-            }
-        }
-
-    protected:
-        std::mutex* mux;
-    };
-
     // acquired the lock for the live-cycle of the returned guard
-    Lease acquire() {
-        return Lease(mux);
+    std::unique_lock<std::mutex> acquire() {
+        return std::unique_lock<std::mutex>(mux);
     }
 
     void lock() {

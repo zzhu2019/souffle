@@ -22,14 +22,15 @@
 
 #include <chrono>
 #include <iostream>
+#include <mutex>
 #include <utility>
 
 namespace souffle {
 /**
  * Obtains a reference to the lock synchronizing output operations.
  */
-inline Lock& getOutputLock() {
-    static Lock output_lock;
+inline std::mutex& getOutputLock() {
+    static std::mutex output_lock;
     return output_lock;
 }
 

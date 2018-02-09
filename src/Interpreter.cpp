@@ -657,8 +657,7 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
         }
 
         bool visitPrintSize(const RamPrintSize& print) override {
-            auto lease = getOutputLock().acquire();
-            (void)lease;
+            std::lock_guard<std::mutex> guard(getOutputLock());
             const InterpreterRelation& rel = interpreter.getRelation(print.getRelation());
             std::cout << print.getMessage() << rel.size() << "\n";
             return true;
@@ -742,8 +741,7 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
         // -- safety net --
 
         bool visitNode(const RamNode& node) override {
-            auto lease = getOutputLock().acquire();
-            (void)lease;
+            std::lock_guard<std::mutex> guard(getOutputLock());
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
             assert(false && "Unsupported Node Type!");
             return false;

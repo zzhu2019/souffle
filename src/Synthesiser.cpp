@@ -369,8 +369,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
         void visitPrintSize(const RamPrintSize& print, std::ostream& out) override {
             PRINT_BEGIN_COMMENT(out);
             out << "if (performIO) {\n";
-            out << "{ auto lease = getOutputLock().acquire(); \n";
-            out << "(void)lease;\n";
+            out << "{ std::lock_guard<std::mutex> guard(getOutputLock()); \n";
             out << "std::cout << R\"(" << print.getMessage() << ")\" <<  ";
             out << synthesiser.getRelationName(print.getRelation()) << "->"
                 << "size() << std::endl;\n";
@@ -1403,8 +1402,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
                 os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
             }
         } else if (auto print = dynamic_cast<const RamPrintSize*>(&node)) {
-            os << "{ auto lease = getOutputLock().acquire(); \n";
-            os << "(void)lease;\n";
+            os << "{ std::lock_guard<std::mutex> guard(getOutputLock()); \n";
             os << "std::cout << R\"(" << print->getMessage() << ")\" <<  ";
             os << getRelationName(print->getRelation()) << "->"
                << "size() << std::endl;\n";

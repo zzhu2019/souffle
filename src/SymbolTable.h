@@ -38,7 +38,7 @@ namespace souffle {
 class SymbolTable {
 private:
     /** A lock to synchronize parallel accesses */
-    mutable Lock access;
+    mutable std::mutex lock;
 
     /** Map indices to strings. */
     std::deque<std::string> numToStr;
@@ -111,15 +111,13 @@ public:
 
     /** Find the index of a symbol in the table, inserting a new symbol if it does not exist there already. */
     RamDomain lookup(const std::string& symbol) {
-        auto lease = access.acquire();
-        (void)lease;  // avoid warning;
+        std::lock_guard<std::mutex> guard(lock);
         return static_cast<RamDomain>(newSymbolOfIndex(symbol));
     }
 
     /** Finds the index of a symbol in the table, giving an error if it's not found */
     RamDomain lookupExisting(const std::string& symbol) const {
-        auto lease = access.acquire();
-        (void)lease;  // avoid warning;
+        std::lock_guard<std::mutex> guard(lock);
         auto result = strToNum.find(symbol);
         if (result == strToNum.end()) {
             std::cerr << "Error string not found in call to SymbolTable::lookupExisting.\n";
@@ -136,8 +134,7 @@ public:
     /** Find a symbol in the table by its index, note that this gives an error if the index is out of bounds.
      */
     const std::string& resolve(const RamDomain index) const {
-        auto lease = access.acquire();
-        (void)lease;  // avoid warning;
+        std::lock_guard<std::mutex> guard(lock);
         auto pos = static_cast<size_t>(index);
         if (pos >= size()) {
             // TODO: use different error reporting here!!
@@ -159,8 +156,7 @@ public:
     /** Bulk insert symbols into the table, note that this operation is more efficient than repeated inserts
      * of single symbols. */
     void insert(const std::vector<std::string>& symbols) {
-        auto lease = access.acquire();
-        (void)lease;  // avoid warning;
+        std::lock_guard<std::mutex> guard(lock);
         strToNum.reserve(size() + symbols.size());
         for (auto& symbol : symbols) {
             newSymbol(symbol);
@@ -170,8 +166,7 @@ public:
     /** Insert a single symbol into the table, not that this operation should not be used if inserting symbols
      * in bulk. */
     void insert(const std::string& symbol) {
-        auto lease = access.acquire();
-        (void)lease;  // avoid warning;
+        std::lock_guard<std::mutex> guard(lock);
         newSymbol(symbol);
     }
 
@@ -185,8 +180,8 @@ public:
         out << "}\n";
     }
 
-    Lock::Lease acquireLock() const {
-        return access.acquire();
+    std::unique_lock<std::mutex> acquireLock() const {
+        return std::unique_lock<std::mutex>(lock);
     }
 
     /** Stream operator, used as a convenience for print. */

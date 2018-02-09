@@ -96,7 +96,7 @@ class RecordMap {
     block_index_type i2r;
 
     /** a lock for the pack operation */
-    Lock pack_lock;
+    std::mutex pack_lock;
 
 public:
     RecordMap() = default;
@@ -109,8 +109,7 @@ public:
 
         {
             // lock pack operation
-            auto leas = pack_lock.acquire();  // lock hold till end of scope
-            (void)leas;                       // avoid warning
+            std::lock_guard<std::mutex> guard(pack_lock);  // lock hold till end of scope
 
             // try lookup
             auto pos = r2i.find(tuple);

@@ -28,7 +28,6 @@ public:
     template <typename T>
     void writeAll(const T& relation) {
         auto lease = symbolTable.acquireLock();
-        (void)lease;
         for (const auto& current : relation) {
             writeNext(current);
         }
