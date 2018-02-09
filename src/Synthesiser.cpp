@@ -193,7 +193,6 @@ std::string getRelationType(const RamRelation& rel, std::size_t arity, const Aut
         } else {
             res << "Auto,";
         }
-        
     }
 
     res << arity;
