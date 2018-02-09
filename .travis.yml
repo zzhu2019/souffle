@@ -156,11 +156,11 @@ jobs:
   - <<: *linuxpackage
     env:
     - *gcc_environment
-    before_deploy: .travis/bintray_json.sh unstable
+    before_deploy: .travis/bintray_json.sh xenial,yakkety,zesty,artful,bionic unstable
     deploy:
       provider: bintray
       skip-cleanup: true
-      file: .travis/bintray-unstable.json
+      file: bintray.json
       user: souffle-lang
       key: $BINTRAY_KEY
       on:
