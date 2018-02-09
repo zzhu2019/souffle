@@ -19,6 +19,7 @@
 #include "AstTranslationUnit.h"
 #include "RamProgram.h"
 #include "RamRelation.h"
+#include "RamTranslationUnit.h"
 
 #include <map>
 #include <vector>
@@ -41,7 +42,6 @@ class RecursiveClauses;
  */
 class AstTranslator {
     /** If true, created constructs will be annotated with logging information */
-    bool logging;
 
 public:
     /**
@@ -49,7 +49,6 @@ public:
      *
      * @param logging if generated clauses should be annotated with logging operations
      */
-    AstTranslator(bool logging = false) : logging(logging) {}
 
     /**
      * Converts the given relation identifier into a relation name.
@@ -78,8 +77,17 @@ public:
     std::unique_ptr<RamStatement> makeSubproofSubroutine(
             const AstClause& clause, const AstProgram* program, const TypeEnvironment& typeEnv);
 
-    /** translates the given datalog program into an equivalent RAM program  */
+    /** Translate AST to RamProgram */
     std::unique_ptr<RamProgram> translateProgram(const AstTranslationUnit& translationUnit);
+
+    /** translates AST to translation unit  */
+    std::unique_ptr<RamTranslationUnit> translateUnit(AstTranslationUnit& tu) {
+        std::unique_ptr<RamProgram> ramProg = translateProgram(tu);
+        SymbolTable& symTab = tu.getSymbolTable();
+        ErrorReport& errReport = tu.getErrorReport();
+        DebugReport& debugReport = tu.getDebugReport();
+        return std::make_unique<RamTranslationUnit>(std::move(ramProg), symTab, errReport, debugReport);
+    }
 };
 
 }  // end of namespace souffle

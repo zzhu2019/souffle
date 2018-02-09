@@ -956,8 +956,8 @@ void separateDBs(AstProgram* program) {
                 std::stringstream argName;
                 argName.str("");
                 argName << "arg" << j;
-                headAtom->addArgument(std::unique_ptr<AstArgument>(new AstVariable(argName.str())));
-                bodyAtom->addArgument(std::unique_ptr<AstArgument>(new AstVariable(argName.str())));
+                headAtom->addArgument(std::make_unique<AstVariable>(argName.str()));
+                bodyAtom->addArgument(std::make_unique<AstVariable>(argName.str()));
             }
 
             newIdbClause->setHead(std::unique_ptr<AstAtom>(headAtom));
@@ -1456,8 +1456,8 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
             std::stringstream argName;
             argName.str("");
             argName << "arg" << j;
-            headatom->addArgument(std::unique_ptr<AstArgument>(new AstVariable(argName.str())));
-            bodyatom->addArgument(std::unique_ptr<AstArgument>(new AstVariable(argName.str())));
+            headatom->addArgument(std::make_unique<AstVariable>(argName.str()));
+            bodyatom->addArgument(std::make_unique<AstVariable>(argName.str()));
         }
 
         // add the clause to the program

@@ -18,7 +18,9 @@
 #include "AstProgram.h"
 #include "AstTranslator.h"
 #include "AstVisitor.h"
-#include "RamInterpreter.h"
+#include "Global.h"
+#include "Interpreter.h"
+#include "RamProgram.h"
 #include "RamStatement.h"
 
 namespace souffle {
@@ -48,7 +50,8 @@ public:
      * Processes the given query by forwarding the call to the nested strategy an
      * recording its performance.
      */
-    ExecutionSummary operator()(const RamInsert& insert, RamEnvironment& env, std::ostream* report) const {
+    ExecutionSummary operator()(
+            const RamInsert& insert, InterpreterEnvironment& env, std::ostream* report) const {
         // run nested strategy
         auto res = nested(insert, env, report);
 
@@ -119,7 +122,7 @@ bool AutoScheduleTransformer::autotune(AstTranslationUnit& translationUnit, std:
     souffle::SymbolTable table = translationUnit.getSymbolTable();
 
     // create interpreter instance
-    RamInterpreter interpreter(profiler);
+    Interpreter interpreter(profiler);
 
     if (report && verbose) {
         SplitStream splitStream(report, &std::cout);
