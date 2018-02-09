@@ -181,7 +181,18 @@ std::string getRelationType(const RamRelation& rel, std::size_t arity, const Aut
     } else if (rel.isEqRel()) {
         res << "EqRel,";
     } else {
-        res << "Auto,";
+        auto data_structure = Global::config().get("data-structure");
+        if (data_structure == "btree") {
+            res << "BTree,";
+        } else if (data_structure == "hashmap") {
+            res << "Hashmap,";
+        } else if (data_structure == "brie") {
+            res << "Brie,";
+        } else if (data_structure == "eqrel") {
+            res << "Eqrel,";
+        } else {
+            res << "Auto,";
+        }
     }
 
     res << arity;
