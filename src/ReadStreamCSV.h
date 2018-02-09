@@ -103,12 +103,16 @@ protected:
                 tuple[inputMap[column]] = symbolTable.unsafeLookup(element.c_str());
             } else {
                 try {
+#if RAM_DOMAIN_SIZE == 64
+                    tuple[inputMap[column]] = std::stoll(element.c_str());
+#else
                     tuple[inputMap[column]] = std::stoi(element.c_str());
+#endif
                 } catch (...) {
                     if (!error) {
                         std::stringstream errorMessage;
-                        errorMessage << "Error converting number in column " << column + 1 << " in line "
-                                     << lineNumber << "; ";
+                        errorMessage << "Error converting number <" + element + "> in column " << column + 1
+                                     << " in line " << lineNumber << "; ";
                         throw std::invalid_argument(errorMessage.str());
                     }
                 }

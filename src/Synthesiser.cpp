@@ -1014,7 +1014,7 @@ public:
     // -- values --
     void visitNumber(const RamNumber& num, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
-        out << num.getConstant();
+        out << "RamDomain(" << num.getConstant() << ")";
         PRINT_END_COMMENT(out);
     }
 
