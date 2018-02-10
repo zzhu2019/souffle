@@ -131,8 +131,7 @@ int main(int argc, char** argv) {
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
                             {"fault-tolerance", 'f', "", "", false,
                                     "THIS IS NOW DEPRECATED, PLEASE DO NOT USE"},
-                            {"stratify", 's', "FILE", "", false,
-                                    "THIS IS NOW DEPRECATED, PLEASE DO NOT USE"},
+                            {"stratify", 's', "FILE", "", false, "THIS IS NOW DEPRECATED, PLEASE DO NOT USE"},
 #ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information via guided SLD."},
