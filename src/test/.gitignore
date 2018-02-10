@@ -1,6 +1,0 @@
-*_test
-*.log
-*.trs
-
-.dirstamp
-gtest/.dirstamp
