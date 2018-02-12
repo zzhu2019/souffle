@@ -124,6 +124,7 @@ class BindingStore {
 private:
     std::map<std::string, std::unique_ptr<AstArgument>> originalArguments;
     std::map<std::string, std::set<std::string>> varDependencies;
+    std::set<std::string> variableBoundComposites;
 
 public:
     AstArgument* cloneOriginalArgument(const std::string& argName) const {
@@ -141,6 +142,14 @@ public:
         std::set<std::string> dependencies;
         visitDepthFirst(*arg, [&](const AstVariable& var) { dependencies.insert(var.getName()); });
         varDependencies[newVariableName] = dependencies;
+    }
+
+    void addVariableBoundComposite(std::string functorName) {
+        variableBoundComposites.insert(functorName);
+    }
+
+    bool isVariableBoundComposite(std::string functorName) const {
+        return (variableBoundComposites.find(functorName) != variableBoundComposites.end());
     }
 };
 
