@@ -6,7 +6,7 @@
 # - https://opensource.org/licenses/UPL
 # - <souffle root>/licenses/SOUFFLE-UPL.txt
 ###
-### souffle-docker
+### souffle-docker.sh
 ###
 ###     Use Souffle with Docker.
 ###
@@ -47,12 +47,12 @@
 ###     To set up Souffle in a Docker for CentOS, using the
 ###     master branch of upstream at the latest commit, do
 ###
-###     $ ./souffle-docker build -i centos -t centos7
+###     $ ./docker/souffle-docker.sh build -i centos -t centos7
 ###
 ###     Alternatively, to do the same but on your own master
 ###     branch.
 ###
-###     $ ./souffle-docker build -i centos -t centos7 -u "${USER}"
+###     $ ./docker/souffle-docker.sh build -i centos -t centos7 -u "${USER}"
 ###
 ###     Where ${USER} is your Github username.
 ###
