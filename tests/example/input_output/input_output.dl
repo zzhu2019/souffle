@@ -3,8 +3,30 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at:
 // - https://opensource.org/licenses/UPL
 // - <souffle root>/licenses/SOUFFLE-UPL.txt
-
+//
 // input_output.dl
+//
+// Test for propagation of tuples between program strata
+// under multiple input and output configurations.
+//
+// Relations are names by the following schema, with
+// <x|y> denoting the exclusive or of x and y, and
+// [x] denoting the optional occurrence of x.
+//
+// [<Receiver|Sender|Receive|Send|ReceiveSend>] [<Input|Output|InputOutput>] <NumberSymbol|SymbolNumber>
+//
+// Sender relations propagate tuples to Receive and ReceiveSend
+// relations, while Send and ReceiveSend relations propagate
+// tuples to Receiver relations.
+//
+// Input relations are marked with .input, Output relations
+// with .output, and InputOutput relations with both .input
+// and .output.
+//
+// NumberSymbol and SymbolNumber relations have a number and
+// symbol, or, symbol and number, as their first and second
+// arguments respectively.
+//
 
 .decl SenderNumberSymbol(x:number, y:symbol)
 .input SenderNumberSymbol()
