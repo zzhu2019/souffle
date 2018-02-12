@@ -795,6 +795,11 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
             AdornedPredicate currPredicate = currentPredicates[0];
             currentPredicates.erase(currentPredicates.begin());
 
+            // don't bother adorning ignored predicates
+            if (contains(ignoredAtoms, currPredicate.getName())) {
+                continue;
+            }
+
             // go through and adorn all IDB clauses defining the relation
             AstRelation* rel = program->getRelation(currPredicate.getName());
             for (AstClause* clause : rel->getClauses()) {
