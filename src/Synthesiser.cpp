@@ -1246,8 +1246,8 @@ void genCode(std::ostream& out, const RamStatement& stmt, const IndexMap& indice
 }
 }  // namespace
 
-std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename) const {
+std::string Synthesiser::generateCode(
+        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
     // ---------------------------------------------------------------
@@ -1707,8 +1707,8 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
     return sourceFilename;
 }
 
-std::string Synthesiser::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename) const {
+std::string Synthesiser::compileToBinary(
+        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
     // ---------------------------------------------------------------
     //                       Code Generation
     // ---------------------------------------------------------------
@@ -1744,8 +1744,8 @@ std::string Synthesiser::compileToBinary(const SymbolTable& symTable, const RamP
     return sourceFilename;
 }
 
-std::string Synthesiser::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename) const {
+std::string Synthesiser::executeBinary(
+        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
     // compile statement
     std::string sourceFilename = compileToBinary(symTable, prog, filename);
     std::string binaryFilename = filename == "" ? simpleName(sourceFilename) : sourceFilename;

@@ -966,15 +966,15 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
         relNew[rel] = getRamRelation(rel, &typeEnv, "new_" + relName, rel->getArity(), true);
 
         /* create update statements for fixpoint (even iteration) */
-            appendStmt(updateRelTable,
-                    std::unique_ptr<RamStatement>(new RamSequence(
-                            std::unique_ptr<RamStatement>(
-                                    new RamMerge(std::unique_ptr<RamRelation>(rrel[rel]->clone()),
-                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
-                            std::unique_ptr<RamStatement>(
-                                    new RamSwap(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
-                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
-                            std::make_unique<RamClear>(std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
+        appendStmt(updateRelTable,
+                std::unique_ptr<RamStatement>(new RamSequence(
+                        std::unique_ptr<RamStatement>(
+                                new RamMerge(std::unique_ptr<RamRelation>(rrel[rel]->clone()),
+                                        std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
+                        std::unique_ptr<RamStatement>(
+                                new RamSwap(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
+                                        std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
+                        std::make_unique<RamClear>(std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
 
         /* measure update time for each relation */
         if (Global::config().has("profile")) {
@@ -1263,9 +1263,9 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
 
         /* during stratification, create and load all predecessor relations in another scc */
 
-            for (const AstRelation* rel : step.computed()) {
-                createAndLoad(current, rel, typeEnv, true, sccGraph.isRecursive(rel), true);
-            }
+        for (const AstRelation* rel : step.computed()) {
+            createAndLoad(current, rel, typeEnv, true, sccGraph.isRecursive(rel), true);
+        }
 
         /* translate the body, this is where actual computation happens */
         std::unique_ptr<RamStatement> stmt;
@@ -1282,20 +1282,20 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
         appendStmt(current, std::move(stmt));
 
         /* store all relations with fault tolerance, and output relations without */
-            for (const AstRelation* rel : step.computed()) {
-                printSizeStore(current, rel, typeEnv, true);
-            }
+        for (const AstRelation* rel : step.computed()) {
+            printSizeStore(current, rel, typeEnv, true);
+        }
 
         /* drop expired relations, or all relations for stratification */
         if (!Global::config().has("provenance")) {
-                for (const AstRelation* rel : step.expired()) {
+            for (const AstRelation* rel : step.expired()) {
+                appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
+            }
+            if (index == schedule.size() - 1) {
+                for (const AstRelation* rel : step.computed()) {
                     appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
                 }
-                if (index == schedule.size() - 1) {
-                    for (const AstRelation* rel : step.computed()) {
-                        appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
-                    }
-                }
+            }
         }
 
         // append the current step to the result

@@ -56,8 +56,8 @@ public:
      * name is either set by the corresponding member field or will
      * be determined randomly. The chosen file-name will be returned.
      */
-    std::string generateCode(const SymbolTable& symTable, const RamProgram& prog,
-            const std::string& filename = "") const;
+    std::string generateCode(
+            const SymbolTable& symTable, const RamProgram& prog, const std::string& filename = "") const;
 
     /**
      * Compiles the given statement to a binary file. The target file
@@ -65,8 +65,8 @@ public:
      * be determined randomly. The chosen file-name will be returned.
      * Note that this uses the generateCode method for code generation.
      */
-    std::string compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
-            const std::string& filename = "") const;
+    std::string compileToBinary(
+            const SymbolTable& symTable, const RamProgram& prog, const std::string& filename = "") const;
 
     /**
      * Compiles the given statement to a binary file. The target file
@@ -74,8 +74,8 @@ public:
      * be determined randomly. The environment after execution will be returned.
      * Note that this uses the compileToBinary method for code compilation.
      */
-    std::string executeBinary(const SymbolTable& symTable, const RamProgram& prog,
-            const std::string& filename = "") const;
+    std::string executeBinary(
+            const SymbolTable& symTable, const RamProgram& prog, const std::string& filename = "") const;
 };
 
 }  // end of namespace souffle
