@@ -453,14 +453,12 @@ int main(int argc, char** argv) {
             // check if this is code generation only
             if (Global::config().has("generate")) {
                 // just generate, no compile, no execute
-                synthesiser->generateCode(
-                        *ramTranslationUnit, Global::config().get("generate"));
+                synthesiser->generateCode(*ramTranslationUnit, Global::config().get("generate"));
 
                 // check if this is a compile only
             } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
                 // just compile, no execute
-                synthesiser->compileToBinary(
-                        *ramTranslationUnit, Global::config().get("dl-program"));
+                synthesiser->compileToBinary(*ramTranslationUnit, Global::config().get("dl-program"));
             } else {
                 // run compiled C++ program
                 synthesiser->executeBinary(*ramTranslationUnit);
