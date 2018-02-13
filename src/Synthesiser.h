@@ -18,6 +18,7 @@
 
 #include "RamProgram.h"
 #include "RamRelation.h"
+#include "RamTranslationUnit.h"
 #include "SymbolTable.h"
 
 #include "RamStatement.h"
@@ -57,7 +58,7 @@ public:
      * be determined randomly. The chosen file-name will be returned.
      */
     std::string generateCode(
-            const SymbolTable& symTable, const RamProgram& prog, const std::string& filename = "") const;
+            const RamTranslationUnit &tu, const std::string& filename = "") const;
 
     /**
      * Compiles the given statement to a binary file. The target file
@@ -66,7 +67,7 @@ public:
      * Note that this uses the generateCode method for code generation.
      */
     std::string compileToBinary(
-            const SymbolTable& symTable, const RamProgram& prog, const std::string& filename = "") const;
+            const RamTranslationUnit &tu, const std::string& filename = "") const;
 
     /**
      * Compiles the given statement to a binary file. The target file
@@ -75,7 +76,7 @@ public:
      * Note that this uses the compileToBinary method for code compilation.
      */
     std::string executeBinary(
-            const SymbolTable& symTable, const RamProgram& prog, const std::string& filename = "") const;
+            const RamTranslationUnit &tu, const std::string& filename = "") const;
 };
 
 }  // end of namespace souffle

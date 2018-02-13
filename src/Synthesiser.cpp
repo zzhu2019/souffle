@@ -1247,10 +1247,13 @@ void genCode(std::ostream& out, const RamStatement& stmt, const IndexMap& indice
 }  // namespace
 
 std::string Synthesiser::generateCode(
-        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
+        const RamTranslationUnit &unit,
+        const std::string& filename) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
     // ---------------------------------------------------------------
+     const SymbolTable& symTable = unit.getSymbolTable();
+     const RamProgram& prog = unit.getP();
 
     // collect all used indices
     IndexMap indices;
@@ -1708,12 +1711,12 @@ std::string Synthesiser::generateCode(
 }
 
 std::string Synthesiser::compileToBinary(
-        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
+        const RamTranslationUnit &unit, const std::string& filename) const {
     // ---------------------------------------------------------------
     //                       Code Generation
     // ---------------------------------------------------------------
 
-    std::string sourceFilename = generateCode(symTable, prog, filename);
+    std::string sourceFilename = generateCode(unit, filename);
 
     // ---------------------------------------------------------------
     //                    Compilation & Execution
@@ -1745,9 +1748,10 @@ std::string Synthesiser::compileToBinary(
 }
 
 std::string Synthesiser::executeBinary(
-        const SymbolTable& symTable, const RamProgram& prog, const std::string& filename) const {
+        const RamTranslationUnit &unit, const std::string& filename) const {
+
     // compile statement
-    std::string sourceFilename = compileToBinary(symTable, prog, filename);
+    std::string sourceFilename = compileToBinary(unit, filename);
     std::string binaryFilename = filename == "" ? simpleName(sourceFilename) : sourceFilename;
 
     // separate souffle output form executable output

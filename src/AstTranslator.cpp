@@ -1248,7 +1248,6 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
 
     /* Compute SCCs of program */
     const auto& sccGraph = *translationUnit.getAnalysis<SCCGraph>();
-    const auto& sortedSCCGraph = *translationUnit.getAnalysis<TopologicallySortedSCCGraph>();
     const auto& schedule = translationUnit.getAnalysis<RelationSchedule>()->schedule();
 
     /** Do nothing for empty schedules */

@@ -468,7 +468,6 @@ int main(int argc, char** argv) {
                 // run compiled C++ program
                 synthesiser->executeBinary(astTranslationUnit->getSymbolTable(), *ramProg);
             }
-
         } catch (std::exception& e) {
             std::cerr << e.what() << std::endl;
         }
