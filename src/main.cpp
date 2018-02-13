@@ -130,10 +130,8 @@ int main(int argc, char** argv) {
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
                             {"fault-tolerance", 'f', "", "", false,
-                                    "Enable fault tolerance to recover from failure on program restart."},
-                            {"stratify", 's', "FILE", "", false,
-                                    "Generate/compile to multiple subprograms, and write an execution graph "
-                                    "to FILE (valid extensions are '.dot' or '.json')."},
+                                    "THIS IS NOW DEPRECATED, PLEASE DO NOT USE"},
+                            {"stratify", 's', "FILE", "", false, "THIS IS NOW DEPRECATED, PLEASE DO NOT USE"},
 #ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information via guided SLD."},
