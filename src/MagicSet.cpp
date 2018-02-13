@@ -92,7 +92,6 @@ int getEndpoint(std::string mainName) {
 // returns the string representation of a given argument
 std::string getString(const AstArgument* arg) {
     std::stringstream argStream;
-    argStream.str("");
     argStream << *arg;
     return argStream.str();
 }
@@ -1087,6 +1086,11 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
     std::set<AstRelationIdentifier> addAsOutput;
     std::set<AstRelationIdentifier> addAsPrintSize;
     std::map<AstRelationIdentifier, std::vector<AstIODirective*>> outputDirectives;
+
+    // ignore negated atoms
+    for (AstRelationIdentifier relation : negatedAtoms) {
+        ignoredAtoms.insert(relation);
+    }
 
     // perform magic set algorithm for each output
     for (size_t querynum = 0; querynum < outputQueries.size(); querynum++) {
