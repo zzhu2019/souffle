@@ -966,20 +966,6 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
         relNew[rel] = getRamRelation(rel, &typeEnv, "new_" + relName, rel->getArity(), true);
 
         /* create update statements for fixpoint (even iteration) */
-        if (Global::config().has("fault-tolerance") && !rel->hasRecordInHead()) {
-            appendStmt(updateRelTable,
-                    std::unique_ptr<RamStatement>(new RamSequence(
-                            std::unique_ptr<RamStatement>(
-                                    new RamMerge(std::unique_ptr<RamRelation>(rrel[rel]->clone()),
-                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
-                            // TODO (#466): uncomment the following line to store new recursive
-                            // relations immediately upon discovery
-                            // std::make_unique<RamStore>(relNew[rel]),
-                            std::unique_ptr<RamStatement>(
-                                    new RamSwap(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
-                                            std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
-                            std::make_unique<RamClear>(std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
-        } else {
             appendStmt(updateRelTable,
                     std::unique_ptr<RamStatement>(new RamSequence(
                             std::unique_ptr<RamStatement>(
@@ -989,7 +975,6 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                                     new RamSwap(std::unique_ptr<RamRelation>(relDelta[rel]->clone()),
                                             std::unique_ptr<RamRelation>(relNew[rel]->clone()))),
                             std::make_unique<RamClear>(std::unique_ptr<RamRelation>(relNew[rel]->clone())))));
-        }
 
         /* measure update time for each relation */
         if (Global::config().has("profile")) {
@@ -1140,15 +1125,6 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
     if (!loopSeq->getStatements().empty() && exitCond && updateTable) {
         appendStmt(res, std::unique_ptr<RamStatement>(new RamLoop(std::move(loopSeq),
                                 std::make_unique<RamExit>(std::move(exitCond)), std::move(updateTable))));
-    } else {
-        if (Global::config().has("fault-tolerance")) {
-            for (const AstRelation* rel : scc) {
-                if (!rel->hasRecordInHead()) {
-                    appendStmt(res, std::make_unique<RamStore>(getRamRelation(rel, &typeEnv),
-                                            getOutputIODirectives(rel, &typeEnv)));
-                }
-            }
-        }
     }
     if (postamble) {
         appendStmt(res, std::move(postamble));
@@ -1286,23 +1262,10 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
         std::unique_ptr<RamStatement> current;
 
         /* during stratification, create and load all predecessor relations in another scc */
-        if (Global::config().has("stratify")) {
-            // for each inbound relation (i.e. a predecessor in another scc)...
-            for (const AstRelation* rel : sccGraph.getInbound(sortedSCCGraph.order().at(index))) {
-                createAndLoad(current, rel, typeEnv, false, false, false);
-            }
-        }
 
-        /* during fault-tolerant stratification, attempt to recover all relations computed in this step */
-        if (Global::config().has("fault-tolerance")) {
-            for (const AstRelation* rel : step.computed()) {
-                createAndLoad(current, rel, typeEnv, true, sccGraph.isRecursive(rel), rel->hasRecordInHead());
-            }
-        } else {
             for (const AstRelation* rel : step.computed()) {
                 createAndLoad(current, rel, typeEnv, true, sccGraph.isRecursive(rel), true);
             }
-        }
 
         /* translate the body, this is where actual computation happens */
         std::unique_ptr<RamStatement> stmt;
@@ -1318,41 +1281,13 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
         }
         appendStmt(current, std::move(stmt));
 
-        /* drop expired relations, or all relations for stratification */
-        if (!Global::config().has("provenance") && Global::config().has("stratify")) {
-            // for each inbound relation (i.e. a predecessor in another scc)...
-            for (const AstRelation* rel : sccGraph.getInbound(sortedSCCGraph.order().at(index))) {
-                // don't worry about file paths as this is a drop only
-                appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
-            }
-        }
-
         /* store all relations with fault tolerance, and output relations without */
-        if (Global::config().has("fault-tolerance")) {
-            for (const AstRelation* rel : step.computed()) {
-                // TODO (#466): if storing new recursive relations immediately, uncomment the following
-                // line to avoid duplicates
-                // if (!sccGraph.isRecursive(rel)) {
-                printSizeStore(current, rel, typeEnv, rel->hasRecordInHead());
-                // }
-            }
-        } else if (Global::config().has("stratify")) {
-            for (const AstRelation* rel : step.computed()) {
-                printSizeStore(current, rel, typeEnv, rel->hasRecordInHead());
-            }
-        } else {
             for (const AstRelation* rel : step.computed()) {
                 printSizeStore(current, rel, typeEnv, true);
             }
-        }
 
         /* drop expired relations, or all relations for stratification */
-        if (!Global::config().has("provenance") && !Global::config().has("record-provenance")) {
-            if (Global::config().has("stratify")) {
-                for (const AstRelation* rel : step.computed()) {
-                    appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
-                }
-            } else {
+        if (!Global::config().has("provenance")) {
                 for (const AstRelation* rel : step.expired()) {
                     appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
                 }
@@ -1361,7 +1296,6 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
                         appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
                     }
                 }
-            }
         }
 
         // append the current step to the result
