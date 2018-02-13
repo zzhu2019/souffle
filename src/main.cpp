@@ -436,9 +436,6 @@ int main(int argc, char** argv) {
     } else {
         // ------- compiler -------------
 
-        std::unique_ptr<RamProgram> ramProg = ramTranslationUnit->getProg();
-
-        /* Locate souffle-compile script */
         std::string compileCmd = ::findTool("souffle-compile", souffleExecutable, ".");
         /* Fail if a souffle-compile executable is not found */
         if (!isExecutable(compileCmd)) {
@@ -457,16 +454,16 @@ int main(int argc, char** argv) {
             if (Global::config().has("generate")) {
                 // just generate, no compile, no execute
                 synthesiser->generateCode(
-                        astTranslationUnit->getSymbolTable(), *ramProg, Global::config().get("generate"));
+                        *ramTranslationUnit, Global::config().get("generate"));
 
                 // check if this is a compile only
             } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
                 // just compile, no execute
                 synthesiser->compileToBinary(
-                        astTranslationUnit->getSymbolTable(), *ramProg, Global::config().get("dl-program"));
+                        *ramTranslationUnit, Global::config().get("dl-program"));
             } else {
                 // run compiled C++ program
-                synthesiser->executeBinary(astTranslationUnit->getSymbolTable(), *ramProg);
+                synthesiser->executeBinary(*ramTranslationUnit);
             }
         } catch (std::exception& e) {
             std::cerr << e.what() << std::endl;
