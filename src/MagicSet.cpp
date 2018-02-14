@@ -136,7 +136,6 @@ bool isBoundArgument(
             return true;  // found a bound argument, so can stop
         }
     } else {
-        // TODO: check completeness here! this should be checked elsewhere
         assert(false && "incomplete checks (MST)");
     }
 
@@ -153,10 +152,8 @@ bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs, BindingSto
     return false;
 }
 
-// -- TODO -- change this where its used
-// -- TODO -- change the name
 // checks whether the lhs is bound by a binary constraint (and is not bound yet)
-bool isBoundArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundArgs) {
+bool isBindingConstraint(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundArgs) {
     std::string lhs_name = getString(lhs);
     std::string rhs_name = getString(rhs);
 
@@ -528,7 +525,6 @@ int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boun
 // SIPS #2:
 // Choose the body atom with the maximum number of bound arguments
 // If equal boundness, prioritise left-most EDB
-// TODO: change all the SIPS to prioritise by EDB -> IDB -> atoms with functors/records
 int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
         std::set<AstRelationIdentifier> edb, BindingStore& compositeBindings) {
     int maxBound = -1;
@@ -610,7 +606,8 @@ int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArg
     return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb, compositeBindings);
 }
 
-// TODO: comment
+// Find and stores all composite arguments (namely records and functors) along
+// with their variable dependencies
 BindingStore bindComposites(const AstProgram* program) {
     struct M : public AstNodeMapper {
         BindingStore& compositeBindings;
@@ -841,10 +838,10 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
 
                     AstArgument* lhs = constraint->getLHS();
                     AstArgument* rhs = constraint->getRHS();
-                    if (isBoundArg(lhs, rhs, boundArgs)) {
+                    if (isBindingConstraint(lhs, rhs, boundArgs)) {
                         boundArgs.insert(getString(lhs));
                     }
-                    if (isBoundArg(rhs, lhs, boundArgs)) {
+                    if (isBindingConstraint(rhs, lhs, boundArgs)) {
                         boundArgs.insert(getString(rhs));
                     }
                 }

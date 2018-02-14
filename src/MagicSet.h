@@ -172,27 +172,27 @@ public:
 
     void print(std::ostream& os) const;
 
-    const std::vector<std::vector<AdornedClause>>& getAdornedClauses() {
+    const std::vector<std::vector<AdornedClause>>& getAdornedClauses() const {
         return adornmentClauses;
     }
 
-    const std::vector<AstRelationIdentifier>& getRelations() {
+    const std::vector<AstRelationIdentifier>& getRelations() const {
         return adornmentRelations;
     }
 
-    const std::set<AstRelationIdentifier>& getEDB() {
+    const std::set<AstRelationIdentifier>& getEDB() const {
         return adornmentEdb;
     }
 
-    const std::set<AstRelationIdentifier>& getIDB() {
+    const std::set<AstRelationIdentifier>& getIDB() const {
         return adornmentIdb;
     }
 
-    const std::set<AstRelationIdentifier>& getNegatedAtoms() {
+    const std::set<AstRelationIdentifier>& getNegatedAtoms() const {
         return negatedAtoms;
     }
 
-    const std::set<AstRelationIdentifier>& getIgnoredAtoms() {
+    const std::set<AstRelationIdentifier>& getIgnoredAtoms() const {
         return ignoredAtoms;
     }
 
