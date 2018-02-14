@@ -64,6 +64,58 @@
 
 namespace souffle {
 
+/**
+ * Executes a binary file.
+ */
+void executeBinary(const std::string& binaryFilename) {
+    assert(!binaryFilename.empty() && "binary filename cannot be blank");
+
+    // separate souffle output from executable output
+    if (Global::config().has("profile")) {
+        std::cout.flush();
+    }
+
+    // check whether the executable exists
+    if (!isExecutable(binaryFilename)) {
+        throw std::invalid_argument("Generated executable <" + binaryFilename + "> could not be found");
+    }
+
+    // run executable
+    int result = system(binaryFilename.c_str());
+    // Remove temp files
+    if (Global::config().get("dl-program").empty()) {
+        remove(binaryFilename.c_str());
+        remove((binaryFilename + ".cpp").c_str());
+    }
+    if (result != 0) {
+        exit(result);
+    }
+}
+
+/**
+ * Compiles the given source file to a binary file.
+ */
+void compileToBinary(std::string compileCmd, const std::string& sourceFilename) {
+    // set up number of threads
+    auto num_threads = std::stoi(Global::config().get("jobs"));
+    if (num_threads == 1) {
+        compileCmd += "-s ";
+    }
+
+    // add source code
+    compileCmd += sourceFilename;
+
+    // separate souffle output from executable output
+    if (Global::config().has("profile")) {
+        std::cout.flush();
+    }
+
+    // run executable
+    if (system(compileCmd.c_str()) != 0) {
+        throw std::invalid_argument("failed to compile C++ source <" + sourceFilename + ">");
+    }
+}
+
 int main(int argc, char** argv) {
     /* Time taking for overall runtime */
     auto souffle_start = std::chrono::high_resolution_clock::now();
@@ -443,25 +495,43 @@ int main(int argc, char** argv) {
         }
         compileCmd += " ";
 
-        std::unique_ptr<Synthesiser> synthesiser = std::make_unique<Synthesiser>(compileCmd);
+        std::unique_ptr<Synthesiser> synthesiser = std::make_unique<Synthesiser>();
 
         // configure compiler
         if (Global::config().has("verbose")) {
             synthesiser->setReportTarget(std::cout);
         }
         try {
-            // check if this is code generation only
-            if (Global::config().has("generate")) {
-                // just generate, no compile, no execute
-                synthesiser->generateCode(*ramTranslationUnit, Global::config().get("generate"));
-
-                // check if this is a compile only
-            } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
-                // just compile, no execute
-                synthesiser->compileToBinary(*ramTranslationUnit, Global::config().get("dl-program"));
+            // Find the base filename for code generation and execution
+            std::string baseFilename;
+            if (Global::config().has("dl-program")) {
+                baseFilename = Global::config().get("dl-program");
+            } else if (Global::config().has("generate")) {
+                baseFilename = Global::config().get("generate");
+                // trim .cpp extension if it exists
+                if (baseFilename.size() >= 4 && baseFilename.substr(baseFilename.size() - 4) == ".cpp") {
+                    baseFilename = baseFilename.substr(0, baseFilename.size() - 4);
+                }
             } else {
-                // run compiled C++ program
-                synthesiser->executeBinary(*ramTranslationUnit);
+                baseFilename = tempFile();
+            }
+            if (baseName(baseFilename) == "/" || baseName(baseFilename) == ".") {
+                baseFilename = tempFile();
+            }
+
+            std::string baseIdentifier = identifier(simpleName(baseFilename));
+            std::string sourceFilename = baseFilename + ".cpp";
+
+            std::ofstream os(sourceFilename);
+            synthesiser->generateCode(*ramTranslationUnit, os, baseIdentifier);
+            os.close();
+
+            if (Global::config().has("compile")) {
+                compileToBinary(compileCmd, sourceFilename);
+                // run compiled C++ program if requested.
+                if (!Global::config().has("dl-program")) {
+                    executeBinary(baseFilename);
+                }
             }
         } catch (std::exception& e) {
             std::cerr << e.what() << std::endl;
