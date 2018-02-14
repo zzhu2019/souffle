@@ -37,9 +37,6 @@ private:
     /** An optional stream to print logging information to an output stream */
     std::ostream* report;
 
-    /** compile command */
-    std::string compileCmd;
-
 public:
     /**
      * Updates logging stream
@@ -50,30 +47,16 @@ public:
 
 public:
     /** A simple constructor */
-    Synthesiser(const std::string& compileCmd) : report(nullptr), compileCmd(compileCmd) {}
+    Synthesiser() : report(nullptr) {}
 
     /**
-     * Generates the code for the given ram statement.The target file
-     * name is either set by the corresponding member field or will
-     * be determined randomly. The chosen file-name will be returned.
+     * Generates the code for a given ram translation unit.
+     *
+     * @param tu
+     * @param os the stream to send the generated C++ code to.
+     * @param id the base identifier used in code generation, including class name.
      */
-    std::string generateCode(const RamTranslationUnit& tu, const std::string& filename = "") const;
-
-    /**
-     * Compiles the given statement to a binary file. The target file
-     * name is either set by the corresponding member field or will
-     * be determined randomly. The chosen file-name will be returned.
-     * Note that this uses the generateCode method for code generation.
-     */
-    std::string compileToBinary(const RamTranslationUnit& tu, const std::string& filename = "") const;
-
-    /**
-     * Compiles the given statement to a binary file. The target file
-     * name is either set by the corresponding member field or will
-     * be determined randomly. The environment after execution will be returned.
-     * Note that this uses the compileToBinary method for code compilation.
-     */
-    std::string executeBinary(const RamTranslationUnit& tu, const std::string& filename = "") const;
+    void generateCode(const RamTranslationUnit& tu, std::ostream& os, const std::string& id) const;
 };
 
 }  // end of namespace souffle
