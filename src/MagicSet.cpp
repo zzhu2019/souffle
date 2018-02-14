@@ -122,8 +122,7 @@ bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string
     return bound;
 }
 
-bool isBoundArgument(
-        AstArgument* arg, std::set<std::string> boundArgs, BindingStore& compositeBindings) {
+bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs, BindingStore& compositeBindings) {
     if (AstVariable* var = dynamic_cast<AstVariable*>(arg)) {
         std::string variableName = var->getName();
         if (hasPrefix(variableName, "+functor") || hasPrefix(variableName, "+record")) {
@@ -1318,9 +1317,10 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             // of its constituent variables were bound, then bind
                             // the composite variable to the original argument
                             if (compositeBindings.isVariableBoundComposite(argName)) {
-                                AstArgument* originalArgument = compositeBindings.cloneOriginalArgument(argName);
-                                magicClause->addToBody(std::make_unique<AstConstraint>(
-                                        BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(compositeArgument->clone()),
+                                AstArgument* originalArgument =
+                                        compositeBindings.cloneOriginalArgument(argName);
+                                magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                                        std::unique_ptr<AstArgument>(compositeArgument->clone()),
                                         std::unique_ptr<AstArgument>(originalArgument)));
                             }
                         }
