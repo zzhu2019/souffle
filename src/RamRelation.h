@@ -58,9 +58,10 @@ protected:
     bool output;    // output relation
     bool computed;  // either output or printed
 
-    bool btree;  // btree data-structure
-    bool brie;   // brie data-structure
-    bool eqrel;  // equivalence relation
+    bool btree;    // btree data-structure
+    bool hashmap;  // hashmap data-structure
+    bool brie;     // brie data-structure
+    bool eqrel;    // equivalence relation
 
     bool isdata;  // Datalog relation in the program
     bool istemp;  // Temporary relation for semi-naive evaluation
@@ -68,7 +69,7 @@ protected:
 public:
     RamRelation()
             : RamNode(RN_Relation), arity(0), mask(arity), input(false), output(false), computed(false),
-              btree(false), brie(false), eqrel(false), isdata(false), istemp(false) {}
+              btree(false), hashmap(false), brie(false), eqrel(false), isdata(false), istemp(false) {}
 
     RamRelation(const std::string& name, unsigned arity, const bool istemp) : RamRelation(name, arity) {
         this->istemp = istemp;
@@ -77,11 +78,12 @@ public:
     RamRelation(const std::string& name, unsigned arity, std::vector<std::string> attributeNames = {},
             std::vector<std::string> attributeTypeQualifiers = {}, const SymbolMask& mask = SymbolMask(0),
             const bool input = false, const bool computed = false, const bool output = false,
-            const bool btree = false, const bool brie = false, const bool eqrel = false,
-            const bool isdata = false, const bool istemp = false)
+            const bool btree = false, const bool hashmap = false, const bool brie = false,
+            const bool eqrel = false, const bool isdata = false, const bool istemp = false)
             : RamNode(RN_Relation), name(name), arity(arity), attributeNames(attributeNames),
               attributeTypeQualifiers(attributeTypeQualifiers), mask(mask), input(input), output(output),
-              computed(computed), btree(btree), brie(brie), eqrel(eqrel), isdata(isdata), istemp(istemp) {
+              computed(computed), btree(btree), hashmap(hashmap), brie(brie), eqrel(eqrel), isdata(isdata),
+              istemp(istemp) {
         assert(this->attributeNames.size() == arity || this->attributeNames.empty());
         assert(this->attributeTypeQualifiers.size() == arity || this->attributeTypeQualifiers.empty());
     }
@@ -124,6 +126,10 @@ public:
         return btree;
     }
 
+    const bool isHashmap() const {
+        return hashmap;
+    }
+
     const bool isBrie() const {
         return brie;
     }
@@ -144,14 +150,6 @@ public:
         return arity;
     }
 
-    bool operator==(const RamRelation& other) const {
-        return name == other.name;
-    }
-
-    bool operator!=(const RamRelation& other) const {
-        return name != other.name;
-    }
-
     bool operator<(const RamRelation& other) const {
         return name < other.name;
     }
@@ -165,6 +163,11 @@ public:
             out << getArg(i);
         }
         out << ")";
+
+        if (isBTree()) out << " btree";
+        if (isHashmap()) out << " hashmap";
+        if (isBrie()) out << " brie";
+        if (isEqRel()) out << " eqrel";
     }
 
     /** Obtain list of child nodes */
@@ -175,7 +178,7 @@ public:
     /** Create clone */
     RamRelation* clone() const override {
         RamRelation* res = new RamRelation(name, arity, attributeNames, attributeTypeQualifiers, mask, input,
-                computed, output, btree, brie, eqrel, isdata, istemp);
+                computed, output, btree, hashmap, brie, eqrel, isdata, istemp);
         return res;
     }
 
@@ -191,8 +194,8 @@ protected:
                attributeTypeQualifiers == other.attributeTypeQualifiers && mask == other.mask &&
                isInput() == other.isInput() && isOutput() == other.isOutput() &&
                isComputed() == other.isComputed() && isBTree() == other.isBTree() &&
-               isBrie() == other.isBrie() && isEqRel() == other.isEqRel() && isData() == other.isData() &&
-               isTemp() == other.isTemp();
+               isHashmap() == other.isHashmap() && isBrie() == other.isBrie() &&
+               isEqRel() == other.isEqRel() && isData() == other.isData() && isTemp() == other.isTemp();
     }
 };
 

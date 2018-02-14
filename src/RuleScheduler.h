@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file QueryOptimizer.h
+ * @file RuleScheduler.h
  *
  * A set of generic utilities to optimize queries.
  *

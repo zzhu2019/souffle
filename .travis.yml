@@ -125,37 +125,31 @@ jobs:
     env:
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
 
-# Testing stage (-c -j8 -s-,-c -f -j8 -s-)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-
-# Testing stage (-f -j8,-c -f -j8)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-
 # Packaging stage
   # Make the linux deb packages.
   - <<: *linuxpackage
     env:
     - *gcc_environment
+    before_deploy:
+      - .travis/bintray_json.sh
+    deploy:
+      - provider: bintray
+        skip-cleanup: true
+        file: bintray-unstable.json
+        user: souffle-lang
+        key: $BINTRAY_KEY
+        on:
+          branch: master
+          repo: souffle-lang/souffle
+      - provider: bintray
+        skip-cleanup: true
+        file: bintray-stable.json
+        user: souffle-lang
+        key: $BINTRAY_KEY
+        on:
+          branch: master
+          repo: souffle-lang/souffle
+          tags: true
   # Make the OSX packages.
   - <<: *osxpackage
   # Generate doxygen html

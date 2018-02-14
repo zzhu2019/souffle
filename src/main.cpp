@@ -129,15 +129,12 @@ int main(int argc, char** argv) {
                                     "Enable profiling, and write profile data to <FILE>."},
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
-                            {"fault-tolerance", 'f', "", "", false,
-                                    "Enable fault tolerance to recover from failure on program restart."},
-                            {"stratify", 's', "FILE", "", false,
-                                    "Generate/compile to multiple subprograms, and write an execution graph "
-                                    "to FILE (valid extensions are '.dot' or '.json')."},
 #ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information via guided SLD."},
 #endif
+                            {"data-structure", 'd', "type", "", false,
+                                    "Specify data structure (brie/btree/eqrel/hashmap)."},
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
@@ -204,20 +201,6 @@ int main(int argc, char** argv) {
             }
             allIncludes += " -I" + currentInclude;
             Global::config().set("include-dir", allIncludes);
-        }
-
-        /* ensure that code generation and/or compilation is enabled if stratification is for non-none
-         * options*/
-        if (Global::config().has("stratify")) {
-            if (Global::config().has("profile")) {
-                ERROR("stratification cannot be enabled with option 'profile'.");
-            } else if (Global::config().get("stratify") == "-" && Global::config().has("generate")) {
-                ERROR("stratification cannot be enabled with format 'auto' and option 'generate'.");
-            } else if (!(Global::config().has("compile") || Global::config().has("dl-program") ||
-                               Global::config().has("generate"))) {
-                ERROR("one of 'compile', 'dl-program', or 'generate' options must be present for "
-                      "stratification");
-            }
         }
 
         /* turn on compilation of executables */
@@ -453,30 +436,6 @@ int main(int argc, char** argv) {
     } else {
         // ------- compiler -------------
 
-        std::vector<std::unique_ptr<RamProgram>> strata;
-        if (Global::config().has("stratify")) {
-            std::unique_ptr<RamProgram> ramProg = ramTranslationUnit->getProg();
-            if (RamSequence* sequence = dynamic_cast<RamSequence*>(ramProg->getMain())) {
-                sequence->moveSubprograms(strata);
-            } else {
-                strata.push_back(std::move(ramProg));
-            }
-        } else {
-            std::unique_ptr<RamProgram> ramProg = ramTranslationUnit->getProg();
-            strata.push_back(std::move(ramProg));
-        }
-
-        if (Global::config().has("stratify") && Global::config().get("stratify") != "-") {
-            const std::string filePath = Global::config().get("stratify");
-            std::ofstream os(filePath);
-            if (!os.is_open()) {
-                ERROR("could not open '" + filePath + "' for writing.");
-            }
-            astTranslationUnit->getAnalysis<SCCGraph>()->print(
-                    os, fileExtension(Global::config().get("stratify")));
-        }
-
-        /* Locate souffle-compile script */
         std::string compileCmd = ::findTool("souffle-compile", souffleExecutable, ".");
         /* Fail if a souffle-compile executable is not found */
         if (!isExecutable(compileCmd)) {
@@ -484,36 +443,28 @@ int main(int argc, char** argv) {
         }
         compileCmd += " ";
 
-        int index = -1;
-        std::unique_ptr<Synthesiser> synthesiser;
-        for (auto&& stratum : strata) {
-            if (Global::config().has("stratify")) index++;
+        std::unique_ptr<Synthesiser> synthesiser = std::make_unique<Synthesiser>(compileCmd);
 
-            // configure compiler
-            synthesiser = std::make_unique<Synthesiser>(compileCmd);
-            if (Global::config().has("verbose")) {
-                synthesiser->setReportTarget(std::cout);
+        // configure compiler
+        if (Global::config().has("verbose")) {
+            synthesiser->setReportTarget(std::cout);
+        }
+        try {
+            // check if this is code generation only
+            if (Global::config().has("generate")) {
+                // just generate, no compile, no execute
+                synthesiser->generateCode(*ramTranslationUnit, Global::config().get("generate"));
+
+                // check if this is a compile only
+            } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
+                // just compile, no execute
+                synthesiser->compileToBinary(*ramTranslationUnit, Global::config().get("dl-program"));
+            } else {
+                // run compiled C++ program
+                synthesiser->executeBinary(*ramTranslationUnit);
             }
-            try {
-                // check if this is code generation only
-                if (Global::config().has("generate")) {
-                    // just generate, no compile, no execute
-                    synthesiser->generateCode(astTranslationUnit->getSymbolTable(), *stratum,
-                            Global::config().get("generate"), index);
-
-                    // check if this is a compile only
-                } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
-                    // just compile, no execute
-                    synthesiser->compileToBinary(astTranslationUnit->getSymbolTable(), *stratum,
-                            Global::config().get("dl-program"), index);
-                } else {
-                    // run compiled C++ program
-                    synthesiser->executeBinary(astTranslationUnit->getSymbolTable(), *stratum);
-                }
-
-            } catch (std::exception& e) {
-                std::cerr << e.what() << std::endl;
-            }
+        } catch (std::exception& e) {
+            std::cerr << e.what() << std::endl;
         }
     }
 

@@ -59,13 +59,17 @@ protected:
         }
 
         for (size_t i = 0; i < arity; i++) {
-            int32_t value;
+            RamDomain value;
             if (symbolMask.isSymbol(i)) {
                 value = getSymbolTableID(tuple[i]);
             } else {
-                value = (int32_t)tuple[i];
+                value = tuple[i];
             }
+#if RAM_DOMAIN_SIZE == 64
+            if (sqlite3_bind_int64(insertStatement, i + 1, value) != SQLITE_OK) {
+#else
             if (sqlite3_bind_int(insertStatement, i + 1, value) != SQLITE_OK) {
+#endif
                 throwError("SQLite error in sqlite3_bind_text: ");
             }
         }

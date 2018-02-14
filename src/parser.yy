@@ -47,6 +47,7 @@
     #include "AstParserUtils.h"
 
     #include "AstSrcLocation.h"
+    #include "AstTypes.h"
 
     using namespace souffle;
 
@@ -98,6 +99,7 @@
 %token BRIE_QUALIFIER            "BRIE datastructure qualifier"
 %token BTREE_QUALIFIER           "BTREE datastructure qualifier"
 %token EQREL_QUALIFIER           "equivalence relation qualifier"
+%token HASHMAP_QUALIFIER         "hashmap relation qualifier"
 %token OVERRIDABLE_QUALIFIER     "relation qualifier overidable"
 %token INLINE_QUALIFIER          "relation qualifier inline"
 %token TMATCH                    "match predicate"
@@ -170,7 +172,7 @@
 %token LOG                       "log"
 %token EXP                       "exp"
 
-%type <int>                              qualifiers
+%type <uint32_t>                         qualifiers
 %type <AstTypeIdentifier *>              type_id
 %type <AstRelationIdentifier *>          rel_id
 %type <AstType *>                        type
@@ -381,16 +383,20 @@ qualifiers
         $$ = $1 | INLINE_RELATION;
     }
   | qualifiers BRIE_QUALIFIER {
-        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION)) driver.error(@2, "btree/brie/eqrel qualifier already set");
+        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|HASHMAP_RELATION)) driver.error(@2, "btree/brie/eqrel/hashmap qualifier already set");
         $$ = $1 | BRIE_RELATION;
     }
   | qualifiers BTREE_QUALIFIER {
-        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION)) driver.error(@2, "btree/brie/eqrel qualifier already set");
+        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|HASHMAP_RELATION)) driver.error(@2, "btree/brie/eqrel/hashmap qualifier already set");
         $$ = $1 | BTREE_RELATION;
     }
   | qualifiers EQREL_QUALIFIER {
-        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION)) driver.error(@2, "btree/brie/eqrel qualifier already set");
+        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|HASHMAP_RELATION)) driver.error(@2, "btree/brie/eqrel/hashmap qualifier already set");
         $$ = $1 | EQREL_RELATION;
+    }
+  | qualifiers HASHMAP_QUALIFIER {
+        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|HASHMAP_RELATION)) driver.error(@2, "btree/brie/eqrel/hashmap qualifier already set");
+        $$ = $1 | HASHMAP_RELATION;
     }
   | %empty {
         $$ = 0;

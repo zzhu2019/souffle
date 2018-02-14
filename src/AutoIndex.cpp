@@ -33,12 +33,13 @@ void AutoIndex::solve() {
     }
 
     // check whether one of the naive indexers should be used
+    // two conditions: either set by environment or relation is a hash map
     static const char ENV_NAIVE_INDEX[] = "SOUFFLE_USE_NAIVE_INDEX";
-    if (std::getenv(ENV_NAIVE_INDEX)) {
+    if (isHashmap || std::getenv(ENV_NAIVE_INDEX)) {
         static bool first = true;
 
         // print a warning - only the first time
-        if (first) {
+        if (!isHashmap && first) {
             std::cout << "WARNING: auto index selection disabled, naive indexes are utilized!!\n";
             first = false;
         }
@@ -81,7 +82,7 @@ void AutoIndex::solve() {
         }
     }
 
-    // Perform the hopcroft-karp on the graph and receive matchings (mapped A->B and B->A)
+    // Perform the Hopcroft-Karp on the graph and receive matchings (mapped A->B and B->A)
     // Assume: alg.calculate is not called on an empty graph
     ASSERT(!searches.empty());
     const MaxMatching::Matchings& matchings = matching.calculate();

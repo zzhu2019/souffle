@@ -1122,11 +1122,11 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
     // set a prefix for variables bound by magic-set for identification later
     // prepended by + to avoid conflict with user-defined variables
-    static const std::string boundPrefix = "+abdul";
+    static constexpr const char* boundPrefix = "+abdul";
 
     AstProgram& program = *translationUnit.getProgram();
 
-    /* Create a node mapper that recursively replaces all constant and underscores
+    /* Create a node mapper that recursively replaces all constants and underscores
      * with named variables.
      *
      * The mapper keeps track of constraints that should be added to the original

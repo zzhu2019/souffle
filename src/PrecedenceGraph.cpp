@@ -42,10 +42,6 @@ void PrecedenceGraph::run(const AstTranslationUnit& translationUnit) {
                     irs != dependencies.end(); ++irs) {
                 const AstRelation* source = (*irs);
                 backingGraph.insert(source, r);
-                // TODO (#467): one possible way to handle subprogram compilation for record types is
-                // by introducing artificial dependencies to the precedence graph
-                // if (Global::config().has("stratify") && (source->hasRecordInHead()))
-                // backingGraph.insert(r, source);
             }
         }
     }
