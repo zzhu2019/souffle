@@ -171,6 +171,7 @@ jobs:
       local-dir: doc/html
       on:
         branch: master
+        condition: -v $GHPAGES_TOKEN
 
 after_failure:
   - ".travis/after_failure.sh"
