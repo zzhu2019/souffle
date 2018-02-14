@@ -123,7 +123,6 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
         TypeSet types = typeAnalysis.getTypes(&cnst);
         if (!isRecordType(types)) {
             // TODO (#467) remove the next line to enable subprogram compilation for record types
-            if (Global::config().has("stratify")) Global::config().unset("stratify");
             report.addError("Null constant used as a non-record", cnst.getSrcLoc());
         }
     });
@@ -133,7 +132,6 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
         TypeSet types = typeAnalysis.getTypes(&cnst);
         if (isRecordType(types)) {
             // TODO (#467) remove the next line to enable subprogram compilation for record types
-            if (Global::config().has("stratify")) Global::config().unset("stratify");
             for (const Type& type : types) {
                 if (cnst.getArguments().size() !=
                         dynamic_cast<const RecordType*>(&type)->getFields().size()) {

@@ -1246,11 +1246,12 @@ void genCode(std::ostream& out, const RamStatement& stmt, const IndexMap& indice
 }
 }  // namespace
 
-std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename, const int index) const {
+std::string Synthesiser::generateCode(const RamTranslationUnit& unit, const std::string& filename) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
     // ---------------------------------------------------------------
+    const SymbolTable& symTable = unit.getSymbolTable();
+    const RamProgram& prog = unit.getP();
 
     // collect all used indices
     IndexMap indices;
@@ -1311,20 +1312,19 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
 
     // generate class name by stripping extensions and renaming if empty
     const std::string nameNoExtension = simpleName((sourceFilename != "") ? sourceFilename : tempFile());
-    const std::string indexStr = ((index != -1) ? "_" + std::to_string(index) : "");
     const std::string id = identifier(baseName(nameNoExtension));
 
-    std::string classname = "Sf_" + id + indexStr;
+    std::string classname = "Sf_" + id;
 
     // Add index, if any, and .cpp extension
-    sourceFilename = (sourceFilename == "" ? nameNoExtension : sourceFilename) + indexStr + ".cpp";
+    sourceFilename = (sourceFilename == "" ? nameNoExtension : sourceFilename) + ".cpp";
 
     // open output stream for header file
     std::ofstream os(sourceFilename);
 
     // generate C++ program
     os << "#include \"souffle/CompiledSouffle.h\"\n";
-    if (Global::config().has("provenance") || Global::config().has("record-provenance")) {
+    if (Global::config().has("provenance")) {
         os << "#include \"souffle/Explain.h\"\n";
         os << "#include <ncurses.h>\n";
     }
@@ -1696,12 +1696,6 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
         os << "explain(obj, true, true);\n";
     }
 
-    if (Global::config().get("record-provenance") == "1") {
-        os << "explain(obj, false, false);\n";
-    } else if (Global::config().get("record-provenance") == "2") {
-        os << "explain(obj, false, true);\n";
-    }
-
     os << "return 0;\n";
     os << "} catch(std::exception &e) { souffle::SignalHandler::instance()->error(e.what());}\n";
     os << "}\n";
@@ -1714,13 +1708,12 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
     return sourceFilename;
 }
 
-std::string Synthesiser::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename, const int index) const {
+std::string Synthesiser::compileToBinary(const RamTranslationUnit& unit, const std::string& filename) const {
     // ---------------------------------------------------------------
     //                       Code Generation
     // ---------------------------------------------------------------
 
-    std::string sourceFilename = generateCode(symTable, prog, filename, index);
+    std::string sourceFilename = generateCode(unit, filename);
 
     // ---------------------------------------------------------------
     //                    Compilation & Execution
@@ -1751,10 +1744,9 @@ std::string Synthesiser::compileToBinary(const SymbolTable& symTable, const RamP
     return sourceFilename;
 }
 
-std::string Synthesiser::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename, const int index) const {
+std::string Synthesiser::executeBinary(const RamTranslationUnit& unit, const std::string& filename) const {
     // compile statement
-    std::string sourceFilename = compileToBinary(symTable, prog, filename, index);
+    std::string sourceFilename = compileToBinary(unit, filename);
     std::string binaryFilename = filename == "" ? simpleName(sourceFilename) : sourceFilename;
 
     // separate souffle output form executable output
