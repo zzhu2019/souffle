@@ -15,7 +15,6 @@
  ***********************************************************************/
 
 #include "MagicSet.h"
-#include "AstVisitor.h"
 #include "Global.h"
 #include "IODirectives.h"
 
@@ -25,19 +24,13 @@ namespace souffle {
 // checks whether the adorned version of two predicates is equal
 bool isEqualAdornment(
         AstRelationIdentifier pred1, std::string adorn1, AstRelationIdentifier pred2, std::string adorn2) {
-    if ((pred1 == pred2) && (adorn1.compare(adorn2) == 0)) {
-        return true;
-    }
-    return false;
+    return ((pred1 == pred2) && (adorn1.compare(adorn2) == 0));
 }
 
 // checks whether an element is contained within a set
 template <class T>
 bool contains(std::set<T> set, T element) {
-    if (set.find(element) != set.end()) {
-        return true;
-    }
-    return false;
+    return (set.find(element) != set.end());
 }
 
 // checks whether a given adorned predicate is contained within a set
@@ -97,26 +90,69 @@ int getEndpoint(std::string mainName) {
 /* argument-related functions */
 
 // returns the string representation of a given argument
-std::string getString(AstArgument* arg) {
+std::string getString(const AstArgument* arg) {
     std::stringstream argStream;
-    argStream.str("");
     argStream << *arg;
     return argStream.str();
 }
 
-// checks whether a given atom has a bound argument
-bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs) {
-    for (AstArgument* arg : atom->getArguments()) {
-        std::string name = getString(arg);
-        if (boundArgs.find(name) != boundArgs.end()) {
+// checks whether a given record or functor is bound
+bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string> boundArgs,
+        BindingStore& compositeBindings) {
+    std::string variableName = compositeVariable->getName();
+    if (contains(boundArgs, variableName)) {
+        return true;
+    }
+
+    bool bound = true;
+
+    // a composite argument is bound iff all its subvariables are bound
+    auto dependencies = compositeBindings.getVariableDependencies(variableName);
+    for (const std::string& var : dependencies) {
+        if (!contains(boundArgs, var)) {
+            bound = false;
+        }
+    }
+
+    if (bound) {
+        // composite variable bound only because its constituent variables are bound
+        compositeBindings.addVariableBoundComposite(variableName);
+    }
+
+    return bound;
+}
+
+bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs, BindingStore& compositeBindings) {
+    if (AstVariable* var = dynamic_cast<AstVariable*>(arg)) {
+        std::string variableName = var->getName();
+        if (hasPrefix(variableName, "+functor") || hasPrefix(variableName, "+record")) {
+            if (isBoundComposite(var, boundArgs, compositeBindings)) {
+                return true;
+            }
+        }
+
+        if (contains(boundArgs, variableName)) {
             return true;  // found a bound argument, so can stop
+        }
+    } else {
+        assert(false && "incomplete checks (MST)");
+    }
+
+    return false;
+}
+
+// checks whether a given atom has a bound argument
+bool hasBoundArgument(AstAtom* atom, std::set<std::string> boundArgs, BindingStore& compositeBindings) {
+    for (AstArgument* arg : atom->getArguments()) {
+        if (isBoundArgument(arg, boundArgs, compositeBindings)) {
+            return true;
         }
     }
     return false;
 }
 
-// checks whether the lhs is bound by a binary functor (and is not bound yet)
-bool isBoundArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundArgs) {
+// checks whether the lhs is bound by a binary constraint (and is not bound yet)
+bool isBindingConstraint(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundArgs) {
     std::string lhs_name = getString(lhs);
     std::string rhs_name = getString(rhs);
 
@@ -132,74 +168,14 @@ bool isBoundArg(AstArgument* lhs, AstArgument* rhs, std::set<std::string> boundA
     return false;
 }
 
-/* functor/aggregator check functions */
+// checks whether the clause involves aggregators
+bool containsAggregators(AstClause* clause) {
+    bool found = false;
 
-// checks whether an argument involves functors or aggregators
-bool argumentContainsFunctorsOrAggs(AstArgument* arg) {
-    if (dynamic_cast<AstFunctor*>(arg)) {
-        // functor found!
-        return true;
-    } else if (dynamic_cast<AstRecordInit*>(arg)) {
-        AstRecordInit* recordarg = dynamic_cast<AstRecordInit*>(arg);
-        for (AstArgument* subarg : recordarg->getArguments()) {
-            if (argumentContainsFunctorsOrAggs(subarg)) {
-                return true;
-            }
-        }
-    } else if (dynamic_cast<AstTypeCast*>(arg)) {
-        AstTypeCast* typearg = dynamic_cast<AstTypeCast*>(arg);
-        if (argumentContainsFunctorsOrAggs(typearg->getValue())) {
-            return true;
-        }
-    } else if (dynamic_cast<AstAggregator*>(arg)) {
-        // aggregator found!
-        return true;
-    }
-    return false;
-}
+    // check for aggregators
+    visitDepthFirst(*clause, [&](const AstAggregator& aggr) { found = true; });
 
-// checks whether an atom involves functors or aggregators
-bool atomContainsFunctorsOrAggs(AstAtom* atom) {
-    for (AstArgument* arg : atom->getArguments()) {
-        if (argumentContainsFunctorsOrAggs(arg)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// checks whether a literal involves functors or aggregators
-bool literalContainsFunctorsOrAggs(AstLiteral* lit) {
-    if (dynamic_cast<AstAtom*>(lit)) {
-        if (atomContainsFunctorsOrAggs(dynamic_cast<AstAtom*>(lit))) {
-            return true;
-        }
-    } else if (dynamic_cast<AstNegation*>(lit)) {
-        AstNegation* negLit = dynamic_cast<AstNegation*>(lit);
-        if (atomContainsFunctorsOrAggs(negLit->getAtom())) {
-            return true;
-        }
-    } else {
-        AstConstraint* cons = dynamic_cast<AstConstraint*>(lit);
-        if (argumentContainsFunctorsOrAggs(cons->getLHS()) ||
-                argumentContainsFunctorsOrAggs(cons->getRHS())) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// checks whether the clause contains functors or aggregators
-bool containsFunctorsOrAggs(AstClause* clause) {
-    if (atomContainsFunctorsOrAggs(clause->getHead())) {
-        return true;
-    }
-    for (AstLiteral* lit : clause->getBodyLiterals()) {
-        if (literalContainsFunctorsOrAggs(lit)) {
-            return true;
-        }
-    }
-    return false;
+    return found;
 }
 
 /* program-adding related functions */
@@ -320,110 +296,88 @@ AstRelationIdentifier createSubIdentifier(AstRelationIdentifier relationName, si
 
 /* functions to find atoms to ignore */
 
-// add all atoms of an argument that contain aggregators to the ignored relations list
-// ignoredNames - name of relations already ignored
-std::set<AstRelationIdentifier> argumentAddAggregators(
-        AstArgument* arg, std::set<AstRelationIdentifier> ignoredNames) {
-    std::set<AstRelationIdentifier> retVal = ignoredNames;
-
-    if (dynamic_cast<AstAggregator*>(arg)) {
-        AstAggregator* aggregator = dynamic_cast<AstAggregator*>(arg);
-        // aggregator found - add all atoms in body to ignored atoms list
-        for (AstLiteral* lit : aggregator->getBodyLiterals()) {
-            if (lit->getAtom() != nullptr) {
-                retVal.insert(lit->getAtom()->getName());
-            }
-        }
-    } else if (dynamic_cast<AstFunctor*>(arg)) {
-        // if the argument is a functor, check each of its respective
-        // arguments for aggregators
-        if (dynamic_cast<AstUnaryFunctor*>(arg)) {
-            AstUnaryFunctor* func = dynamic_cast<AstUnaryFunctor*>(arg);
-            retVal = argumentAddAggregators(func->getOperand(), retVal);
-        } else if (dynamic_cast<AstBinaryFunctor*>(arg)) {
-            AstBinaryFunctor* func = dynamic_cast<AstBinaryFunctor*>(arg);
-            retVal = argumentAddAggregators(func->getLHS(), retVal);
-            retVal = argumentAddAggregators(func->getRHS(), retVal);
-        } else if (dynamic_cast<AstTernaryFunctor*>(arg)) {
-            AstTernaryFunctor* func = dynamic_cast<AstTernaryFunctor*>(arg);
-            retVal = argumentAddAggregators(func->getArg(0), retVal);
-            retVal = argumentAddAggregators(func->getArg(1), retVal);
-            retVal = argumentAddAggregators(func->getArg(2), retVal);
-        }
-    } else if (dynamic_cast<AstRecordInit*>(arg)) {
-        // if the argument is a record, check each of its own arguments for aggregators
-        AstRecordInit* rec = dynamic_cast<AstRecordInit*>(arg);
-        for (AstArgument* subarg : rec->getArguments()) {
-            retVal = argumentAddAggregators(subarg, retVal);
-        }
-    } else if (dynamic_cast<AstTypeCast*>(arg)) {
-        // if the argument is a typecast, check the subargument
-        AstTypeCast* tcast = dynamic_cast<AstTypeCast*>(arg);
-        retVal = argumentAddAggregators(tcast->getValue(), retVal);
-    }
-
-    return retVal;
-}
-
-// add all atoms of an atom that contain aggregators to the ignored relations list
-std::set<AstRelationIdentifier> atomAddAggregators(
-        AstAtom* atom, std::set<AstRelationIdentifier> ignoredNames) {
-    std::set<AstRelationIdentifier> retVal = ignoredNames;
-    for (AstArgument* arg : atom->getArguments()) {
-        retVal = argumentAddAggregators(arg, retVal);
-    }
-    return retVal;
-}
-
 // add all atoms within a clause that contain aggregators to the ignored relations list
 std::set<AstRelationIdentifier> addAggregators(
         AstClause* clause, std::set<AstRelationIdentifier> ignoredNames) {
     std::set<AstRelationIdentifier> retVal = ignoredNames;
 
-    // check for aggregators in the head
-    retVal = atomAddAggregators(clause->getHead(), retVal);
+    visitDepthFirst(*clause, [&](const AstAggregator& aggregator) {
+        visitDepthFirst(aggregator, [&](const AstAtom& atom) { retVal.insert(atom.getName()); });
+    });
 
-    // check for aggregators in the body literals
-    for (AstLiteral* lit : clause->getBodyLiterals()) {
-        if (dynamic_cast<AstAtom*>(lit)) {
-            retVal = atomAddAggregators((AstAtom*)lit, retVal);
-        } else if (dynamic_cast<AstNegation*>(lit)) {
-            retVal = atomAddAggregators((AstAtom*)(lit->getAtom()), retVal);
-        } else {
-            AstConstraint* cons = dynamic_cast<AstConstraint*>(lit);
-            retVal = argumentAddAggregators(cons->getLHS(), retVal);
-            retVal = argumentAddAggregators(cons->getRHS(), retVal);
-        }
-    }
     return retVal;
 }
 
-// for a given set of relations, add in all the atoms in their rules
-// TODO (azreika): can be done much more efficiently
-std::set<AstRelationIdentifier> addDependencies(
+// Given a set of relations R, add in all relations that use one of these
+// relations in their clauses. Repeat until a fixed point is reached.
+std::set<AstRelationIdentifier> addBackwardDependencies(
         const AstProgram* program, std::set<AstRelationIdentifier> relations) {
     bool relationsAdded = false;
-    std::set<AstRelationIdentifier> retVals;
-    for (AstRelationIdentifier relName : relations) {
-        retVals.insert(relName);  // add the relation itself
+    std::set<AstRelationIdentifier> result;
 
-        for (AstClause* clause : program->getRelation(relName)->getClauses()) {
-            for (AstLiteral* lit : clause->getBodyLiterals()) {
-                if (dynamic_cast<AstAtom*>(lit) || dynamic_cast<AstNegation*>(lit)) {
-                    AstRelationIdentifier addedName = lit->getAtom()->getName();
-                    retVals.insert(addedName);
-                    if (relations.find(addedName) == relations.end()) {
+    for (AstRelationIdentifier relName : relations) {
+        // Add the relation itself
+        result.insert(relName);
+    }
+
+    // Add in all relations that need to use an ignored relation
+    for (AstRelation* rel : program->getRelations()) {
+        for (AstClause* clause : rel->getClauses()) {
+            AstRelationIdentifier clauseHeadName = clause->getHead()->getName();
+            if (!contains(relations, clauseHeadName)) {
+                // Clause hasn't been added yet, so check if it needs to be added
+                visitDepthFirst(*clause, [&](const AstAtom& subatom) {
+                    AstRelationIdentifier atomName = subatom.getName();
+                    if (contains(relations, atomName)) {
+                        // Clause uses one of the given relations
+                        result.insert(clauseHeadName);
+
+                        // Clause name hasn't been seen yet, so fixed point not reached
                         relationsAdded = true;
                     }
-                }
+                });
             }
         }
     }
 
     if (relationsAdded) {
-        return addDependencies(program, retVals);
+        // Keep going until we reach a fixed point
+        return addBackwardDependencies(program, result);
     } else {
-        return retVals;
+        return result;
+    }
+}
+
+// Given a set of relations R, add in all relations that they use in their clauses.
+// Repeat until a fixed point is reached.
+std::set<AstRelationIdentifier> addForwardDependencies(
+        const AstProgram* program, std::set<AstRelationIdentifier> relations) {
+    bool relationsAdded = false;
+    std::set<AstRelationIdentifier> result;
+
+    for (AstRelationIdentifier relName : relations) {
+        // Add the relation itself
+        result.insert(relName);
+
+        // Add in all the relations that it needs to use
+        AstRelation* associatedRelation = program->getRelation(relName);
+        for (AstClause* clause : associatedRelation->getClauses()) {
+            visitDepthFirst(*clause, [&](const AstAtom& subatom) {
+                AstRelationIdentifier atomName = subatom.getName();
+                result.insert(atomName);
+                if (!contains(relations, atomName)) {
+                    // Hasn't been seen yet, so fixed point not reached
+                    relationsAdded = true;
+                }
+            });
+        }
+    }
+
+    if (relationsAdded) {
+        // Keep going until we reach a fixed point
+        return addForwardDependencies(program, result);
+    } else {
+        return result;
     }
 }
 
@@ -439,11 +393,24 @@ std::set<AstRelationIdentifier> addIgnoredRelations(
         return relations;
     }
 
+    // find all specified relations
+    std::set<AstRelationIdentifier> targetRelations;
+    for (AstRelation* rel : program->getRelations()) {
+        std::string mainName = rel->getName().getNames()[0];
+        if (contains(specifiedRelations, mainName)) {
+            targetRelations.insert(rel->getName());
+        }
+    }
+
+    // add all backward-dependencies to the list of relations to transform;
+    // if we want to magic transform 'a', then we also have to magic transform
+    // every relation that (directly or indirectly) uses 'a' in its clauses
+    targetRelations = addBackwardDependencies(program, targetRelations);
+
+    // ignore all relations not specified by the option
     std::set<AstRelationIdentifier> retVal(relations);
     for (AstRelation* rel : program->getRelations()) {
-        // ignore all relations not specified by the option
-        std::string mainName = rel->getName().getNames()[0];
-        if (!contains(specifiedRelations, mainName)) {
+        if (!contains(targetRelations, rel->getName())) {
             retVal.insert(rel->getName());
         }
     }
@@ -491,16 +458,16 @@ std::vector<std::string> reorderAdornment(
 // computes the adornment of a newly chosen atom
 // returns both the adornment and the new list of bound arguments
 std::pair<std::string, std::set<std::string>> bindArguments(
-        AstAtom* currAtom, std::set<std::string> boundArgs) {
+        AstAtom* currAtom, std::set<std::string> boundArgs, BindingStore& compositeBindings) {
     std::set<std::string> newlyBoundArgs;
     std::string atomAdornment = "";
 
     for (AstArgument* arg : currAtom->getArguments()) {
-        std::string argName = getString(arg);
-        if (boundArgs.find(argName) != boundArgs.end()) {
+        if (isBoundArgument(arg, boundArgs, compositeBindings)) {
             atomAdornment += "b";  // bound
         } else {
-            atomAdornment += "f";            // free
+            atomAdornment += "f";  // free
+            std::string argName = getString(arg);
             newlyBoundArgs.insert(argName);  // now bound
         }
     }
@@ -510,17 +477,14 @@ std::pair<std::string, std::set<std::string>> bindArguments(
         boundArgs.insert(newArg);
     }
 
-    std::pair<std::string, std::set<std::string>> result;
-    result.first = atomAdornment;
-    result.second = boundArgs;
-    return result;
+    return std::make_pair(atomAdornment, boundArgs);
 }
 
 // SIPS #1:
 // Choose the left-most body atom with at least one bound argument
 // If none exist, prioritise EDB predicates.
-int getNextAtomNaiveSIPS(
-        std::vector<AstAtom*> atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+int getNextAtomNaiveSIPS(std::vector<AstAtom*> atoms, std::set<std::string> boundArgs,
+        std::set<AstRelationIdentifier> edb, BindingStore& compositeBindings) {
     // find the first available atom with at least one bound argument
     int firstedb = -1;
     int firstidb = -1;
@@ -543,7 +507,7 @@ int getNextAtomNaiveSIPS(
         }
 
         // if it has at least one bound argument, then adorn this atom next
-        if (hasBoundArgument(currAtom, boundArgs)) {
+        if (hasBoundArgument(currAtom, boundArgs, compositeBindings)) {
             return i;
         }
     }
@@ -560,8 +524,8 @@ int getNextAtomNaiveSIPS(
 // SIPS #2:
 // Choose the body atom with the maximum number of bound arguments
 // If equal boundness, prioritise left-most EDB
-int getNextAtomMaxBoundSIPS(
-        std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+int getNextAtomMaxBoundSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
+        std::set<AstRelationIdentifier> edb, BindingStore& compositeBindings) {
     int maxBound = -1;
     int maxIndex = 0;
     bool maxIsEDB = false;  // checks if current max index is an EDB predicate
@@ -575,9 +539,8 @@ int getNextAtomMaxBoundSIPS(
 
         int numBound = 0;
         for (AstArgument* arg : currAtom->getArguments()) {
-            std::string name = getString(arg);
-            if (boundArgs.find(name) != boundArgs.end()) {
-                numBound++;  // found a bound argument
+            if (isBoundArgument(arg, boundArgs, compositeBindings)) {
+                numBound++;
             }
         }
 
@@ -596,8 +559,8 @@ int getNextAtomMaxBoundSIPS(
 }
 
 // Choose the atom with the maximum ratio of bound arguments to total arguments
-int getNextAtomMaxRatioSIPS(
-        std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
+int getNextAtomMaxRatioSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
+        std::set<AstRelationIdentifier> edb, BindingStore& compositeBindings) {
     double maxRatio = -1;
     int maxIndex = 0;
 
@@ -615,9 +578,8 @@ int getNextAtomMaxRatioSIPS(
 
         int numBound = 0;
         for (AstArgument* arg : currAtom->getArguments()) {
-            std::string name = getString(arg);
-            if (boundArgs.find(name) != boundArgs.end()) {
-                numBound++;  // found a bound argument
+            if (isBoundArgument(arg, boundArgs, compositeBindings)) {
+                numBound++;
             }
         }
 
@@ -638,9 +600,91 @@ int getNextAtomMaxRatioSIPS(
 
 // Choose the SIP Strategy to be used
 // Current choice is the max ratio SIPS
-int getNextAtomSIPS(
-        std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs, std::set<AstRelationIdentifier> edb) {
-    return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb);
+int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArgs,
+        std::set<AstRelationIdentifier> edb, BindingStore& compositeBindings) {
+    return getNextAtomMaxBoundSIPS(atoms, boundArgs, edb, compositeBindings);
+}
+
+// Find and stores all composite arguments (namely records and functors) along
+// with their variable dependencies
+BindingStore bindComposites(const AstProgram* program) {
+    struct M : public AstNodeMapper {
+        BindingStore& compositeBindings;
+        std::set<AstConstraint*>& constraints;
+        mutable int changeCount;
+
+        M(BindingStore& compositeBindings, std::set<AstConstraint*>& constraints, int changeCount)
+                : compositeBindings(compositeBindings), constraints(constraints), changeCount(changeCount) {}
+
+        int getChangeCount() const {
+            return changeCount;
+        }
+
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            if (AstFunctor* functor = dynamic_cast<AstFunctor*>(node.get())) {
+                // functor found
+                changeCount++;
+
+                // create new variable name (with appropriate suffix)
+                std::stringstream newVariableName;
+                newVariableName << "+functor" << changeCount;
+
+                // add the binding to the BindingStore
+                compositeBindings.addBinding(newVariableName.str(), functor);
+
+                // create new constraint (+functorX = original-functor)
+                auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
+                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                        std::unique_ptr<AstArgument>(newVariable->clone()),
+                        std::unique_ptr<AstArgument>(functor->clone())));
+
+                // update functor to be the variable created
+                return std::move(newVariable);
+            } else if (AstRecordInit* record = dynamic_cast<AstRecordInit*>(node.get())) {
+                // record found
+                changeCount++;
+
+                // create new variable name (with appropriate suffix)
+                std::stringstream newVariableName;
+                newVariableName << "+record" << changeCount;
+
+                // add the binding to the BindingStore
+                compositeBindings.addBinding(newVariableName.str(), record);
+
+                // create new constraint (+recordX = original-record)
+                auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
+                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                        std::unique_ptr<AstArgument>(newVariable->clone()),
+                        std::unique_ptr<AstArgument>(record->clone())));
+
+                // update record to be the variable created
+                return std::move(newVariable);
+            }
+            node->apply(*this);
+            return node;
+        }
+    };
+
+    BindingStore compositeBindings;
+
+    int changeCount = 0;  // number of functors/records seen so far
+
+    // apply the change to all clauses in the program
+    for (AstRelation* rel : program->getRelations()) {
+        for (AstClause* clause : rel->getClauses()) {
+            std::set<AstConstraint*> constraints;
+            M update(compositeBindings, constraints, changeCount);
+            clause->apply(update);
+
+            changeCount = update.getChangeCount();
+
+            for (AstConstraint* constraint : constraints) {
+                clause->addToBody(std::unique_ptr<AstConstraint>(constraint));
+            }
+        }
+    }
+
+    return compositeBindings;
 }
 
 // runs the adornment algorithm on an input program
@@ -667,6 +711,9 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     // --- Setup ---
     // -------------
     const AstProgram* program = translationUnit.getProgram();
+
+    // normalises and tracks bindings of composite arguments (namely records and functors)
+    BindingStore compositeBindings = bindComposites(program);
 
     // set up IDB/EDB and the output queries
     std::vector<AstRelationIdentifier> outputQueries;
@@ -699,24 +746,17 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     }
 
     // find all negated literals
-    for (AstRelation* rel : program->getRelations()) {
-        for (AstClause* clause : rel->getClauses()) {
-            for (AstLiteral* lit : clause->getBodyLiterals()) {
-                if (dynamic_cast<AstNegation*>(lit)) {
-                    negatedAtoms.insert(lit->getAtom()->getName());
-                }
-            }
-        }
-    }
+    visitDepthFirst(*program,
+            [&](const AstNegation& negation) { negatedAtoms.insert(negation.getAtom()->getName()); });
 
     // add the relations needed for negated relations to be computed
-    negatedAtoms = addDependencies(program, negatedAtoms);
+    negatedAtoms = addForwardDependencies(program, negatedAtoms);
 
     // find atoms that should be ignored
     for (AstRelation* rel : program->getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
-            // ignore atoms that have rules containing functors or aggregators
-            if (containsFunctorsOrAggs(clause)) {
+            // ignore atoms that have rules containing aggregators
+            if (containsAggregators(clause)) {
                 ignoredAtoms.insert(clause->getHead()->getName());
             }
 
@@ -727,7 +767,9 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
 
     // find atoms that should be ignored based on magic-transform option
     ignoredAtoms = addIgnoredRelations(program, ignoredAtoms);
-    ignoredAtoms = addDependencies(program, ignoredAtoms);
+
+    // if a relation is ignored, then all the atoms in its bodies need to be ignored
+    ignoredAtoms = addForwardDependencies(program, ignoredAtoms);
 
     // -----------------
     // --- Adornment ---
@@ -752,6 +794,11 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
             // pop out the first element
             AdornedPredicate currPredicate = currentPredicates[0];
             currentPredicates.erase(currentPredicates.begin());
+
+            // don't bother adorning ignored predicates
+            if (contains(ignoredAtoms, currPredicate.getName())) {
+                continue;
+            }
 
             // go through and adorn all IDB clauses defining the relation
             AstRelation* rel = program->getRelation(currPredicate.getName());
@@ -790,10 +837,10 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
 
                     AstArgument* lhs = constraint->getLHS();
                     AstArgument* rhs = constraint->getRHS();
-                    if (isBoundArg(lhs, rhs, boundArgs)) {
+                    if (isBindingConstraint(lhs, rhs, boundArgs)) {
                         boundArgs.insert(getString(lhs));
                     }
-                    if (isBoundArg(rhs, lhs, boundArgs)) {
+                    if (isBindingConstraint(rhs, lhs, boundArgs)) {
                         boundArgs.insert(getString(rhs));
                     }
                 }
@@ -804,13 +851,14 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
 
                 while (atomsAdorned < atomsTotal) {
                     // get the next body atom to adorn based on our SIPS
-                    int currIndex = getNextAtomSIPS(atoms, boundArgs, adornmentEdb);
+                    int currIndex = getNextAtomSIPS(atoms, boundArgs, adornmentEdb, compositeBindings);
                     AstAtom* currAtom = atoms[currIndex];
                     AstRelationIdentifier atomName = currAtom->getName();
 
                     // compute the adornment pattern of this atom, and
                     // add all its arguments to the list of bound args
-                    std::pair<std::string, std::set<std::string>> result = bindArguments(currAtom, boundArgs);
+                    std::pair<std::string, std::set<std::string>> result =
+                            bindArguments(currAtom, boundArgs, compositeBindings);
                     std::string atomAdornment = result.first;
                     boundArgs = result.second;
 
@@ -839,6 +887,8 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
         // add the list of adorned clauses matching the current output relation
         adornmentClauses.push_back(adornedClauses);
     }
+
+    this->bindings = std::move(compositeBindings);
 }
 
 // output the adornment analysis computed
@@ -931,43 +981,67 @@ std::string extractAdornment(AstRelationIdentifier magicRelationName) {
     return adornment;
 }
 
+// returns the constant represented by a variable of the form "+abdulX_variablevalue_X"
+AstArgument* extractConstant(SymbolTable& symbolTable, std::string normalisedConstant) {
+    // strip off the prefix up to (and including) the first underscore
+    size_t argStart = normalisedConstant.find('_');
+    std::string arg = normalisedConstant.substr(argStart + 1, normalisedConstant.size());
+
+    // -- check if string or num constant --
+    char indicatorChar = arg[arg.size() - 1];  // 'n' or 's'
+    std::string stringRep = arg.substr(0, arg.size() - 2);
+
+    if (indicatorChar == 's') {
+        // string argument
+        return new AstStringConstant(symbolTable, stringRep.c_str());
+    } else if (indicatorChar == 'n') {
+        // numeric argument
+        return new AstNumberConstant(stoi(stringRep));
+    } else {
+        // invalid format
+        return nullptr;
+    }
+}
+
+// creates a new magic relation based on a given relation and magic base name
+AstRelation* createMagicRelation(AstRelation* original, AstRelationIdentifier magicPredName) {
+    // get the adornment of this argument
+    std::string adornment = extractAdornment(magicPredName);
+
+    // create the relation
+    AstRelation* newMagicRelation = new AstRelation();
+    newMagicRelation->setName(magicPredName);
+
+    // copy over (bound) attributes from the original relation
+    std::vector<AstAttribute*> attrs = original->getAttributes();
+    for (size_t currentArg = 0; currentArg < original->getArity(); currentArg++) {
+        if (adornment[currentArg] == 'b') {
+            newMagicRelation->addAttribute(std::unique_ptr<AstAttribute>(attrs[currentArg]->clone()));
+        }
+    }
+
+    return newMagicRelation;
+}
+
 // transforms the program so that all underscores previously transformed
 // to a "+underscoreX" are changed back to underscores
 void replaceUnderscores(AstProgram* program) {
+    struct M : public AstNodeMapper {
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            if (AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+                if (hasPrefix(var->getName(), "+underscore")) {
+                    return std::make_unique<AstUnnamedVariable>();
+                }
+            }
+            node->apply(*this);
+            return node;
+        }
+    };
+
+    M update;
     for (AstRelation* rel : program->getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
-            // create a new clause for the final result
-            AstClause* newClause = clause->cloneHead();
-
-            for (AstLiteral* lit : clause->getBodyLiterals()) {
-                if (dynamic_cast<AstAtom*>(lit) == 0) {
-                    // all non-atoms added immediately
-                    newClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
-                    continue;
-                }
-
-                AstAtom* newLit = lit->getAtom()->clone();
-                std::vector<AstArgument*> args = newLit->getArguments();
-                for (size_t argNum = 0; argNum < args.size(); argNum++) {
-                    AstArgument* currArg = args[argNum];
-
-                    // find all variables beginning with "+underscore" and
-                    // replace them with actual underscores
-                    if (dynamic_cast<const AstVariable*>(currArg)) {
-                        AstVariable* var = (AstVariable*)currArg;
-                        if (hasPrefix(var->getName(), "+underscore")) {
-                            newLit->setArgument(argNum, std::make_unique<AstUnnamedVariable>());
-                        }
-                    }
-                }
-
-                // add the fixed atom to the body
-                newClause->addToBody(std::unique_ptr<AstLiteral>(newLit));
-            }
-
-            // remove the old clause and add the fixed one
-            rel->removeClause(clause);
-            rel->addClause(std::unique_ptr<AstClause>(newClause));
+            clause->apply(update);
         }
     }
 }
@@ -990,6 +1064,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
     separateDBs(program);  // make EDB int IDB = empty
 
     Adornment* adornment = translationUnit.getAnalysis<Adornment>();  // perform adornment
+    const BindingStore& compositeBindings = adornment->getBindings();
 
     // edb/idb handling
     std::vector<std::vector<AdornedClause>> allAdornedClauses = adornment->getAdornedClauses();
@@ -1007,6 +1082,11 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
     std::set<AstRelationIdentifier> addAsOutput;
     std::set<AstRelationIdentifier> addAsPrintSize;
     std::map<AstRelationIdentifier, std::vector<AstIODirective*>> outputDirectives;
+
+    // ignore negated atoms
+    for (AstRelationIdentifier relation : negatedAtoms) {
+        ignoredAtoms.insert(relation);
+    }
 
     // perform magic set algorithm for each output
     for (size_t querynum = 0; querynum < outputQueries.size(); querynum++) {
@@ -1195,27 +1275,13 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
                         // create the relation if it does not exist
                         if (program->getRelation(magPredName) == nullptr) {
-                            // get the adornment of this argument
-                            std::string adornment = extractAdornment(magPredName);
-
-                            // create the relation
-                            AstRelation* newMagRelation = new AstRelation();
-                            newMagRelation->setName(magPredName);
-
-                            // copy over (bound) attributes from the original relation
-                            AstRelation* currentRelation =
+                            AstRelation* originalRelation =
                                     program->getRelation(newClause->getHead()->getName());
-                            std::vector<AstAttribute*> attrs = currentRelation->getAttributes();
-                            for (size_t currentArg = 0; currentArg < currentRelation->getArity();
-                                    currentArg++) {
-                                if (adornment[currentArg] == 'b') {
-                                    newMagRelation->addAttribute(
-                                            std::unique_ptr<AstAttribute>(attrs[currentArg]->clone()));
-                                }
-                            }
+                            AstRelation* newMagicRelation =
+                                    createMagicRelation(originalRelation, magPredName);
 
                             // add the new relation to the prgoram
-                            program->appendRelation(std::unique_ptr<AstRelation>(newMagRelation));
+                            program->appendRelation(std::unique_ptr<AstRelation>(newMagicRelation));
                         }
 
                         // add (bound) arguments to the magic predicate from the clause head
@@ -1235,39 +1301,48 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             magicClause->addToBody(std::unique_ptr<AstLiteral>(body[j]->clone()));
                         }
 
-                        // go through the arguments in the head and bind the bound variables using constraints
-                        std::vector<AstArgument*> currArguments = magicClause->getHead()->getArguments();
-                        for (AstArgument* arg : currArguments) {
-                            std::string argName = getString(arg);
+                        // restore memorised bindings for all composite arguments
+                        std::vector<const AstArgument*> compositeArguments;
+                        visitDepthFirst(*magicClause, [&](const AstArgument& argument) {
+                            std::string argName = getString(&argument);
+                            if (hasPrefix(argName, "+functor") || hasPrefix(argName, "+record")) {
+                                compositeArguments.push_back(&argument);
+                            }
+                        });
 
-                            // all bound arguments begin with "+abdul" (see AstTransforms.cpp)
-                            // +abdulX_variablevalue_s
-                            if (hasPrefix(argName, "+abdul")) {
-                                // -- check if string or num constant --
+                        for (const AstArgument* compositeArgument : compositeArguments) {
+                            std::string argName = getString(compositeArgument);
 
-                                // strip off the prefix up to (and including) the first underscore
-                                size_t argStart = argName.find('_');
-                                std::string res = argName.substr(argStart + 1, argName.size());
+                            // if the composite argument was bound only because all
+                            // of its constituent variables were bound, then bind
+                            // the composite variable to the original argument
+                            if (compositeBindings.isVariableBoundComposite(argName)) {
+                                AstArgument* originalArgument =
+                                        compositeBindings.cloneOriginalArgument(argName);
+                                magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                                        std::unique_ptr<AstArgument>(compositeArgument->clone()),
+                                        std::unique_ptr<AstArgument>(originalArgument)));
+                            }
+                        }
 
-                                AstArgument* newArgument;
-                                if (res[res.size() - 1] == 's') {
-                                    // string argument
-                                    std::string str = res.substr(0, res.size() - 2);
-                                    newArgument = new AstStringConstant(
-                                            translationUnit.getSymbolTable(), str.c_str());
-                                } else {
-                                    // numeric argument
-                                    size_t argEnd = argName.find('_', argStart + 1);
-                                    std::string startstr =
-                                            argName.substr(argStart + 1, argEnd - argStart - 1);
-                                    newArgument = new AstNumberConstant(stoi(startstr));
-                                }
+                        // restore bindings for normalised constants
+                        std::vector<const AstVariable*> clauseVariables;
+                        visitDepthFirst(*magicClause,
+                                [&](const AstVariable& variable) { clauseVariables.push_back(&variable); });
+
+                        for (const AstVariable* var : clauseVariables) {
+                            std::string varName = getString(var);
+
+                            // all normalised constants begin with "+abdul" (see AstTransforms.cpp)
+                            // +abdulX_variablevalue_Y
+                            if (hasPrefix(varName, "+abdul")) {
+                                AstArgument* embeddedConstant =
+                                        extractConstant(translationUnit.getSymbolTable(), varName);
 
                                 // add the constraint to the body of the clause
-                                AstConstraint* newConstraint = new AstConstraint(BinaryConstraintOp::EQ,
-                                        std::unique_ptr<AstArgument>(arg->clone()),
-                                        std::unique_ptr<AstArgument>(newArgument));
-                                magicClause->addToBody(std::unique_ptr<AstLiteral>(newConstraint));
+                                magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+                                        std::unique_ptr<AstArgument>(var->clone()),
+                                        std::unique_ptr<AstArgument>(embeddedConstant)));
                             }
                         }
 
