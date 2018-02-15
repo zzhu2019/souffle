@@ -186,7 +186,7 @@ AS_IF([test "x$enable_intel_rtm" = "xyes"], [
 
 AC_ARG_ENABLE(
   [64bit-domain],
-  [AS_HELP_STRING([--enable-64bit-domain], [Enable 64-bit number values in Datalog records])]
+  [AS_HELP_STRING([--enable-64bit-domain], [Enable 64-bit number values in Datalog tuples])]
 )
 AS_IF([test "x$enable_64bit_domain" = "xyes"], [
   AS_VAR_APPEND(CXXFLAGS, [" -DRAM_DOMAIN_SIZE=64"])
