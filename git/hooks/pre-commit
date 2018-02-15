@@ -1,12 +1,16 @@
 #!/bin/bash
 
-CLANG_FORMAT=$(which clang-format-4.0)
-[ ! "${CLANG_FORMAT}" ] && CLANG_FORMAT=$(which clang-format)
+set -e -u -o pipefail
 
-${CLANG_FORMAT} \
+if [ $(which clang-format-4.0) ]
+then
+
+clang-format-4.0 \
             -i \
             -style=file \
             ./src/*.cpp \
             ./src/*.h \
             ./src/test/*.cpp \
             ./src/test/*.h
+
+fi

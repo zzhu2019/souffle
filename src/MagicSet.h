@@ -17,6 +17,7 @@
 #pragma once
 
 #include "AstTransforms.h"
+#include "AstVisitor.h"
 
 #include <string>
 #include <vector>
@@ -47,10 +48,11 @@ public:
     }
 
     friend bool operator<(const AdornedPredicate& p1, const AdornedPredicate& p2) {
-        std::stringstream comp1, comp2;
-        comp1 << p1.getName() << "+ _ADD_ +" << p1.getAdornment();
-        comp2 << p2.getName() << "+ _ADD_ +" << p2.getAdornment();
-        return (comp1.str() < comp2.str());
+        if (p1.getName() != p2.getName()) {
+            return p1.getName() < p2.getName();
+        } else {
+            return p1.getAdornment() < p2.getAdornment();
+        }
     }
 };
 
@@ -118,6 +120,39 @@ public:
     }
 };
 
+class BindingStore {
+private:
+    std::map<std::string, std::unique_ptr<AstArgument>> originalArguments;
+    std::map<std::string, std::set<std::string>> varDependencies;
+    std::set<std::string> variableBoundComposites;
+
+public:
+    AstArgument* cloneOriginalArgument(const std::string& argName) const {
+        return originalArguments.at(argName)->clone();
+    }
+
+    const std::set<std::string>& getVariableDependencies(const std::string& argName) const {
+        return varDependencies.at(argName);
+    }
+
+    void addBinding(std::string newVariableName, const AstArgument* arg) {
+        originalArguments[newVariableName] = std::unique_ptr<AstArgument>(arg->clone());
+
+        // find the variable dependencies
+        std::set<std::string> dependencies;
+        visitDepthFirst(*arg, [&](const AstVariable& var) { dependencies.insert(var.getName()); });
+        varDependencies[newVariableName] = dependencies;
+    }
+
+    void addVariableBoundComposite(std::string functorName) {
+        variableBoundComposites.insert(functorName);
+    }
+
+    bool isVariableBoundComposite(std::string functorName) const {
+        return (variableBoundComposites.find(functorName) != variableBoundComposites.end());
+    }
+};
+
 class Adornment : public AstAnalysis {
 private:
     std::vector<std::vector<AdornedClause>> adornmentClauses;
@@ -126,6 +161,7 @@ private:
     std::set<AstRelationIdentifier> adornmentIdb;
     std::set<AstRelationIdentifier> negatedAtoms;
     std::set<AstRelationIdentifier> ignoredAtoms;
+    BindingStore bindings;
 
 public:
     static constexpr const char* name = "adorned-clauses";
@@ -136,28 +172,32 @@ public:
 
     void print(std::ostream& os) const;
 
-    const std::vector<std::vector<AdornedClause>> getAdornedClauses() {
+    const std::vector<std::vector<AdornedClause>>& getAdornedClauses() const {
         return adornmentClauses;
     }
 
-    const std::vector<AstRelationIdentifier> getRelations() {
+    const std::vector<AstRelationIdentifier>& getRelations() const {
         return adornmentRelations;
     }
 
-    const std::set<AstRelationIdentifier> getEDB() {
+    const std::set<AstRelationIdentifier>& getEDB() const {
         return adornmentEdb;
     }
 
-    const std::set<AstRelationIdentifier> getIDB() {
+    const std::set<AstRelationIdentifier>& getIDB() const {
         return adornmentIdb;
     }
 
-    const std::set<AstRelationIdentifier> getNegatedAtoms() {
+    const std::set<AstRelationIdentifier>& getNegatedAtoms() const {
         return negatedAtoms;
     }
 
-    const std::set<AstRelationIdentifier> getIgnoredAtoms() {
+    const std::set<AstRelationIdentifier>& getIgnoredAtoms() const {
         return ignoredAtoms;
+    }
+
+    const BindingStore& getBindings() const {
+        return bindings;
     }
 };
 }  // namespace souffle

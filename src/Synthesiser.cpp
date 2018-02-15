@@ -1255,11 +1255,13 @@ void genCode(std::ostream& out, const RamStatement& stmt, const IndexMap& indice
 }
 }  // namespace
 
-std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename, const int index) const {
+void Synthesiser::generateCode(
+        const RamTranslationUnit& unit, std::ostream& os, const std::string& id) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
     // ---------------------------------------------------------------
+    const SymbolTable& symTable = unit.getSymbolTable();
+    const RamProgram& prog = unit.getP();
 
     // collect all used indices
     IndexMap indices;
@@ -1312,28 +1314,11 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
     //                      Code Generation
     // ---------------------------------------------------------------
 
-    std::string sourceFilename = filename;
-    // trim .cpp extension if it exists
-    if (sourceFilename.size() >= 4 && sourceFilename.substr(sourceFilename.size() - 4) == ".cpp") {
-        sourceFilename = sourceFilename.substr(0, sourceFilename.size() - 4);
-    }
-
-    // generate class name by stripping extensions and renaming if empty
-    const std::string nameNoExtension = simpleName((sourceFilename != "") ? sourceFilename : tempFile());
-    const std::string indexStr = ((index != -1) ? "_" + std::to_string(index) : "");
-    const std::string id = identifier(baseName(nameNoExtension));
-
-    std::string classname = "Sf_" + id + indexStr;
-
-    // Add index, if any, and .cpp extension
-    sourceFilename = (sourceFilename == "" ? nameNoExtension : sourceFilename) + indexStr + ".cpp";
-
-    // open output stream for header file
-    std::ofstream os(sourceFilename);
+    std::string classname = "Sf_" + id;
 
     // generate C++ program
     os << "#include \"souffle/CompiledSouffle.h\"\n";
-    if (Global::config().has("provenance") || Global::config().has("record-provenance")) {
+    if (Global::config().has("provenance")) {
         os << "#include \"souffle/Explain.h\"\n";
         os << "#include <ncurses.h>\n";
     }
@@ -1637,9 +1622,8 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
         for (auto& sub : prog.getSubroutines()) {
             // method header
             os << "void "
-               << "subproof_" << subroutineNum
-               << "(const std::vector<RamDomain>& args, "
-                  "std::vector<RamDomain>& ret, std::vector<bool>& err) {\n";
+               << "subproof_" << subroutineNum << "(const std::vector<RamDomain>& args, "
+                                                  "std::vector<RamDomain>& ret, std::vector<bool>& err) {\n";
 
             // generate code for body
             genCode(os, *sub.second, indices);
@@ -1707,87 +1691,9 @@ std::string Synthesiser::generateCode(const SymbolTable& symTable, const RamProg
         os << "explain(obj, true, true);\n";
     }
 
-    if (Global::config().get("record-provenance") == "1") {
-        os << "explain(obj, false, false);\n";
-    } else if (Global::config().get("record-provenance") == "2") {
-        os << "explain(obj, false, true);\n";
-    }
-
     os << "return 0;\n";
     os << "} catch(std::exception &e) { souffle::SignalHandler::instance()->error(e.what());}\n";
     os << "}\n";
     os << "#endif\n";
-
-    // close source file
-    os.close();
-
-    // return the filename
-    return sourceFilename;
 }
-
-std::string Synthesiser::compileToBinary(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename, const int index) const {
-    // ---------------------------------------------------------------
-    //                       Code Generation
-    // ---------------------------------------------------------------
-
-    std::string sourceFilename = generateCode(symTable, prog, filename, index);
-
-    // ---------------------------------------------------------------
-    //                    Compilation & Execution
-    // ---------------------------------------------------------------
-
-    std::string cmd = compileCmd;
-
-    // set up number of threads
-    auto num_threads = std::stoi(Global::config().get("jobs"));
-    if (num_threads == 1) {
-        cmd += "-s ";
-    }
-
-    // add source code
-    cmd += sourceFilename;
-
-    // separate souffle output form executable output
-    if (Global::config().has("profile")) {
-        std::cout.flush();
-    }
-
-    // run executable
-    if (system(cmd.c_str()) != 0) {
-        throw std::invalid_argument("failed to compile C++ source <" + sourceFilename + ">");
-    }
-
-    // done
-    return sourceFilename;
-}
-
-std::string Synthesiser::executeBinary(const SymbolTable& symTable, const RamProgram& prog,
-        const std::string& filename, const int index) const {
-    // compile statement
-    std::string sourceFilename = compileToBinary(symTable, prog, filename, index);
-    std::string binaryFilename = filename == "" ? simpleName(sourceFilename) : sourceFilename;
-
-    // separate souffle output form executable output
-    if (Global::config().has("profile")) {
-        std::cout.flush();
-    }
-
-    // check whether the executable exists
-    if (!isExecutable(binaryFilename)) {
-        throw std::invalid_argument("Generated executable <" + binaryFilename + "> could not be found");
-    }
-
-    // run executable
-    int result = system(binaryFilename.c_str());
-    if (Global::config().get("dl-program").empty()) {
-        remove(binaryFilename.c_str());
-        remove((binaryFilename + ".cpp").c_str());
-    }
-    if (result != 0) {
-        exit(result);
-    }
-    return sourceFilename;
-}
-
 }  // end of namespace souffle
