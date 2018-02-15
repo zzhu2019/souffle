@@ -22,7 +22,6 @@
 #include "CompiledTuple.h"
 #include "IOSystem.h"
 #include "IterUtils.h"
-#include "ParallelUtils.h"
 #include "Table.h"
 #include "Trie.h"
 #include "Util.h"
@@ -334,7 +333,7 @@ private:
     indices_t indices;
 
     // the lock utilized to synchronize inserts
-    Lock insert_lock;
+    std::mutex insert_lock;
 
     /* A utility to check whether a certain index is covered by this relation. */
     template <typename Index>
@@ -375,7 +374,7 @@ public:
         // check primary index first
         {
             // acquire exclusive access to the primary index
-            auto lease = insert_lock.acquire();
+            std::lock_guard<std::mutex> guard(insert_lock);
 
             // if already present => skip
             if (contains(tuple, context)) return false;

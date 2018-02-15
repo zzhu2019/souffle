@@ -21,14 +21,12 @@
 #include "BinaryRelation.h"
 #include "CompiledTuple.h"
 #include "IterUtils.h"
-#include "ParallelUtils.h"
 #include "SymbolTable.h"
 #include "Table.h"
 #include "Trie.h"
 #include "Util.h"
 
 #include <iterator>
-#include <mutex>
 #include <type_traits>
 
 #include <libgen.h>

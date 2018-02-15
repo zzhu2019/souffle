@@ -17,11 +17,11 @@
 #pragma once
 
 #include "CompiledTuple.h"
-#include "ParallelUtils.h"
 #include "Util.h"
 
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 

@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "ParallelUtils.h"
 #include "ProfileEvent.h"
 
 #include <chrono>
