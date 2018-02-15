@@ -18,6 +18,8 @@
 
 #include <stdint.h>
 
+#include "RamTypes.h"
+
 namespace souffle {
 
 /** ast domain that contains ram domain */
@@ -28,14 +30,8 @@ typedef int64_t AstDomain;
 #endif
 
 /** Lower and upper boundaries for the AST domain. The range must be able to be
- * stored in a RamDomain. By default, RamDomain is int32_t and the allowed
- * AstDomain range is that of a int32_t. The 64-bit case is active if the
- * user configured the build accordingly (with --enable-64bit-domain). **/
-#if RAM_DOMAIN_SIZE == 64
-#define MIN_AST_DOMAIN (std::numeric_limits<int64_t>::min())
-#define MAX_AST_DOMAIN (std::numeric_limits<int64_t>::max())
-#else
-#define MIN_AST_DOMAIN (std::numeric_limits<int32_t>::min())
-#define MAX_AST_DOMAIN (std::numeric_limits<int32_t>::max())
-#endif
+ * stored in a RamDomain, so we simply compute the limits of that type. **/
+#define MIN_AST_DOMAIN (std::numeric_limits<RamDomain>::min())
+#define MAX_AST_DOMAIN (std::numeric_limits<RamDomain>::max())
+
 }  // namespace souffle
