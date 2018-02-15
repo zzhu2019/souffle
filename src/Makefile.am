@@ -130,7 +130,8 @@ souffle_sources = \
               InterpreterIndex.h                        \
               InterpreterRecords.cpp InterpreterRecords.h \
               ProvenanceTransformer.cpp                 \
-              Global.cpp            Global.h
+              Global.cpp            Global.h            \
+              AstLogStatement.h
 
 # -- build souffle as a library so it can be reused in testing
 noinst_LTLIBRARIES = libsouffle.la

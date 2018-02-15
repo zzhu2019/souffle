@@ -24,7 +24,7 @@
 ###
 ### Options:
 ###
-###    --git-user           -u    Github username.
+###    --github-user        -u    Github username.
 ###    --git-branch         -b    Git branch.
 ###    --git-revision       -r    Git revision.
 ###    --docker-image       -i    Docker image.
@@ -71,17 +71,27 @@ function Help {
         sed 's/^##*//g'
 }
 
+function Error {
+    echo "ERROR: $1"
+    exit 1
+}
+
+if [ ! -e ./docker/souffle-docker.sh ]
+then
+    Error "Please run this script from the top level Souffle directory."
+fi
+
 if [ $# == 0 ]
 then
     Help
     exit 1
 fi
 
-GIT_USER="souffle-lang"
-GIT_BRANCH="master"
-GIT_REVISION="HEAD"
-DOCKER_IMAGE="souffle"
-DOCKER_TAG="latest"
+SOUFFLE_GITHUB_USER="souffle-lang"
+SOUFFLE_GIT_BRANCH="master"
+SOUFFLE_GIT_REVISION="HEAD"
+SOUFFLE_DOCKER_IMAGE="souffle"
+SOUFFLE_DOCKER_TAG="latest"
 SOUFFLE_OPTIONS=""
 COMMAND="${1}"
 shift
@@ -91,25 +101,25 @@ do
     case "${1}" in
     --*)
         case "${1}" in
-        --git-user)
+        --github-user)
             shift
-            GIT_USER="${1}"
+            SOUFFLE_GITHUB_USER="${1}"
             ;;
         --git-branch)
             shift
-            GIT_BRANCH="${1}"
+            SOUFFLE_GIT_BRANCH="${1}"
             ;;
         --git-revision)
             shift
-            GIT_REVISION="${1}"
+            SOUFFLE_GIT_REVISION="${1}"
             ;;
         --docker-image)
             shift
-            DOCKER_IMAGE="${1}"
+            SOUFFLE_DOCKER_IMAGE="${1}"
             ;;
         --docker-tag)
             shift
-            DOCKER_TAG="${1}"
+            SOUFFLE_DOCKER_TAG="${1}"
             ;;
         --souffle-options)
             shift
@@ -117,7 +127,7 @@ do
             ;;
         --help)
             shift
-            DOCKER_TAG="${1}"
+            SOUFFLE_DOCKER_TAG="${1}"
             ;;
         esac
         ;;
@@ -125,23 +135,23 @@ do
         case "${1}" in
         -u)
             shift
-            GIT_USER="${1}"
+            SOUFFLE_GITHUB_USER="${1}"
             ;;
         -b)
             shift
-            GIT_BRANCH="${1}"
+            SOUFFLE_GIT_BRANCH="${1}"
             ;;
         -r)
             shift
-            GIT_REVISION="${1}"
+            SOUFFLE_GIT_REVISION="${1}"
             ;;
         -i)
             shift
-            DOCKER_IMAGE="${1}"
+            SOUFFLE_DOCKER_IMAGE="${1}"
             ;;
         -t)
             shift
-            DOCKER_TAG="${1}"
+            SOUFFLE_DOCKER_TAG="${1}"
             ;;
         -o)
             shift
@@ -154,8 +164,7 @@ do
         esac
         ;;
     *)
-        Help
-        exit 1
+        Error "Unrecognised argument, try -h or --help for available options."
         ;;
     esac
     shift
@@ -165,26 +174,24 @@ case "${COMMAND}" in
 build)
     docker build \
         --rm \
-        -t "$(echo souffle_${DOCKER_IMAGE}_${DOCKER_TAG}_${GIT_USER}_${GIT_BRANCH}_${GIT_REVISION} | tr [A-Z] [a-z])" \
-        -f docker/Dockerfile.${DOCKER_IMAGE}_${DOCKER_TAG} \
-        --build-arg GIT_USER=${GIT_USER} \
-        --build-arg GIT_BRANCH=${GIT_BRANCH} \
-        --build-arg GIT_REVISION=${GIT_REVISION} \
+        -t "$(echo souffle_${SOUFFLE_DOCKER_IMAGE}_${SOUFFLE_DOCKER_TAG}_${SOUFFLE_GITHUB_USER}_${SOUFFLE_GIT_BRANCH}_${SOUFFLE_GIT_REVISION} | tr [A-Z] [a-z])" \
+        -f docker/Dockerfile.${SOUFFLE_DOCKER_IMAGE}_${SOUFFLE_DOCKER_TAG} \
+        --build-arg SOUFFLE_GITHUB_USER=${SOUFFLE_GITHUB_USER} \
+        --build-arg SOUFFLE_GIT_BRANCH=${SOUFFLE_GIT_BRANCH} \
+        --build-arg SOUFFLE_GIT_REVISION=${SOUFFLE_GIT_REVISION} \
         --build-arg SOUFFLE_OPTIONS=${SOUFFLE_OPTIONS} \
         ${PWD}
     ;;
 exec)
     docker run \
         --rm \
-        -t "$(echo souffle_${DOCKER_IMAGE}_${DOCKER_TAG}_${GIT_USER}_${GIT_BRANCH}_${GIT_REVISION} | tr [A-Z] [a-z])" \
-        -i \
+        -it "$(echo souffle_${SOUFFLE_DOCKER_IMAGE}_${SOUFFLE_DOCKER_TAG}_${SOUFFLE_GITHUB_USER}_${SOUFFLE_GIT_BRANCH}_${SOUFFLE_GIT_REVISION} | tr [A-Z] [a-z])" \
         /bin/bash -c "/souffle/src/souffle ${SOUFFLE_OPTIONS}"
     ;;
 test)
     docker run \
         --rm \
-        -t "$(echo souffle_${DOCKER_IMAGE}_${DOCKER_TAG}_${GIT_USER}_${GIT_BRANCH}_${GIT_REVISION} | tr [A-Z] [a-z])" \
-        -i \
+        -it "$(echo souffle_${SOUFFLE_DOCKER_IMAGE}_${SOUFFLE_DOCKER_TAG}_${SOUFFLE_GITHUB_USER}_${SOUFFLE_GIT_BRANCH}_${SOUFFLE_GIT_REVISION} | tr [A-Z] [a-z])" \
         /bin/bash -c "make check ${SOUFFLE_OPTIONS}"
     ;;
 list)
@@ -196,8 +203,8 @@ list)
 run)
     docker run \
         --rm \
-        -t "$(echo souffle_${DOCKER_IMAGE}_${DOCKER_TAG}_${GIT_USER}_${GIT_BRANCH}_${GIT_REVISION} | tr [A-Z] [a-z])" \
-        -i \
+        -v "${PWD}":/mnt \
+        -it "$(echo souffle_${SOUFFLE_DOCKER_IMAGE}_${SOUFFLE_DOCKER_TAG}_${SOUFFLE_GITHUB_USER}_${SOUFFLE_GIT_BRANCH}_${SOUFFLE_GIT_REVISION} | tr [A-Z] [a-z])" \
         /bin/bash
     ;;
 esac

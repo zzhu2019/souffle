@@ -1,0 +1,12 @@
+#!/bin/bash
+
+CLANG_FORMAT=$(which clang-format-4.0)
+[ ! "${CLANG_FORMAT}" ] && CLANG_FORMAT=$(which clang-format)
+
+${CLANG_FORMAT} \
+            -i \
+            -style=file \
+            ./src/*.cpp \
+            ./src/*.h \
+            ./src/test/*.cpp \
+            ./src/test/*.h

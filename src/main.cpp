@@ -472,8 +472,7 @@ int main(int argc, char** argv) {
             if (!os.is_open()) {
                 ERROR("could not open '" + filePath + "' for writing.");
             }
-            astTranslationUnit->getAnalysis<SCCGraph>()->print(
-                    os, fileExtension(Global::config().get("stratify")));
+            astTranslationUnit->getAnalysis<SCCGraph>()->print(os);
         }
 
         /* Locate souffle-compile script */

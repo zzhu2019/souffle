@@ -22,17 +22,11 @@ RUN yum -y install \
         ncurses-devel \
         zlib-devel
 
-ARG GIT_USER
-ARG GIT_BRANCH
-ARG GIT_REVISION
+ARG SOUFFLE_GITHUB_USER
+ARG SOUFFLE_GIT_BRANCH
+ARG SOUFFLE_GIT_REVISION
 ARG SOUFFLE_OPTIONS
 
-WORKDIR /souffle
-RUN git clone https://github.com/${GIT_USER}/souffle /souffle
-RUN git checkout ${GIT_BRANCH} ${GIT_REVISION}
-RUN ./bootstrap
-RUN ./configure ${SOUFFLE_OPTIONS}
-RUN make
-RUN /souffle/src/souffle
-RUN make install
-RUN souffle
+COPY docker/run.sh run.sh
+RUN chmod +x run.sh
+RUN SOUFFLE_GITHUB_USER="${SOUFFLE_GITHUB_USER}" SOUFFLE_GIT_BRANCH="${SOUFFLE_GIT_BRANCH}" SOUFFLE_GIT_REVISION="${SOUFFLE_GIT_REVISION}" SOUFFLE_OPTIONS="${SOUFFLE_OPTIONS}" ./run.sh

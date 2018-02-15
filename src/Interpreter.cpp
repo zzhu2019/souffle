@@ -15,6 +15,7 @@
  ***********************************************************************/
 
 #include "Interpreter.h"
+#include "AstLogStatement.h"
 #include "AstRelation.h"
 #include "AstTranslator.h"
 #include "AstVisitor.h"
@@ -220,10 +221,10 @@ RamDomain eval(const RamValue& value, InterpreterEnvironment& env, const EvalCon
 
                 // strings
                 case BinaryOp::CAT: {
-                    return env.getSymbolTable().lookup((
-                            std::string(env.getSymbolTable().resolve(visit(op.getLHS()))) +
-                            std::string(env.getSymbolTable().resolve(
-                                    visit(op.getRHS())))).c_str());
+                    return env.getSymbolTable().lookup(
+                            (std::string(env.getSymbolTable().resolve(visit(op.getLHS()))) +
+                                    std::string(env.getSymbolTable().resolve(visit(op.getRHS()))))
+                                    .c_str());
                 }
                 default:
                     assert(0 && "unsupported operator");
@@ -730,7 +731,8 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
         }
 
         bool visitLogTimer(const RamLogTimer& timer) override {
-            Logger logger(timer.getMessage().c_str(), *profile);
+            Logger logger(
+                    timer.getMessage().c_str(), *profile, fileExtension(Global::config().get("profile")));
             return visit(timer.getStatement());
         }
 
@@ -764,7 +766,12 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
         bool visitLogSize(const RamLogSize& print) override {
             auto lease = getOutputLock().acquire();
             (void)lease;
-            *profile << print.getMessage() << env.getRelation(print.getRelation()).size() << "\n";
+            *profile << print.getMessage() << env.getRelation(print.getRelation()).size();
+            const std::string ext = fileExtension(Global::config().get("profile"));
+            if (ext == "json") {
+                *profile << "},";
+            }
+            *profile << "\n";
             return true;
         }
 
@@ -862,7 +869,7 @@ void Interpreter::invoke(const RamProgram& prog, InterpreterEnvironment& env) co
         if (!os.is_open()) {
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
-        os << "@start-debug\n";
+        os << AstLogStatement::startDebug() << std::endl;
         run(queryStrategy, report, &os, *(prog.getMain()), env);
     } else {
         run(queryStrategy, report, nullptr, *(prog.getMain()), env);
@@ -984,8 +991,8 @@ Order scheduleByModel(AstClause& clause, InterpreterEnvironment& env, std::ostre
 }  // namespace
 
 /** With this strategy queries will be processed as they are stated by the user */
-const QueryExecutionStrategy DirectExecution = [](
-        const RamInsert& insert, InterpreterEnvironment& env, std::ostream*) -> ExecutionSummary {
+const QueryExecutionStrategy DirectExecution = [](const RamInsert& insert, InterpreterEnvironment& env,
+                                                       std::ostream*) -> ExecutionSummary {
     // measure the time
     auto start = now();
 
@@ -999,8 +1006,8 @@ const QueryExecutionStrategy DirectExecution = [](
 };
 
 /** With this strategy queries will be dynamically rescheduled before each execution */
-const QueryExecutionStrategy ScheduledExecution = [](
-        const RamInsert& insert, InterpreterEnvironment& env, std::ostream* report) -> ExecutionSummary {
+const QueryExecutionStrategy ScheduledExecution = [](const RamInsert& insert, InterpreterEnvironment& env,
+                                                          std::ostream* report) -> ExecutionSummary {
 
     // Report scheduling
     // TODO: only re-schedule atoms (avoid cloning entire clause)
