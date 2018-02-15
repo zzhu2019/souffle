@@ -64,6 +64,58 @@
 
 namespace souffle {
 
+/**
+ * Executes a binary file.
+ */
+void executeBinary(const std::string& binaryFilename) {
+    assert(!binaryFilename.empty() && "binary filename cannot be blank");
+
+    // separate souffle output from executable output
+    if (Global::config().has("profile")) {
+        std::cout.flush();
+    }
+
+    // check whether the executable exists
+    if (!isExecutable(binaryFilename)) {
+        throw std::invalid_argument("Generated executable <" + binaryFilename + "> could not be found");
+    }
+
+    // run executable
+    int result = system(binaryFilename.c_str());
+    // Remove temp files
+    if (Global::config().get("dl-program").empty()) {
+        remove(binaryFilename.c_str());
+        remove((binaryFilename + ".cpp").c_str());
+    }
+    if (result != 0) {
+        exit(result);
+    }
+}
+
+/**
+ * Compiles the given source file to a binary file.
+ */
+void compileToBinary(std::string compileCmd, const std::string& sourceFilename) {
+    // set up number of threads
+    auto num_threads = std::stoi(Global::config().get("jobs"));
+    if (num_threads == 1) {
+        compileCmd += "-s ";
+    }
+
+    // add source code
+    compileCmd += sourceFilename;
+
+    // separate souffle output from executable output
+    if (Global::config().has("profile")) {
+        std::cout.flush();
+    }
+
+    // run executable
+    if (system(compileCmd.c_str()) != 0) {
+        throw std::invalid_argument("failed to compile C++ source <" + sourceFilename + ">");
+    }
+}
+
 int main(int argc, char** argv) {
     /* Time taking for overall runtime */
     auto souffle_start = std::chrono::high_resolution_clock::now();
@@ -129,11 +181,6 @@ int main(int argc, char** argv) {
                                     "Enable profiling, and write profile data to <FILE>."},
                             {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
-                            {"fault-tolerance", 'f', "", "", false,
-                                    "Enable fault tolerance to recover from failure on program restart."},
-                            {"stratify", 's', "FILE", "", false,
-                                    "Generate/compile to multiple subprograms, and write an execution graph "
-                                    "to FILE (valid extensions are '.dot' or '.json')."},
 #ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
                                     "Enable provenance information via guided SLD."},
@@ -206,20 +253,6 @@ int main(int argc, char** argv) {
             }
             allIncludes += " -I" + currentInclude;
             Global::config().set("include-dir", allIncludes);
-        }
-
-        /* ensure that code generation and/or compilation is enabled if stratification is for non-none
-         * options*/
-        if (Global::config().has("stratify")) {
-            if (Global::config().has("profile")) {
-                ERROR("stratification cannot be enabled with option 'profile'.");
-            } else if (Global::config().get("stratify") == "-" && Global::config().has("generate")) {
-                ERROR("stratification cannot be enabled with format 'auto' and option 'generate'.");
-            } else if (!(Global::config().has("compile") || Global::config().has("dl-program") ||
-                               Global::config().has("generate"))) {
-                ERROR("one of 'compile', 'dl-program', or 'generate' options must be present for "
-                      "stratification");
-            }
         }
 
         /* turn on compilation of executables */
@@ -455,30 +488,6 @@ int main(int argc, char** argv) {
     } else {
         // ------- compiler -------------
 
-        std::vector<std::unique_ptr<RamProgram>> strata;
-        if (Global::config().has("stratify")) {
-            std::unique_ptr<RamProgram> ramProg = ramTranslationUnit->getProg();
-            if (RamSequence* sequence = dynamic_cast<RamSequence*>(ramProg->getMain())) {
-                sequence->moveSubprograms(strata);
-            } else {
-                strata.push_back(std::move(ramProg));
-            }
-        } else {
-            std::unique_ptr<RamProgram> ramProg = ramTranslationUnit->getProg();
-            strata.push_back(std::move(ramProg));
-        }
-
-        if (Global::config().has("stratify") && Global::config().get("stratify") != "-") {
-            const std::string filePath = Global::config().get("stratify");
-            std::ofstream os(filePath);
-            if (!os.is_open()) {
-                ERROR("could not open '" + filePath + "' for writing.");
-            }
-            astTranslationUnit->getAnalysis<SCCGraph>()->print(
-                    os, fileExtension(Global::config().get("stratify")));
-        }
-
-        /* Locate souffle-compile script */
         std::string compileCmd = ::findTool("souffle-compile", souffleExecutable, ".");
         /* Fail if a souffle-compile executable is not found */
         if (!isExecutable(compileCmd)) {
@@ -486,36 +495,46 @@ int main(int argc, char** argv) {
         }
         compileCmd += " ";
 
-        int index = -1;
-        std::unique_ptr<Synthesiser> synthesiser;
-        for (auto&& stratum : strata) {
-            if (Global::config().has("stratify")) index++;
+        std::unique_ptr<Synthesiser> synthesiser = std::make_unique<Synthesiser>();
 
-            // configure compiler
-            synthesiser = std::make_unique<Synthesiser>(compileCmd);
-            if (Global::config().has("verbose")) {
-                synthesiser->setReportTarget(std::cout);
-            }
-            try {
-                // check if this is code generation only
-                if (Global::config().has("generate")) {
-                    // just generate, no compile, no execute
-                    synthesiser->generateCode(astTranslationUnit->getSymbolTable(), *stratum,
-                            Global::config().get("generate"), index);
-
-                    // check if this is a compile only
-                } else if (Global::config().has("compile") && Global::config().has("dl-program")) {
-                    // just compile, no execute
-                    synthesiser->compileToBinary(astTranslationUnit->getSymbolTable(), *stratum,
-                            Global::config().get("dl-program"), index);
-                } else {
-                    // run compiled C++ program
-                    synthesiser->executeBinary(astTranslationUnit->getSymbolTable(), *stratum);
+        // configure compiler
+        if (Global::config().has("verbose")) {
+            synthesiser->setReportTarget(std::cout);
+        }
+        try {
+            // Find the base filename for code generation and execution
+            std::string baseFilename;
+            if (Global::config().has("dl-program")) {
+                baseFilename = Global::config().get("dl-program");
+            } else if (Global::config().has("generate")) {
+                baseFilename = Global::config().get("generate");
+                // trim .cpp extension if it exists
+                if (baseFilename.size() >= 4 && baseFilename.substr(baseFilename.size() - 4) == ".cpp") {
+                    baseFilename = baseFilename.substr(0, baseFilename.size() - 4);
                 }
-
-            } catch (std::exception& e) {
-                std::cerr << e.what() << std::endl;
+            } else {
+                baseFilename = tempFile();
             }
+            if (baseName(baseFilename) == "/" || baseName(baseFilename) == ".") {
+                baseFilename = tempFile();
+            }
+
+            std::string baseIdentifier = identifier(simpleName(baseFilename));
+            std::string sourceFilename = baseFilename + ".cpp";
+
+            std::ofstream os(sourceFilename);
+            synthesiser->generateCode(*ramTranslationUnit, os, baseIdentifier);
+            os.close();
+
+            if (Global::config().has("compile")) {
+                compileToBinary(compileCmd, sourceFilename);
+                // run compiled C++ program if requested.
+                if (!Global::config().has("dl-program")) {
+                    executeBinary(baseFilename);
+                }
+            }
+        } catch (std::exception& e) {
+            std::cerr << e.what() << std::endl;
         }
     }
 

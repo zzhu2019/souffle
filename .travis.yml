@@ -125,32 +125,6 @@ jobs:
     env:
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
 
-# Testing stage (-c -j8 -s-,-c -f -j8 -s-)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-c -j8 -s-,-c -f -j8 -s-"
-
-# Testing stage (-f -j8,-c -f -j8)
-  - <<: *linuxgcc
-    env:
-    - *gcc_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-  - <<: *linuxclang
-    env:
-    - *clang_environment
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-  - <<: *osxclang
-    env:
-    - SOUFFLE_CATEGORY=FastEvaluation SOUFFLE_CONFS="-f -j8,-c -f -j8"
-
 # Packaging stage
   # Make the linux deb packages.
   - <<: *linuxpackage
@@ -158,6 +132,8 @@ jobs:
     - *gcc_environment
     before_deploy:
       - .travis/bintray_json.sh
+    # deploy to bintray if we're in the souffle-lang repo
+    # https://docs.travis-ci.com/user/deployment/bintray
     deploy:
       - provider: bintray
         skip-cleanup: true
@@ -189,6 +165,8 @@ jobs:
         - doxygen
         - graphviz
     script: "./bootstrap && ./configure && make doxygen-doc"
+    # update the gh-pages branch with doxygen output if the required github token has been set
+    # https://pages.github.com/
     deploy:
       provider: pages
       skip-cleanup: true
@@ -197,6 +175,7 @@ jobs:
       local-dir: doc/html
       on:
         branch: master
+        condition: -v $GHPAGES_TOKEN
 
 after_failure:
   - ".travis/after_failure.sh"
