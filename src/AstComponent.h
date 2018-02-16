@@ -34,7 +34,7 @@ class ErrorReport;
  * where name is the name of the component and < Type, Type, ... > is an optional
  * list of type parameters.
  */
-class AstComponentType {
+class AstComponentType : public AstNode {
     /**
      * The name of the addressed component.
      */
@@ -89,18 +89,35 @@ public:
         typeParams = params;
     }
 
-    // -- printers --
+    // -- others --
 
-    void print(std::ostream& out) const {
-        out << name;
+    std::vector<const AstNode*> getChildNodes() const override {
+        std::vector<const AstNode*> res;
+        return res;  // no child nodes
+    }
+
+    void apply(const AstNodeMapper& /*mapper*/) override {
+        return;  // nothing to do
+    }
+
+    AstComponentType* clone() const override {
+        AstComponentType* res = new AstComponentType(name, typeParams);
+        res->setSrcLoc(getSrcLoc());
+        return res;
+    }
+
+    void print(std::ostream& os) const override {
+        os << name;
         if (!typeParams.empty()) {
-            out << "<" << join(typeParams, ",") << ">";
+            os << "<" << join(typeParams, ",") << ">";
         }
     }
 
-    friend std::ostream& operator<<(std::ostream& out, const AstComponentType& id) {
-        id.print(out);
-        return out;
+protected:
+    bool equal(const AstNode& node) const override {
+        assert(dynamic_cast<const AstComponentType*>(&node));
+        const AstComponentType& other = static_cast<const AstComponentType&>(node);
+        return name == other.name && typeParams == other.typeParams;
     }
 };
 
