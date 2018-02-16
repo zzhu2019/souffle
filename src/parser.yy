@@ -991,18 +991,15 @@ comp_type
 component_head
   : COMPONENT comp_type {
         $$ = new AstComponent();
-        $$->setComponentType(*$2);
-        delete $2;
+        $$->setComponentType(std::unique_ptr<AstComponentType>($2));
     }
   | component_head COLON comp_type {
         $$ = $1;
-        $$->addBaseComponent(*$3);
-        delete $3;
+        $$->addBaseComponent(std::unique_ptr<AstComponentType>($3));
     }
   | component_head COMMA comp_type {
         $$ = $1;
-        $$->addBaseComponent(*$3);
-        delete $3;
+        $$->addBaseComponent(std::unique_ptr<AstComponentType>($3));
     }
 
 component_body
@@ -1047,8 +1044,7 @@ component_body
 component
   : component_head LBRACE component_body RBRACE {
         $$ = $3;
-        $$->setComponentType($1->getComponentType());
-        $$->setBaseComponents($1->getBaseComponents());
+        $$->copyBaseTypes($1);
         delete $1;
         $$->setSrcLoc(@$);
     }
@@ -1058,9 +1054,8 @@ comp_init
   : INSTANTIATE IDENT EQUALS comp_type {
         $$ = new AstComponentInit();
         $$->setInstanceName($2);
-        $$->setComponentType(*$4);
+        $$->setComponentType(std::unique_ptr<AstComponentType>($4));
         $$->setSrcLoc(@$);
-        delete $4;
     }
 
 /* Override rules of a relation */

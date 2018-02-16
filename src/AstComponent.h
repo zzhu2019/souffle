@@ -53,24 +53,6 @@ public:
             const std::vector<AstTypeIdentifier>& params = std::vector<AstTypeIdentifier>())
             : name(name), typeParams(params) {}
 
-    // -- copy constructors and assignment operators --
-
-    AstComponentType(const AstComponentType& other) = default;
-    AstComponentType(AstComponentType&& other) = default;
-
-    AstComponentType& operator=(const AstComponentType& other) = default;
-    AstComponentType& operator=(AstComponentType&& other) = default;
-
-    // -- equality and inequality operators --
-
-    bool operator==(const AstComponentType& other) const {
-        return this == &other || (name == other.name && typeParams == other.typeParams);
-    }
-
-    bool operator!=(const AstComponentType& other) const {
-        return !(*this == other);
-    }
-
     // -- getters and setters --
 
     const std::string& getName() const {
@@ -266,6 +248,15 @@ public:
 
     std::vector<AstType*> getTypes() const {
         return toPtrVector(types);
+    }
+
+    void copyBaseTypes(const AstComponent* other) {
+        setComponentType(std::unique_ptr<AstComponentType>(other->getComponentType()->clone()));
+
+        baseComponents.clear();
+        for (const auto& baseComponent : other->getBaseComponents()) {
+            baseComponents.push_back(std::unique_ptr<AstComponentType>(baseComponent->clone()));
+        }
     }
 
     void addRelation(std::unique_ptr<AstRelation> r) {
