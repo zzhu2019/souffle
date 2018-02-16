@@ -1044,7 +1044,8 @@ component_body
 component
   : component_head LBRACE component_body RBRACE {
         $$ = $3;
-        $$->copyBaseTypes($1);
+        $$->setComponentType(std::unique_ptr<AstComponentType>($1->getComponentType()->clone()));
+        $$->copyBaseComponents($1);
         delete $1;
         $$->setSrcLoc(@$);
     }

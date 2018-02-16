@@ -146,8 +146,8 @@ public:
     }
 
     /** Applies the node mapper to all child nodes and conducts the corresponding replacements */
-    void apply(const AstNodeMapper& map) override {
-        componentType = map(std::move(componentType));
+    void apply(const AstNodeMapper& mapper) override {
+        componentType = mapper(std::move(componentType));
     }
 
     /** Obtains a list of all embedded child nodes */
@@ -250,9 +250,7 @@ public:
         return toPtrVector(types);
     }
 
-    void copyBaseTypes(const AstComponent* other) {
-        setComponentType(std::unique_ptr<AstComponentType>(other->getComponentType()->clone()));
-
+    void copyBaseComponents(const AstComponent* other) {
         baseComponents.clear();
         for (const auto& baseComponent : other->getBaseComponents()) {
             baseComponents.push_back(std::unique_ptr<AstComponentType>(baseComponent->clone()));
@@ -351,7 +349,11 @@ public:
     /** Applies the node mapper to all child nodes and conducts the corresponding replacements */
     void apply(const AstNodeMapper& mapper) override {
         // apply mapper to all sub-nodes
+        type = mapper(std::move(type));
         for (auto& cur : components) {
+            cur = mapper(std::move(cur));
+        }
+        for (auto& cur : baseComponents) {
             cur = mapper(std::move(cur));
         }
         for (auto& cur : instantiations) {
@@ -377,7 +379,11 @@ public:
     std::vector<const AstNode*> getChildNodes() const override {
         std::vector<const AstNode*> res;
 
+        res.push_back(type.get());
         for (const auto& cur : components) {
+            res.push_back(cur.get());
+        }
+        for (const auto& cur : baseComponents) {
             res.push_back(cur.get());
         }
         for (const auto& cur : instantiations) {
