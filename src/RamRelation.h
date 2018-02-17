@@ -139,6 +139,11 @@ public:
         return eqrel;
     }
 
+    // data-structures that can server various searches
+    const bool isCoverable() const {
+        return !isHashmap();
+    }
+
     const bool isTemp() const {
         return istemp;
     }

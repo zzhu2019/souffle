@@ -141,7 +141,7 @@ static const std::string getOpContextName(const RamRelation& rel) {
     return getRelationName(rel) + "_op_ctxt";
 }
 
-std::string getRelationType(const RamRelation& rel, std::size_t arity, const AutoIndex& indexes) {
+std::string getRelationType(const RamRelation& rel, std::size_t arity, const IndexSet& indexes) {
     std::stringstream res;
     res << "ram::Relation";
     res << "<";

@@ -59,66 +59,38 @@ private:
     typedef std::map<SearchColumns, Edges> Graph;
     typedef std::map<SearchColumns, int> Distance;
 
-private:
-    Matchings match;    // if x not in match assume match[x] == 0 else a value. Needs both edges...
-    Graph graph;        // Only traversed not modified
-    Distance distance;  // if x not in distance assume distance[x] == inf. distance [0] special
-
 public:
-    /** calculates max matching */
-    const Matchings& calculate() {
-        while (bfSearch()) {
-            for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
-                if (getMatch(it->first) == NIL) {
-                    dfSearch(it->first);
-                }
-            }
-        }
-        return match;
-    }
+    /** Calculate matching */
+    const Matchings& calculate();
 
-    int getNumMatchings() {
+    /** Get number of matches */
+    int getNumMatchings() const {
         return match.size() / 2;
     }
 
-    /** add an edge to the bi-partite graph */
-    void addEdge(SearchColumns u, SearchColumns v) {
-        if (graph.find(u) == graph.end()) {
-            Edges vals;
-            vals.insert(v);
-            graph.insert(make_pair(u, vals));
-        } else {
-            graph[u].insert(v);
-        }
-    }
+    /** Add edge */
+    void addEdge(SearchColumns u, SearchColumns v);
 
 protected:
-    /** returns match of v */
-    inline SearchColumns getMatch(SearchColumns v) {
-        Matchings::iterator it = match.find(v);
-        if (it == match.end()) {
-            return NIL;
-        }
-        return it->second;
-    }
+    /** Get match */
+    SearchColumns getMatch(SearchColumns v);
 
-    /** returns distance of v */
-    inline int getDistance(int v) {
-        Distance::iterator it = distance.find(v);
-        if (it == distance.end()) {
-            return INF;
-        }
-        return it->second;
-    }
+    /** Get distance */
+    int getDistance(int v);
 
     /** breadth first search */
     bool bfSearch();
 
     /** depth first search */
     bool dfSearch(SearchColumns u);
+
+private:
+    Matchings match;    
+    Graph graph;
+    Distance distance;
 };
 
-class AutoIndex {
+class IndexSet {
 public:
     typedef std::vector<int> LexicographicalOrder;
     typedef std::vector<LexicographicalOrder> OrderCollection;
@@ -133,11 +105,10 @@ protected:
     ChainOrderMap chainToOrder;  // maps order index to set of searches covered by chain
 
     MaxMatching matching;  // matching problem for finding minimal number of orders
-    bool isHashmap;        // relation is a hashmap / no covering possible
     const RamRelation &relation; // relation
 
 public:
-    AutoIndex(const RamRelation &rel) : isHashmap(false), relation(rel) {}
+    IndexSet(const RamRelation &rel) : relation(rel) {}
 
     /** Add new key to an Index Set */
     inline void addSearch(SearchColumns cols) {
@@ -149,11 +120,6 @@ public:
     /** Get relation */
     const RamRelation &getRelation() const {
         return relation;
-    }
-
-    /** Set Hashmap */
-    void setHashmap(bool flag) {
-        isHashmap = flag;
     }
 
     /** Get searches **/
@@ -271,9 +237,9 @@ protected:
  */
 class IndexAnalysis : public RamAnalysis {
 private:
-    typedef std::map<std::string, AutoIndex> data_t;
+    typedef std::map<std::string, IndexSet> data_t;
     typedef typename data_t::iterator iterator;
-    std::map<std::string, AutoIndex> data;
+    std::map<std::string, IndexSet> data;
 
 public:
     static constexpr const char* name = "index-analysis";
@@ -285,12 +251,12 @@ public:
     void print(std::ostream& os) const override;
 
     /** get indexes */
-    AutoIndex& getIndexes(const RamRelation &rel) {
+    IndexSet& getIndexes(const RamRelation &rel) {
         auto pos = data.find(rel.getName());
         if (pos != data.end()) {
             return pos->second;
         } else {
-            auto ret=data.insert(make_pair(rel.getName(), AutoIndex(rel)));
+            auto ret=data.insert(make_pair(rel.getName(), IndexSet(rel)));
             assert(ret.second);
             return ret.first->second;
         }

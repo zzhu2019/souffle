@@ -19,6 +19,7 @@
 #include "RamOperation.h"
 #include "RamValue.h"
 #include "RamTranslationUnit.h"
+#include "RamVisitor.h"
 
 #include <algorithm>
 #include <chrono>
@@ -38,11 +39,42 @@ namespace souffle {
  * Class MaxMatching
  */
 
-/** breadth first search */
-bool MaxMatching::bfSearch() {
+/** Add edge */
+void MaxMatching::addEdge(SearchColumns u, SearchColumns v) 
+{
+    if (graph.find(u) == graph.end()) {
+        Edges vals;
+        vals.insert(v);
+        graph.insert(make_pair(u, vals));
+    } else {
+        graph[u].insert(v);
+    }
+}
+
+/** Get match */
+SearchColumns MaxMatching::getMatch(SearchColumns v)
+{
+    Matchings::iterator it = match.find(v);
+    if (it == match.end()) {
+        return NIL;
+    }
+    return it->second;
+}
+
+/** Get Distance */
+int MaxMatching::getDistance(int v) {
+    Distance::iterator it = distance.find(v);
+    if (it == distance.end()) {
+       return INF;
+    }
+    return it->second;
+}
+
+/** Breadth first search */
+bool MaxMatching::bfSearch() 
+{
     SearchColumns u;
     std::queue<SearchColumns> bfQueue;
-
     // Build layers
     for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
         if (getMatch(it->first) == NIL) {
@@ -52,15 +84,11 @@ bool MaxMatching::bfSearch() {
             distance[it->first] = INF;
         }
     }
-
     distance[NIL] = INF;
-
     while (!bfQueue.empty()) {
         u = bfQueue.front();
         bfQueue.pop();
-
         ASSERT(u != NIL);
-
         const Edges& children = graph[u];
         for (Edges::iterator it = children.begin(); it != children.end(); ++it) {
             SearchColumns mv = getMatch(*it);
@@ -72,12 +100,12 @@ bool MaxMatching::bfSearch() {
             }
         }
     }
-
     return (getDistance(0) != INF);
 }
 
-/** implementation of depth first search */
-bool MaxMatching::dfSearch(SearchColumns u) {
+/** Depth first search */
+bool MaxMatching::dfSearch(SearchColumns u) 
+{
     if (u != 0) {
         Edges& children = graph[u];
         for (Edges::iterator it = children.begin(); it != children.end(); ++it) {
@@ -97,12 +125,25 @@ bool MaxMatching::dfSearch(SearchColumns u) {
     return true;
 }
 
+/** Calculate max-matching */
+const MaxMatching::Matchings& MaxMatching::calculate() 
+{
+   while (bfSearch()) {
+       for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
+           if (getMatch(it->first) == NIL) {
+               dfSearch(it->first);
+           }
+       }
+   }
+   return match;
+}
+
 /*
  * Class IndexSet
  */
 
 /** map the keys in the key set to lexicographical order */
-void AutoIndex::solve() {
+void IndexSet::solve() {
     if (searches.empty()) {
         return;
     }
@@ -110,11 +151,11 @@ void AutoIndex::solve() {
     // check whether one of the naive indexers should be used
     // two conditions: either set by environment or relation is a hash map
     static const char ENV_NAIVE_INDEX[] = "SOUFFLE_USE_NAIVE_INDEX";
-    if (isHashmap || std::getenv(ENV_NAIVE_INDEX)) {
+    if (!relation.isCoverable() || std::getenv(ENV_NAIVE_INDEX)) {
         static bool first = true;
 
         // print a warning - only the first time
-        if (!isHashmap && first) {
+        if (!relation.isCoverable() && first) {
             std::cout << "WARNING: auto index selection disabled, naive indexes are utilized!!\n";
             first = false;
         }
@@ -197,7 +238,7 @@ void AutoIndex::solve() {
 
 /** given an unmapped node from set A we follow it from set B until it cannot be matched from B
   if not mateched from B then umn is a chain*/
-AutoIndex::Chain AutoIndex::getChain(const SearchColumns umn, const MaxMatching::Matchings& match) {
+IndexSet::Chain IndexSet::getChain(const SearchColumns umn, const MaxMatching::Matchings& match) {
     SearchColumns start = umn;  // start at an unmateched node
     Chain chain;
     // Assume : no circular mappings, i.e. a in A -> b in B -> ........ -> a in A is not allowed.
@@ -217,7 +258,7 @@ AutoIndex::Chain AutoIndex::getChain(const SearchColumns umn, const MaxMatching:
 }
 
 /** get all chains from the matching */
-const AutoIndex::ChainOrderMap AutoIndex::getChainsFromMatching(
+const IndexSet::ChainOrderMap IndexSet::getChainsFromMatching(
         const MaxMatching::Matchings& match, const SearchSet& nodes) {
     ASSERT(!nodes.empty());
 
@@ -256,26 +297,20 @@ void IndexAnalysis::run(const RamTranslationUnit& translationUnit) {
     // visit all nodes to collect searches of each relation
     visitDepthFirst(translationUnit.getP(), [&](const RamNode& node) {
         if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
-            bool isHashSet = scan->getRelation().isHashmap();  
-            AutoIndex &indexes = getIndexes(scan->getRelation());
-            indexes.setHashmap(isHashSet);
+            IndexSet &indexes = getIndexes(scan->getRelation());
             indexes.addSearch(scan->getRangeQueryColumns());
         } else if (const RamAggregate* agg = dynamic_cast<const RamAggregate*>(&node)) {
-            bool isHashSet = agg->getRelation().isHashmap();  
-            AutoIndex &indexes = getIndexes(agg->getRelation());
-            indexes.setHashmap(isHashSet);
+            IndexSet &indexes = getIndexes(agg->getRelation());
             indexes.addSearch(agg->getRangeQueryColumns());
         } else if (const RamNotExists* ne = dynamic_cast<const RamNotExists*>(&node)) {
-            bool isHashSet = ne->getRelation().isHashmap();  
-            AutoIndex &indexes = getIndexes(ne->getRelation());
-            indexes.setHashmap(isHashSet);
+            IndexSet &indexes = getIndexes(ne->getRelation());
             indexes.addSearch(ne->getKey());
         }
     });
 
     // find optimal indexes for relations
     for (auto& cur : data) {
-        AutoIndex &indexes =cur.second;
+        IndexSet &indexes =cur.second;
         indexes.solve();
     }
 }
@@ -287,7 +322,7 @@ void IndexAnalysis::print(std::ostream& os) const
     for (auto& cur : data) {
 
         const std::string &relName = cur.first;
-        const AutoIndex &indexes = cur.second;
+        const IndexSet &indexes = cur.second;
         const RamRelation &rel = indexes.getRelation(); 
 
         /* Print searches */
