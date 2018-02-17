@@ -150,7 +150,7 @@ void IndexSet::solve() {
         static bool first = true;
 
         // print a warning - only the first time
-        if (!relation.isCoverable() && first) {
+        if (relation.isCoverable() && first) {
             std::cout << "WARNING: auto index selection disabled, naive indexes are utilized!!\n";
             first = false;
         }
