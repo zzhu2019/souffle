@@ -32,7 +32,7 @@ using namespace souffle;
 RamRelation rel;
 class TestAutoIndex : public IndexSet {
 public:
-    TestAutoIndex() : IndexSet(rel) { }
+    TestAutoIndex() : IndexSet(rel) {}
     /** returns number of unique matchings */
     int getNumMatchings() {
         return matching.getNumMatchings();
