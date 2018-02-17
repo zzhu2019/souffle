@@ -18,6 +18,7 @@
 #include "IODirectives.h"
 #include "ParallelUtils.h"
 #include "RamTypes.h"
+#include "RamNode.h"
 #include "SymbolMask.h"
 #include "SymbolTable.h"
 #include "Table.h"

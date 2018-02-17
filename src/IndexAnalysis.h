@@ -8,16 +8,18 @@
 
 /***************************************************************************
  *
- * @file AutoIndex.h
+ * @file IndexAnalysis.h
  *
- * Defines classes to automatically compute the minimal indexes for a table
+ * Computes indexes for relations in a translation unit
  *
  ***************************************************************************/
 
 #pragma once
 
-#include "MaxMatching.h"
 #include "RamTypes.h"
+#include "RamRelation.h"
+#include "RamAnalysis.h"
+#include "Util.h"
 
 #include <iostream>
 #include <limits>
@@ -25,12 +27,96 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
+#include <cstring>
+#include <functional>
+#include <iostream>
+#include <map>
+#include <queue>
+#include <set>
+
+#define NIL 0
+#define INF -1
+
+// define if enable unit tests
+#define M_UNIT_TEST
 
 namespace souffle {
+
+/**
+ * Computes a maximum matching with Hopcroft-Karp algorithm
+ * Source: http://en.wikipedia.org/wiki/Hopcroft%E2%80%93Karp_algorithm#Pseudocode
+ */
+class MaxMatching {
+public:
+    typedef std::map<SearchColumns, SearchColumns, std::greater<SearchColumns>> Matchings;
+    typedef std::set<SearchColumns, std::greater<SearchColumns>> Nodes;
+
+private:
+    typedef std::set<SearchColumns> Edges;
+    typedef std::map<SearchColumns, Edges> Graph;
+    typedef std::map<SearchColumns, int> Distance;
+
+private:
+    Matchings match;    // if x not in match assume match[x] == 0 else a value. Needs both edges...
+    Graph graph;        // Only traversed not modified
+    Distance distance;  // if x not in distance assume distance[x] == inf. distance [0] special
+
+public:
+    /** calculates max matching */
+    const Matchings& calculate() {
+        while (bfSearch()) {
+            for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
+                if (getMatch(it->first) == NIL) {
+                    dfSearch(it->first);
+                }
+            }
+        }
+        return match;
+    }
+
+    int getNumMatchings() {
+        return match.size() / 2;
+    }
+
+    /** add an edge to the bi-partite graph */
+    void addEdge(SearchColumns u, SearchColumns v) {
+        if (graph.find(u) == graph.end()) {
+            Edges vals;
+            vals.insert(v);
+            graph.insert(make_pair(u, vals));
+        } else {
+            graph[u].insert(v);
+        }
+    }
+
+protected:
+    /** returns match of v */
+    inline SearchColumns getMatch(SearchColumns v) {
+        Matchings::iterator it = match.find(v);
+        if (it == match.end()) {
+            return NIL;
+        }
+        return it->second;
+    }
+
+    /** returns distance of v */
+    inline int getDistance(int v) {
+        Distance::iterator it = distance.find(v);
+        if (it == distance.end()) {
+            return INF;
+        }
+        return it->second;
+    }
+
+    /** breadth first search */
+    bool bfSearch();
+
+    /** depth first search */
+    bool dfSearch(SearchColumns u);
+};
 
 class AutoIndex {
 public:
@@ -47,15 +133,22 @@ protected:
     ChainOrderMap chainToOrder;  // maps order index to set of searches covered by chain
 
     MaxMatching matching;  // matching problem for finding minimal number of orders
-    bool isHashmap;
+    bool isHashmap;        // relation is a hashmap / no covering possible
+    const RamRelation &relation; // relation
 
 public:
-    AutoIndex() : isHashmap(false) {}
-    /** add new key to an Index Set */
+    AutoIndex(const RamRelation &rel) : isHashmap(false), relation(rel) {}
+
+    /** Add new key to an Index Set */
     inline void addSearch(SearchColumns cols) {
         if (cols != 0) {
             searches.insert(cols);
         }
+    }
+
+    /** Get relation */
+    const RamRelation &getRelation() const {
+        return relation;
     }
 
     /** Set Hashmap */
@@ -63,16 +156,18 @@ public:
         isHashmap = flag;
     }
 
-    /** obtains access to the internally stored keys **/
+    /** Get searches **/
     const SearchSet& getSearches() const {
         return searches;
     }
 
+    /** Get index for a search */
     const LexicographicalOrder getLexOrder(SearchColumns cols) const {
         int idx = map(cols);
         return orders[idx];
     }
 
+    /** Get all indexes */
     const OrderCollection getAllOrders() const {
         return orders;
     }
@@ -168,6 +263,37 @@ protected:
             }
         }
         return unmatched;
+    }
+};
+
+/**
+ * Analysis pass computing the precedence graph of the relations of the datalog progam.
+ */
+class IndexAnalysis : public RamAnalysis {
+private:
+    typedef std::map<std::string, AutoIndex> data_t;
+    typedef typename data_t::iterator iterator;
+    std::map<std::string, AutoIndex> data;
+
+public:
+    static constexpr const char* name = "index-analysis";
+
+    /** run analysis */
+    void run(const RamTranslationUnit& translationUnit) override;
+
+    /** print analysis */
+    void print(std::ostream& os) const override;
+
+    /** get indexes */
+    AutoIndex& getIndexes(const RamRelation &rel) {
+        auto pos = data.find(rel.getName());
+        if (pos != data.end()) {
+            return pos->second;
+        } else {
+            auto ret=data.insert(make_pair(rel.getName(), AutoIndex(rel)));
+            assert(ret.second);
+            return ret.first->second;
+        }
     }
 };
 
