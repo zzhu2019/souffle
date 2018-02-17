@@ -17,8 +17,8 @@
 #include "IndexSetAnalysis.h"
 #include "RamCondition.h"
 #include "RamOperation.h"
-#include "RamValue.h"
 #include "RamTranslationUnit.h"
+#include "RamValue.h"
 #include "RamVisitor.h"
 
 #include <algorithm>
@@ -40,8 +40,7 @@ namespace souffle {
  */
 
 /** Add edge */
-void MaxMatching::addEdge(SearchColumns u, SearchColumns v) 
-{
+void MaxMatching::addEdge(SearchColumns u, SearchColumns v) {
     if (graph.find(u) == graph.end()) {
         Edges vals;
         vals.insert(v);
@@ -52,8 +51,7 @@ void MaxMatching::addEdge(SearchColumns u, SearchColumns v)
 }
 
 /** Get match */
-SearchColumns MaxMatching::getMatch(SearchColumns v)
-{
+SearchColumns MaxMatching::getMatch(SearchColumns v) {
     Matchings::iterator it = match.find(v);
     if (it == match.end()) {
         return NIL;
@@ -65,14 +63,13 @@ SearchColumns MaxMatching::getMatch(SearchColumns v)
 int MaxMatching::getDistance(int v) {
     Distance::iterator it = distance.find(v);
     if (it == distance.end()) {
-       return INF;
+        return INF;
     }
     return it->second;
 }
 
 /** Breadth first search */
-bool MaxMatching::bfSearch() 
-{
+bool MaxMatching::bfSearch() {
     SearchColumns u;
     std::queue<SearchColumns> bfQueue;
     // Build layers
@@ -104,8 +101,7 @@ bool MaxMatching::bfSearch()
 }
 
 /** Depth first search */
-bool MaxMatching::dfSearch(SearchColumns u) 
-{
+bool MaxMatching::dfSearch(SearchColumns u) {
     if (u != 0) {
         Edges& children = graph[u];
         for (Edges::iterator it = children.begin(); it != children.end(); ++it) {
@@ -126,16 +122,15 @@ bool MaxMatching::dfSearch(SearchColumns u)
 }
 
 /** Calculate max-matching */
-const MaxMatching::Matchings& MaxMatching::solve() 
-{
-   while (bfSearch()) {
-       for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
-           if (getMatch(it->first) == NIL) {
-               dfSearch(it->first);
-           }
-       }
-   }
-   return match;
+const MaxMatching::Matchings& MaxMatching::solve() {
+    while (bfSearch()) {
+        for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
+            if (getMatch(it->first) == NIL) {
+                dfSearch(it->first);
+            }
+        }
+    }
+    return match;
 }
 
 /*
@@ -297,33 +292,31 @@ void IndexSetAnalysis::run(const RamTranslationUnit& translationUnit) {
     // visit all nodes to collect searches of each relation
     visitDepthFirst(translationUnit.getP(), [&](const RamNode& node) {
         if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
-            IndexSet &indexes = getIndexes(scan->getRelation());
+            IndexSet& indexes = getIndexes(scan->getRelation());
             indexes.addSearch(scan->getRangeQueryColumns());
         } else if (const RamAggregate* agg = dynamic_cast<const RamAggregate*>(&node)) {
-            IndexSet &indexes = getIndexes(agg->getRelation());
+            IndexSet& indexes = getIndexes(agg->getRelation());
             indexes.addSearch(agg->getRangeQueryColumns());
         } else if (const RamNotExists* ne = dynamic_cast<const RamNotExists*>(&node)) {
-            IndexSet &indexes = getIndexes(ne->getRelation());
+            IndexSet& indexes = getIndexes(ne->getRelation());
             indexes.addSearch(ne->getKey());
         }
     });
 
     // find optimal indexes for relations
     for (auto& cur : data) {
-        IndexSet &indexes =cur.second;
+        IndexSet& indexes = cur.second;
         indexes.solve();
     }
 }
 
 /** Print indexes */
-void IndexSetAnalysis::print(std::ostream& os) const
-{
+void IndexSetAnalysis::print(std::ostream& os) const {
     os << "------ Auto-Index-Generation Report -------\n";
     for (auto& cur : data) {
-
-        const std::string &relName = cur.first;
-        const IndexSet &indexes = cur.second;
-        const RamRelation &rel = indexes.getRelation(); 
+        const std::string& relName = cur.first;
+        const IndexSet& indexes = cur.second;
+        const RamRelation& rel = indexes.getRelation();
 
         /* Print searches */
         os << "Relation " << relName << "\n";

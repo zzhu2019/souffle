@@ -16,13 +16,17 @@
 
 #pragma once
 
-#include "RamTypes.h"
-#include "RamRelation.h"
 #include "RamAnalysis.h"
+#include "RamRelation.h"
+#include "RamTypes.h"
 #include "Util.h"
 
+#include <cstring>
+#include <functional>
 #include <iostream>
 #include <limits>
+#include <map>
+#include <queue>
 #include <set>
 #include <sstream>
 #include <string>
@@ -30,12 +34,6 @@
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
-#include <cstring>
-#include <functional>
-#include <iostream>
-#include <map>
-#include <queue>
-#include <set>
 
 #define NIL 0
 #define INF -1
@@ -85,16 +83,16 @@ protected:
     bool dfSearch(SearchColumns u);
 
 private:
-    Matchings match;    
+    Matchings match;
     Graph graph;
     Distance distance;
 };
 
-/** 
+/**
  * Computes the index set for a relation
  *
- * If the indexes of a relation can cover several searches, the minimal 
- * set of indexes is computed by Dilworth's problem. See 
+ * If the indexes of a relation can cover several searches, the minimal
+ * set of indexes is computed by Dilworth's problem. See
  *
  * "Optimal On The Fly Index Selection in Polynomial Time"
  * https://arxiv.org/abs/1709.03685
@@ -115,11 +113,11 @@ protected:
     OrderCollection orders;      // collection of lexicographical orders
     ChainOrderMap chainToOrder;  // maps order index to set of searches covered by chain
 
-    MaxMatching matching;  // matching problem for finding minimal number of orders
-    const RamRelation &relation; // relation
+    MaxMatching matching;         // matching problem for finding minimal number of orders
+    const RamRelation& relation;  // relation
 
 public:
-    IndexSet(const RamRelation &rel) : relation(rel) {}
+    IndexSet(const RamRelation& rel) : relation(rel) {}
 
     /** Add new key to an Index Set */
     inline void addSearch(SearchColumns cols) {
@@ -129,7 +127,7 @@ public:
     }
 
     /** Get relation */
-    const RamRelation &getRelation() const {
+    const RamRelation& getRelation() const {
         return relation;
     }
 
@@ -262,12 +260,12 @@ public:
     void print(std::ostream& os) const override;
 
     /** get indexes */
-    IndexSet& getIndexes(const RamRelation &rel) {
+    IndexSet& getIndexes(const RamRelation& rel) {
         auto pos = data.find(rel.getName());
         if (pos != data.end()) {
             return pos->second;
         } else {
-            auto ret=data.insert(make_pair(rel.getName(), IndexSet(rel)));
+            auto ret = data.insert(make_pair(rel.getName(), IndexSet(rel)));
             assert(ret.second);
             return ret.first->second;
         }

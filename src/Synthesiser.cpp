@@ -20,8 +20,8 @@
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
-#include "IndexSetAnalysis.h"
 #include "IOSystem.h"
+#include "IndexSetAnalysis.h"
 #include "Logger.h"
 #include "Macro.h"
 #include "RamRelation.h"
@@ -1218,13 +1218,14 @@ void genCode(std::ostream& out, const RamStatement& stmt) {
 }
 }  // namespace
 
-void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os, const std::string& id) const {
+void Synthesiser::generateCode(
+        const RamTranslationUnit& unit, std::ostream& os, const std::string& id) const {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
     // ---------------------------------------------------------------
     const SymbolTable& symTable = unit.getSymbolTable();
     const RamProgram& prog = unit.getP();
-    IndexSetAnalysis *idxAnalysis = unit.getAnalysis<IndexSetAnalysis>();
+    IndexSetAnalysis* idxAnalysis = unit.getAnalysis<IndexSetAnalysis>();
 
     // ---------------------------------------------------------------
     //                      Code Generation
@@ -1287,8 +1288,8 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         tempType = (rel.isTemp() && raw_name.find("@delta") != std::string::npos)
                            ? getRelationType(rel, rel.getArity(), idxAnalysis->getIndexes(rel))
                            : tempType;
-        const std::string& type =
-                (rel.isTemp()) ? tempType : getRelationType(rel, rel.getArity(), idxAnalysis->getIndexes(rel));
+        const std::string& type = (rel.isTemp()) ? tempType : getRelationType(rel, rel.getArity(),
+                                                                      idxAnalysis->getIndexes(rel));
 
         // defining table
         os << "// -- Table: " << raw_name << "\n";

@@ -15,7 +15,4 @@
 
 #include "MaxMatching.h"
 
-namespace souffle {
-
-
-}  // end of namespace souffle
+namespace souffle {}  // end of namespace souffle
