@@ -20,7 +20,7 @@
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
-#include "IndexAnalysis.h"
+#include "IndexSetAnalysis.h"
 #include "IOSystem.h"
 #include "Logger.h"
 #include "Macro.h"
@@ -1224,7 +1224,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     // ---------------------------------------------------------------
     const SymbolTable& symTable = unit.getSymbolTable();
     const RamProgram& prog = unit.getP();
-    IndexAnalysis *idxAnalysis = unit.getAnalysis<IndexAnalysis>();
+    IndexSetAnalysis *idxAnalysis = unit.getAnalysis<IndexSetAnalysis>();
 
     // ---------------------------------------------------------------
     //                      Code Generation

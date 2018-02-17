@@ -8,7 +8,7 @@
 
 /***************************************************************************
  *
- * @file IndexAnalysis.h
+ * @file IndexSetAnalysis.h
  *
  * Computes indexes for relations in a translation unit
  *
@@ -60,8 +60,8 @@ private:
     typedef std::map<SearchColumns, int> Distance;
 
 public:
-    /** Calculate matching */
-    const Matchings& calculate();
+    /** Solve */
+    const Matchings& solve();
 
     /** Get number of matches */
     int getNumMatchings() const {
@@ -89,6 +89,17 @@ private:
     Graph graph;
     Distance distance;
 };
+
+/** 
+ * Computes the index set for a relation
+ *
+ * If the indexes of a relation can cover several searches, the minimal 
+ * set of indexes is computed by Dilworth's problem. See 
+ *
+ * "Optimal On The Fly Index Selection in Polynomial Time"
+ * https://arxiv.org/abs/1709.03685
+ *
+ */
 
 class IndexSet {
 public:
@@ -233,9 +244,9 @@ protected:
 };
 
 /**
- * Analysis pass computing the precedence graph of the relations of the datalog progam.
+ * Analysis pass computing the index sets of RAM relations
  */
-class IndexAnalysis : public RamAnalysis {
+class IndexSetAnalysis : public RamAnalysis {
 private:
     typedef std::map<std::string, IndexSet> data_t;
     typedef typename data_t::iterator iterator;

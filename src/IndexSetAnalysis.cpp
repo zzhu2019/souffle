@@ -10,11 +10,11 @@
  *
  * @file IndexAnalysis.cpp
  *
- * Implementation of an Minimal Index Analysis for RAM programs.
+ * Computes indexes for relations in a translation unit
  *
  ***********************************************************************/
 
-#include "IndexAnalysis.h"
+#include "IndexSetAnalysis.h"
 #include "RamCondition.h"
 #include "RamOperation.h"
 #include "RamValue.h"
@@ -126,7 +126,7 @@ bool MaxMatching::dfSearch(SearchColumns u)
 }
 
 /** Calculate max-matching */
-const MaxMatching::Matchings& MaxMatching::calculate() 
+const MaxMatching::Matchings& MaxMatching::solve() 
 {
    while (bfSearch()) {
        for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
@@ -201,7 +201,7 @@ void IndexSet::solve() {
     // Perform the Hopcroft-Karp on the graph and receive matchings (mapped A->B and B->A)
     // Assume: alg.calculate is not called on an empty graph
     ASSERT(!searches.empty());
-    const MaxMatching::Matchings& matchings = matching.calculate();
+    const MaxMatching::Matchings& matchings = matching.solve();
 
     // Extract the chains given the nodes and matchings
     const ChainOrderMap chains = getChainsFromMatching(matchings, searches);
@@ -293,7 +293,7 @@ const IndexSet::ChainOrderMap IndexSet::getChainsFromMatching(
 }
 
 /** Compute indexes */
-void IndexAnalysis::run(const RamTranslationUnit& translationUnit) {
+void IndexSetAnalysis::run(const RamTranslationUnit& translationUnit) {
     // visit all nodes to collect searches of each relation
     visitDepthFirst(translationUnit.getP(), [&](const RamNode& node) {
         if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
@@ -316,7 +316,7 @@ void IndexAnalysis::run(const RamTranslationUnit& translationUnit) {
 }
 
 /** Print indexes */
-void IndexAnalysis::print(std::ostream& os) const
+void IndexSetAnalysis::print(std::ostream& os) const
 {
     os << "------ Auto-Index-Generation Report -------\n";
     for (auto& cur : data) {

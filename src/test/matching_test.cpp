@@ -14,7 +14,7 @@
  *
  ***********************************************************************/
 
-#include "../IndexAnalysis.h"
+#include "../IndexSetAnalysis.h"
 #include "../RamRelation.h"
 #include "test.h"
 
