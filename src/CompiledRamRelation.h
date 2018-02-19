@@ -71,12 +71,6 @@ struct Auto;
  * A setup utilizing direct b-trees for relations exclusively.
  */
 struct BTree;
-
-/**
- * A setup utilizing direct hashmaps for relations exclusively.
- */
-struct Hashmap;
-
 /**
  * A setup utilizing bries for relations exclusively.
  */
@@ -88,14 +82,14 @@ struct Brie;
 struct EqRel;
 
 /**
- * A setup utilizing a std set and multiset based structures exclusively.
- */
-using StdOrdered = GenericSetup<detail::std_set_config>;
-
-/**
  * A setup utilizing hash based data structures exclusively (STL unordered set and multiset).
  */
-using StdUnordered = GenericSetup<detail::std_unordered_config>;
+using Hashset = GenericSetup<detail::std_unordered_config>;
+
+/**
+ * A setup utilizing a std set and multiset based structures exclusively.
+ */
+using Rbtset = GenericSetup<detail::std_set_config>;
 
 // -------------------------------------------------------------
 //                  Auto Setup Implementation
@@ -142,21 +136,6 @@ class SingleIndexTypeRelation;
  * A setup utilizing direct b-trees for relations exclusively.
  */
 struct BTree {
-    // a index factory selecting in any case a BTree index
-    template <typename Tuple, typename Index, bool>
-    struct btree_index_factory {
-        using type = typename index_utils::DirectIndex<Tuple, Index>;
-    };
-
-    // determines the relation implementation for a given use case
-    template <unsigned arity, typename... Indices>
-    using relation = detail::SingleIndexTypeRelation<btree_index_factory, arity, Indices...>;
-};
-
-/**
- * A setup utilizing direct hashmaps for relations exclusively.
- */
-struct Hashmap {
     // a index factory selecting in any case a BTree index
     template <typename Tuple, typename Index, bool>
     struct btree_index_factory {
@@ -1103,6 +1082,14 @@ public:
         return nested.template get<Index>();
     }
 
+    /*
+    template <typename Index>
+    typename std::enable_if<config::template covers_query<Index, First>::value, range<iterator>>::type
+    equal_range(const tuple_type& t) const {
+        return make_range(data.lower_bound(index_utils::lower<First, Index>(t)),
+                data.upper_bound(index_utils::raise<First, Index>(t)));
+    }*/
+    
     template <typename Index>
     typename std::enable_if<config::template covers_query<Index, First>::value &&
                                     config::template use_equal_range<Index, First>::value,
@@ -1239,7 +1226,7 @@ public:
     }
 
     template <typename I>
-    auto equalRange(const tuple_type& value, operation_context& ctxt) const
+    auto equalRange(const tuple_type& value, operation_context&) const
             -> decltype(indices.template equal_range<I>(value)) {
         return indices.template equal_range<I>(value);
     }

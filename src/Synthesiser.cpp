@@ -174,8 +174,10 @@ std::string getRelationType(const RamRelation& rel, std::size_t arity, const Aut
 
     if (rel.isBTree()) {
         res << "BTree,";
-    } else if (rel.isHashmap()) {
-        res << "Hashmap,";
+    } else if (rel.isRbtset()) {
+        res << "Rbtset,";
+    } else if (rel.isHashset()) {
+        res << "Hashset,";
     } else if (rel.isBrie()) {
         res << "Brie,";
     } else if (rel.isEqRel()) {
@@ -184,8 +186,10 @@ std::string getRelationType(const RamRelation& rel, std::size_t arity, const Aut
         auto data_structure = Global::config().get("data-structure");
         if (data_structure == "btree") {
             res << "BTree,";
-        } else if (data_structure == "hashmap") {
-            res << "Hashmap,";
+        } else if (data_structure == "rbtset") {
+            res << "Rbtset,";
+        } else if (data_structure == "hashset") {
+            res << "Hashset,";
         } else if (data_structure == "brie") {
             res << "Brie,";
         } else if (data_structure == "eqrel") {
@@ -1258,15 +1262,15 @@ void Synthesiser::generateCode(
     IndexMap indices;
     visitDepthFirst(prog, [&](const RamNode& node) {
         if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
-            indices[scan->getRelation()].setHashmap(scan->getRelation().isHashmap());
+            indices[scan->getRelation()].setHashset(scan->getRelation().isHashset());
             indices[scan->getRelation()].addSearch(scan->getRangeQueryColumns());
         }
         if (const RamAggregate* agg = dynamic_cast<const RamAggregate*>(&node)) {
-            indices[agg->getRelation()].setHashmap(agg->getRelation().isHashmap());
+            indices[agg->getRelation()].setHashset(agg->getRelation().isHashset());
             indices[agg->getRelation()].addSearch(agg->getRangeQueryColumns());
         }
         if (const RamNotExists* ne = dynamic_cast<const RamNotExists*>(&node)) {
-            indices[ne->getRelation()].setHashmap(ne->getRelation().isHashmap());
+            indices[ne->getRelation()].setHashset(ne->getRelation().isHashset());
             indices[ne->getRelation()].addSearch(ne->getKey());
         }
     });

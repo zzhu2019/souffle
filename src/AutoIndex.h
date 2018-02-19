@@ -47,10 +47,10 @@ protected:
     ChainOrderMap chainToOrder;  // maps order index to set of searches covered by chain
 
     MaxMatching matching;  // matching problem for finding minimal number of orders
-    bool isHashmap;
+    bool isHashset;
 
 public:
-    AutoIndex() : isHashmap(false) {}
+    AutoIndex() : isHashset(false) {}
     /** add new key to an Index Set */
     inline void addSearch(SearchColumns cols) {
         if (cols != 0) {
@@ -58,9 +58,9 @@ public:
         }
     }
 
-    /** Set Hashmap */
-    void setHashmap(bool flag) {
-        isHashmap = flag;
+    /** Set Hashset */
+    void setHashset(bool flag) {
+        isHashset = flag;
     }
 
     /** obtains access to the internally stored keys **/
