@@ -127,7 +127,7 @@ souffle_sources = \
               InterpreterInterface.h                    \
               InterpreterIndex.h                        \
               InterpreterRecords.cpp InterpreterRecords.h \
-			  IndexSetAnalysis.cpp   IndexSetAnalysis.h \
+              IndexSetAnalysis.cpp   IndexSetAnalysis.h \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h
 

@@ -22,12 +22,7 @@
 #include "RamVisitor.h"
 
 #include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <memory>
-#include <regex>
-#include <utility>
-#include <unistd.h>
+#include <queue>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -176,9 +171,6 @@ void IndexSet::solve() {
             chainToOrder.push_back(Chain());
             chainToOrder.back().insert(cur);
         }
-
-        //		std::cout << "Orders: " << orders << "\n";
-        //		std::cout << "Chains: " << chainToOrder << "\n";
 
         return;
     }
