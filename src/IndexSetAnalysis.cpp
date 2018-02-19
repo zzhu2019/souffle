@@ -22,12 +22,7 @@
 #include "RamVisitor.h"
 
 #include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <memory>
-#include <regex>
-#include <utility>
-#include <unistd.h>
+#include <queue>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -40,7 +35,8 @@ namespace souffle {
  */
 
 /** Add edge */
-void MaxMatching::addEdge(SearchColumns u, SearchColumns v) {
+void MaxMatching::addEdge(SearchColumns u, SearchColumns v) 
+{
     if (graph.find(u) == graph.end()) {
         Edges vals;
         vals.insert(v);
@@ -51,7 +47,8 @@ void MaxMatching::addEdge(SearchColumns u, SearchColumns v) {
 }
 
 /** Get match */
-SearchColumns MaxMatching::getMatch(SearchColumns v) {
+SearchColumns MaxMatching::getMatch(SearchColumns v) 
+{
     Matchings::iterator it = match.find(v);
     if (it == match.end()) {
         return NIL;
@@ -60,7 +57,8 @@ SearchColumns MaxMatching::getMatch(SearchColumns v) {
 }
 
 /** Get Distance */
-int MaxMatching::getDistance(int v) {
+int MaxMatching::getDistance(int v) 
+{
     Distance::iterator it = distance.find(v);
     if (it == distance.end()) {
         return INF;
@@ -69,7 +67,8 @@ int MaxMatching::getDistance(int v) {
 }
 
 /** Breadth first search */
-bool MaxMatching::bfSearch() {
+bool MaxMatching::bfSearch() 
+{
     SearchColumns u;
     std::queue<SearchColumns> bfQueue;
     // Build layers
@@ -101,7 +100,8 @@ bool MaxMatching::bfSearch() {
 }
 
 /** Depth first search */
-bool MaxMatching::dfSearch(SearchColumns u) {
+bool MaxMatching::dfSearch(SearchColumns u) 
+{
     if (u != 0) {
         Edges& children = graph[u];
         for (Edges::iterator it = children.begin(); it != children.end(); ++it) {
@@ -122,7 +122,8 @@ bool MaxMatching::dfSearch(SearchColumns u) {
 }
 
 /** Calculate max-matching */
-const MaxMatching::Matchings& MaxMatching::solve() {
+const MaxMatching::Matchings& MaxMatching::solve() 
+{
     while (bfSearch()) {
         for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
             if (getMatch(it->first) == NIL) {
@@ -138,7 +139,8 @@ const MaxMatching::Matchings& MaxMatching::solve() {
  */
 
 /** map the keys in the key set to lexicographical order */
-void IndexSet::solve() {
+void IndexSet::solve() 
+{
     if (searches.empty()) {
         return;
     }
@@ -176,9 +178,6 @@ void IndexSet::solve() {
             chainToOrder.push_back(Chain());
             chainToOrder.back().insert(cur);
         }
-
-        //		std::cout << "Orders: " << orders << "\n";
-        //		std::cout << "Chains: " << chainToOrder << "\n";
 
         return;
     }
@@ -233,7 +232,8 @@ void IndexSet::solve() {
 
 /** given an unmapped node from set A we follow it from set B until it cannot be matched from B
   if not mateched from B then umn is a chain*/
-IndexSet::Chain IndexSet::getChain(const SearchColumns umn, const MaxMatching::Matchings& match) {
+IndexSet::Chain IndexSet::getChain(const SearchColumns umn, const MaxMatching::Matchings& match) 
+{
     SearchColumns start = umn;  // start at an unmateched node
     Chain chain;
     // Assume : no circular mappings, i.e. a in A -> b in B -> ........ -> a in A is not allowed.
@@ -254,7 +254,8 @@ IndexSet::Chain IndexSet::getChain(const SearchColumns umn, const MaxMatching::M
 
 /** get all chains from the matching */
 const IndexSet::ChainOrderMap IndexSet::getChainsFromMatching(
-        const MaxMatching::Matchings& match, const SearchSet& nodes) {
+        const MaxMatching::Matchings& match, const SearchSet& nodes) 
+{
     ASSERT(!nodes.empty());
 
     // Get all unmatched nodes from A
@@ -288,7 +289,8 @@ const IndexSet::ChainOrderMap IndexSet::getChainsFromMatching(
 }
 
 /** Compute indexes */
-void IndexSetAnalysis::run(const RamTranslationUnit& translationUnit) {
+void IndexSetAnalysis::run(const RamTranslationUnit& translationUnit) 
+{
     // visit all nodes to collect searches of each relation
     visitDepthFirst(translationUnit.getP(), [&](const RamNode& node) {
         if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
@@ -311,7 +313,8 @@ void IndexSetAnalysis::run(const RamTranslationUnit& translationUnit) {
 }
 
 /** Print indexes */
-void IndexSetAnalysis::print(std::ostream& os) const {
+void IndexSetAnalysis::print(std::ostream& os) const 
+{
     os << "------ Auto-Index-Generation Report -------\n";
     for (auto& cur : data) {
         const std::string& relName = cur.first;

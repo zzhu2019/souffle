@@ -21,18 +21,9 @@
 #include "RamTypes.h"
 #include "Util.h"
 
-#include <cstring>
-#include <functional>
-#include <iostream>
-#include <limits>
-#include <map>
-#include <queue>
 #include <set>
-#include <sstream>
 #include <string>
 #include <vector>
-#include <math.h>
-#include <stdint.h>
 #include <string.h>
 
 #define NIL 0
