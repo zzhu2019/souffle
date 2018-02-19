@@ -389,6 +389,31 @@ std::map<const AstArgument*, bool> getGroundedTerms(const AstClause& clause) {
         void visitAggregator(const AstAggregator& c) override {
             addConstraint(isTrue(getVar(c)));
         }
+
+        // #8 - functors with grounded values are grounded values
+        void visitUnaryFunctor(const AstUnaryFunctor& cur) override {
+            auto fun = getVar(cur);
+            auto arg = getVar(cur.getOperand());
+
+            addConstraint(imply(arg, fun));
+        }
+
+        void visitBinaryFunctor(const AstBinaryFunctor& cur) override {
+            auto fun = getVar(cur);
+            auto lhs = getVar(cur.getLHS());
+            auto rhs = getVar(cur.getRHS());
+
+            addConstraint(imply({lhs, rhs}, fun));
+        }
+
+        void visitTernaryFunctor(const AstTernaryFunctor& cur) override {
+            auto fun = getVar(cur);
+            auto a0 = getVar(cur.getArg(0));
+            auto a1 = getVar(cur.getArg(1));
+            auto a2 = getVar(cur.getArg(2));
+
+            addConstraint(imply({a0, a1, a2}, fun));
+        }
     };
 
     // run analysis on given clause
