@@ -253,11 +253,11 @@ AC_CONFIG_FILES([
   tests/Makefile
   tests/atlocal
 ])
-AC_CONFIG_LINKS([include/souffle/CompiledRamOptions.h:src/CompiledRamOptions.h])
-AC_CONFIG_LINKS([include/souffle/CompiledRamIndexUtils.h:src/CompiledRamIndexUtils.h])
-AC_CONFIG_LINKS([include/souffle/CompiledRamRelation.h:src/CompiledRamRelation.h])
-AC_CONFIG_LINKS([include/souffle/CompiledRamTuple.h:src/CompiledRamTuple.h])
-AC_CONFIG_LINKS([include/souffle/CompiledRamRecord.h:src/CompiledRamRecord.h])
+AC_CONFIG_LINKS([include/souffle/CompiledOptions.h:src/CompiledOptions.h])
+AC_CONFIG_LINKS([include/souffle/CompiledIndexUtils.h:src/CompiledIndexUtils.h])
+AC_CONFIG_LINKS([include/souffle/CompiledRelation.h:src/CompiledRelation.h])
+AC_CONFIG_LINKS([include/souffle/CompiledTuple.h:src/CompiledTuple.h])
+AC_CONFIG_LINKS([include/souffle/CompiledRecord.h:src/CompiledRecord.h])
 AC_CONFIG_LINKS([include/souffle/CompiledSouffle.h:src/CompiledSouffle.h])
 AC_CONFIG_LINKS([include/souffle/SouffleInterface.h:src/SouffleInterface.h])
 AC_CONFIG_LINKS([include/souffle/ParallelUtils.h:src/ParallelUtils.h])

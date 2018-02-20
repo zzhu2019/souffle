@@ -8,13 +8,13 @@
 
 /************************************************************************
  *
- * @file compiled_ram_tuple_test.h
+ * @file compiled_test.h
  *
  * Test cases for the RAM tuple data structure.
  *
  ***********************************************************************/
 
-#include "CompiledRamTuple.h"
+#include "CompiledTuple.h"
 #include "test.h"
 
 #include <iostream>
