@@ -77,6 +77,10 @@ public:
         return orders;
     }
 
+    const ChainOrderMap getAllChains() const{
+        return chainToOrder;
+    }
+
     /** check whether number of bits in k is not equal
         to number of columns in lexicographical order */
     bool isSubset(SearchColumns cols) const {

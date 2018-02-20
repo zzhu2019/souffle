@@ -149,7 +149,7 @@ std::vector<IODirectives> getOutputIODirectives(const AstRelation* rel, const Ty
 }
 
 std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv,
-        std::string name, size_t arity, const bool istemp = false, std::string filePath = std::string(),
+        std::string name, size_t arity, const bool istemp = false, const bool hashset = false, std::string filePath = std::string(),
         std::string fileExt = std::string()) {
     // avoid name conflicts for temporary identifiers
     if (istemp) {
@@ -157,7 +157,7 @@ std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEn
     }
 
     if (!rel) {
-        return std::make_unique<RamRelation>(name, arity, istemp);
+        return std::make_unique<RamRelation>(name, arity, istemp, hashset);
     }
 
     assert(arity == rel->getArity());
@@ -177,7 +177,7 @@ std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEn
 }
 
 std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv) {
-    return getRamRelation(rel, typeEnv, getRelationName(rel->getName()), rel->getArity());
+    return getRamRelation(rel, typeEnv, getRelationName(rel->getName()), rel->getArity(), false, rel->isHashset());
 }
 }  // namespace
 
@@ -429,7 +429,7 @@ std::unique_ptr<RamValue> translateValue(const AstArgument& arg, const ValueInde
 
 /** generate RAM code for a clause */
 std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& clause,
-        const AstProgram* program, const TypeEnvironment* typeEnv, int version, bool ret) {
+        const AstProgram* program, const TypeEnvironment* typeEnv, int version, bool ret, bool hashset) {
     // check whether there is an imposed order constraint
     if (clause.getExecutionPlan() && clause.getExecutionPlan()->hasOrderFor(version)) {
         // get the imposed order
@@ -451,7 +451,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
         copy->setFixedExecutionPlan();
 
         // translate reordered clause
-        return translateClause(*copy, program, typeEnv, version);
+        return translateClause(*copy, program, typeEnv, version, false, hashset);
     }
 
     // get extract some details
@@ -460,7 +460,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
     // a utility to translate atoms to relations
     auto getRelation = [&](const AstAtom* atom) {
         return getRamRelation((program ? getAtomRelation(atom, program) : nullptr), typeEnv,
-                getRelationName(atom->getName()), atom->getArity());
+                getRelationName(atom->getName()), atom->getArity(), false, hashset);
     };
 
     // handle facts
@@ -961,10 +961,9 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
 
         /* create two temporary tables for relaxed semi-naive evaluation */
         auto relName = getRelationName(rel->getName());
-        rrel[rel] = getRamRelation(rel, &typeEnv, relName, rel->getArity());
-        relDelta[rel] = getRamRelation(rel, &typeEnv, "delta_" + relName, rel->getArity(), true);
-        relNew[rel] = getRamRelation(rel, &typeEnv, "new_" + relName, rel->getArity(), true);
-
+        rrel[rel] = getRamRelation(rel, &typeEnv, relName, rel->getArity(), false, rel->isHashset());
+        relDelta[rel] = getRamRelation(rel, &typeEnv, "delta_" + relName, rel->getArity(), true, rel->isHashset());
+        relNew[rel] = getRamRelation(rel, &typeEnv, "new_" + relName, rel->getArity(), true, rel->isHashset());
         /* create update statements for fixpoint (even iteration) */
         appendStmt(updateRelTable,
                 std::unique_ptr<RamStatement>(new RamSequence(
@@ -1055,7 +1054,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                     }
                 }
 
-                std::unique_ptr<RamStatement> rule = translateClause(*r1, program, &typeEnv, version);
+                std::unique_ptr<RamStatement> rule = translateClause(*r1, program, &typeEnv, version, false, rel->isHashset());
 
                 /* add logging */
                 if (Global::config().has("profile")) {
@@ -1149,7 +1148,7 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
         mrel->addIODirectives(std::move(directive));
     }
     std::unique_ptr<RamRelation> rrel = getRamRelation(
-            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
+            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, mrel->isHashset(), dir, ext);
     // create and load the relation at the start
     appendStmt(current, std::make_unique<RamCreate>(std::unique_ptr<RamRelation>(rrel->clone())));
 
@@ -1179,7 +1178,7 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
         mrel->addIODirectives(std::move(directive));
     }
     std::unique_ptr<RamRelation> rrel = getRamRelation(
-            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, dir, ext);
+            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, mrel->isHashset(), dir, ext);
     if (rel->isPrintSize()) {
         appendStmt(current, std::make_unique<RamPrintSize>(std::unique_ptr<RamRelation>(rrel->clone())));
     }

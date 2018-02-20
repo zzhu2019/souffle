@@ -72,7 +72,8 @@ public:
             : RamNode(RN_Relation), arity(0), mask(arity), input(false), output(false), computed(false),
               btree(false), rbtset(false), hashset(false), brie(false), eqrel(false), isdata(false), istemp(false) {}
 
-    RamRelation(const std::string& name, unsigned arity, const bool istemp) : RamRelation(name, arity) {
+    RamRelation(const std::string& name, unsigned arity, const bool istemp, const bool hashset=false) : RamRelation(name, arity) {
+        this->hashset = hashset;
         this->istemp = istemp;
     }
 
