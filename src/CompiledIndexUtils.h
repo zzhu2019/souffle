@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file CompiledRamIndexUtils.h
+ * @file CompiledIndexUtils.h
  *
  * The central file covering the data structure utilized by
  * the souffle compiler for representing relations in compiled queries.
@@ -19,7 +19,7 @@
 
 #include "BTree.h"
 #include "BinaryRelation.h"
-#include "CompiledRamTuple.h"
+#include "CompiledTuple.h"
 #include "IterUtils.h"
 #include "ParallelUtils.h"
 #include "SymbolTable.h"

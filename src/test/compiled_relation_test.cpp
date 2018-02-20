@@ -8,13 +8,13 @@
 
 /************************************************************************
  *
- * @file compiled_ram_relation_test.cpp
+ * @file compiled_relation_test.cpp
  *
  * Test cases for the RAM relation data structure.
  *
  ***********************************************************************/
 
-#include "CompiledRamRelation.h"
+#include "CompiledRelation.h"
 #include "test.h"
 
 namespace souffle {

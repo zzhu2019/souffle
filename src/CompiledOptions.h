@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file CompiledRamOptions.h
+ * @file CompiledOptions.h
  *
  * A header file offering command-line option support for compiled
  * RAM programs.

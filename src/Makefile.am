@@ -146,11 +146,11 @@ EXTRA_DIST = parser.yy scanner.ll  test/test.h
 
 soufflepublicdir = $(includedir)/souffle
 
-soufflepublic_HEADERS = CompiledRamOptions.h    \
-                        CompiledRamIndexUtils.h \
-                        CompiledRamRelation.h   \
-                        CompiledRamTuple.h      \
-                        CompiledRamRecord.h     \
+soufflepublic_HEADERS = CompiledOptions.h       \
+                        CompiledIndexUtils.h    \
+                        CompiledRelation.h      \
+                        CompiledTuple.h         \
+                        CompiledRecord.h        \
                         CompiledSouffle.h       \
                         SignalHandler.h         \
                         SouffleInterface.h      \
@@ -245,22 +245,22 @@ test_binary_relation_test_SOURCES = test/binary_relation_test.cpp
 test_binary_relation_test_LDADD = libsouffle.la
 
 # compiled ram tuple test
-check_PROGRAMS += test/compiled_ram_tuple_test
-test_compiled_ram_tuple_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
-test_compiled_ram_tuple_test_SOURCES = test/compiled_ram_tuple_test.cpp
-test_compiled_ram_tuple_test_LDADD = libsouffle.la
+check_PROGRAMS += test/compiled_tuple_test
+test_compiled_tuple_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
+test_compiled_tuple_test_SOURCES = test/compiled_tuple_test.cpp
+test_compiled_tuple_test_LDADD = libsouffle.la
 
 # compiled ram index utils test
-check_PROGRAMS += test/compiled_ram_index_utils_test
-test_compiled_ram_index_utils_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
-test_compiled_ram_index_utils_test_SOURCES = test/compiled_ram_index_utils_test.cpp
-test_compiled_ram_index_utils_test_LDADD = libsouffle.la
+check_PROGRAMS += test/compiled_index_utils_test
+test_compiled_index_utils_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
+test_compiled_index_utils_test_SOURCES = test/compiled_index_utils_test.cpp
+test_compiled_index_utils_test_LDADD = libsouffle.la
 
 # compiled ram relation test
-check_PROGRAMS += test/compiled_ram_relation_test
-test_compiled_ram_relation_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
-test_compiled_ram_relation_test_SOURCES = test/compiled_ram_relation_test.cpp
-test_compiled_ram_relation_test_LDADD = libsouffle.la
+check_PROGRAMS += test/compiled_relation_test
+test_compiled_relation_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
+test_compiled_relation_test_SOURCES = test/compiled_relation_test.cpp
+test_compiled_relation_test_LDADD = libsouffle.la
 
 # type system test
 check_PROGRAMS += test/type_system_test
