@@ -149,8 +149,8 @@ std::vector<IODirectives> getOutputIODirectives(const AstRelation* rel, const Ty
 }
 
 std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv,
-        std::string name, size_t arity, const bool istemp = false, const bool hashset = false, std::string filePath = std::string(),
-        std::string fileExt = std::string()) {
+        std::string name, size_t arity, const bool istemp = false, const bool hashset = false,
+        std::string filePath = std::string(), std::string fileExt = std::string()) {
     // avoid name conflicts for temporary identifiers
     if (istemp) {
         name.insert(0, "@");
@@ -177,7 +177,8 @@ std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEn
 }
 
 std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv) {
-    return getRamRelation(rel, typeEnv, getRelationName(rel->getName()), rel->getArity(), false, rel->isHashset());
+    return getRamRelation(
+            rel, typeEnv, getRelationName(rel->getName()), rel->getArity(), false, rel->isHashset());
 }
 }  // namespace
 
@@ -962,8 +963,10 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
         /* create two temporary tables for relaxed semi-naive evaluation */
         auto relName = getRelationName(rel->getName());
         rrel[rel] = getRamRelation(rel, &typeEnv, relName, rel->getArity(), false, rel->isHashset());
-        relDelta[rel] = getRamRelation(rel, &typeEnv, "delta_" + relName, rel->getArity(), true, rel->isHashset());
-        relNew[rel] = getRamRelation(rel, &typeEnv, "new_" + relName, rel->getArity(), true, rel->isHashset());
+        relDelta[rel] =
+                getRamRelation(rel, &typeEnv, "delta_" + relName, rel->getArity(), true, rel->isHashset());
+        relNew[rel] =
+                getRamRelation(rel, &typeEnv, "new_" + relName, rel->getArity(), true, rel->isHashset());
         /* create update statements for fixpoint (even iteration) */
         appendStmt(updateRelTable,
                 std::unique_ptr<RamStatement>(new RamSequence(
@@ -1054,7 +1057,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                     }
                 }
 
-                std::unique_ptr<RamStatement> rule = translateClause(*r1, program, &typeEnv, version, false, rel->isHashset());
+                std::unique_ptr<RamStatement> rule =
+                        translateClause(*r1, program, &typeEnv, version, false, rel->isHashset());
 
                 /* add logging */
                 if (Global::config().has("profile")) {
@@ -1147,8 +1151,8 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
         directive->addKVP("intermediate", "true");
         mrel->addIODirectives(std::move(directive));
     }
-    std::unique_ptr<RamRelation> rrel = getRamRelation(
-            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, mrel->isHashset(), dir, ext);
+    std::unique_ptr<RamRelation> rrel = getRamRelation(mrel, &typeEnv, getRelationName(mrel->getName()),
+            mrel->getArity(), false, mrel->isHashset(), dir, ext);
     // create and load the relation at the start
     appendStmt(current, std::make_unique<RamCreate>(std::unique_ptr<RamRelation>(rrel->clone())));
 
@@ -1177,8 +1181,8 @@ void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* r
         directive->setAsOutput();
         mrel->addIODirectives(std::move(directive));
     }
-    std::unique_ptr<RamRelation> rrel = getRamRelation(
-            mrel, &typeEnv, getRelationName(mrel->getName()), mrel->getArity(), false, mrel->isHashset(), dir, ext);
+    std::unique_ptr<RamRelation> rrel = getRamRelation(mrel, &typeEnv, getRelationName(mrel->getName()),
+            mrel->getArity(), false, mrel->isHashset(), dir, ext);
     if (rel->isPrintSize()) {
         appendStmt(current, std::make_unique<RamPrintSize>(std::unique_ptr<RamRelation>(rrel->clone())));
     }

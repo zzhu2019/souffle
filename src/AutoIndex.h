@@ -77,7 +77,7 @@ public:
         return orders;
     }
 
-    const ChainOrderMap getAllChains() const{
+    const ChainOrderMap getAllChains() const {
         return chainToOrder;
     }
 

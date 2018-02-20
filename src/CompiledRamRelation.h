@@ -1089,7 +1089,7 @@ public:
         return make_range(data.lower_bound(index_utils::lower<First, Index>(t)),
                 data.upper_bound(index_utils::raise<First, Index>(t)));
     }*/
-    
+
     template <typename Index>
     typename std::enable_if<config::template covers_query<Index, First>::value &&
                                     config::template use_equal_range<Index, First>::value,
@@ -1162,7 +1162,7 @@ class GenericRelation : public RelationBase<arity, GenericRelation<config, arity
     using group_type = typename std::conditional<index_utils::contains_full_index<arity, Indices...>::value,
             GenericRelationGroup<config, arity, Indices...>,
             GenericRelationGroup<config, arity, typename index_utils::get_full_index<arity>::type,
-                                                         Indices...>>::type;
+                    Indices...>>::type;
 
     // the full index to be utilized
     using full_index = typename index_utils::get_first_full_index<arity, Indices...,
