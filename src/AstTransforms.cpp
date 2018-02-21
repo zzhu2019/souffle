@@ -228,7 +228,7 @@ std::unique_ptr<AstClause> ResolveAliasesTransformer::resolveAliases(const AstCl
 
     // I) extract equations
     std::vector<Equation> equations;
-    visitDepthFirst(clause, [&](const AstConstraint& rel) {
+    visitDepthFirst(clause, [&](const AstBinaryConstraint& rel) {
         if (rel.getOperator() == BinaryConstraintOp::EQ) {
             equations.push_back(Equation(rel.getLHS(), rel.getRHS()));
         }
@@ -327,7 +327,7 @@ std::unique_ptr<AstClause> ResolveAliasesTransformer::removeTrivialEquality(cons
     std::unique_ptr<AstClause> res(clause.cloneHead());
     for (AstLiteral* cur : clause.getBodyLiterals()) {
         // filter out t = t
-        if (AstConstraint* rel = dynamic_cast<AstConstraint*>(cur)) {
+        if (AstBinaryConstraint* rel = dynamic_cast<AstBinaryConstraint*>(cur)) {
             if (rel->getOperator() == BinaryConstraintOp::EQ) {
                 if (*rel->getLHS() == *rel->getRHS()) {
                     continue;  // skip this one
@@ -405,7 +405,7 @@ void ResolveAliasesTransformer::removeComplexTermsInAtoms(AstClause& clause) {
     // add variable constraints to clause
     for (const auto& cur : map) {
         clause.addToBody(std::unique_ptr<AstLiteral>(
-                new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(cur.second->clone()),
+                new AstBinaryConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(cur.second->clone()),
                         std::unique_ptr<AstArgument>(cur.first->clone()))));
     }
 }
@@ -1133,10 +1133,10 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
      * clause it is being applied on in a given constraint set.
      */
     struct M : public AstNodeMapper {
-        std::set<AstConstraint*>& constraints;
+        std::set<AstBinaryConstraint*>& constraints;
         mutable int changeCount;
 
-        M(std::set<AstConstraint*>& constraints, int changeCount)
+        M(std::set<AstBinaryConstraint*>& constraints, int changeCount)
                 : constraints(constraints), changeCount(changeCount) {}
 
         bool hasChanged() const {
@@ -1159,7 +1159,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
                 // create new constraint (+abdulX = constant)
                 auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
-                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                constraints.insert(new AstBinaryConstraint(BinaryConstraintOp::EQ,
                         std::unique_ptr<AstArgument>(newVariable->clone()),
                         std::unique_ptr<AstArgument>(stringConstant->clone())));
 
@@ -1176,7 +1176,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
                 // create new constraint (+abdulX = constant)
                 auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
-                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                constraints.insert(new AstBinaryConstraint(BinaryConstraintOp::EQ,
                         std::unique_ptr<AstArgument>(newVariable->clone()),
                         std::unique_ptr<AstArgument>(numberConstant->clone())));
 
@@ -1207,15 +1207,15 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
                 continue;  // don't normalise facts
             }
 
-            std::set<AstConstraint*> constraints;
+            std::set<AstBinaryConstraint*> constraints;
             M update(constraints, changeCount);
             clause->apply(update);
 
             changeCount = update.getChangeCount();
             changed = changed || update.hasChanged();
 
-            for (AstConstraint* constraint : constraints) {
-                clause->addToBody(std::unique_ptr<AstConstraint>(constraint));
+            for (AstBinaryConstraint* constraint : constraints) {
+                clause->addToBody(std::unique_ptr<AstBinaryConstraint>(constraint));
             }
         }
     }

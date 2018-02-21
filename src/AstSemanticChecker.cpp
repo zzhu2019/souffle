@@ -238,7 +238,7 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
     });
 
     // - binary relation -
-    visitDepthFirst(nodes, [&](const AstConstraint& constraint) {
+    visitDepthFirst(nodes, [&](const AstBinaryConstraint& constraint) {
 
         // only interested in non-equal constraints
         auto op = constraint.getOperator();
@@ -374,7 +374,7 @@ void AstSemanticChecker::checkLiteral(
         checkAtom(report, program, *atom);
     }
 
-    if (const AstConstraint* constraint = dynamic_cast<const AstConstraint*>(&literal)) {
+    if (const AstBinaryConstraint* constraint = dynamic_cast<const AstBinaryConstraint*>(&literal)) {
         checkArgument(report, program, *constraint->getLHS());
         checkArgument(report, program, *constraint->getRHS());
     }
@@ -385,7 +385,7 @@ void AstSemanticChecker::checkLiteral(
             // nothing to check since underscores are allowed
         } else if (dynamic_cast<const AstNegation*>(&literal)) {
             // nothing to check since underscores are allowed
-        } else if (dynamic_cast<const AstConstraint*>(&literal)) {
+        } else if (dynamic_cast<const AstBinaryConstraint*>(&literal)) {
             report.addError("Underscore in binary relation", literal.getSrcLoc());
         } else {
             std::cout << "Unsupported Literal type: " << typeid(literal).name() << "\n";

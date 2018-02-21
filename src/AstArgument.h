@@ -147,7 +147,7 @@ public:
         os << "$";
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstCounter* clone() const override {
         AstCounter* res = new AstCounter();
         res->setSrcLoc(getSrcLoc());
