@@ -163,7 +163,7 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         Table.h                 \
                         Util.h                  \
                         Macro.h                 \
-              	        RamTypes.h              \
+                        RamTypes.h              \
                         AstTypes.h              \
                         IterUtils.h             \
                         SymbolTable.h           \
