@@ -106,7 +106,6 @@ souffle_sources = \
               RamStatement.h                            \
               RamTransformer.cpp    RamTransformer.h    \
               RamTranslationUnit.h                      \
-              RamTypes.h                                \
               RamValue.h                                \
               RamVisitor.h                              \
               RuleScheduler.h                           \
@@ -164,6 +163,7 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         Table.h                 \
                         Util.h                  \
                         Macro.h                 \
+              	        RamTypes.h              \
                         AstTypes.h              \
                         IterUtils.h             \
                         SymbolTable.h           \
