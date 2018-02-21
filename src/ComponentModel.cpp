@@ -48,7 +48,7 @@ const AstComponent* ComponentLookup::getComponent(
     const AstComponent* searchScope = scope;
     while (searchScope != nullptr) {
         for (const AstComponent* cur : searchScope->getComponents()) {
-            if (cur->getComponentType().getName() == toString(boundName)) {
+            if (cur->getComponentType()->getName() == toString(boundName)) {
                 return cur;
             }
         }
@@ -63,7 +63,7 @@ const AstComponent* ComponentLookup::getComponent(
 
     // check global scope
     for (const AstComponent* cur : globalScopeComponents) {
-        if (cur->getComponentType().getName() == toString(boundName)) {
+        if (cur->getComponentType()->getName() == toString(boundName)) {
             return cur;
         }
     }
@@ -152,11 +152,11 @@ void collectContent(const AstComponent& component, const TypeBinding& binding,
         ErrorReport& report, unsigned int maxInstantiationDepth) {
     // start with relations and clauses of the base components
     for (const auto& base : component.getBaseComponents()) {
-        const AstComponent* comp = componentLookup.getComponent(enclosingComponent, base.getName(), binding);
+        const AstComponent* comp = componentLookup.getComponent(enclosingComponent, base->getName(), binding);
         if (comp) {
             // link formal with actual type parameters
-            const auto& formalParams = comp->getComponentType().getTypeParameters();
-            const auto& actualParams = base.getTypeParameters();
+            const auto& formalParams = comp->getComponentType()->getTypeParameters();
+            const auto& actualParams = base->getTypeParameters();
 
             // update type binding
             TypeBinding activeBinding = binding.extend(formalParams, actualParams);
@@ -291,15 +291,15 @@ ComponentContent getInstantiatedContent(const AstComponentInit& componentInit,
 
     // get referenced component
     const AstComponent* component = componentLookup.getComponent(
-            enclosingComponent, componentInit.getComponentType().getName(), binding);
+            enclosingComponent, componentInit.getComponentType()->getName(), binding);
     if (!component) {
         // this component is not defined => will trigger a semantic error
         return res;
     }
 
     // update type biding
-    const auto& formalParams = component->getComponentType().getTypeParameters();
-    const auto& actualParams = componentInit.getComponentType().getTypeParameters();
+    const auto& formalParams = component->getComponentType()->getTypeParameters();
+    const auto& actualParams = componentInit.getComponentType()->getTypeParameters();
     TypeBinding activeBinding = binding.extend(formalParams, actualParams);
 
     // instantiated nested components
