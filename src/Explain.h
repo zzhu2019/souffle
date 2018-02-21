@@ -129,6 +129,7 @@ private:
             } else if (ch == KEY_DOWN) {
                 if (y < MAX_TREE_HEIGHT - 1) y += 1;
             } else {
+                ungetch(ch);
                 break;
             }
 
@@ -183,7 +184,10 @@ public:
                 prefresh(treePad, 0, 0, 0, 0, maxy - 3, maxx - 1);
             } else {
                 std::cout << "Enter command > ";
-                getline(std::cin, line);
+                if (!getline(std::cin, line)) {
+                    printStr("Exiting explain\n");
+                    break;
+                }
             }
 
             std::vector<std::string> command = split(line, ' ', 1);
@@ -237,7 +241,10 @@ public:
                     printStr("Usage: printrel <relation name>\n");
                     continue;
                 }
-            } else if (command[0] == "help") {
+            } else if (command[0] == "exit") {
+                printStr("Exiting explain\n");
+                break;
+            } else {
                 printStr(
                         "\n----------\n"
                         "Commands:\n"
@@ -249,9 +256,6 @@ public:
                         "rule <rule number>: Prints a rule\n"
                         "printrel <relation name>: Prints the tuples of a relation\n"
                         "exit: Exits this interface\n\n");
-            } else if (command[0] == "exit") {
-                printStr("Exiting explain\n");
-                break;
             }
 
             // refresh treePad and allow scrolling
