@@ -17,6 +17,7 @@
 
 #include "IODirectives.h"
 #include "ParallelUtils.h"
+#include "RamNode.h"
 #include "RamTypes.h"
 #include "SymbolMask.h"
 #include "SymbolTable.h"
@@ -145,6 +146,11 @@ public:
 
     const bool isEqRel() const {
         return eqrel;
+    }
+
+    // data-structures that can server various searches
+    const bool isCoverable() const {
+        return !isHashset();
     }
 
     const bool isTemp() const {
