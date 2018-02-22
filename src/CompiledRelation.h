@@ -1024,6 +1024,16 @@ class GenericRelationGroup<config, arity> {
     using tuple_type = Tuple<RamDomain, arity>;
 
 public:
+
+    template<typename Index>
+    void get() {}
+
+    template<typename Index>
+    void get() const {}
+
+    template<typename Index>
+    void equal_range(const tuple_type&) const {}
+
     void insert(const tuple_type&) {
         // nothing to do here
     }
