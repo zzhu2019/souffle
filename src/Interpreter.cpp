@@ -19,7 +19,6 @@
 #include "AstRelation.h"
 #include "AstTranslator.h"
 #include "AstVisitor.h"
-#include "AutoIndex.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"

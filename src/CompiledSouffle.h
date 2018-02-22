@@ -17,9 +17,9 @@
 #pragma once
 
 #include "AstTypes.h"
-#include "CompiledRamOptions.h"
-#include "CompiledRamRecord.h"
-#include "CompiledRamRelation.h"
+#include "CompiledOptions.h"
+#include "CompiledRecord.h"
+#include "CompiledRelation.h"
 #include "Logger.h"
 #include "ParallelUtils.h"
 #include "SignalHandler.h"
