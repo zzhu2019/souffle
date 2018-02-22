@@ -184,6 +184,14 @@ AS_IF([test "x$enable_intel_rtm" = "xyes"], [
   AS_VAR_APPEND(CXXFLAGS, [" -mrtm -DHAS_TSX"])
 ])
 
+AC_ARG_ENABLE(
+  [64bit-domain],
+  [AS_HELP_STRING([--enable-64bit-domain], [Enable 64-bit number values in Datalog tuples])]
+)
+AS_IF([test "x$enable_64bit_domain" = "xyes"], [
+  AS_VAR_APPEND(CXXFLAGS, [" -DRAM_DOMAIN_SIZE=64"])
+])
+
 dnl Check for the program(s), define a variable and perform substitution in the
 dnl Makefiles if found.  Bail with an error message otherwise
 dnl   $1 -- Variable
