@@ -181,8 +181,8 @@ public:
 
     static const std::string pProofCounter(const std::string& relationName, const AstSrcLocation& srcLocation,
             const std::string& datalogText) {
-        // TODO: the profiler should be modified to use this type of log message, as currently these messages
-        // are ignored
+        // TODO (#590): the profiler should be modified to use this type of log message, as currently these
+        // messages are ignored
         const char* messageType = "#p-proof-counter";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
@@ -194,7 +194,7 @@ public:
             line << "\"failed-proofs\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";" << datalogText << ";";
-            // TODO: the additional semicolon is added to maintain backwards compatibility and should
+            // TODO (#590): the additional semicolon is added to maintain backwards compatibility and should
             // eventually be removed
             line << ";";
         }
