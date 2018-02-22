@@ -224,6 +224,9 @@ protected:
     }
 };
 
+/**
+ * Subclass of Literal that represents a logical constraint
+ */
 class AstConstraint : public AstLiteral {
 public:
     ~AstConstraint() override = default;
@@ -240,7 +243,54 @@ public:
 };
 
 /**
- * Subclass of Literal that represents a binary constraint
+ * Subclass of Constraint that represents a constant 'true'
+ * or 'false' value.
+ */
+class AstBooleanConstraint : public AstConstraint {
+protected:
+    bool truthValue;
+
+public:
+    AstBooleanConstraint(bool truthValue) : truthValue (truthValue) {}
+
+    ~AstBooleanConstraint() override = default;
+
+    bool isTrue() const {
+        return truthValue;
+    }
+
+    void negate() override {
+        truthValue = !truthValue;
+    }
+
+    void print(std::ostream& os) const override {
+        os << (truthValue ? "true" : "false");
+    }
+
+    AstBooleanConstraint* clone() const override {
+        AstBooleanConstraint* res = new AstBooleanConstraint(truthValue);
+        res->setSrcLoc(getSrcLoc());
+        return res;
+    }
+
+    /** No nested nodes to apply to */
+    void apply(const AstNodeMapper& /*mapper*/) override {}
+
+    /** No nested child nodes */
+    std::vector<const AstNode*> getChildNodes() const override {
+        return std::vector<const AstNode*>();
+    }
+
+protected:
+    bool equal(const AstNode& node) const override {
+        assert(dynamic_cast<const AstBooleanConstraint*>(&node));
+        const AstBooleanConstraint& other = static_cast<const AstBooleanConstraint&>(node);
+        return truthValue == other.truthValue;
+    }
+};
+
+/**
+ * Subclass of Constraint that represents a binary constraint
  * e.g., x = y.
  */
 class AstBinaryConstraint : public AstConstraint {

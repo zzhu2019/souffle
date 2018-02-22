@@ -360,9 +360,9 @@ static bool hasUnnamedVariable(const AstLiteral* lit) {
         return hasUnnamedVariable(neg->getAtom());
     }
     if (dynamic_cast<const AstConstraint*>(lit)) {
-        // if (dynamic_cast<const AstBoolean*>(lit)) {
-        //    return false;
-        // }
+        if (dynamic_cast<const AstBooleanConstraint*>(lit)) {
+           return false;
+        }
         if (const AstBinaryConstraint* br = dynamic_cast<const AstBinaryConstraint*>(lit)) {
             return hasUnnamedVariable(br->getLHS()) || hasUnnamedVariable(br->getRHS());
         }
