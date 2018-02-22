@@ -15,6 +15,7 @@
  ***********************************************************************/
 
 #include "Synthesiser.h"
+#include "AstLogStatement.h"
 #include "AstRelation.h"
 #include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
@@ -380,6 +381,8 @@ public:
             // aggregate proof counters
         }
         if (Global::config().has("profile")) {
+            // TODO: this should be moved to AstTranslator, as all other such logging is done there
+
             // get target relation
             const RamRelation* rel = nullptr;
             visitDepthFirst(insert, [&](const RamProject& project) { rel = &project.getRelation(); });
@@ -390,15 +393,16 @@ public:
             replace(clauseText.begin(), clauseText.end(), '"', '\'');
             replace(clauseText.begin(), clauseText.end(), '\n', ' ');
 
-            std::ostringstream line;
-            line << "p-proof-counter;" << rel->getName() << ";" << clause.getSrcLoc() << ";" << clauseText
-                 << ";";
-            std::string label = line.str();
-
             // print log entry
             out << "{ auto lease = getOutputLock().acquire(); ";
             out << "(void)lease;\n";
-            out << "profile << R\"(#" << label << ";)\" << num_failed_proofs << std::endl;\n";
+            out << "profile << R\"(";
+            out << AstLogStatement::pProofCounter(rel->getName(), clause.getSrcLoc(), clauseText);
+            out << ")\" << num_failed_proofs << ";
+            if (fileExtension(Global::config().get("profile")) == "json") {
+                out << "\"},\" << ";
+            }
+            out << "std::endl;\n";
             out << "}";
         }
 
@@ -450,13 +454,16 @@ public:
 
     void visitLogSize(const RamLogSize& print, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
+        const std::string ext = fileExtension(Global::config().get("profile"));
         out << "{ auto lease = getOutputLock().acquire(); \n";
         out << "(void)lease;\n";
-        out << "profile << R\"(" << print.getMessage() << ")\" <<  ";
-        out << getRelationName(print.getRelation());
-        out << "->"
-            << "size() << std::endl;\n"
-            << "}";
+        out << "profile << R\"(" << print.getMessage() << ")\" << ";
+        out << getRelationName(print.getRelation()) << "->size() << ";
+        if (ext == "json") {
+            out << "\"},\" << ";
+        }
+        out << "std::endl;\n";
+        out << "}";
         PRINT_END_COMMENT(out);
     }
 
@@ -535,8 +542,10 @@ public:
         // create local scope for name resolution
         out << "{\n";
 
+        const std::string ext = fileExtension(Global::config().get("profile"));
+
         // create local timer
-        out << "\tLogger logger(R\"(" << timer.getMessage() << ")\",profile);\n";
+        out << "\tLogger logger(R\"(" << timer.getMessage() << ")\",profile, \"" << ext << "\");\n";
 
         // insert statement to be measured
         visit(timer.getStatement(), out);
@@ -1394,7 +1403,7 @@ void Synthesiser::generateCode(
     os << "// -- query evaluation --\n";
     if (Global::config().has("profile")) {
         os << "std::ofstream profile(profiling_fname);\n";
-        os << "profile << \"@start-debug\\n\";\n";
+        os << "profile << \"" << AstLogStatement::startDebug() << "\" << std::endl;\n";
         genCode(os, *(prog.getMain()));
     } else {
         genCode(os, *(prog.getMain()));
