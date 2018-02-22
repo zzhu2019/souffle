@@ -359,8 +359,13 @@ static bool hasUnnamedVariable(const AstLiteral* lit) {
     if (const AstNegation* neg = dynamic_cast<const AstNegation*>(lit)) {
         return hasUnnamedVariable(neg->getAtom());
     }
-    if (const AstConstraint* br = dynamic_cast<const AstConstraint*>(lit)) {
-        return hasUnnamedVariable(br->getLHS()) || hasUnnamedVariable(br->getRHS());
+    if (dynamic_cast<const AstConstraint*>(lit)) {
+        // if (dynamic_cast<const AstBoolean*>(lit)) {
+        //    return false;
+        // }
+        if (const AstBinaryConstraint* br = dynamic_cast<const AstBinaryConstraint*>(lit)) {
+            return hasUnnamedVariable(br->getLHS()) || hasUnnamedVariable(br->getRHS());
+        }
     }
     std::cout << "Unsupported Literal type: " << typeid(lit).name() << "\n";
     ASSERT(false && "Unsupported Argument Type!");

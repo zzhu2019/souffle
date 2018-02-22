@@ -224,6 +224,21 @@ protected:
     }
 };
 
+class AstConstraint : public AstLiteral {
+public:
+    ~AstConstraint() override = default;
+
+    const AstAtom* getAtom() const override {
+        // This kind of literal has no nested atom
+        return nullptr;
+    }
+
+    /** Negates the constraint */
+    virtual void negate() = 0;
+
+    AstConstraint* clone() const override = 0;
+};
+
 /**
  * Subclass of Literal that represents a binary constraint
  * e.g., x = y.
@@ -269,7 +284,7 @@ public:
     }
 
     /** Negates the constraint */
-    void negate() {
+    void negate() override {
         setOperator(souffle::negatedConstraintOp(operation));
     }
 

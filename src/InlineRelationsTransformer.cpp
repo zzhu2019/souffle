@@ -398,8 +398,8 @@ std::vector<std::vector<AstLiteral*>> formNegatedLiterals(AstProgram& program, A
 
     // Add in the necessary constraints to all the body literals
     for (size_t i = 0; i < negatedAddedBodyLiterals.size(); i++) {
-        for (std::vector<AstConstraint*> constraintGroup : addedConstraints) {
-            for (AstConstraint* constraint : constraintGroup) {
+        for (std::vector<AstBinaryConstraint*> constraintGroup : addedConstraints) {
+            for (AstBinaryConstraint* constraint : constraintGroup) {
                 negatedAddedBodyLiterals[i].push_back(constraint->clone());
             }
         }
@@ -411,7 +411,7 @@ std::vector<std::vector<AstLiteral*>> formNegatedLiterals(AstProgram& program, A
             delete lit;
         }
     }
-    for (std::vector<AstConstraint*> consGroup : addedConstraints) {
+    for (std::vector<AstBinaryConstraint*> consGroup : addedConstraints) {
         for (AstConstraint* cons : consGroup) {
             delete cons;
         }
@@ -798,7 +798,7 @@ NullableVector<std::vector<AstLiteral*>> getInlinedLiteral(AstProgram& program, 
             if (atomVersions.getVector().empty()) {
                 // No clauses associated with the atom, so just becomes a true literal
                 std::vector<AstLiteral*> trueBody;
-                // TODO: change this to AstTautology
+                // TODO: change this to AstBoolean
                 trueBody.push_back(new AstBinaryConstraint(BinaryConstraintOp::EQ,
                         std::make_unique<AstNumberConstant>(1), std::make_unique<AstNumberConstant>(1)));
                 addedBodyLiterals.push_back(trueBody);

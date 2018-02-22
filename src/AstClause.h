@@ -319,9 +319,12 @@ public:
 
     /** Obtains a list of binary constraints */
     std::vector<AstBinaryConstraint*> getBinaryConstraints() const {
-        std::vector<AstConstraint*> constraints = toPtrVector(constraints);
         std::vector<AstBinaryConstraint*> result;
-        std::copy_if(constraints.begin(), constraints.end(), std::back_inserter(result), [&](const AstConstraint* constraint) { return dynamic_cast<AstBinaryConstraint*>(constraint); });
+        for (auto& constraint : constraints) {
+            if (AstBinaryConstraint* br = dynamic_cast<AstBinaryConstraint*>(constraint.get())) {
+                result.push_back(br);
+            }
+        }
         return result;
     }
 
