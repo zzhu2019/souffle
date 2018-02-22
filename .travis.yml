@@ -22,9 +22,13 @@ aliases:
         - ubuntu-toolchain-r-test
         packages:
         - *linux_deps
+        - lcov
         - g++-7
-    before_script: ".travis/init_test.sh"
+    before_script:
+      - ".travis/init_test.sh"
+      - "gem install coveralls-lcov"
     script: ".travis/run_test.sh"
+    after_script: ".travis/coveralls.sh"
   - &linuxclang
     stage: Testing
     os: linux
