@@ -149,8 +149,10 @@ std::string getRelationType(const RamRelation& rel, std::size_t arity, const Ind
 
     if (rel.isBTree()) {
         res << "BTree,";
-    } else if (rel.isHashmap()) {
-        res << "Hashmap,";
+    } else if (rel.isRbtset()) {
+        res << "Rbtset,";
+    } else if (rel.isHashset()) {
+        res << "Hashset,";
     } else if (rel.isBrie()) {
         res << "Brie,";
     } else if (rel.isEqRel()) {
@@ -159,8 +161,10 @@ std::string getRelationType(const RamRelation& rel, std::size_t arity, const Ind
         auto data_structure = Global::config().get("data-structure");
         if (data_structure == "btree") {
             res << "BTree,";
-        } else if (data_structure == "hashmap") {
-            res << "Hashmap,";
+        } else if (data_structure == "rbtset") {
+            res << "Rbtset,";
+        } else if (data_structure == "hashset") {
+            res << "Hashset,";
         } else if (data_structure == "brie") {
             res << "Brie,";
         } else if (data_structure == "eqrel") {
