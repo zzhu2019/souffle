@@ -333,6 +333,7 @@ int main(int argc, char** argv) {
     astTransforms.push_back(std::make_unique<ComponentInstantiationTransformer>());
     astTransforms.push_back(std::make_unique<UniqueAggregationVariablesTransformer>());
     astTransforms.push_back(std::make_unique<AstSemanticChecker>());
+    astTransforms.push_back(std::make_unique<RemoveBooleanConstraintsTransformer>());
     astTransforms.push_back(std::make_unique<InlineRelationsTransformer>());
     astTransforms.push_back(std::make_unique<ReduceExistentialsTransformer>());
     astTransforms.push_back(std::make_unique<ExtractDisconnectedLiteralsTransformer>());

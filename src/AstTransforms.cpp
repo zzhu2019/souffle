@@ -797,6 +797,103 @@ bool RemoveRedundantRelationsTransformer::transform(AstTranslationUnit& translat
     return changed;
 }
 
+bool RemoveBooleanConstraintsTransformer::transform(AstTranslationUnit& translationUnit) {
+    AstProgram& program = *translationUnit.getProgram();
+
+    // If any boolean constraints exist, they will be removed
+    bool changed = false;
+    visitDepthFirst(program, [&](const AstBooleanConstraint& bc) { changed = true; });
+
+    // Remove true and false constant literals from all aggregators
+    struct M : public AstNodeMapper {
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            // Remove them from child nodes
+            node->apply(*this);
+
+            if (AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
+                bool containsTrue = false;
+                bool containsFalse = false;
+
+                for (AstLiteral* lit : aggr->getBodyLiterals()) {
+                    if (AstBooleanConstraint* bc = dynamic_cast<AstBooleanConstraint*>(lit)) {
+                        bc->isTrue() ? containsTrue = true : containsFalse = true;
+                    }
+                }
+
+                if (containsFalse || containsTrue) {
+                    // Only keep literals that aren't boolean constraints
+                    auto replacementAggregator = std::unique_ptr<AstAggregator>(aggr->clone());
+                    replacementAggregator->clearBodyLiterals();
+
+                    bool isEmpty = true;
+
+                    // Don't bother copying over body literals if any are false
+                    if (!containsFalse) {
+                        for (AstLiteral* lit : aggr->getBodyLiterals()) {
+                            // Don't add in 'true' boolean constraints
+                            if (!dynamic_cast<AstBooleanConstraint*>(lit)) {
+                                isEmpty = false;
+                                replacementAggregator->addBodyLiteral(std::unique_ptr<AstLiteral>(lit->clone()));
+                            }
+                        }
+                    }
+
+                    if (containsFalse || isEmpty) {
+                        // Empty aggregator body! Should fail for non-count aggregators,
+                        // so replace with non-empty failing aggregators
+                        // E.g. max x : { } =becomes=> max 1 : {0 = 1}
+                        if (aggr->getOperator() != AstAggregator::Op::count) {
+                            replacementAggregator->setTargetExpression(std::make_unique<AstNumberConstant>(1));
+                            replacementAggregator->addBodyLiteral(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ, std::make_unique<AstNumberConstant>(0), std::make_unique<AstNumberConstant>(1)));
+                        }
+                    }
+
+                    return std::move(replacementAggregator);
+                }
+            }
+
+            // no false or true, so return the original node
+            return node;
+        }
+    };
+
+    M update;
+    program.apply(update);
+
+    // Remove true and false constant literals from all clauses
+    for (AstRelation* rel : program.getRelations()) {
+        for (AstClause* clause : rel->getClauses()) {
+            bool containsTrue = false;
+            bool containsFalse = false;
+
+            for (AstLiteral* lit : clause->getBodyLiterals()) {
+                if (AstBooleanConstraint* bc = dynamic_cast<AstBooleanConstraint*>(lit)) {
+                    bc->isTrue() ? containsTrue = true : containsFalse = true;
+                }
+            }
+
+            if (containsFalse) {
+                // Clause will always fail
+                rel->removeClause(clause);
+            } else if (containsTrue) {
+                auto replacementClause = std::unique_ptr<AstClause>(clause->cloneHead());
+
+                // Only keep non-'true' literals
+                for (AstLiteral* lit : clause->getBodyLiterals()) {
+                    if (!dynamic_cast<AstBooleanConstraint*>(lit)) {
+                        replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+                    }
+                }
+
+                rel->removeClause(clause);
+                rel->addClause(std::move(replacementClause));
+            }
+        }
+    }
+
+    return changed;
+}
+
 bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& translationUnit) {
     bool changed = false;
     AstProgram& program = *translationUnit.getProgram();
