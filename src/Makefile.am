@@ -106,7 +106,6 @@ souffle_sources = \
               RamStatement.h                            \
               RamTransformer.cpp    RamTransformer.h    \
               RamTranslationUnit.h                      \
-              RamTypes.h                                \
               RamValue.h                                \
               RamVisitor.h                              \
               RuleScheduler.h                           \
@@ -129,7 +128,8 @@ souffle_sources = \
               InterpreterRecords.cpp InterpreterRecords.h \
               IndexSetAnalysis.cpp   IndexSetAnalysis.h \
               ProvenanceTransformer.cpp                 \
-              Global.cpp            Global.h
+              Global.cpp            Global.h            \
+              AstLogStatement.h
 
 # -- build souffle as a library so it can be reused in testing
 noinst_LTLIBRARIES = libsouffle.la
@@ -164,6 +164,7 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         Table.h                 \
                         Util.h                  \
                         Macro.h                 \
+                        RamTypes.h              \
                         AstTypes.h              \
                         IterUtils.h             \
                         SymbolTable.h           \
