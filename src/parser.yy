@@ -112,6 +112,8 @@
 %token MAX                       "max aggregator"
 %token COUNT                     "count aggregator"
 %token SUM                       "sum aggregator"
+%token TRUE                      "true literal constraint"
+%token FALSE                     "false literal constraint"
 %token STRICT                    "strict marker"
 %token PLAN                      "plan keyword"
 %token IF                        ":-"
@@ -826,6 +828,16 @@ literal
     }
   | TCONTAINS LPAREN arg COMMA arg RPAREN {
         auto* res = new AstBinaryConstraint(BinaryConstraintOp::CONTAINS, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        res->setSrcLoc(@$);
+        $$ = new RuleBody(RuleBody::constraint(res));
+    }
+  | TRUE {
+        auto* res = new AstBooleanConstraint(true);
+        res->setSrcLoc(@$);
+        $$ = new RuleBody(RuleBody::constraint(res));
+    }
+  | FALSE {
+        auto* res = new AstBooleanConstraint(false);
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
