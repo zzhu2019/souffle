@@ -981,7 +981,7 @@ Order scheduleByModel(AstClause& clause, InterpreterEnvironment& env) {
 
 /** With this strategy queries will be processed as they are stated by the user */
 const QueryExecutionStrategy DirectExecution = [](
-        const RamInsert& insert, InterpreterEnvironment& env, std::ostream*) -> ExecutionSummary {
+        const RamInsert& insert, InterpreterEnvironment& env) -> ExecutionSummary {
     // measure the time
     auto start = now();
 
@@ -1005,13 +1005,7 @@ const QueryExecutionStrategy ScheduledExecution = [](
     Order order;
 
     // (re-)schedule clause
-    {
-        auto start = now();
-        order = scheduleByModel(*clause, env);
-        auto end = now();
-        if (!equal_targets(insert.getOrigin().getAtoms(), clause->getAtoms())) {
-        }
-    }
+    order = scheduleByModel(*clause, env);
 
     // create operation
     std::unique_ptr<RamStatement> stmt = AstTranslator().translateClause(*clause, nullptr, nullptr);

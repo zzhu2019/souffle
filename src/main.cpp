@@ -415,8 +415,6 @@ int main(int argc, char** argv) {
 
     // ------- execution -------------
 
-    auto ram_start = std::chrono::high_resolution_clock::now();
-
     /* translate AST to RAM */
     std::unique_ptr<RamTranslationUnit> ramTranslationUnit =
             AstTranslator().translateUnit(*astTranslationUnit);
@@ -440,22 +438,6 @@ int main(int argc, char** argv) {
         std::cerr << ramTranslationUnit->getErrorReport();
     }
 
-    if (!Global::config().get("debug-report").empty()) {
-        if (ramTranslationUnit->getProgram()) {
-            auto ram_end = std::chrono::high_resolution_clock::now();
-            std::string runtimeStr =
-                    "(" + std::to_string(std::chrono::duration<double>(ram_end - ram_start).count()) + "s)";
-            std::stringstream ramProgStr;
-            ramProgStr << *ramTranslationUnit->getProgram();
-            astTranslationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
-                    "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
-        }
-
-        if (!ramTranslationUnit->getDebugReport().empty()) {
-            std::ofstream debugReportStream(Global::config().get("debug-report"));
-            debugReportStream << ramTranslationUnit->getDebugReport();
-        }
-    }
 
     if (!ramTranslationUnit->getProgram()->getMain()) {
         return 0;
