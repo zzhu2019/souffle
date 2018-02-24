@@ -208,9 +208,7 @@ private:
 
 public:
     InterpreterProgInterface(Interpreter& interp)
-            : prog(interp.getTranslationUnit().getP()), 
-              exec(interp),
-              env(interp.getEnvironment()), 
+            : prog(interp.getTranslationUnit().getP()), exec(interp), env(interp.getEnvironment()),
               symTable(interp.getTranslationUnit().getSymbolTable()) {
         uint32_t id = 0;
 

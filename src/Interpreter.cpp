@@ -44,12 +44,10 @@
 #include <omp.h>
 #endif
 
-
 namespace souffle {
 
 /** Evaluate RAM Value */
-RamDomain Interpreter::eval(const RamValue& value, const EvalContext& ctxt) 
-{
+RamDomain Interpreter::eval(const RamValue& value, const EvalContext& ctxt) {
     class ValueEvaluator : public RamVisitor<RamDomain> {
         InterpreterEnvironment& env;
         const EvalContext& ctxt;
@@ -233,15 +231,16 @@ RamDomain Interpreter::eval(const RamValue& value, const EvalContext& ctxt)
     return ValueEvaluator(env, ctxt)(value);
 }
 
-/** Evaluate RAM Condition */ 
+/** Evaluate RAM Condition */
 bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
     class ConditionEvaluator : public RamVisitor<bool> {
         InterpreterEnvironment& env;
         const EvalContext& ctxt;
-        Interpreter &interpreter;
+        Interpreter& interpreter;
 
     public:
-        ConditionEvaluator(InterpreterEnvironment& env, const EvalContext& ctxt, Interpreter &intp) : env(env), ctxt(ctxt), interpreter(intp) {}
+        ConditionEvaluator(InterpreterEnvironment& env, const EvalContext& ctxt, Interpreter& intp)
+                : env(env), ctxt(ctxt), interpreter(intp) {}
 
         // -- connectors operators --
 
@@ -367,15 +366,15 @@ bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
 }
 
 /** Evaluate RAM operation */
-void Interpreter::eval(const RamOperation& op, const EvalContext& args ) 
-{
+void Interpreter::eval(const RamOperation& op, const EvalContext& args) {
     class OperationEvaluator : public RamVisitor<void> {
         InterpreterEnvironment& env;
         EvalContext& ctxt;
         Interpreter& interpreter;
 
     public:
-        OperationEvaluator(InterpreterEnvironment& env, EvalContext& ctxt, Interpreter &interp) : env(env), ctxt(ctxt), interpreter(interp) {}
+        OperationEvaluator(InterpreterEnvironment& env, EvalContext& ctxt, Interpreter& interp)
+                : env(env), ctxt(ctxt), interpreter(interp) {}
 
         // -- Operations -----------------------------
 
@@ -609,7 +608,7 @@ void Interpreter::eval(const RamOperation& op, const EvalContext& args )
         }
     };
 
-    // create and run interpreter for operations 
+    // create and run interpreter for operations
     EvalContext ctxt(op.getDepth());
     ctxt.setReturnValues(args.getReturnValues());
     ctxt.setReturnErrors(args.getReturnErrors());
@@ -617,16 +616,15 @@ void Interpreter::eval(const RamOperation& op, const EvalContext& args )
     OperationEvaluator(env, ctxt, *this).visit(op);
 }
 
-/** Evaluate RAM statement */ 
-void Interpreter::eval(const RamStatement& stmt, std::ostream *profile) 
-{
+/** Evaluate RAM statement */
+void Interpreter::eval(const RamStatement& stmt, std::ostream* profile) {
     class StatementEvaluator : public RamVisitor<bool> {
         InterpreterEnvironment& env;
         std::ostream* profile;
         Interpreter& interpreter;
+
     public:
-        StatementEvaluator(
-                InterpreterEnvironment& env, std::ostream* profile, Interpreter& interp)
+        StatementEvaluator(InterpreterEnvironment& env, std::ostream* profile, Interpreter& interp)
                 : env(env), profile(profile), interpreter(interp) {}
 
         // -- Statements -----------------------------
@@ -801,15 +799,14 @@ void Interpreter::eval(const RamStatement& stmt, std::ostream *profile)
         }
     };
 
-    // create and run interpreter for statements 
+    // create and run interpreter for statements
     StatementEvaluator(env, profile, *this).visit(stmt);
 }
 
 /** Execute main program of a translation unit */
-void Interpreter::executeMain() 
-{
+void Interpreter::executeMain() {
     SignalHandler::instance()->set();
-    const RamStatement &main = *translationUnit.getP().getMain(); 
+    const RamStatement& main = *translationUnit.getP().getMain();
 
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
@@ -827,9 +824,8 @@ void Interpreter::executeMain()
 }
 
 /** Execute subroutine */
-void Interpreter::executeSubroutine(const RamStatement& stmt,
-        const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
-        std::vector<bool>& returnErrors){
+void Interpreter::executeSubroutine(const RamStatement& stmt, const std::vector<RamDomain>& arguments,
+        std::vector<RamDomain>& returnValues, std::vector<bool>& returnErrors) {
     EvalContext ctxt;
     ctxt.setReturnValues(returnValues);
     ctxt.setReturnErrors(returnErrors);

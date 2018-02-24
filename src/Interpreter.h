@@ -624,35 +624,34 @@ public:
  * Interpreter executing a RAM translation unit
  */
 class Interpreter {
-private: 
-
+private:
     /** Ram Translation Unit */
-    RamTranslationUnit &translationUnit;
+    RamTranslationUnit& translationUnit;
 
     /** Execution environment */
     InterpreterEnvironment env;
 
 public:
     /** Get environment */
-    InterpreterEnvironment &getEnvironment() {
+    InterpreterEnvironment& getEnvironment() {
         return env;
     }
 
     /** Get translation unit */
-    RamTranslationUnit &getTranslationUnit() {
+    RamTranslationUnit& getTranslationUnit() {
         return translationUnit;
     }
 
     /** Evaluate value */
     RamDomain eval(const RamValue& value, const EvalContext& ctxt = EvalContext());
 
-    /** Evaluate operation */ 
+    /** Evaluate operation */
     void eval(const RamOperation& op, const EvalContext& args = EvalContext());
-   
+
     /** Evaluate conditions */
     bool eval(const RamCondition& cond, const EvalContext& ctxt = EvalContext());
 
-    /** Evaluate statement */ 
+    /** Evaluate statement */
     void eval(const RamStatement& stmt, std::ostream* profile = nullptr);
 
 public:
@@ -663,9 +662,8 @@ public:
     void executeMain();
 
     /* Execute subroutine */
-    void executeSubroutine(const RamStatement& stmt,
-            const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
-            std::vector<bool>& returnErrors);
+    void executeSubroutine(const RamStatement& stmt, const std::vector<RamDomain>& arguments,
+            std::vector<RamDomain>& returnValues, std::vector<bool>& returnErrors);
 };
 
 }  // end of namespace souffle
