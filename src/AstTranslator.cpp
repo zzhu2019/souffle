@@ -1344,8 +1344,7 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
     return prog;
 }
 
-std::unique_ptr<RamTranslationUnit> AstTranslator::translateUnit(AstTranslationUnit& tu) 
-{
+std::unique_ptr<RamTranslationUnit> AstTranslator::translateUnit(AstTranslationUnit& tu) {
     auto ram_start = std::chrono::high_resolution_clock::now();
     std::unique_ptr<RamProgram> ramProg = translateProgram(tu);
     SymbolTable& symTab = tu.getSymbolTable();
