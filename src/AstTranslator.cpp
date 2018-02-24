@@ -819,7 +819,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
     }
 
     /* generate the final RAM Insert statement */
-    return std::make_unique<RamInsert>(clause, std::move(op));
+    return std::make_unique<RamInsert>(std::move(op));
 }
 
 /* utility for appending statements */

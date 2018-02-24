@@ -520,7 +520,6 @@ class InterpreterEnvironment {
 
 public:
     InterpreterEnvironment(SymbolTable& symbolTable) : symbolTable(symbolTable), counter(0) {}
-
     virtual ~InterpreterEnvironment() {
         for (auto& x : data) {
             delete x.second;
@@ -631,17 +630,6 @@ private:
     /** Execution environment */
     InterpreterEnvironment env;
 
-public:
-    /** Get environment */
-    InterpreterEnvironment& getEnvironment() {
-        return env;
-    }
-
-    /** Get translation unit */
-    RamTranslationUnit& getTranslationUnit() {
-        return translationUnit;
-    }
-
     /** Evaluate value */
     RamDomain eval(const RamValue& value, const EvalContext& ctxt = EvalContext());
 
@@ -657,6 +645,16 @@ public:
 public:
     Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit), env(tUnit.getSymbolTable()) {}
     virtual ~Interpreter() = default;
+
+    /** Get environment */
+    InterpreterEnvironment& getEnvironment() {
+        return env;
+    }
+
+    /** Get translation unit */
+    RamTranslationUnit& getTranslationUnit() {
+        return translationUnit;
+    }
 
     /** Execute main program */
     void executeMain();

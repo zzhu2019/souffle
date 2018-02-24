@@ -383,32 +383,6 @@ public:
 
             // aggregate proof counters
         }
-        if (Global::config().has("profile")) {
-            // TODO: this should be moved to AstTranslator, as all other such logging is done there
-
-            // get target relation
-            const RamRelation* rel = nullptr;
-            visitDepthFirst(insert, [&](const RamProject& project) { rel = &project.getRelation(); });
-
-            // build log message
-            auto& clause = insert.getOrigin();
-            std::string clauseText = toString(clause);
-            replace(clauseText.begin(), clauseText.end(), '"', '\'');
-            replace(clauseText.begin(), clauseText.end(), '\n', ' ');
-
-            // print log entry
-            out << "{ auto lease = getOutputLock().acquire(); ";
-            out << "(void)lease;\n";
-            out << "profile << R\"(";
-            out << AstLogStatement::pProofCounter(rel->getName(), clause.getSrcLoc(), clauseText);
-            out << ")\" << num_failed_proofs << ";
-            if (fileExtension(Global::config().get("profile")) == "json") {
-                out << "\"},\" << ";
-            }
-            out << "std::endl;\n";
-            out << "}";
-        }
-
         out << "}\n";  // end lambda
         // out << "();";  // call lambda
         PRINT_END_COMMENT(out);
