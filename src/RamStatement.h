@@ -413,8 +413,7 @@ protected:
     std::unique_ptr<RamOperation> operation;
 
 public:
-    RamInsert(std::unique_ptr<RamOperation> o)
-            : RamStatement(RN_Insert), operation(std::move(o)) {}
+    RamInsert(std::unique_ptr<RamOperation> o) : RamStatement(RN_Insert), operation(std::move(o)) {}
 
     /** Get RAM operation */
     const RamOperation& getOperation() const {
