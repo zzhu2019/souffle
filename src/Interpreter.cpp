@@ -669,17 +669,17 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
     Interpreter(env, ctxt).visit(op);
 }
 
-void run(const QueryExecutionStrategy& strategy, std::ostream* profile,
-        const RamStatement& stmt, InterpreterEnvironment& env) {
+void run(const QueryExecutionStrategy& strategy, std::ostream* profile, const RamStatement& stmt,
+        InterpreterEnvironment& env) {
     class Interpreter : public RamVisitor<bool> {
         InterpreterEnvironment& env;
         const QueryExecutionStrategy& queryExecutor;
         std::ostream* profile;
 
     public:
-        Interpreter(InterpreterEnvironment& env, const QueryExecutionStrategy& strategy,
-                std::ostream* profile)
-                : env(env), queryExecutor(strategy),  profile(profile) {}
+        Interpreter(
+                InterpreterEnvironment& env, const QueryExecutionStrategy& strategy, std::ostream* profile)
+                : env(env), queryExecutor(strategy), profile(profile) {}
 
         // -- Statements -----------------------------
 

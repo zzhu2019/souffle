@@ -623,8 +623,7 @@ struct ExecutionSummary {
 };
 
 /** Defines the type of execution strategies for interpreter */
-typedef std::function<ExecutionSummary(const RamInsert&, InterpreterEnvironment& env)>
-        QueryExecutionStrategy;
+typedef std::function<ExecutionSummary(const RamInsert&, InterpreterEnvironment& env)> QueryExecutionStrategy;
 
 /** With this strategy queries will be processed without profiling */
 extern const QueryExecutionStrategy DirectExecution;
@@ -706,9 +705,7 @@ public:
  * optional scheduling step will be conducted.
  */
 class Interpreter {
-
 public:
-
     /**
      * Runs the given RAM statement on an empty environment and returns
      * this environment after the completion of the execution.
@@ -732,8 +729,7 @@ public:
 
 public:
     /** A constructor accepting a query strategy */
-    Interpreter(const QueryExecutionStrategy& queryStrategy)
-            : queryStrategy(queryStrategy) {}
+    Interpreter(const QueryExecutionStrategy& queryStrategy) : queryStrategy(queryStrategy) {}
 
     /** run the program for a given interpreter environment */
     void invoke(const RamProgram& prog, InterpreterEnvironment& env) const;

@@ -438,7 +438,6 @@ int main(int argc, char** argv) {
         std::cerr << ramTranslationUnit->getErrorReport();
     }
 
-
     if (!ramTranslationUnit->getProgram()->getMain()) {
         return 0;
     };
