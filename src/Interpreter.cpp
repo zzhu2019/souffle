@@ -266,7 +266,7 @@ bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
             if (ne.isTotal()) {
                 RamDomain tuple[arity];
                 for (size_t i = 0; i < arity; i++) {
-                    tuple[i] = (values[i]) ? interpreter.eval(values[i], ctxt) : MIN_RAM_DOMAIN;
+                    tuple[i] = (values[i]) ? interpreter.eval(*values[i], ctxt) : MIN_RAM_DOMAIN;
                 }
 
                 return !rel.exists(tuple);
@@ -276,7 +276,7 @@ bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
             RamDomain low[arity];
             RamDomain high[arity];
             for (size_t i = 0; i < arity; i++) {
-                low[i] = (values[i]) ? interpreter.eval(values[i], ctxt) : MIN_RAM_DOMAIN;
+                low[i] = (values[i]) ? interpreter.eval(*values[i], ctxt) : MIN_RAM_DOMAIN;
                 high[i] = (values[i]) ? low[i] : MAX_RAM_DOMAIN;
             }
 
@@ -292,22 +292,22 @@ bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
             switch (relOp.getOperator()) {
                 // comparison operators
                 case BinaryConstraintOp::EQ:
-                    return interpreter.eval(relOp.getLHS(), ctxt) == interpreter.eval(relOp.getRHS(), ctxt);
+                    return interpreter.eval(*relOp.getLHS(), ctxt) == interpreter.eval(*relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::NE:
-                    return interpreter.eval(relOp.getLHS(), ctxt) != interpreter.eval(relOp.getRHS(), ctxt);
+                    return interpreter.eval(*relOp.getLHS(), ctxt) != interpreter.eval(*relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::LT:
-                    return interpreter.eval(relOp.getLHS(), ctxt) < interpreter.eval(relOp.getRHS(), ctxt);
+                    return interpreter.eval(*relOp.getLHS(), ctxt) < interpreter.eval(*relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::LE:
-                    return interpreter.eval(relOp.getLHS(), ctxt) <= interpreter.eval(relOp.getRHS(), ctxt);
+                    return interpreter.eval(*relOp.getLHS(), ctxt) <= interpreter.eval(*relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::GT:
-                    return interpreter.eval(relOp.getLHS(), ctxt) > interpreter.eval(relOp.getRHS(), ctxt);
+                    return interpreter.eval(*relOp.getLHS(), ctxt) > interpreter.eval(*relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::GE:
-                    return interpreter.eval(relOp.getLHS(), ctxt) >= interpreter.eval(relOp.getRHS(), ctxt);
+                    return interpreter.eval(*relOp.getLHS(), ctxt) >= interpreter.eval(*relOp.getRHS(), ctxt);
 
                 // strings
                 case BinaryConstraintOp::MATCH: {
-                    RamDomain l = interpreter.eval(relOp.getLHS(), ctxt);
-                    RamDomain r = interpreter.eval(relOp.getRHS(), ctxt);
+                    RamDomain l = interpreter.eval(*relOp.getLHS(), ctxt);
+                    RamDomain r = interpreter.eval(*relOp.getRHS(), ctxt);
                     const std::string& pattern = env.getSymbolTable().resolve(l);
                     const std::string& text = env.getSymbolTable().resolve(r);
                     bool result = false;
@@ -320,8 +320,8 @@ bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
                     return result;
                 }
                 case BinaryConstraintOp::NOT_MATCH: {
-                    RamDomain l = interpreter.eval(relOp.getLHS(), ctxt);
-                    RamDomain r = interpreter.eval(relOp.getRHS(), ctxt);
+                    RamDomain l = interpreter.eval(*relOp.getLHS(), ctxt);
+                    RamDomain r = interpreter.eval(*relOp.getRHS(), ctxt);
                     const std::string& pattern = env.getSymbolTable().resolve(l);
                     const std::string& text = env.getSymbolTable().resolve(r);
                     bool result = false;
@@ -334,15 +334,15 @@ bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
                     return result;
                 }
                 case BinaryConstraintOp::CONTAINS: {
-                    RamDomain l = interpreter.eval(relOp.getLHS(), ctxt);
-                    RamDomain r = interpreter.eval(relOp.getRHS(), ctxt);
+                    RamDomain l = interpreter.eval(*relOp.getLHS(), ctxt);
+                    RamDomain r = interpreter.eval(*relOp.getRHS(), ctxt);
                     const std::string& pattern = env.getSymbolTable().resolve(l);
                     const std::string& text = env.getSymbolTable().resolve(r);
                     return text.find(pattern) != std::string::npos;
                 }
                 case BinaryConstraintOp::NOT_CONTAINS: {
-                    RamDomain l = interpreter.eval(relOp.getLHS(), ctxt);
-                    RamDomain r = interpreter.eval(relOp.getRHS(), ctxt);
+                    RamDomain l = interpreter.eval(*relOp.getLHS(), ctxt);
+                    RamDomain r = interpreter.eval(*relOp.getRHS(), ctxt);
                     const std::string& pattern = env.getSymbolTable().resolve(l);
                     const std::string& text = env.getSymbolTable().resolve(r);
                     return text.find(pattern) == std::string::npos;
@@ -417,7 +417,7 @@ void Interpreter::eval(const RamOperation& op, const EvalContext& args )
             auto pattern = scan.getRangePattern();
             for (size_t i = 0; i < arity; i++) {
                 if (pattern[i] != nullptr) {
-                    low[i] = interpreter.eval(pattern[i], ctxt);
+                    low[i] = interpreter.eval(*pattern[i], ctxt);
                     hig[i] = low[i];
                 } else {
                     low[i] = MIN_RAM_DOMAIN;
@@ -498,7 +498,7 @@ void Interpreter::eval(const RamOperation& op, const EvalContext& args )
 
             for (size_t i = 0; i < arity; i++) {
                 if (pattern[i] != nullptr) {
-                    low[i] = interpreter.eval(pattern[i], ctxt);
+                    low[i] = interpreter.eval(*pattern[i], ctxt);
                     hig[i] = low[i];
                 } else {
                     low[i] = MIN_RAM_DOMAIN;
@@ -534,7 +534,7 @@ void Interpreter::eval(const RamOperation& op, const EvalContext& args )
                 // aggregation is a bit more difficult
 
                 // eval target expression
-                RamDomain cur = interpreter.eval(aggregate.getTargetExpression(), ctxt);
+                RamDomain cur = interpreter.eval(*aggregate.getTargetExpression(), ctxt);
 
                 switch (aggregate.getFunction()) {
                     case RamAggregate::MIN:
@@ -579,7 +579,7 @@ void Interpreter::eval(const RamOperation& op, const EvalContext& args )
             const auto& values = project.getValues();
             RamDomain tuple[arity];
             for (size_t i = 0; i < arity; i++) {
-                tuple[i] = interpreter.eval(values[i], ctxt);
+                tuple[i] = interpreter.eval(*values[i], ctxt);
             }
 
             // check filter relation
@@ -597,7 +597,7 @@ void Interpreter::eval(const RamOperation& op, const EvalContext& args )
                 if (val == nullptr) {
                     ctxt.addReturnValue(0, true);
                 } else {
-                    ctxt.addReturnValue(interpreter.eval(val, ctxt));
+                    ctxt.addReturnValue(interpreter.eval(*val, ctxt));
                 }
             }
         }
@@ -756,7 +756,7 @@ void Interpreter::eval(const RamStatement& stmt, std::ostream *profile)
             auto values = fact.getValues();
 
             for (size_t i = 0; i < arity; ++i) {
-                tuple[i] = interpreter.eval(values[i]);
+                tuple[i] = interpreter.eval(*values[i]);
             }
 
             env.getRelation(fact.getRelation()).insert(tuple);
@@ -806,7 +806,7 @@ void Interpreter::eval(const RamStatement& stmt, std::ostream *profile)
 }
 
 /** Execute main program of a translation unit */
-void Interpreter::execute() 
+void Interpreter::executeMain() 
 {
     SignalHandler::instance()->set();
     const RamStatement &main = *translationUnit.getP().getMain(); 

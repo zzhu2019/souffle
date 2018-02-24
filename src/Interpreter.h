@@ -455,6 +455,7 @@ class EvalContext {
 
 public:
     EvalContext(size_t size = 0) : data(size) {}
+    virtual ~EvalContext() = default;
 
     const RamDomain*& operator[](size_t index) {
         return data[index];
@@ -502,7 +503,7 @@ public:
 
 /**
  * An environment encapsulates all the context information required for
- * processing a RAM program.
+ * processing a translation unit.
  */
 class InterpreterEnvironment {
     /** The type utilized for storing relations */
@@ -620,9 +621,7 @@ public:
 };
 
 /**
- * A RAM interpreter. The RAM program will
- * be processed within the callers process. Before every query operation, an
- * optional scheduling step will be conducted.
+ * Interpreter executing a RAM translation unit
  */
 class Interpreter {
 private: 
@@ -644,34 +643,29 @@ public:
         return translationUnit;
     }
 
-    /** Evaluate RAM value */
+    /** Evaluate value */
     RamDomain eval(const RamValue& value, const EvalContext& ctxt = EvalContext());
 
-    /** Evaluation wrapper for pointers */
-    RamDomain eval(const RamValue* value, const EvalContext& ctxt = EvalContext()) { 
-        return eval(*value, ctxt);
-    }
-
-    /* Evaluate RAM operation */ 
+    /** Evaluate operation */ 
     void eval(const RamOperation& op, const EvalContext& args = EvalContext());
    
-    /** Evaluate RAM conditions */
+    /** Evaluate conditions */
     bool eval(const RamCondition& cond, const EvalContext& ctxt = EvalContext());
 
-    /** Evaluate RAM statement */ 
+    /** Evaluate statement */ 
     void eval(const RamStatement& stmt, std::ostream* profile = nullptr);
 
 public:
     Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit), env(tUnit.getSymbolTable()) {}
+    virtual ~Interpreter() = default;
 
     /** Execute main program */
-    void execute();
+    void executeMain();
 
     /* Execute subroutine */
     void executeSubroutine(const RamStatement& stmt,
             const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
             std::vector<bool>& returnErrors);
-
 };
 
 }  // end of namespace souffle

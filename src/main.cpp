@@ -439,7 +439,7 @@ int main(int argc, char** argv) {
         std::unique_ptr<Interpreter> interpreter = std::make_unique<Interpreter>(*ramTranslationUnit);
 
         // execute translation unit
-        interpreter->execute();
+        interpreter->executeMain();
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
