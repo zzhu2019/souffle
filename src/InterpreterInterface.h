@@ -207,8 +207,11 @@ private:
     std::vector<InterpreterRelInterface*> interfaces;
 
 public:
-    InterpreterProgInterface(const RamTranslationUnit& tu, Interpreter& e, InterpreterEnvironment& r)
-            : prog(*tu.getProgram()), exec(e), env(r), symTable(tu.getSymbolTable()) {
+    InterpreterProgInterface(Interpreter& interp)
+            : prog(interp.getTranslationUnit().getP()), 
+              exec(interp),
+              env(interp.getEnvironment()), 
+              symTable(interp.getTranslationUnit().getSymbolTable()) {
         uint32_t id = 0;
 
         // Retrieve AST Relations and store them in a map
@@ -216,7 +219,7 @@ public:
         visitDepthFirst(*(prog.getMain()), [&](const RamRelation& rel) { map[rel.getName()] = &rel; });
 
         // Build wrapper relations for Souffle's interface
-        for (auto& rel_pair : r.getRelationMap()) {
+        for (auto& rel_pair : interp.getEnvironment().getRelationMap()) {
             auto& name = rel_pair.first;
             auto& interpreterRel = *rel_pair.second;
             ASSERT(map[name]);
@@ -266,7 +269,7 @@ public:
     /** Run subroutine */
     void executeSubroutine(std::string name, const std::vector<RamDomain>& args, std::vector<RamDomain>& ret,
             std::vector<bool>& err) override {
-        exec.executeSubroutine(env, prog.getSubroutine(name), args, ret, err);
+        exec.executeSubroutine(prog.getSubroutine(name), args, ret, err);
     }
 
     /** Get symbol table */

@@ -27,7 +27,6 @@
 #include "Logger.h"
 #include "Macro.h"
 #include "RamVisitor.h"
-#include "RuleScheduler.h"
 #include "SignalHandler.h"
 #include "TypeSystem.h"
 #include "UnaryFunctorOps.h"
@@ -45,70 +44,18 @@
 #include <omp.h>
 #endif
 
+
 namespace souffle {
 
-class EvalContext {
-    std::vector<const RamDomain*> data;
-    std::vector<RamDomain>* returnValues = nullptr;
-    std::vector<bool>* returnErrors = nullptr;
-    const std::vector<RamDomain>* args = nullptr;
-
-public:
-    EvalContext(size_t size = 0) : data(size) {}
-
-    const RamDomain*& operator[](size_t index) {
-        return data[index];
-    }
-
-    const RamDomain* const& operator[](size_t index) const {
-        return data[index];
-    }
-
-    std::vector<RamDomain>& getReturnValues() const {
-        return *returnValues;
-    }
-
-    void setReturnValues(std::vector<RamDomain>& retVals) {
-        returnValues = &retVals;
-    }
-
-    void addReturnValue(RamDomain val, bool err = false) {
-        assert(returnValues != nullptr && returnErrors != nullptr);
-        returnValues->push_back(val);
-        returnErrors->push_back(err);
-    }
-
-    std::vector<bool>& getReturnErrors() const {
-        return *returnErrors;
-    }
-
-    void setReturnErrors(std::vector<bool>& retErrs) {
-        returnErrors = &retErrs;
-    }
-
-    const std::vector<RamDomain>& getArguments() const {
-        return *args;
-    }
-
-    void setArguments(const std::vector<RamDomain>& a) {
-        args = &a;
-    }
-
-    RamDomain getArgument(size_t i) const {
-        assert(args != nullptr && i < args->size() && "argument out of range");
-        return (*args)[i];
-    }
-};
-
-namespace {
-
-RamDomain eval(const RamValue& value, InterpreterEnvironment& env, const EvalContext& ctxt = EvalContext()) {
-    class Evaluator : public RamVisitor<RamDomain> {
+/** Evaluate RAM Value */
+RamDomain Interpreter::eval(const RamValue& value, const EvalContext& ctxt) 
+{
+    class ValueEvaluator : public RamVisitor<RamDomain> {
         InterpreterEnvironment& env;
         const EvalContext& ctxt;
 
     public:
-        Evaluator(InterpreterEnvironment& env, const EvalContext& ctxt) : env(env), ctxt(ctxt) {}
+        ValueEvaluator(InterpreterEnvironment& env, const EvalContext& ctxt) : env(env), ctxt(ctxt) {}
 
         // -- basics --
         RamDomain visitNumber(const RamNumber& num) override {
@@ -283,20 +230,18 @@ RamDomain eval(const RamValue& value, InterpreterEnvironment& env, const EvalCon
     };
 
     // create and run evaluator
-    return Evaluator(env, ctxt)(value);
+    return ValueEvaluator(env, ctxt)(value);
 }
 
-RamDomain eval(const RamValue* value, InterpreterEnvironment& env, const EvalContext& ctxt = EvalContext()) {
-    return eval(*value, env, ctxt);
-}
-
-bool eval(const RamCondition& cond, InterpreterEnvironment& env, const EvalContext& ctxt = EvalContext()) {
-    class Evaluator : public RamVisitor<bool> {
+/** Evaluate RAM Condition */ 
+bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
+    class ConditionEvaluator : public RamVisitor<bool> {
         InterpreterEnvironment& env;
         const EvalContext& ctxt;
+        Interpreter &interpreter;
 
     public:
-        Evaluator(InterpreterEnvironment& env, const EvalContext& ctxt) : env(env), ctxt(ctxt) {}
+        ConditionEvaluator(InterpreterEnvironment& env, const EvalContext& ctxt, Interpreter &intp) : env(env), ctxt(ctxt), interpreter(intp) {}
 
         // -- connectors operators --
 
@@ -321,7 +266,7 @@ bool eval(const RamCondition& cond, InterpreterEnvironment& env, const EvalConte
             if (ne.isTotal()) {
                 RamDomain tuple[arity];
                 for (size_t i = 0; i < arity; i++) {
-                    tuple[i] = (values[i]) ? eval(values[i], env, ctxt) : MIN_RAM_DOMAIN;
+                    tuple[i] = (values[i]) ? interpreter.eval(values[i], ctxt) : MIN_RAM_DOMAIN;
                 }
 
                 return !rel.exists(tuple);
@@ -331,7 +276,7 @@ bool eval(const RamCondition& cond, InterpreterEnvironment& env, const EvalConte
             RamDomain low[arity];
             RamDomain high[arity];
             for (size_t i = 0; i < arity; i++) {
-                low[i] = (values[i]) ? eval(values[i], env, ctxt) : MIN_RAM_DOMAIN;
+                low[i] = (values[i]) ? interpreter.eval(values[i], ctxt) : MIN_RAM_DOMAIN;
                 high[i] = (values[i]) ? low[i] : MAX_RAM_DOMAIN;
             }
 
@@ -347,22 +292,22 @@ bool eval(const RamCondition& cond, InterpreterEnvironment& env, const EvalConte
             switch (relOp.getOperator()) {
                 // comparison operators
                 case BinaryConstraintOp::EQ:
-                    return eval(relOp.getLHS(), env, ctxt) == eval(relOp.getRHS(), env, ctxt);
+                    return interpreter.eval(relOp.getLHS(), ctxt) == interpreter.eval(relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::NE:
-                    return eval(relOp.getLHS(), env, ctxt) != eval(relOp.getRHS(), env, ctxt);
+                    return interpreter.eval(relOp.getLHS(), ctxt) != interpreter.eval(relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::LT:
-                    return eval(relOp.getLHS(), env, ctxt) < eval(relOp.getRHS(), env, ctxt);
+                    return interpreter.eval(relOp.getLHS(), ctxt) < interpreter.eval(relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::LE:
-                    return eval(relOp.getLHS(), env, ctxt) <= eval(relOp.getRHS(), env, ctxt);
+                    return interpreter.eval(relOp.getLHS(), ctxt) <= interpreter.eval(relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::GT:
-                    return eval(relOp.getLHS(), env, ctxt) > eval(relOp.getRHS(), env, ctxt);
+                    return interpreter.eval(relOp.getLHS(), ctxt) > interpreter.eval(relOp.getRHS(), ctxt);
                 case BinaryConstraintOp::GE:
-                    return eval(relOp.getLHS(), env, ctxt) >= eval(relOp.getRHS(), env, ctxt);
+                    return interpreter.eval(relOp.getLHS(), ctxt) >= interpreter.eval(relOp.getRHS(), ctxt);
 
                 // strings
                 case BinaryConstraintOp::MATCH: {
-                    RamDomain l = eval(relOp.getLHS(), env, ctxt);
-                    RamDomain r = eval(relOp.getRHS(), env, ctxt);
+                    RamDomain l = interpreter.eval(relOp.getLHS(), ctxt);
+                    RamDomain r = interpreter.eval(relOp.getRHS(), ctxt);
                     const std::string& pattern = env.getSymbolTable().resolve(l);
                     const std::string& text = env.getSymbolTable().resolve(r);
                     bool result = false;
@@ -375,8 +320,8 @@ bool eval(const RamCondition& cond, InterpreterEnvironment& env, const EvalConte
                     return result;
                 }
                 case BinaryConstraintOp::NOT_MATCH: {
-                    RamDomain l = eval(relOp.getLHS(), env, ctxt);
-                    RamDomain r = eval(relOp.getRHS(), env, ctxt);
+                    RamDomain l = interpreter.eval(relOp.getLHS(), ctxt);
+                    RamDomain r = interpreter.eval(relOp.getRHS(), ctxt);
                     const std::string& pattern = env.getSymbolTable().resolve(l);
                     const std::string& text = env.getSymbolTable().resolve(r);
                     bool result = false;
@@ -389,15 +334,15 @@ bool eval(const RamCondition& cond, InterpreterEnvironment& env, const EvalConte
                     return result;
                 }
                 case BinaryConstraintOp::CONTAINS: {
-                    RamDomain l = eval(relOp.getLHS(), env, ctxt);
-                    RamDomain r = eval(relOp.getRHS(), env, ctxt);
+                    RamDomain l = interpreter.eval(relOp.getLHS(), ctxt);
+                    RamDomain r = interpreter.eval(relOp.getRHS(), ctxt);
                     const std::string& pattern = env.getSymbolTable().resolve(l);
                     const std::string& text = env.getSymbolTable().resolve(r);
                     return text.find(pattern) != std::string::npos;
                 }
                 case BinaryConstraintOp::NOT_CONTAINS: {
-                    RamDomain l = eval(relOp.getLHS(), env, ctxt);
-                    RamDomain r = eval(relOp.getRHS(), env, ctxt);
+                    RamDomain l = interpreter.eval(relOp.getLHS(), ctxt);
+                    RamDomain r = interpreter.eval(relOp.getRHS(), ctxt);
                     const std::string& pattern = env.getSymbolTable().resolve(l);
                     const std::string& text = env.getSymbolTable().resolve(r);
                     return text.find(pattern) == std::string::npos;
@@ -418,23 +363,26 @@ bool eval(const RamCondition& cond, InterpreterEnvironment& env, const EvalConte
     };
 
     // run evaluator
-    return Evaluator(env, ctxt)(cond);
+    return ConditionEvaluator(env, ctxt, *this)(cond);
 }
 
-void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContext& args = EvalContext()) {
-    class Interpreter : public RamVisitor<void> {
+/** Evaluate RAM operation */
+void Interpreter::eval(const RamOperation& op, const EvalContext& args ) 
+{
+    class OperationEvaluator : public RamVisitor<void> {
         InterpreterEnvironment& env;
         EvalContext& ctxt;
+        Interpreter& interpreter;
 
     public:
-        Interpreter(InterpreterEnvironment& env, EvalContext& ctxt) : env(env), ctxt(ctxt) {}
+        OperationEvaluator(InterpreterEnvironment& env, EvalContext& ctxt, Interpreter &interp) : env(env), ctxt(ctxt), interpreter(interp) {}
 
         // -- Operations -----------------------------
 
         void visitSearch(const RamSearch& search) override {
             // check condition
             auto condition = search.getCondition();
-            if (condition && !eval(*condition, env, ctxt)) {
+            if (condition && !interpreter.eval(*condition, ctxt)) {
                 return;  // condition not valid => skip nested
             }
 
@@ -469,7 +417,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
             auto pattern = scan.getRangePattern();
             for (size_t i = 0; i < arity; i++) {
                 if (pattern[i] != nullptr) {
-                    low[i] = eval(pattern[i], env, ctxt);
+                    low[i] = interpreter.eval(pattern[i], ctxt);
                     hig[i] = low[i];
                 } else {
                     low[i] = MIN_RAM_DOMAIN;
@@ -550,7 +498,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
 
             for (size_t i = 0; i < arity; i++) {
                 if (pattern[i] != nullptr) {
-                    low[i] = eval(pattern[i], env, ctxt);
+                    low[i] = interpreter.eval(pattern[i], ctxt);
                     hig[i] = low[i];
                 } else {
                     low[i] = MIN_RAM_DOMAIN;
@@ -586,7 +534,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
                 // aggregation is a bit more difficult
 
                 // eval target expression
-                RamDomain cur = eval(aggregate.getTargetExpression(), env, ctxt);
+                RamDomain cur = interpreter.eval(aggregate.getTargetExpression(), ctxt);
 
                 switch (aggregate.getFunction()) {
                     case RamAggregate::MIN:
@@ -611,7 +559,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
 
             // check whether result is used in a condition
             auto condition = aggregate.getCondition();
-            if (condition && !eval(*condition, env, ctxt)) {
+            if (condition && !interpreter.eval(*condition, ctxt)) {
                 return;  // condition not valid => skip nested
             }
 
@@ -622,7 +570,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
         void visitProject(const RamProject& project) override {
             // check constraints
             RamCondition* condition = project.getCondition();
-            if (condition && !eval(*condition, env, ctxt)) {
+            if (condition && !interpreter.eval(*condition, ctxt)) {
                 return;  // condition violated => skip insert
             }
 
@@ -631,7 +579,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
             const auto& values = project.getValues();
             RamDomain tuple[arity];
             for (size_t i = 0; i < arity; i++) {
-                tuple[i] = eval(values[i], env, ctxt);
+                tuple[i] = interpreter.eval(values[i], ctxt);
             }
 
             // check filter relation
@@ -649,7 +597,7 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
                 if (val == nullptr) {
                     ctxt.addReturnValue(0, true);
                 } else {
-                    ctxt.addReturnValue(eval(val, env, ctxt));
+                    ctxt.addReturnValue(interpreter.eval(val, ctxt));
                 }
             }
         }
@@ -661,25 +609,25 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
         }
     };
 
-    // create and run interpreter
+    // create and run interpreter for operations 
     EvalContext ctxt(op.getDepth());
     ctxt.setReturnValues(args.getReturnValues());
     ctxt.setReturnErrors(args.getReturnErrors());
     ctxt.setArguments(args.getArguments());
-    Interpreter(env, ctxt).visit(op);
+    OperationEvaluator(env, ctxt, *this).visit(op);
 }
 
-void run(const QueryExecutionStrategy& strategy, std::ostream* profile, const RamStatement& stmt,
-        InterpreterEnvironment& env) {
-    class Interpreter : public RamVisitor<bool> {
+/** Evaluate RAM statement */ 
+void Interpreter::eval(const RamStatement& stmt, std::ostream *profile) 
+{
+    class StatementEvaluator : public RamVisitor<bool> {
         InterpreterEnvironment& env;
-        const QueryExecutionStrategy& queryExecutor;
         std::ostream* profile;
-
+        Interpreter& interpreter;
     public:
-        Interpreter(
-                InterpreterEnvironment& env, const QueryExecutionStrategy& strategy, std::ostream* profile)
-                : env(env), queryExecutor(strategy), profile(profile) {}
+        StatementEvaluator(
+                InterpreterEnvironment& env, std::ostream* profile, Interpreter& interp)
+                : env(env), profile(profile), interpreter(interp) {}
 
         // -- Statements -----------------------------
 
@@ -725,7 +673,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* profile, const Ra
         }
 
         bool visitExit(const RamExit& exit) override {
-            return !eval(exit.getCondition(), env);
+            return !interpreter.eval(exit.getCondition());
         }
 
         bool visitLogTimer(const RamLogTimer& timer) override {
@@ -808,7 +756,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* profile, const Ra
             auto values = fact.getValues();
 
             for (size_t i = 0; i < arity; ++i) {
-                tuple[i] = eval(values[i], env);
+                tuple[i] = interpreter.eval(values[i]);
             }
 
             env.getRelation(fact.getRelation()).insert(tuple);
@@ -817,7 +765,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* profile, const Ra
 
         bool visitInsert(const RamInsert& insert) override {
             // run generic query executor
-            queryExecutor(insert, env);
+            interpreter.eval(insert.getOperation());
             return true;
         }
 
@@ -853,13 +801,16 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* profile, const Ra
         }
     };
 
-    // create and run interpreter
-    Interpreter(env, strategy, profile).visit(stmt);
+    // create and run interpreter for statements 
+    StatementEvaluator(env, profile, *this).visit(stmt);
 }
-}  // namespace
 
-void Interpreter::invoke(const RamProgram& prog, InterpreterEnvironment& env) const {
+/** Execute main program of a translation unit */
+void Interpreter::execute() 
+{
     SignalHandler::instance()->set();
+    const RamStatement &main = *translationUnit.getP().getMain(); 
+
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
         // open output stream
@@ -868,19 +819,17 @@ void Interpreter::invoke(const RamProgram& prog, InterpreterEnvironment& env) co
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
         os << AstLogStatement::startDebug() << std::endl;
-        run(queryStrategy, &os, *(prog.getMain()), env);
+        eval(main, &os);
     } else {
-        run(queryStrategy, nullptr, *(prog.getMain()), env);
+        eval(main);
     }
     SignalHandler::instance()->reset();
 }
 
-/**
- * Runs a subroutine of a RamProgram
- */
-void Interpreter::executeSubroutine(InterpreterEnvironment& env, const RamStatement& stmt,
+/** Execute subroutine */
+void Interpreter::executeSubroutine(const RamStatement& stmt,
         const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
-        std::vector<bool>& returnErrors) const {
+        std::vector<bool>& returnErrors){
     EvalContext ctxt;
     ctxt.setReturnValues(returnValues);
     ctxt.setReturnErrors(returnErrors);
@@ -888,183 +837,7 @@ void Interpreter::executeSubroutine(InterpreterEnvironment& env, const RamStatem
 
     // run subroutine
     const RamOperation& op = static_cast<const RamInsert&>(stmt).getOperation();
-    apply(op, env, ctxt);
-}
-
-namespace {
-
-using namespace scheduler;
-
-Order scheduleByModel(AstClause& clause, InterpreterEnvironment& env) {
-    assert(!clause.isFact());
-
-    // check whether schedule is fixed
-    if (clause.hasFixedExecutionPlan()) {
-        return Order::getIdentity(clause.getAtoms().size());
-    }
-
-    // check whether there is actually something to schedule
-    if (clause.getAtoms().size() < 2) {
-        return Order::getIdentity(clause.getAtoms().size());
-    }
-
-    // TODO: provide alternative scheduling approach for larger rules
-    //  8 atoms require   ~200ms to schedule
-    //  9 atoms require  ~2400ms to schedule
-    // 10 atoms require ~29000ms to schedule
-    // 11 atoms => out of memory
-    if (clause.getAtoms().size() > 8) {
-        return Order::getIdentity(clause.getAtoms().size());
-    }
-
-    // get atom list
-    std::vector<AstAtom*> atoms = clause.getAtoms();
-
-    // a utility for mapping variable names to ids
-    std::map<std::string, int> varIDs;
-    auto getID = [&](const AstVariable& var) -> int {
-        auto pos = varIDs.find(var.getName());
-        if (pos != varIDs.end()) {
-            return pos->second;
-        }
-        int id = varIDs.size();
-        varIDs[var.getName()] = id;
-        return id;
-    };
-
-    // fix scheduling strategy
-    typedef Problem<SimpleComputationalCostModel> Problem;
-    typedef typename Problem::atom_type Atom;
-
-    // create an optimization problem
-    Problem p;
-
-    // create atoms
-    for (unsigned i = 0; i < atoms.size(); i++) {
-        // convert pattern of arguments
-        std::vector<Argument> args;
-
-        for (const AstArgument* arg : atoms[i]->getArguments()) {
-            if (const AstVariable* var = dynamic_cast<const AstVariable*>(arg)) {
-                args.push_back(Argument::createVar(getID(*var)));
-            } else if (dynamic_cast<const AstUnnamedVariable*>(arg)) {
-                args.push_back(Argument::createUnderscore());
-            } else if (dynamic_cast<const AstConstant*>(arg)) {
-                args.push_back(Argument::createConst());
-            } else {
-                args.push_back(Argument::createOther());
-            }
-        }
-
-        // add new atom
-        AstTranslator translator;
-        p.addAtom(
-                Atom(i, args, env.getRelation(translator.translateRelationName(atoms[i]->getName())).size()));
-    }
-
-    // solve the optimization problem
-    auto schedule = p.solve();
-
-    // extract order
-    Order res;
-    for (const auto& cur : schedule) {
-        res.append(cur.getID());
-    }
-
-    // re-order atoms
-    clause.reorderAtoms(res.getOrder());
-
-    // done
-    return res;
-}
-}  // namespace
-
-/** With this strategy queries will be processed as they are stated by the user */
-const QueryExecutionStrategy DirectExecution = [](
-        const RamInsert& insert, InterpreterEnvironment& env) -> ExecutionSummary {
-    // measure the time
-    auto start = now();
-
-    // simplest strategy of all - just apply the nested operation
-    apply(insert.getOperation(), env);
-
-    // create report
-    auto end = now();
-    return ExecutionSummary(
-            {Order::getIdentity(insert.getOrigin().getAtoms().size()), duration_in_ms(start, end)});
-};
-
-/** With this strategy queries will be dynamically rescheduled before each execution */
-const QueryExecutionStrategy ScheduledExecution = [](
-        const RamInsert& insert, InterpreterEnvironment& env) -> ExecutionSummary {
-
-    // Report scheduling
-    // TODO: only re-schedule atoms (avoid cloning entire clause)
-    std::unique_ptr<AstClause> clause(insert.getOrigin().clone());
-
-    Order order;
-
-    // (re-)schedule clause
-    order = scheduleByModel(*clause, env);
-
-    // create operation
-    std::unique_ptr<RamStatement> stmt = AstTranslator().translateClause(*clause, nullptr, nullptr);
-    assert(dynamic_cast<RamInsert*>(stmt.get()));
-
-    // run rescheduled node
-    auto start = now();
-    apply(static_cast<RamInsert*>(stmt.get())->getOperation(), env);
-    auto end = now();
-    auto runtime = duration_in_ms(start, end);
-
-    return ExecutionSummary({order, runtime});
-};
-
-RelationStats RelationStats::extractFrom(const InterpreterRelation& rel, uint32_t sample_size) {
-    // write each column in its own set
-    std::vector<btree_set<RamDomain>> columns(rel.getArity());
-
-    // analyze sample
-    uint32_t count = 0;
-    for (auto it = rel.begin(); it != rel.end() && count < sample_size; ++it, ++count) {
-        const RamDomain* tuple = *it;
-
-        // compute cardinality of columns
-        for (std::size_t i = 0; i < rel.getArity(); ++i) {
-            columns[i].insert(tuple[i]);
-        }
-    }
-
-    // create the resulting statistics object
-    RelationStats stats;
-
-    stats.arity = rel.getArity();
-    stats.size = rel.size();
-    stats.sample_size = count;
-
-    for (std::size_t i = 0; i < rel.getArity(); i++) {
-        // estimate the cardinality of the columns
-        uint64_t card = 0;
-        if (count > 0) {
-            // based on the observed probability
-            uint64_t cur = columns[i].size();
-            double p = ((double)cur / (double)count);
-
-            // obtain an estimate of the overall cardinality
-            card = (uint64_t)(p * rel.size());
-
-            // make sure that it is at least what you have seen
-            if (card < cur) {
-                card = cur;
-            }
-        }
-
-        // add result
-        stats.cardinalities.push_back(card);
-    }
-
-    // done
-    return stats;
+    eval(op, ctxt);
 }
 
 }  // end of namespace souffle

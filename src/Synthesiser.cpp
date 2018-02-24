@@ -27,7 +27,6 @@
 #include "Macro.h"
 #include "RamRelation.h"
 #include "RamVisitor.h"
-#include "RuleScheduler.h"
 #include "SignalHandler.h"
 #include "TypeSystem.h"
 #include "UnaryFunctorOps.h"

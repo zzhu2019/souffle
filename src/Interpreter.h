@@ -445,6 +445,62 @@ public:
 };
 
 /**
+ * Evaluation context for RAM operations
+ */
+class EvalContext {
+    std::vector<const RamDomain*> data;
+    std::vector<RamDomain>* returnValues = nullptr;
+    std::vector<bool>* returnErrors = nullptr;
+    const std::vector<RamDomain>* args = nullptr;
+
+public:
+    EvalContext(size_t size = 0) : data(size) {}
+
+    const RamDomain*& operator[](size_t index) {
+        return data[index];
+    }
+
+    const RamDomain* const& operator[](size_t index) const {
+        return data[index];
+    }
+
+    std::vector<RamDomain>& getReturnValues() const {
+        return *returnValues;
+    }
+
+    void setReturnValues(std::vector<RamDomain>& retVals) {
+        returnValues = &retVals;
+    }
+
+    void addReturnValue(RamDomain val, bool err = false) {
+        assert(returnValues != nullptr && returnErrors != nullptr);
+        returnValues->push_back(val);
+        returnErrors->push_back(err);
+    }
+
+    std::vector<bool>& getReturnErrors() const {
+        return *returnErrors;
+    }
+
+    void setReturnErrors(std::vector<bool>& retErrs) {
+        returnErrors = &retErrs;
+    }
+
+    const std::vector<RamDomain>& getArguments() const {
+        return *args;
+    }
+
+    void setArguments(const std::vector<RamDomain>& a) {
+        args = &a;
+    }
+
+    RamDomain getArgument(size_t i) const {
+        assert(args != nullptr && i < args->size() && "argument out of range");
+        return (*args)[i];
+    }
+};
+
+/**
  * An environment encapsulates all the context information required for
  * processing a RAM program.
  */
@@ -564,182 +620,58 @@ public:
 };
 
 /**
- * A class representing the order of predicates in the body of a rule
- */
-class Order {
-    /** The covered order */
-    std::vector<unsigned> order;
-
-public:
-    static Order getIdentity(unsigned size) {
-        Order res;
-        for (unsigned i = 0; i < size; i++) {
-            res.append(i);
-        }
-        return res;
-    }
-
-    void append(unsigned pos) {
-        order.push_back(pos);
-    }
-
-    unsigned operator[](unsigned index) const {
-        return order[index];
-    }
-
-    std::size_t size() const {
-        return order.size();
-    }
-
-    bool isComplete() const {
-        for (size_t i = 0; i < order.size(); i++) {
-            if (!contains(order, i)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    const std::vector<unsigned>& getOrder() const {
-        return order;
-    }
-
-    void print(std::ostream& out) const {
-        out << order;
-    }
-
-    friend std::ostream& operator<<(std::ostream& out, const Order& order) {
-        order.print(out);
-        return out;
-    }
-};
-
-/**
- * The summary to be returned from a statement
- */
-struct ExecutionSummary {
-    Order order;
-    long time;
-};
-
-/** Defines the type of execution strategies for interpreter */
-typedef std::function<ExecutionSummary(const RamInsert&, InterpreterEnvironment& env)> QueryExecutionStrategy;
-
-/** With this strategy queries will be processed without profiling */
-extern const QueryExecutionStrategy DirectExecution;
-
-/** With this strategy queries will be dynamically with profiling */
-extern const QueryExecutionStrategy ScheduledExecution;
-
-/** The type to reference indices */
-typedef unsigned Column;
-
-/**
- * A summary of statistical properties of a ram relation.
- */
-class RelationStats {
-    /** The arity - accurate */
-    uint8_t arity;
-
-    /** The number of tuples - accurate */
-    uint64_t size;
-
-    /** The sample size estimations are based on */
-    uint32_t sample_size;
-
-    /** The cardinality of the various components of the tuples - estimated */
-    std::vector<uint64_t> cardinalities;
-
-public:
-    RelationStats() : arity(0), size(0), sample_size(0) {}
-
-    RelationStats(uint64_t size, const std::vector<uint64_t>& cards)
-            : arity(cards.size()), size(size), sample_size(0), cardinalities(cards) {}
-
-    RelationStats(const RelationStats&) = default;
-    RelationStats(RelationStats&&) = default;
-
-    RelationStats& operator=(const RelationStats&) = default;
-    RelationStats& operator=(RelationStats&&) = default;
-
-    /**
-     * A factory function extracting statistical information form the given relation
-     * base on a given sample size. If the sample size is not specified, the full
-     * relation will be processed.
-     */
-    static RelationStats extractFrom(
-            const InterpreterRelation& rel, uint32_t sample_size = std::numeric_limits<uint32_t>::max());
-
-    uint8_t getArity() const {
-        return arity;
-    }
-
-    uint64_t getCardinality() const {
-        return size;
-    }
-
-    uint32_t getSampleSize() const {
-        return sample_size;
-    }
-
-    uint64_t getEstimatedCardinality(Column c) const {
-        if (c >= cardinalities.size()) {
-            return 0;
-        }
-        return cardinalities[c];
-    }
-
-    void print(std::ostream& out) const {
-        out << cardinalities;
-    }
-
-    friend std::ostream& operator<<(std::ostream& out, const RelationStats& stats) {
-        stats.print(out);
-        return out;
-    }
-};
-
-/**
  * A RAM interpreter. The RAM program will
  * be processed within the callers process. Before every query operation, an
  * optional scheduling step will be conducted.
  */
 class Interpreter {
+private: 
+
+    /** Ram Translation Unit */
+    RamTranslationUnit &translationUnit;
+
+    /** Execution environment */
+    InterpreterEnvironment env;
+
 public:
-    /**
-     * Runs the given RAM statement on an empty environment and returns
-     * this environment after the completion of the execution.
-     */
-    std::unique_ptr<InterpreterEnvironment> execute(SymbolTable& table, const RamProgram& prog) const {
-        auto env = std::make_unique<InterpreterEnvironment>(table);
-        invoke(prog, *env);
+    /** Get environment */
+    InterpreterEnvironment &getEnvironment() {
         return env;
     }
 
-    /**
-     * Runs the given RAM statement on an empty environment and returns
-     * this environment after the completion of the execution.
-     */
-    std::unique_ptr<InterpreterEnvironment> execute(const RamTranslationUnit& tu) const {
-        return execute(tu.getSymbolTable(), *tu.getProgram());
+    /** Get translation unit */
+    RamTranslationUnit &getTranslationUnit() {
+        return translationUnit;
     }
 
-    /** An execution strategy for the interpreter */
-    QueryExecutionStrategy queryStrategy;
+    /** Evaluate RAM value */
+    RamDomain eval(const RamValue& value, const EvalContext& ctxt = EvalContext());
+
+    /** Evaluation wrapper for pointers */
+    RamDomain eval(const RamValue* value, const EvalContext& ctxt = EvalContext()) { 
+        return eval(*value, ctxt);
+    }
+
+    /* Evaluate RAM operation */ 
+    void eval(const RamOperation& op, const EvalContext& args = EvalContext());
+   
+    /** Evaluate RAM conditions */
+    bool eval(const RamCondition& cond, const EvalContext& ctxt = EvalContext());
+
+    /** Evaluate RAM statement */ 
+    void eval(const RamStatement& stmt, std::ostream* profile = nullptr);
 
 public:
-    /** A constructor accepting a query strategy */
-    Interpreter(const QueryExecutionStrategy& queryStrategy) : queryStrategy(queryStrategy) {}
+    Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit), env(tUnit.getSymbolTable()) {}
 
-    /** run the program for a given interpreter environment */
-    void invoke(const RamProgram& prog, InterpreterEnvironment& env) const;
+    /** Execute main program */
+    void execute();
 
-    /**
-     * Runs a subroutine of a RamProgram
-     */
-    virtual void executeSubroutine(InterpreterEnvironment& env, const RamStatement& stmt,
+    /* Execute subroutine */
+    void executeSubroutine(const RamStatement& stmt,
             const std::vector<RamDomain>& arguments, std::vector<RamDomain>& returnValues,
-            std::vector<bool>& returnErrors) const;
+            std::vector<bool>& returnErrors);
+
 };
 
 }  // end of namespace souffle

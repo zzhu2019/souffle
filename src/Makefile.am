@@ -73,7 +73,6 @@ souffle_sources = \
               AstRelationIdentifier.h                   \
               AstSrcLocation.cpp    AstSrcLocation.h    \
               AstTypeAnalysis.cpp   AstTypeAnalysis.h   \
-              AstTuner.cpp          AstTuner.h          \
               AstType.h                                 \
               AstUtils.cpp          AstUtils.h          \
               AstVisitor.h                              \
@@ -108,7 +107,6 @@ souffle_sources = \
               RamTranslationUnit.h                      \
               RamValue.h                                \
               RamVisitor.h                              \
-              RuleScheduler.h                           \
               SignalHandler.h                           \
               StringPool.h                              \
               TypeSystem.cpp        TypeSystem.h        \
@@ -292,18 +290,6 @@ check_PROGRAMS += test/ast_parser_utils_test
 test_ast_parser_utils_test_CXXFLAGS = $(souffle_CPPFLAGS) -I @abs_top_srcdir@/src/test
 test_ast_parser_utils_test_SOURCES = test/ast_parser_utils_test.cpp
 test_ast_parser_utils_test_LDADD = libsouffle.la
-
-# rule scheduler test
-check_PROGRAMS += test/rule_scheduler_test
-test_rule_scheduler_test_CXXFLAGS = $(souffle_bin_CPPFLAGS) -I @abs_top_srcdir@/src/test
-test_rule_scheduler_test_SOURCES = test/rule_scheduler_test.cpp
-test_rule_scheduler_test_LDADD = libsouffle.la
-
-# relation statistics
-check_PROGRAMS += test/ram_relation_stats_test
-test_ram_relation_stats_test_CXXFLAGS = $(souffle_bin_CPPFLAGS) -I @abs_top_srcdir@/src/test -DBUILDDIR='"@abs_top_builddir@/src/"'
-test_ram_relation_stats_test_SOURCES = test/ram_relation_stats_test.cpp
-test_ram_relation_stats_test_LDADD = libsouffle.la
 
 # symbol table
 check_PROGRAMS += test/symbol_table_test
