@@ -51,9 +51,9 @@ public:
      * recording its performance.
      */
     ExecutionSummary operator()(
-            const RamInsert& insert, InterpreterEnvironment& env, std::ostream* report) const {
+            const RamInsert& insert, InterpreterEnvironment& env) const {
         // run nested strategy
-        auto res = nested(insert, env, report);
+        auto res = nested(insert, env);
 
         // record the execution summary
         data[insert.getOrigin().getSrcLoc()].push_back(res);
@@ -123,15 +123,6 @@ bool AutoScheduleTransformer::autotune(AstTranslationUnit& translationUnit, std:
 
     // create interpreter instance
     Interpreter interpreter(profiler);
-
-    if (report && verbose) {
-        SplitStream splitStream(report, &std::cout);
-        interpreter.setReportTarget(splitStream);
-    } else if (report) {
-        interpreter.setReportTarget(*report);
-    } else if (verbose) {
-        interpreter.setReportTarget(std::cout);
-    }
 
     // run interpreter
     interpreter.execute(table, *prog);

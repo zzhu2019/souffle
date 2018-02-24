@@ -669,18 +669,17 @@ void apply(const RamOperation& op, InterpreterEnvironment& env, const EvalContex
     Interpreter(env, ctxt).visit(op);
 }
 
-void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostream* profile,
+void run(const QueryExecutionStrategy& strategy, std::ostream* profile,
         const RamStatement& stmt, InterpreterEnvironment& env) {
     class Interpreter : public RamVisitor<bool> {
         InterpreterEnvironment& env;
         const QueryExecutionStrategy& queryExecutor;
-        std::ostream* report;
         std::ostream* profile;
 
     public:
-        Interpreter(InterpreterEnvironment& env, const QueryExecutionStrategy& strategy, std::ostream* report,
+        Interpreter(InterpreterEnvironment& env, const QueryExecutionStrategy& strategy,
                 std::ostream* profile)
-                : env(env), queryExecutor(strategy), report(report), profile(profile) {}
+                : env(env), queryExecutor(strategy),  profile(profile) {}
 
         // -- Statements -----------------------------
 
@@ -818,7 +817,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
 
         bool visitInsert(const RamInsert& insert) override {
             // run generic query executor
-            queryExecutor(insert, env, report);
+            queryExecutor(insert, env);
             return true;
         }
 
@@ -855,7 +854,7 @@ void run(const QueryExecutionStrategy& strategy, std::ostream* report, std::ostr
     };
 
     // create and run interpreter
-    Interpreter(env, strategy, report, profile).visit(stmt);
+    Interpreter(env, strategy, profile).visit(stmt);
 }
 }  // namespace
 
@@ -869,9 +868,9 @@ void Interpreter::invoke(const RamProgram& prog, InterpreterEnvironment& env) co
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
         os << AstLogStatement::startDebug() << std::endl;
-        run(queryStrategy, report, &os, *(prog.getMain()), env);
+        run(queryStrategy, &os, *(prog.getMain()), env);
     } else {
-        run(queryStrategy, report, nullptr, *(prog.getMain()), env);
+        run(queryStrategy, nullptr, *(prog.getMain()), env);
     }
     SignalHandler::instance()->reset();
 }
@@ -896,14 +895,11 @@ namespace {
 
 using namespace scheduler;
 
-Order scheduleByModel(AstClause& clause, InterpreterEnvironment& env, std::ostream* report) {
+Order scheduleByModel(AstClause& clause, InterpreterEnvironment& env) {
     assert(!clause.isFact());
 
     // check whether schedule is fixed
     if (clause.hasFixedExecutionPlan()) {
-        if (report) {
-            *report << "   Skipped due to fixed execution plan!\n";
-        }
         return Order::getIdentity(clause.getAtoms().size());
     }
 
@@ -969,12 +965,6 @@ Order scheduleByModel(AstClause& clause, InterpreterEnvironment& env, std::ostre
     // solve the optimization problem
     auto schedule = p.solve();
 
-    // log problem and solution
-    if (report) {
-        *report << "Scheduling Problem: " << p << "\n";
-        *report << "          Schedule: " << schedule << "\n";
-    }
-
     // extract order
     Order res;
     for (const auto& cur : schedule) {
@@ -1006,7 +996,7 @@ const QueryExecutionStrategy DirectExecution = [](
 
 /** With this strategy queries will be dynamically rescheduled before each execution */
 const QueryExecutionStrategy ScheduledExecution = [](
-        const RamInsert& insert, InterpreterEnvironment& env, std::ostream* report) -> ExecutionSummary {
+        const RamInsert& insert, InterpreterEnvironment& env) -> ExecutionSummary {
 
     // Report scheduling
     // TODO: only re-schedule atoms (avoid cloning entire clause)
@@ -1015,26 +1005,11 @@ const QueryExecutionStrategy ScheduledExecution = [](
     Order order;
 
     // (re-)schedule clause
-    if (report) {
-        *report << "\nScheduling clause @ " << clause->getSrcLoc() << "\n";
-    }
     {
         auto start = now();
-        order = scheduleByModel(*clause, env, report);
+        order = scheduleByModel(*clause, env);
         auto end = now();
-        if (report) {
-            *report << "    Original Query: " << insert.getOrigin() << "\n";
-        }
-        if (report) {
-            *report << "       Rescheduled: " << *clause << "\n";
-        }
         if (!equal_targets(insert.getOrigin().getAtoms(), clause->getAtoms())) {
-            if (report) {
-                *report << "            Order has Changed!\n";
-            }
-        }
-        if (report) {
-            *report << "   Scheduling Time: " << duration_in_ms(start, end) << "ms\n";
         }
     }
 
@@ -1047,9 +1022,6 @@ const QueryExecutionStrategy ScheduledExecution = [](
     apply(static_cast<RamInsert*>(stmt.get())->getOperation(), env);
     auto end = now();
     auto runtime = duration_in_ms(start, end);
-    if (report) {
-        *report << "           Runtime: " << runtime << "ms\n";
-    }
 
     return ExecutionSummary({order, runtime});
 };
