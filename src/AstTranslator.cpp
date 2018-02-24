@@ -30,6 +30,9 @@
 #include "RamStatement.h"
 #include "RamVisitor.h"
 
+#include <fstream>
+#include <iostream>
+
 namespace souffle {
 
 namespace {
@@ -1341,4 +1344,29 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
     return prog;
 }
 
+std::unique_ptr<RamTranslationUnit> AstTranslator::translateUnit(AstTranslationUnit& tu) 
+{
+    auto ram_start = std::chrono::high_resolution_clock::now();
+    std::unique_ptr<RamProgram> ramProg = translateProgram(tu);
+    SymbolTable& symTab = tu.getSymbolTable();
+    ErrorReport& errReport = tu.getErrorReport();
+    DebugReport& debugReport = tu.getDebugReport();
+    if (!Global::config().get("debug-report").empty()) {
+        if (ramProg) {
+            auto ram_end = std::chrono::high_resolution_clock::now();
+            std::string runtimeStr =
+                    "(" + std::to_string(std::chrono::duration<double>(ram_end - ram_start).count()) + "s)";
+            std::stringstream ramProgStr;
+            ramProgStr << *ramProg;
+            debugReport.addSection(DebugReporter::getCodeSection(
+                    "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
+        }
+
+        if (!debugReport.empty()) {
+            std::ofstream debugReportStream(Global::config().get("debug-report"));
+            debugReportStream << debugReport;
+        }
+    }
+    return std::make_unique<RamTranslationUnit>(std::move(ramProg), symTab, errReport, debugReport);
+}
 }  // end of namespace souffle
