@@ -53,7 +53,8 @@ RamDomain Interpreter::eval(const RamValue& value, const InterpreterContext& ctx
         const InterpreterContext& ctxt;
 
     public:
-        ValueEvaluator(Interpreter& interp, const InterpreterContext& ctxt) : interpreter(interp), ctxt(ctxt) {}
+        ValueEvaluator(Interpreter& interp, const InterpreterContext& ctxt)
+                : interpreter(interp), ctxt(ctxt) {}
 
         RamDomain visitNumber(const RamNumber& num) override {
             return num.getConstant();
@@ -234,7 +235,7 @@ bool Interpreter::eval(const RamCondition& cond, const InterpreterContext& ctxt)
         const InterpreterContext& ctxt;
 
     public:
-        ConditionEvaluator(Interpreter &interp, const InterpreterContext& ctxt)
+        ConditionEvaluator(Interpreter& interp, const InterpreterContext& ctxt)
                 : interpreter(interp), ctxt(ctxt) {}
 
         // -- connectors operators --
@@ -367,8 +368,7 @@ void Interpreter::eval(const RamOperation& op, const InterpreterContext& args) {
         InterpreterContext& ctxt;
 
     public:
-        OperationEvaluator(Interpreter& interp, InterpreterContext& ctxt)
-                : interpreter(interp), ctxt(ctxt) {}
+        OperationEvaluator(Interpreter& interp, InterpreterContext& ctxt) : interpreter(interp), ctxt(ctxt) {}
 
         // -- Operations -----------------------------
 

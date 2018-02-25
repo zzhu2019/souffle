@@ -10,19 +10,19 @@
  *
  * @file InterpreterRelation.h
  *
- * Defines Interpreter Relations 
+ * Defines Interpreter Relations
  *
  ***********************************************************************/
 
 #pragma once
 
-#include "RamTypes.h"
-#include "ParallelUtils.h"
 #include "InterpreterIndex.h"
+#include "ParallelUtils.h"
+#include "RamTypes.h"
 
-#include <vector>
 #include <list>
 #include <memory>
+#include <vector>
 
 namespace souffle {
 

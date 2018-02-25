@@ -16,15 +16,15 @@
 
 #pragma once
 
-#include "InterpreterRelation.h"
 #include "InterpreterContext.h"
+#include "InterpreterRelation.h"
 #include "RamTranslationUnit.h"
 #include "SymbolTable.h"
 
-#include <ostream>
-#include <vector>
 #include <map>
 #include <memory>
+#include <ostream>
+#include <vector>
 
 namespace souffle {
 

@@ -10,7 +10,7 @@
  *
  * @file InterpreterContext.h
  *
- * Defines interpreter context 
+ * Defines interpreter context
  *
  ***********************************************************************/
 
