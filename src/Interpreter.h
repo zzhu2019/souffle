@@ -95,7 +95,6 @@ protected:
     InterpreterRelation& getRelation(const std::string& name) {
         // look up relation
         auto pos = data.find(name);
-        std::cout << "name " << name << std::endl;
         assert(pos != data.end());
         return *pos->second;
     }
