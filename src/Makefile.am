@@ -121,8 +121,8 @@ souffle_sources = \
               WriteStreamCSV.h                          \
               IOSystem.h                                \
               Interpreter.cpp       Interpreter.h       \
-			  InterpreterContext.h                      \
-			  InterpreterRelation.h                     \
+              InterpreterContext.h                      \
+              InterpreterRelation.h                     \
               InterpreterInterface.h                    \
               InterpreterIndex.h                        \
               InterpreterRecords.cpp InterpreterRecords.h \

@@ -38,16 +38,16 @@ class Interpreter {
     friend InterpreterProgInterface;
 
 private:
-    /** Ram Translation Unit */
+    /** RAM translation Unit */
     RamTranslationUnit& translationUnit;
 
-    /** The type utilized for storing relations */
+    /** relation environment type */
     typedef std::map<std::string, InterpreterRelation*> relation_map;
 
-    /** The relations manipulated by a ram program */
-    relation_map data;
+    /** relation environment */
+    relation_map environment;
 
-    /** The increment counter utilized by some RAM language constructs */
+    /** counter for $ operator */
     int counter;
 
 protected:
@@ -80,22 +80,22 @@ protected:
 
     /** Create relation */
     void createRelation(const RamRelation& id) {
-        auto pos = data.find(id.getName());
+        auto pos = environment.find(id.getName());
         InterpreterRelation* res = nullptr;
-        assert(pos == data.end());
+        assert(pos == environment.end());
         if (!id.isEqRel()) {
             res = new InterpreterRelation(id.getArity());
         } else {
             res = new InterpreterEqRelation(id.getArity());
         }
-        data[id.getName()] = res;
+        environment[id.getName()] = res;
     }
 
     /** Get relation */
     InterpreterRelation& getRelation(const std::string& name) {
         // look up relation
-        auto pos = data.find(name);
-        assert(pos != data.end());
+        auto pos = environment.find(name);
+        assert(pos != environment.end());
         return *pos->second;
     }
 
@@ -106,20 +106,20 @@ protected:
 
     /** Get relation map */
     relation_map& getRelationMap() const {
-        return const_cast<relation_map&>(data);
+        return const_cast<relation_map&>(environment);
     }
 
     /** Drop relation */
     void dropRelation(const RamRelation& id) {
         InterpreterRelation& rel = getRelation(id);
-        data.erase(id.getName());
+        environment.erase(id.getName());
         delete &rel;
     }
 
 public:
     Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit), counter(0) {}
     virtual ~Interpreter() {
-        for (auto& x : data) {
+        for (auto& x : environment) {
             delete x.second;
         }
     }

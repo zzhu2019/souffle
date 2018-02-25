@@ -41,7 +41,7 @@ private:
     struct Block {
         size_t size;
         size_t used;
-        // TODO (#421): replace linked list by STL linked list
+        // TODO (#541): replace linked list by STL linked list
         // block becomes payload of STL linked list only
         std::unique_ptr<Block> next;
         std::unique_ptr<RamDomain[]> data;

@@ -27,7 +27,7 @@ namespace souffle {
 /**
  * Helper function to convert a tuple to a RamDomain pointer
  */
-// TODO (#421): Check whether this helper function causes a memory leak
+// TODO (#541): Check whether this helper function causes a memory leak
 inline RamDomain* convertTupleToNums(const tuple& t) {
     RamDomain* newTuple = new RamDomain[t.size()];
 
@@ -65,7 +65,7 @@ private:
     bool relOutput;
 
     /** Unique id for wrapper */
-    // TODO (#421): replace unique id by dynamic type checking for C++
+    // TODO (#541): replace unique id by dynamic type checking for C++
     uint32_t id;
 
 protected:
