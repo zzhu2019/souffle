@@ -202,13 +202,12 @@ class InterpreterProgInterface : public SouffleProgram {
 private:
     const RamProgram& prog;
     Interpreter& exec;
-    InterpreterEnvironment& env;
     SymbolTable& symTable;
     std::vector<InterpreterRelInterface*> interfaces;
 
 public:
     InterpreterProgInterface(Interpreter& interp)
-            : prog(interp.getTranslationUnit().getP()), exec(interp), env(interp.getEnvironment()),
+            : prog(interp.getTranslationUnit().getP()), exec(interp),
               symTable(interp.getTranslationUnit().getSymbolTable()) {
         uint32_t id = 0;
 
@@ -217,7 +216,7 @@ public:
         visitDepthFirst(*(prog.getMain()), [&](const RamRelation& rel) { map[rel.getName()] = &rel; });
 
         // Build wrapper relations for Souffle's interface
-        for (auto& rel_pair : interp.getEnvironment().getRelationMap()) {
+        for (auto& rel_pair : exec.getRelationMap()) {
             auto& name = rel_pair.first;
             auto& interpreterRel = *rel_pair.second;
             ASSERT(map[name]);

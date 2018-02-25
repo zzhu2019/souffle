@@ -502,35 +502,41 @@ public:
 };
 
 /**
- * An environment encapsulates all the context information required for
- * processing a translation unit.
+ * Interpreter executing a RAM translation unit
  */
-class InterpreterEnvironment {
+class InterpreterProgInterface;
+class Interpreter {
+    friend InterpreterProgInterface;
+private:
+    /** Ram Translation Unit */
+    RamTranslationUnit& translationUnit;
+
     /** The type utilized for storing relations */
     typedef std::map<std::string, InterpreterRelation*> relation_map;
-
-    /** The symbol table to be utilized by an evaluation */
-    SymbolTable& symbolTable;
 
     /** The relations manipulated by a ram program */
     relation_map data;
 
     /** The increment counter utilized by some RAM language constructs */
-    int counter;
+    std::atomic<int> counter;
 
-public:
-    InterpreterEnvironment(SymbolTable& symbolTable) : symbolTable(symbolTable), counter(0) {}
-    virtual ~InterpreterEnvironment() {
-        for (auto& x : data) {
-            delete x.second;
-        }
-    }
+protected:
+    /** Evaluate value */
+    RamDomain eval(const RamValue& value, const EvalContext& ctxt = EvalContext());
 
-    /**
-     * Obtains a reference to the enclosed symbol table.
+    /** Evaluate operation */
+    void eval(const RamOperation& op, const EvalContext& args = EvalContext());
+
+    /** Evaluate conditions */
+    bool eval(const RamCondition& cond, const EvalContext& ctxt = EvalContext());
+
+    /** Evaluate statement */
+    void eval(const RamStatement& stmt, std::ostream* profile = nullptr);
+
+    /** Get symbol table
      */
     SymbolTable& getSymbolTable() {
-        return symbolTable;
+        return translationUnit.getSymbolTable();
     }
 
     /**
@@ -617,38 +623,13 @@ public:
     void dropRelation(const RamRelation& id) {
         data.erase(id.getName());
     }
-};
-
-/**
- * Interpreter executing a RAM translation unit
- */
-class Interpreter {
-private:
-    /** Ram Translation Unit */
-    RamTranslationUnit& translationUnit;
-
-    /** Execution environment */
-    InterpreterEnvironment env;
-
-    /** Evaluate value */
-    RamDomain eval(const RamValue& value, const EvalContext& ctxt = EvalContext());
-
-    /** Evaluate operation */
-    void eval(const RamOperation& op, const EvalContext& args = EvalContext());
-
-    /** Evaluate conditions */
-    bool eval(const RamCondition& cond, const EvalContext& ctxt = EvalContext());
-
-    /** Evaluate statement */
-    void eval(const RamStatement& stmt, std::ostream* profile = nullptr);
 
 public:
-    Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit), env(tUnit.getSymbolTable()) {}
-    virtual ~Interpreter() = default;
-
-    /** Get environment */
-    InterpreterEnvironment& getEnvironment() {
-        return env;
+    Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit)  {}
+    virtual ~Interpreter() { 
+        for (auto& x : data) {
+            delete x.second;
+        }
     }
 
     /** Get translation unit */
