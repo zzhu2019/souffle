@@ -120,7 +120,7 @@ protected:
     }
 
 public:
-    Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit) {}
+    Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit), counter(0) {}
     virtual ~Interpreter() {
         for (auto& x : data) {
             delete x.second;
