@@ -17,8 +17,8 @@
 #pragma once
 
 #include "RamTypes.h"
-#include <assert.h>
 #include <vector>
+#include <assert.h>
 
 namespace souffle {
 
