@@ -583,7 +583,8 @@ void Interpreter::eval(const RamOperation& op, const InterpreterContext& args) {
             }
 
             // insert in target relation
-            interpreter.getRelation(project.getRelation()).insert(tuple);
+            InterpreterRelation& rel = interpreter.getRelation(project.getRelation());
+            rel.insert(tuple);
         }
 
         // -- return from subroutine --
@@ -681,12 +682,13 @@ void Interpreter::eval(const RamStatement& stmt, std::ostream* profile) {
         }
 
         bool visitCreate(const RamCreate& create) override {
-            interpreter.getRelation(create.getRelation());
+            interpreter.createRelation(create.getRelation());
             return true;
         }
 
         bool visitClear(const RamClear& clear) override {
-            interpreter.getRelation(clear.getRelation()).purge();
+            InterpreterRelation& rel = interpreter.getRelation(clear.getRelation());
+            rel.purge();
             return true;
         }
 
@@ -698,14 +700,16 @@ void Interpreter::eval(const RamStatement& stmt, std::ostream* profile) {
         bool visitPrintSize(const RamPrintSize& print) override {
             auto lease = getOutputLock().acquire();
             (void)lease;
-            std::cout << print.getMessage() << interpreter.getRelation(print.getRelation()).size() << "\n";
+            const InterpreterRelation& rel = interpreter.getRelation(print.getRelation());
+            std::cout << print.getMessage() << rel.size() << "\n";
             return true;
         }
 
         bool visitLogSize(const RamLogSize& print) override {
             auto lease = getOutputLock().acquire();
             (void)lease;
-            *profile << print.getMessage() << interpreter.getRelation(print.getRelation()).size();
+            const InterpreterRelation& rel = interpreter.getRelation(print.getRelation());
+            *profile << print.getMessage() << rel.size();
             const std::string ext = fileExtension(Global::config().get("profile"));
             if (ext == "json") {
                 *profile << "},";

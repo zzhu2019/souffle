@@ -48,7 +48,7 @@ private:
     relation_map data;
 
     /** The increment counter utilized by some RAM language constructs */
-    std::atomic<int> counter;
+    int counter;
 
 protected:
     /** Evaluate value */
@@ -63,60 +63,45 @@ protected:
     /** Evaluate statement */
     void eval(const RamStatement& stmt, std::ostream* profile = nullptr);
 
-    /** Get symbol table
-     */
+    /** Get symbol table */
     SymbolTable& getSymbolTable() {
         return translationUnit.getSymbolTable();
     }
 
-    /**
-     * Obtains the current value of the internal counter.
-     */
+    /** Get counter */
     int getCounter() const {
         return counter;
     }
 
-    /**
-     * Increments the internal counter and obtains the
-     * old value.
-     */
+    /** Increment counter */
     int incCounter() {
         return counter++;
     }
 
-    /** Get relation */
-    InterpreterRelation& getRelation(const RamRelation& id) {
+    /** Create relation */
+    void createRelation(const RamRelation& id) {
+        auto pos = data.find(id.getName());
         InterpreterRelation* res = nullptr;
-        auto pos = data.find(id.getName());
-        if (pos != data.end()) {
-            res = (pos->second);
+        assert(pos == data.end());
+        if (!id.isEqRel()) {
+            res = new InterpreterRelation(id.getArity());
         } else {
-            if (!id.isEqRel()) {
-                res = new InterpreterRelation(id.getArity());
-            } else {
-                res = new InterpreterEqRelation(id.getArity());
-            }
-            data[id.getName()] = res;
+            res = new InterpreterEqRelation(id.getArity());
         }
-        // return result
-        return *res;
-    }
-
-    /** Get relation  */
-    const InterpreterRelation& getRelation(const RamRelation& id) const {
-        // look up relation
-        auto pos = data.find(id.getName());
-        assert(pos != data.end());
-
-        // cache result
-        return *pos->second;
+        data[id.getName()] = res;
     }
 
     /** Get relation */
-    const InterpreterRelation& getRelation(const std::string& name) const {
+    InterpreterRelation& getRelation(const std::string& name) {
+        // look up relation
         auto pos = data.find(name);
         assert(pos != data.end());
         return *pos->second;
+    }
+
+    /** Get relation */
+    inline InterpreterRelation& getRelation(const RamRelation& id) {
+        return getRelation(id.getName());
     }
 
     /** Get relation map */
