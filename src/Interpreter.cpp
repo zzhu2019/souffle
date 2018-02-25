@@ -47,13 +47,13 @@
 namespace souffle {
 
 /** Evaluate RAM Value */
-RamDomain Interpreter::eval(const RamValue& value, const EvalContext& ctxt) {
+RamDomain Interpreter::eval(const RamValue& value, const InterpreterContext& ctxt) {
     class ValueEvaluator : public RamVisitor<RamDomain> {
         Interpreter& interpreter;
-        const EvalContext& ctxt;
+        const InterpreterContext& ctxt;
 
     public:
-        ValueEvaluator(Interpreter& interp, const EvalContext& ctxt) : interpreter(interp), ctxt(ctxt) {}
+        ValueEvaluator(Interpreter& interp, const InterpreterContext& ctxt) : interpreter(interp), ctxt(ctxt) {}
 
         RamDomain visitNumber(const RamNumber& num) override {
             return num.getConstant();
@@ -228,13 +228,13 @@ RamDomain Interpreter::eval(const RamValue& value, const EvalContext& ctxt) {
 }
 
 /** Evaluate RAM Condition */
-bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
+bool Interpreter::eval(const RamCondition& cond, const InterpreterContext& ctxt) {
     class ConditionEvaluator : public RamVisitor<bool> {
         Interpreter& interpreter;
-        const EvalContext& ctxt;
+        const InterpreterContext& ctxt;
 
     public:
-        ConditionEvaluator(Interpreter &interp, const EvalContext& ctxt)
+        ConditionEvaluator(Interpreter &interp, const InterpreterContext& ctxt)
                 : interpreter(interp), ctxt(ctxt) {}
 
         // -- connectors operators --
@@ -361,13 +361,13 @@ bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
 }
 
 /** Evaluate RAM operation */
-void Interpreter::eval(const RamOperation& op, const EvalContext& args) {
+void Interpreter::eval(const RamOperation& op, const InterpreterContext& args) {
     class OperationEvaluator : public RamVisitor<void> {
         Interpreter& interpreter;
-        EvalContext& ctxt;
+        InterpreterContext& ctxt;
 
     public:
-        OperationEvaluator(Interpreter& interp, EvalContext& ctxt)
+        OperationEvaluator(Interpreter& interp, InterpreterContext& ctxt)
                 : interpreter(interp), ctxt(ctxt) {}
 
         // -- Operations -----------------------------
@@ -603,7 +603,7 @@ void Interpreter::eval(const RamOperation& op, const EvalContext& args) {
     };
 
     // create and run interpreter for operations
-    EvalContext ctxt(op.getDepth());
+    InterpreterContext ctxt(op.getDepth());
     ctxt.setReturnValues(args.getReturnValues());
     ctxt.setReturnErrors(args.getReturnErrors());
     ctxt.setArguments(args.getArguments());
@@ -819,7 +819,7 @@ void Interpreter::executeMain() {
 /** Execute subroutine */
 void Interpreter::executeSubroutine(const RamStatement& stmt, const std::vector<RamDomain>& arguments,
         std::vector<RamDomain>& returnValues, std::vector<bool>& returnErrors) {
-    EvalContext ctxt;
+    InterpreterContext ctxt;
     ctxt.setReturnValues(returnValues);
     ctxt.setReturnErrors(returnErrors);
     ctxt.setArguments(arguments);
