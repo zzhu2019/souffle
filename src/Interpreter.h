@@ -116,7 +116,7 @@ protected:
 
     /** Drop relation */
     void dropRelation(const RamRelation& id) {
-        InterpreterRelation &rel = getRelation(id); 
+        InterpreterRelation& rel = getRelation(id);
         data.erase(id.getName());
         delete &rel;
     }
