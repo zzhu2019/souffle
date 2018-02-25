@@ -247,7 +247,8 @@ bool Interpreter::eval(const RamCondition& cond, const InterpreterContext& ctxt)
         // -- relation operations --
 
         bool visitEmpty(const RamEmpty& empty) override {
-            return interpreter.getRelation(empty.getRelation()).empty();
+            const InterpreterRelation& rel = interpreter.getRelation(empty.getRelation());
+            return rel.empty();
         }
 
         bool visitNotExists(const RamNotExists& ne) override {
@@ -572,6 +573,7 @@ void Interpreter::eval(const RamOperation& op, const InterpreterContext& args) {
             const auto& values = project.getValues();
             RamDomain tuple[arity];
             for (size_t i = 0; i < arity; i++) {
+                ASSERT(values[i]);
                 tuple[i] = interpreter.eval(*values[i], ctxt);
             }
 

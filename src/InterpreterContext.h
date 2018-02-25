@@ -17,6 +17,7 @@
 #pragma once
 
 #include "RamTypes.h"
+#include <memory>
 #include <vector>
 #include <assert.h>
 
