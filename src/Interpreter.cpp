@@ -234,8 +234,7 @@ bool Interpreter::eval(const RamCondition& cond, const EvalContext& ctxt) {
         const EvalContext& ctxt;
 
     public:
-        ConditionEvaluator(Interpreter &interp, const EvalContext& ctxt)
-                : interpreter(interp), ctxt(ctxt) {}
+        ConditionEvaluator(Interpreter& interp, const EvalContext& ctxt) : interpreter(interp), ctxt(ctxt) {}
 
         // -- connectors operators --
 
@@ -367,8 +366,7 @@ void Interpreter::eval(const RamOperation& op, const EvalContext& args) {
         EvalContext& ctxt;
 
     public:
-        OperationEvaluator(Interpreter& interp, EvalContext& ctxt)
-                : interpreter(interp), ctxt(ctxt) {}
+        OperationEvaluator(Interpreter& interp, EvalContext& ctxt) : interpreter(interp), ctxt(ctxt) {}
 
         // -- Operations -----------------------------
 
@@ -716,8 +714,8 @@ void Interpreter::eval(const RamStatement& stmt, std::ostream* profile) {
             try {
                 InterpreterRelation& relation = interpreter.getRelation(load.getRelation());
                 std::unique_ptr<ReadStream> reader = IOSystem::getInstance().getReader(
-                        load.getRelation().getSymbolMask(), interpreter.getSymbolTable(), load.getIODirectives(),
-                        Global::config().has("provenance"));
+                        load.getRelation().getSymbolMask(), interpreter.getSymbolTable(),
+                        load.getIODirectives(), Global::config().has("provenance"));
                 reader->readAll(relation);
             } catch (std::exception& e) {
                 std::cerr << e.what();
@@ -777,7 +775,8 @@ void Interpreter::eval(const RamStatement& stmt, std::ostream* profile) {
         }
 
         bool visitSwap(const RamSwap& swap) override {
-            std::swap(interpreter.getRelation(swap.getFirstRelation()), interpreter.getRelation(swap.getSecondRelation()));
+            std::swap(interpreter.getRelation(swap.getFirstRelation()),
+                    interpreter.getRelation(swap.getSecondRelation()));
             return true;
         }
 
