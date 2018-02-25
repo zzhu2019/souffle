@@ -135,8 +135,8 @@ protected:
     }
 
 public:
-    Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit)  {}
-    virtual ~Interpreter() { 
+    Interpreter(RamTranslationUnit& tUnit) : translationUnit(tUnit) {}
+    virtual ~Interpreter() {
         for (auto& x : data) {
             delete x.second;
         }

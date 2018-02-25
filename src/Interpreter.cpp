@@ -716,8 +716,8 @@ void Interpreter::eval(const RamStatement& stmt, std::ostream* profile) {
             try {
                 InterpreterRelation& relation = interpreter.getRelation(load.getRelation());
                 std::unique_ptr<ReadStream> reader = IOSystem::getInstance().getReader(
-                        load.getRelation().getSymbolMask(), interpreter.getSymbolTable(), load.getIODirectives(),
-                        Global::config().has("provenance"));
+                        load.getRelation().getSymbolMask(), interpreter.getSymbolTable(),
+                        load.getIODirectives(), Global::config().has("provenance"));
                 reader->readAll(relation);
             } catch (std::exception& e) {
                 std::cerr << e.what();
@@ -777,7 +777,8 @@ void Interpreter::eval(const RamStatement& stmt, std::ostream* profile) {
         }
 
         bool visitSwap(const RamSwap& swap) override {
-            std::swap(interpreter.getRelation(swap.getFirstRelation()), interpreter.getRelation(swap.getSecondRelation()));
+            std::swap(interpreter.getRelation(swap.getFirstRelation()),
+                    interpreter.getRelation(swap.getSecondRelation()));
             return true;
         }
 
