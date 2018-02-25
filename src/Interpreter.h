@@ -95,6 +95,7 @@ protected:
     InterpreterRelation& getRelation(const std::string& name) {
         // look up relation
         auto pos = data.find(name);
+        std::cout << "name " << name << std::endl;
         assert(pos != data.end());
         return *pos->second;
     }
@@ -107,11 +108,6 @@ protected:
     /** Get relation map */
     relation_map& getRelationMap() const {
         return const_cast<relation_map&>(data);
-    }
-
-    /** Check for relation */
-    bool hasRelation(const std::string& name) const {
-        return data.find(name) != data.end();
     }
 
     /** Drop relation */

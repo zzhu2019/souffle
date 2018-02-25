@@ -1302,11 +1302,6 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
             for (const AstRelation* rel : step.expired()) {
                 appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
             }
-            if (index == schedule.size() - 1) {
-                for (const AstRelation* rel : step.computed()) {
-                    appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
-                }
-            }
         }
 
         // append the current step to the result
