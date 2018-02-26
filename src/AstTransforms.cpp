@@ -839,13 +839,14 @@ bool RemoveBooleanConstraintsTransformer::transform(AstTranslationUnit& translat
                     }
 
                     if (containsFalse || isEmpty) {
-                        // Empty aggregator body! Should fail for non-count aggregators,
-                        // so replace with non-empty failing aggregators
+                        // Empty aggregator body!
+                        // Not currently handled, so add in a false literal in the body
                         // E.g. max x : { } =becomes=> max 1 : {0 = 1}
-                        if (aggr->getOperator() != AstAggregator::Op::count) {
-                            replacementAggregator->setTargetExpression(std::make_unique<AstNumberConstant>(1));
-                            replacementAggregator->addBodyLiteral(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ, std::make_unique<AstNumberConstant>(0), std::make_unique<AstNumberConstant>(1)));
-                        }
+                        replacementAggregator->setTargetExpression(std::make_unique<AstNumberConstant>(1));
+
+                        // Add '0 = 1' if false was found, '1 = 1' otherwise
+                        int lhsConstant = containsFalse ? 0 : 1;
+                        replacementAggregator->addBodyLiteral(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ, std::make_unique<AstNumberConstant>(lhsConstant), std::make_unique<AstNumberConstant>(1)));
                     }
 
                     return std::move(replacementAggregator);
