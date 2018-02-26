@@ -361,7 +361,7 @@ static bool hasUnnamedVariable(const AstLiteral* lit) {
     }
     if (dynamic_cast<const AstConstraint*>(lit)) {
         if (dynamic_cast<const AstBooleanConstraint*>(lit)) {
-           return false;
+            return false;
         }
         if (const AstBinaryConstraint* br = dynamic_cast<const AstBinaryConstraint*>(lit)) {
             return hasUnnamedVariable(br->getLHS()) || hasUnnamedVariable(br->getRHS());

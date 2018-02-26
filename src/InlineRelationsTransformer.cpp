@@ -814,14 +814,14 @@ NullableVector<std::vector<AstLiteral*>> getInlinedLiteral(AstProgram& program, 
                 addedBodyLiterals = formNegatedLiterals(program, atom);
             }
         }
-    } else if (AstBinaryConstraint* constraint = dynamic_cast<AstBinaryConstraint*>(lit)){
+    } else if (AstBinaryConstraint* constraint = dynamic_cast<AstBinaryConstraint*>(lit)) {
         NullableVector<AstArgument*> lhsVersions = getInlinedArgument(program, constraint->getLHS());
         if (lhsVersions.isValid()) {
             changed = true;
             for (AstArgument* newLhs : lhsVersions.getVector()) {
-                AstLiteral* newLit =
-                        new AstBinaryConstraint(constraint->getOperator(), std::unique_ptr<AstArgument>(newLhs),
-                                std::unique_ptr<AstArgument>(constraint->getRHS()->clone()));
+                AstLiteral* newLit = new AstBinaryConstraint(constraint->getOperator(),
+                        std::unique_ptr<AstArgument>(newLhs),
+                        std::unique_ptr<AstArgument>(constraint->getRHS()->clone()));
                 versions.push_back(newLit);
             }
         } else {

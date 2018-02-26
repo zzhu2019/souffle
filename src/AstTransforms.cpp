@@ -404,9 +404,9 @@ void ResolveAliasesTransformer::removeComplexTermsInAtoms(AstClause& clause) {
 
     // add variable constraints to clause
     for (const auto& cur : map) {
-        clause.addToBody(std::unique_ptr<AstLiteral>(
-                new AstBinaryConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(cur.second->clone()),
-                        std::unique_ptr<AstArgument>(cur.first->clone()))));
+        clause.addToBody(std::unique_ptr<AstLiteral>(new AstBinaryConstraint(BinaryConstraintOp::EQ,
+                std::unique_ptr<AstArgument>(cur.second->clone()),
+                std::unique_ptr<AstArgument>(cur.first->clone()))));
     }
 }
 
@@ -833,7 +833,8 @@ bool RemoveBooleanConstraintsTransformer::transform(AstTranslationUnit& translat
                             // Don't add in 'true' boolean constraints
                             if (!dynamic_cast<AstBooleanConstraint*>(lit)) {
                                 isEmpty = false;
-                                replacementAggregator->addBodyLiteral(std::unique_ptr<AstLiteral>(lit->clone()));
+                                replacementAggregator->addBodyLiteral(
+                                        std::unique_ptr<AstLiteral>(lit->clone()));
                             }
                         }
                     }
@@ -846,7 +847,9 @@ bool RemoveBooleanConstraintsTransformer::transform(AstTranslationUnit& translat
 
                         // Add '0 = 1' if false was found, '1 = 1' otherwise
                         int lhsConstant = containsFalse ? 0 : 1;
-                        replacementAggregator->addBodyLiteral(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ, std::make_unique<AstNumberConstant>(lhsConstant), std::make_unique<AstNumberConstant>(1)));
+                        replacementAggregator->addBodyLiteral(std::make_unique<AstBinaryConstraint>(
+                                BinaryConstraintOp::EQ, std::make_unique<AstNumberConstant>(lhsConstant),
+                                std::make_unique<AstNumberConstant>(1)));
                     }
 
                     return std::move(replacementAggregator);

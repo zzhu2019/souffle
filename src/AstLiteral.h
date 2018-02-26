@@ -251,7 +251,7 @@ protected:
     bool truthValue;
 
 public:
-    AstBooleanConstraint(bool truthValue) : truthValue (truthValue) {}
+    AstBooleanConstraint(bool truthValue) : truthValue(truthValue) {}
 
     ~AstBooleanConstraint() override = default;
 
@@ -305,10 +305,12 @@ protected:
     std::unique_ptr<AstArgument> rhs;
 
 public:
-    AstBinaryConstraint(BinaryConstraintOp o, std::unique_ptr<AstArgument> ls, std::unique_ptr<AstArgument> rs)
+    AstBinaryConstraint(
+            BinaryConstraintOp o, std::unique_ptr<AstArgument> ls, std::unique_ptr<AstArgument> rs)
             : operation(o), lhs(std::move(ls)), rhs(std::move(rs)) {}
 
-    AstBinaryConstraint(const std::string& op, std::unique_ptr<AstArgument> ls, std::unique_ptr<AstArgument> rs)
+    AstBinaryConstraint(
+            const std::string& op, std::unique_ptr<AstArgument> ls, std::unique_ptr<AstArgument> rs)
             : operation(toBinaryConstraintOp(op)), lhs(std::move(ls)), rhs(std::move(rs)) {}
 
     ~AstBinaryConstraint() override = default;
@@ -357,8 +359,8 @@ public:
 
     /** Creates a clone if this AST sub-structure */
     AstBinaryConstraint* clone() const override {
-        AstBinaryConstraint* res = new AstBinaryConstraint(operation, std::unique_ptr<AstArgument>(lhs->clone()),
-                std::unique_ptr<AstArgument>(rhs->clone()));
+        AstBinaryConstraint* res = new AstBinaryConstraint(operation,
+                std::unique_ptr<AstArgument>(lhs->clone()), std::unique_ptr<AstArgument>(rhs->clone()));
         res->setSrcLoc(getSrcLoc());
         return res;
     }

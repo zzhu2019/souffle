@@ -1317,9 +1317,10 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             if (compositeBindings.isVariableBoundComposite(argName)) {
                                 AstArgument* originalArgument =
                                         compositeBindings.cloneOriginalArgument(argName);
-                                magicClause->addToBody(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ,
-                                        std::unique_ptr<AstArgument>(compositeArgument->clone()),
-                                        std::unique_ptr<AstArgument>(originalArgument)));
+                                magicClause->addToBody(
+                                        std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ,
+                                                std::unique_ptr<AstArgument>(compositeArgument->clone()),
+                                                std::unique_ptr<AstArgument>(originalArgument)));
                             }
                         }
 
@@ -1338,8 +1339,8 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                                         extractConstant(translationUnit.getSymbolTable(), varName);
 
                                 // add the constraint to the body of the clause
-                                magicClause->addToBody(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ,
-                                        std::unique_ptr<AstArgument>(var->clone()),
+                                magicClause->addToBody(std::make_unique<AstBinaryConstraint>(
+                                        BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(var->clone()),
                                         std::unique_ptr<AstArgument>(embeddedConstant)));
                             }
                         }
