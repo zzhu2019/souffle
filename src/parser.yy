@@ -438,9 +438,17 @@ non_empty_key_value_pairs
         $$ = new AstIODirective();
         $$->addKVP($1, "true");
     }
-  | IDENT EQUALS FALSE {
+  | key_value_pairs COMMA IDENT EQUALS TRUE {
+        $$ = $1;
+        $$->addKVP($3, "true");
+    }
+ | IDENT EQUALS FALSE {
         $$ = new AstIODirective();
         $$->addKVP($1, "false");
+    }
+ | key_value_pairs COMMA IDENT EQUALS FALSE {
+        $$ = $1;
+        $$->addKVP($3, "false");
     }
 
 key_value_pairs
