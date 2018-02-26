@@ -846,7 +846,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
 
     // the ram table reference
     std::unique_ptr<RamRelation> rrel =
-            getRamRelation(&rel, &typeEnv, getRelationName(rel.getName()), rel.getArity());
+            getRamRelation(&rel, &typeEnv, getRelationName(rel.getName()), rel.getArity(), false,  rel.isHashset());
 
     /* iterate over all clauses that belong to the relation */
     for (AstClause* clause : rel.getClauses()) {
@@ -1173,9 +1173,9 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
     // create delta and new relations for recursive relations at the start
     if (isRecursive) {
         appendStmt(current, std::make_unique<RamCreate>(getRamRelation(rel, &typeEnv,
-                                    "delta_" + getRelationName(rel->getName()), rel->getArity(), true)));
+                                    "delta_" + getRelationName(rel->getName()), rel->getArity(), true, rel->isHashset())));
         appendStmt(current, std::make_unique<RamCreate>(getRamRelation(rel, &typeEnv,
-                                    "new_" + getRelationName(rel->getName()), rel->getArity(), true)));
+                                    "new_" + getRelationName(rel->getName()), rel->getArity(), true, rel->isHashset())));
     }
     delete mrel;
 }
@@ -1300,7 +1300,7 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
         /* drop expired relations, or all relations for stratification */
         if (!Global::config().has("provenance")) {
             for (const AstRelation* rel : step.expired()) {
-                appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
+                appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv, getRelationName(rel->getName()), rel->getArity(), false, rel->isHashset())));
             }
         }
 
