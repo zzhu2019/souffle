@@ -35,9 +35,10 @@ d(x) :- c(x), true.
 // Test with aggregators
 .decl e(x:number, y:symbol, z:number)
 .output e()
-e(0, "fail", sum 1 : { false }).
-e(1, "fail", sum 1 : { false } + count : { false }).
+// TODO: see comment on PR #595
+// e(0, "fail", sum 1 : { false }).
+// e(1, "fail", sum 1 : { false } + count : { false }).
 e(2, "pass", count : { false } + count : { true }).
-e(3, "pass", sum 1 : { true }).
+e(3, "pass", sum x : { true, b(x) }).
 e(4, "pass", count : { a(_), true }).
 e(5, "pass", count : { a(_), false}).
