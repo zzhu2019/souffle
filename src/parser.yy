@@ -429,7 +429,14 @@ non_empty_key_value_pairs
         $$ = $1;
         $$->addKVP($3, $5);
     }
-
+  | IDENT EQUALS TRUE {
+        $$ = new AstIODirective();
+        $$->addKVP($1, "true");
+    }
+  | IDENT EQUALS FALSE {
+        $$ = new AstIODirective();
+        $$->addKVP($1, "false");
+    }
 
 key_value_pairs
   : non_empty_key_value_pairs {
