@@ -1,6 +1,6 @@
 /*
  * Souffle - A Datalog Compiler
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved
+ * Copyright (c) 2018, The Souffle Developers. All rights reserved.
  * Licensed under the Universal Permissive License v 1.0 as shown at:
  * - https://opensource.org/licenses/UPL
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
@@ -37,12 +37,11 @@ public:
     Synthesiser() = default;
     virtual ~Synthesiser() = default;
 
-    /**
-     * Generates the code for a given ram translation unit.
+    /** Generate code
      *
-     * @param tu
-     * @param os the stream to send the generated C++ code to.
-     * @param id the base identifier used in code generation, including class name.
+     * @param tu translation unit
+     * @param os output stream for generating code
+     * @param id name of base identifier for tranlation unit
      */
     void generateCode(const RamTranslationUnit& tu, std::ostream& os, const std::string& id) const;
 };
