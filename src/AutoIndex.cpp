@@ -35,11 +35,11 @@ void AutoIndex::solve() {
     // check whether one of the naive indexers should be used
     // two conditions: either set by environment or relation is a hash map
     static const char ENV_NAIVE_INDEX[] = "SOUFFLE_USE_NAIVE_INDEX";
-    if (isHashmap || std::getenv(ENV_NAIVE_INDEX)) {
+    if (isHashset || std::getenv(ENV_NAIVE_INDEX)) {
         static bool first = true;
 
         // print a warning - only the first time
-        if (!isHashmap && first) {
+        if (!isHashset && first) {
             std::cout << "WARNING: auto index selection disabled, naive indexes are utilized!!\n";
             first = false;
         }

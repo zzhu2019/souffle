@@ -37,4 +37,13 @@ A(x,z) :- B(x,y), C(y,z), y > l.
 Warning: Variable l only occurs once in file rule_grounded.dl at line 20
 A(x,z) :- B(x,y), C(y,z), y > l.
 ------------------------------^--
-8 errors generated, evaluation aborted
+Error: Ungrounded variable z in file rule_grounded.dl at line 34
+A(x,z) :- B(x, _), z = cat(x, y).
+----^-----------------------------
+Error: Ungrounded variable y in file rule_grounded.dl at line 34
+A(x,z) :- B(x, _), z = cat(x, y).
+------------------------------^---
+Warning: Variable y only occurs once in file rule_grounded.dl at line 34
+A(x,z) :- B(x, _), z = cat(x, y).
+------------------------------^---
+10 errors generated, evaluation aborted

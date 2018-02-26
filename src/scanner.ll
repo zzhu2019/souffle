@@ -16,6 +16,11 @@
 %option reentrant
 %option extra-type="struct scanner_data *"
 %{
+
+#if defined(__clang__)
+# pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
+#endif
+
     #include <stdio.h>
     #include <libgen.h>
     #include <ctype.h>
@@ -106,7 +111,8 @@
 "overridable"                         { return yy::parser::make_OVERRIDABLE_QUALIFIER(yylloc); }
 "printsize"                           { return yy::parser::make_PRINTSIZE_QUALIFIER(yylloc); }
 "eqrel"                               { return yy::parser::make_EQREL_QUALIFIER(yylloc); }
-"hashmap"                               { return yy::parser::make_HASHMAP_QUALIFIER(yylloc); }
+"rbtset"                              { return yy::parser::make_RBTSET_QUALIFIER(yylloc); }
+"hashset"                             { return yy::parser::make_HASHSET_QUALIFIER(yylloc); }
 "inline"                              { return yy::parser::make_INLINE_QUALIFIER(yylloc); }
 "brie"                                { return yy::parser::make_BRIE_QUALIFIER(yylloc); }
 "btree"                               { return yy::parser::make_BTREE_QUALIFIER(yylloc); }

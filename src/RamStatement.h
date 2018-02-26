@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "AstClause.h"
 #include "RamNode.h"
 #include "RamOperation.h"
 #include "RamRelation.h"
@@ -107,7 +106,8 @@ public:
         }
         os << ")";
         if (getRelation().isBTree()) os << " btree";
-        if (getRelation().isHashmap()) os << " hashmap";
+        if (getRelation().isRbtset()) os << " rbtset";
+        if (getRelation().isHashset()) os << " hashset";
         if (getRelation().isBrie()) os << " brie";
         if (getRelation().isEqRel()) os << " eqrel";
     };
@@ -409,25 +409,11 @@ protected:
  */
 class RamInsert : public RamStatement {
 protected:
-    // TODO (#541): strong dependency to AST do we
-    // need this dependency / better to encapsulate
-    // information here
-    std::unique_ptr<AstClause> clause;
-
     /** RAM operation */
     std::unique_ptr<RamOperation> operation;
 
 public:
-    RamInsert(const AstClause& c, std::unique_ptr<RamOperation> o)
-            : RamStatement(RN_Insert), clause(std::unique_ptr<AstClause>(c.clone())),
-              operation(std::move(o)) {}
-
-    /** Get AST clause */
-    // TODO (#541): remove dependency to AST
-    const AstClause& getOrigin() const {
-        ASSERT(clause);
-        return *clause;
-    }
+    RamInsert(std::unique_ptr<RamOperation> o) : RamStatement(RN_Insert), operation(std::move(o)) {}
 
     /** Get RAM operation */
     const RamOperation& getOperation() const {
@@ -449,7 +435,7 @@ public:
 
     /** Create clone */
     RamInsert* clone() const override {
-        RamInsert* res = new RamInsert(*clause, std::unique_ptr<RamOperation>(operation->clone()));
+        RamInsert* res = new RamInsert(std::unique_ptr<RamOperation>(operation->clone()));
         return res;
     }
 
@@ -463,7 +449,7 @@ protected:
     bool equal(const RamNode& node) const override {
         assert(dynamic_cast<const RamInsert*>(&node));
         const RamInsert& other = static_cast<const RamInsert&>(node);
-        return getOperation() == other.getOperation() && getOrigin() == other.getOrigin();
+        return getOperation() == other.getOperation();
     }
 };
 

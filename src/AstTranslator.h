@@ -57,7 +57,7 @@ public:
 
     /** generate RAM code for a clause */
     std::unique_ptr<RamStatement> translateClause(const AstClause& clause, const AstProgram* program,
-            const TypeEnvironment* typeEnv, int version = 0, bool ret = false);
+            const TypeEnvironment* typeEnv, int version = 0, bool ret = false, bool hashset = false);
 
     /**
      * Generates RAM code for the non-recursive clauses of the given relation.
@@ -81,13 +81,7 @@ public:
     std::unique_ptr<RamProgram> translateProgram(const AstTranslationUnit& translationUnit);
 
     /** translates AST to translation unit  */
-    std::unique_ptr<RamTranslationUnit> translateUnit(AstTranslationUnit& tu) {
-        std::unique_ptr<RamProgram> ramProg = translateProgram(tu);
-        SymbolTable& symTab = tu.getSymbolTable();
-        ErrorReport& errReport = tu.getErrorReport();
-        DebugReport& debugReport = tu.getDebugReport();
-        return std::make_unique<RamTranslationUnit>(std::move(ramProg), symTab, errReport, debugReport);
-    }
+    std::unique_ptr<RamTranslationUnit> translateUnit(AstTranslationUnit& tu);
 };
 
 }  // end of namespace souffle

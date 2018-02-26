@@ -93,6 +93,11 @@ struct AstVisitor : public ast_visitor_tag {
         FORWARD(BooleanConstraint)
         FORWARD(BinaryConstraint)
 
+        // components
+        FORWARD(ComponentType);
+        FORWARD(ComponentInit);
+        FORWARD(Component);
+
         // rest
         FORWARD(Attribute);
         FORWARD(Clause);
@@ -151,6 +156,11 @@ protected:
     LINK(BooleanConstraint, Constraint)
     LINK(BinaryConstraint, Constraint)
     LINK(Constraint, Literal)
+
+    // components
+    LINK(ComponentType, Node);
+    LINK(ComponentInit, Node);
+    LINK(Component, Node);
 
     // -- others --
     LINK(Program, Node);

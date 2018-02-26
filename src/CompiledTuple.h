@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file CompiledRamTuple.h
+ * @file CompiledTuple.h
  *
  * The central file covering the data structure utilized by
  * the souffle compiler for representing relations in compiled queries.

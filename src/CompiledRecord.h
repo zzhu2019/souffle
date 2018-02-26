@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file CompiledRamRecord.h
+ * @file CompiledRecord.h
  *
  * The central interface for handling records in the compiled execution.
  *
@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "CompiledRamTuple.h"
+#include "CompiledTuple.h"
 #include "ParallelUtils.h"
 #include "Util.h"
 
