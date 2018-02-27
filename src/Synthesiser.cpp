@@ -44,6 +44,8 @@
 #include <omp.h>
 #endif
 
+namespace souffle {
+
 /** Convert RAM identifier */
 const std::string Synthesiser::convertRamIdent(const std::string& name) 
 {
@@ -76,14 +78,12 @@ const std::string Synthesiser::convertRamIdent(const std::string& name)
         id = id.substr(0, 1024);
         identifiers.insert(std::make_pair(name, id));
         return id;
-    }
+}
 
-    // The map of identifiers.
-    std::map<const std::string, const std::string> identifiers;
-};
 
 /** check whether indexes are disabled */ 
-bool Synthesiser::areIndexesDisabled() {
+bool Synthesiser::areIndexesDisabled() 
+{
     bool flag = std::getenv("SOUFFLE_USE_NO_INDEX");
     static bool first = true;
     if (first && flag) {
@@ -188,8 +188,11 @@ std::set<RamRelation> Synthesiser::getReferencedRelations(const RamOperation& op
     return res;
 }
 
-void Synthesiser::genCode(std::ostream& out, const RamStatement& stmt) {
+void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 class CodeEmitter : public RamVisitor<void, std::ostream&> {
+private:
+    Synthesiser &synthesiser;
+
 
 // macros to add comments to generated code for debugging
 #ifndef PRINT_BEGIN_COMMENT
@@ -207,7 +210,7 @@ class CodeEmitter : public RamVisitor<void, std::ostream&> {
     std::function<void(std::ostream&, const RamNode*)> rec;
 
 public:
-    CodeEmitter() {
+    CodeEmitter(Synthesiser &syn) : synthesiser(syn) {
         rec = [&](std::ostream& out, const RamNode* node) { this->visit(*node, out); };
     }
 
@@ -220,7 +223,7 @@ public:
 
     void visitFact(const RamFact& fact, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
-        out << getRelationName(fact.getRelation()) << "->"
+        out << synthesiser.getRelationName(fact.getRelation()) << "->"
             << "insert(" << join(fact.getValues(), ",", rec) << ");\n";
         PRINT_END_COMMENT(out);
     }
@@ -241,7 +244,7 @@ public:
         out << "SymbolMask({" << load.getRelation().getSymbolMask() << "})";
         out << ", symTable, ioDirectives";
         out << ", " << Global::config().has("provenance");
-        out << ")->readAll(*" << getRelationName(load.getRelation());
+        out << ")->readAll(*" << synthesiser.getRelationName(load.getRelation());
         out << ");\n";
         out << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
         out << "}\n";
@@ -263,7 +266,7 @@ public:
             out << "SymbolMask({" << store.getRelation().getSymbolMask() << "})";
             out << ", symTable, ioDirectives";
             out << ", " << Global::config().has("provenance");
-            out << ")->writeAll(*" << getRelationName(store.getRelation()) << ");\n";
+            out << ")->writeAll(*" << synthesiser.getRelationName(store.getRelation()) << ");\n";
             out << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
         }
         out << "}\n";
@@ -277,7 +280,7 @@ public:
         visitDepthFirst(insert, [&](const RamScan& scan) { input_relations.insert(scan.getRelation()); });
         if (!input_relations.empty()) {
             out << "if (" << join(input_relations, "&&", [&](std::ostream& out, const RamRelation& rel) {
-                out << "!" << getRelationName(rel) << "->"
+                out << "!" << synthesiser.getRelationName(rel) << "->"
                     << "empty()";
             }) << ") ";
         }
@@ -303,7 +306,7 @@ public:
                 parallel = true;
 
                 // partition outermost relation
-                out << "auto part = " << getRelationName(scan->getRelation()) << "->"
+                out << "auto part = " << synthesiser.getRelationName(scan->getRelation()) << "->"
                     << "partition();\n";
 
                 // build a parallel block around this loop nest
@@ -317,11 +320,12 @@ public:
         }
 
         // create operation contexts for this operation
-        for (const RamRelation& rel : getReferencedRelations(insert.getOperation())) {
+        for (const RamRelation& rel : synthesiser.getReferencedRelations(insert.getOperation())) {
             // TODO (#467): this causes bugs for subprogram compilation for record types if artificial
             // dependencies are introduces in the precedence graph
-            out << "CREATE_OP_CONTEXT(" << getOpContextName(rel) << "," << getRelationName(rel) << "->"
-                << "createContext());\n";
+            out << "CREATE_OP_CONTEXT(" << synthesiser.getOpContextName(rel);
+            out << "," << synthesiser.getRelationName(rel);
+            out << "->createContext());\n";
         }
 
         visit(insert.getOperation(), out);
@@ -344,19 +348,19 @@ public:
     void visitMerge(const RamMerge& merge, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
         if (merge.getTargetRelation().isEqRel()) {
-            out << getRelationName(merge.getSourceRelation()) << "->"
+            out << synthesiser.getRelationName(merge.getSourceRelation()) << "->"
                 << "extend("
-                << "*" << getRelationName(merge.getTargetRelation()) << ");\n";
+                << "*" << synthesiser.getRelationName(merge.getTargetRelation()) << ");\n";
         }
-        out << getRelationName(merge.getTargetRelation()) << "->"
+        out << synthesiser.getRelationName(merge.getTargetRelation()) << "->"
             << "insertAll("
-            << "*" << getRelationName(merge.getSourceRelation()) << ");\n";
+            << "*" << synthesiser.getRelationName(merge.getSourceRelation()) << ");\n";
         PRINT_END_COMMENT(out);
     }
 
     void visitClear(const RamClear& clear, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
-        out << getRelationName(clear.getRelation()) << "->"
+        out << synthesiser.getRelationName(clear.getRelation()) << "->"
             << "purge();\n";
         PRINT_END_COMMENT(out);
     }
@@ -364,7 +368,7 @@ public:
     void visitDrop(const RamDrop& drop, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
         out << "if (!isHintsProfilingEnabled() && (performIO || " << drop.getRelation().isTemp() << ")) ";
-        out << getRelationName(drop.getRelation()) << "->"
+        out << synthesiser.getRelationName(drop.getRelation()) << "->"
             << "purge();\n";
         PRINT_END_COMMENT(out);
     }
@@ -375,7 +379,7 @@ public:
         out << "{ auto lease = getOutputLock().acquire(); \n";
         out << "(void)lease;\n";
         out << "std::cout << R\"(" << print.getMessage() << ")\" <<  ";
-        out << getRelationName(print.getRelation()) << "->"
+        out << synthesiser.getRelationName(print.getRelation()) << "->"
             << "size() << std::endl;\n";
         out << "}";
         out << "}\n";
@@ -388,7 +392,7 @@ public:
         out << "{ auto lease = getOutputLock().acquire(); \n";
         out << "(void)lease;\n";
         out << "profile << R\"(" << print.getMessage() << ")\" << ";
-        out << getRelationName(print.getRelation()) << "->size() << ";
+        out << synthesiser.getRelationName(print.getRelation()) << "->size() << ";
         if (ext == "json") {
             out << "\"},\" << ";
         }
@@ -413,15 +417,15 @@ public:
 
         // special handling cases
         if (stmts.empty()) {
-            return;
             PRINT_END_COMMENT(out);
+            return;
         }
 
         // a single statement => save the overhead
         if (stmts.size() == 1) {
-            out << visit(stmts[0], out);
-            return;
+            visit(stmts[0], out);
             PRINT_END_COMMENT(out);
+            return;
         }
 
         // more than one => parallel sections
@@ -452,8 +456,8 @@ public:
     void visitSwap(const RamSwap& swap, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
         const std::string tempKnowledge = "rel_0";
-        const std::string& deltaKnowledge = getRelationName(swap.getFirstRelation());
-        const std::string& newKnowledge = getRelationName(swap.getSecondRelation());
+        const std::string& deltaKnowledge = synthesiser.getRelationName(swap.getFirstRelation());
+        const std::string& newKnowledge = synthesiser.getRelationName(swap.getSecondRelation());
 
         // perform a triangular swap of pointers
         out << "{\nauto " << tempKnowledge << " = " << deltaKnowledge << ";\n"
@@ -524,8 +528,8 @@ public:
         PRINT_BEGIN_COMMENT(out);
         // get relation name
         const auto& rel = scan.getRelation();
-        auto relName = getRelationName(rel);
-        auto ctxName = "READ_OP_CONTEXT(" + getOpContextName(rel) + ")";
+        auto relName = synthesiser.getRelationName(rel);
+        auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
         auto level = scan.getLevel();
 
         // if this search is a full scan
@@ -561,7 +565,7 @@ public:
         auto printKeyTuple = [&]() {
             for (size_t i = 0; i < arity; i++) {
                 if (rangePattern[i] != nullptr) {
-                    out << this->print(rangePattern[i]);
+                    visit(rangePattern[i],out);
                 } else {
                     out << "0";
                 }
@@ -573,7 +577,7 @@ public:
 
         // get index to be queried
         auto keys = scan.getRangeQueryColumns();
-        auto index = toIndex(keys);
+        auto index = synthesiser.toIndex(keys);
 
         // if it is a equality-range query
         out << "const Tuple<RamDomain," << arity << "> key({";
@@ -621,8 +625,8 @@ public:
         // get some properties
         const auto& rel = aggregate.getRelation();
         auto arity = rel.getArity();
-        auto relName = getRelationName(rel);
-        auto ctxName = "READ_OP_CONTEXT(" + getOpContextName(rel) + ")";
+        auto relName = synthesiser.getRelationName(rel);
+        auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
         auto level = aggregate.getLevel();
 
         // get the tuple type working with
@@ -672,7 +676,7 @@ public:
             auto printKeyTuple = [&]() {
                 for (size_t i = 0; i < arity; i++) {
                     if (aggregate.getPattern()[i] != nullptr) {
-                        out << this->print(aggregate.getPattern()[i]);
+                        visit(aggregate.getPattern()[i],out);
                     } else {
                         out << "0";
                     }
@@ -683,7 +687,7 @@ public:
             };
 
             // get index
-            auto index = toIndex(keys);
+            auto index = synthesiser.toIndex(keys);
             out << "const " << tuple_type << " key({";
             printKeyTuple();
             out << "});\n";
@@ -766,8 +770,8 @@ public:
         PRINT_BEGIN_COMMENT(out);
         const auto& rel = project.getRelation();
         auto arity = rel.getArity();
-        auto relName = getRelationName(rel);
-        auto ctxName = "READ_OP_CONTEXT(" + getOpContextName(rel) + ")";
+        auto relName = synthesiser.getRelationName(rel);
+        auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
 
         // check condition
         auto condition = project.getCondition();
@@ -787,8 +791,8 @@ public:
             // check filter
         }
         if (project.hasFilter()) {
-            auto relFilter = getRelationName(project.getFilter());
-            auto ctxFilter = "READ_OP_CONTEXT(" + getOpContextName(project.getFilter()) + ")";
+            auto relFilter = synthesiser.getRelationName(project.getFilter());
+            auto ctxFilter = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(project.getFilter()) + ")";
             out << "if (!" << relFilter << ".contains(tuple," << ctxFilter << ")) {";
         }
 
@@ -924,7 +928,7 @@ public:
 
     void visitEmpty(const RamEmpty& empty, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
-        out << getRelationName(empty.getRelation()) << "->"
+        out << synthesiser.getRelationName(empty.getRelation()) << "->"
             << "empty()";
         PRINT_END_COMMENT(out);
     }
@@ -933,8 +937,8 @@ public:
         PRINT_BEGIN_COMMENT(out);
         // get some details
         const auto& rel = ne.getRelation();
-        auto relName = getRelationName(rel);
-        auto ctxName = "READ_OP_CONTEXT(" + getOpContextName(rel) + ")";
+        auto relName = synthesiser.getRelationName(rel);
+        auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
         auto arity = rel.getArity();
 
         // if it is total we use the contains function
@@ -949,7 +953,7 @@ public:
         // else we conduct a range query
         out << relName << "->"
             << "equalRange";
-        out << toIndex(ne.getKey());
+        out << synthesiser.toIndex(ne.getKey());
         out << "(Tuple<RamDomain," << arity << ">({";
         out << join(ne.getValues(), ",", [&](std::ostream& out, RamValue* value) {
             if (!value) {
@@ -1030,7 +1034,7 @@ public:
                 out << "(";
                 visit(op.getLHS(),out);
                 out << ") - (";
-                visit(op.getRHS());
+                visit(op.getRHS(),out);
                 out << ")";
                 break;
             }
@@ -1071,7 +1075,7 @@ public:
                 visit(op.getLHS(),out);
                 out << ") & (";
                 visit(op.getRHS(),out);
-                otu << ")";
+                out << ")";
                 break;
             }
             case BinaryOp::BOR: {
@@ -1201,7 +1205,7 @@ public:
 };
 
     // emit code
-    CodeEmitter().visit(stmt, out);
+    CodeEmitter(*this).visit(stmt, out);
 }
 
 void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os, const std::string& id) {
@@ -1380,9 +1384,9 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     if (Global::config().has("profile")) {
         os << "std::ofstream profile(profiling_fname);\n";
         os << "profile << \"" << AstLogStatement::startDebug() << "\" << std::endl;\n";
-        genCode(os, *(prog.getMain()));
+        emitCode(os, *(prog.getMain()));
     } else {
-        genCode(os, *(prog.getMain()));
+        emitCode(os, *(prog.getMain()));
     }
     // add code printing hint statistics
     os << "\n// -- relation hint statistics --\n";
@@ -1527,7 +1531,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
                                                   "std::vector<RamDomain>& ret, std::vector<bool>& err) {\n";
 
             // generate code for body
-            genCode(os, *sub.second);
+            emitCode(os, *sub.second);
 
             os << "return;\n";
             os << "}\n";  // end of subroutine
@@ -1597,4 +1601,5 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "}\n";
     os << "#endif\n";
 }
+
 }  // end of namespace souffle

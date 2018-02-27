@@ -46,34 +46,6 @@ inline std::string getSymbolForUnaryOp(UnaryOp op) {
             return "bnot";
         case UnaryOp::LNOT:
             return "lnot";
-        case UnaryOp::SIN:
-            return "sin";
-        case UnaryOp::COS:
-            return "cos";
-        case UnaryOp::TAN:
-            return "tan";
-        case UnaryOp::ASIN:
-            return "asin";
-        case UnaryOp::ACOS:
-            return "acos";
-        case UnaryOp::ATAN:
-            return "atan";
-        case UnaryOp::SINH:
-            return "sinh";
-        case UnaryOp::COSH:
-            return "cosh";
-        case UnaryOp::TANH:
-            return "tanh";
-        case UnaryOp::ASINH:
-            return "asinh";
-        case UnaryOp::ACOSH:
-            return "acosh";
-        case UnaryOp::ATANH:
-            return "atanh";
-        case UnaryOp::LOG:
-            return "log";
-        case UnaryOp::EXP:
-            return "exp";
         default:
             break;
     }
@@ -90,20 +62,6 @@ inline UnaryOp getUnaryOpForSymbol(const std::string& symbol) {
     if (symbol == "-") return UnaryOp::NEG;
     if (symbol == "bnot") return UnaryOp::BNOT;
     if (symbol == "lnot") return UnaryOp::LNOT;
-    if (symbol == "sin") return UnaryOp::SIN;
-    if (symbol == "cos") return UnaryOp::COS;
-    if (symbol == "tan") return UnaryOp::TAN;
-    if (symbol == "asin") return UnaryOp::ASIN;
-    if (symbol == "acos") return UnaryOp::ACOS;
-    if (symbol == "atan") return UnaryOp::ATAN;
-    if (symbol == "sinh") return UnaryOp::SINH;
-    if (symbol == "cosh") return UnaryOp::COSH;
-    if (symbol == "tanh") return UnaryOp::TANH;
-    if (symbol == "asinh") return UnaryOp::ASINH;
-    if (symbol == "acosh") return UnaryOp::ACOSH;
-    if (symbol == "atanh") return UnaryOp::ATANH;
-    if (symbol == "tan") return UnaryOp::TAN;
-    if (symbol == "exp") return UnaryOp::EXP;
     std::cout << "Unrecognised operator: " << symbol << "\n";
     assert(false && "Unsupported Operator!");
     return UnaryOp::__UNDEFINED__;
@@ -119,20 +77,6 @@ inline bool isNumericUnaryOp(const UnaryOp op) {
         case UnaryOp::NEG:
         case UnaryOp::BNOT:
         case UnaryOp::LNOT:
-        case UnaryOp::SIN:
-        case UnaryOp::COS:
-        case UnaryOp::TAN:
-        case UnaryOp::ASIN:
-        case UnaryOp::ACOS:
-        case UnaryOp::ATAN:
-        case UnaryOp::SINH:
-        case UnaryOp::COSH:
-        case UnaryOp::TANH:
-        case UnaryOp::ASINH:
-        case UnaryOp::ACOSH:
-        case UnaryOp::ATANH:
-        case UnaryOp::LOG:
-        case UnaryOp::EXP:
             return true;
         default:
             break;
@@ -156,20 +100,6 @@ inline bool unaryOpAcceptsNumbers(const UnaryOp op) {
         case UnaryOp::NEG:
         case UnaryOp::BNOT:
         case UnaryOp::LNOT:
-        case UnaryOp::SIN:
-        case UnaryOp::COS:
-        case UnaryOp::TAN:
-        case UnaryOp::ASIN:
-        case UnaryOp::ACOS:
-        case UnaryOp::ATAN:
-        case UnaryOp::SINH:
-        case UnaryOp::COSH:
-        case UnaryOp::TANH:
-        case UnaryOp::ASINH:
-        case UnaryOp::ACOSH:
-        case UnaryOp::ATANH:
-        case UnaryOp::LOG:
-        case UnaryOp::EXP:
             return true;
         case UnaryOp::ORD:
         case UnaryOp::STRLEN:
