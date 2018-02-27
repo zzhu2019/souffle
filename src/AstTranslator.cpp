@@ -30,6 +30,9 @@
 #include "RamStatement.h"
 #include "RamVisitor.h"
 
+#include <fstream>
+#include <iostream>
+
 namespace souffle {
 
 namespace {
@@ -773,7 +776,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             // covered already within the scan/lookup generation step
 
             // for binary relations
-        } else if (auto binRel = dynamic_cast<const AstConstraint*>(lit)) {
+        } else if (auto binRel = dynamic_cast<const AstBinaryConstraint*>(lit)) {
             std::unique_ptr<RamValue> valLHS = translateValue(binRel->getLHS(), valueIndex);
             std::unique_ptr<RamValue> valRHS = translateValue(binRel->getRHS(), valueIndex);
             op->addCondition(std::unique_ptr<RamCondition>(
@@ -816,7 +819,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
     }
 
     /* generate the final RAM Insert statement */
-    return std::make_unique<RamInsert>(clause, std::move(op));
+    return std::make_unique<RamInsert>(std::move(op));
 }
 
 /* utility for appending statements */
@@ -1215,13 +1218,13 @@ std::unique_ptr<RamStatement> AstTranslator::makeSubproofSubroutine(
         auto arg = head->getArgument(i);
 
         if (auto var = dynamic_cast<AstVariable*>(arg)) {
-            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+            intermediateClause->addToBody(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ,
                     std::unique_ptr<AstArgument>(var->clone()), std::make_unique<AstSubroutineArgument>(i)));
         } else if (auto func = dynamic_cast<AstFunctor*>(arg)) {
-            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+            intermediateClause->addToBody(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ,
                     std::unique_ptr<AstArgument>(func->clone()), std::make_unique<AstSubroutineArgument>(i)));
         } else if (auto rec = dynamic_cast<AstRecordInit*>(arg)) {
-            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
+            intermediateClause->addToBody(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ,
                     std::unique_ptr<AstArgument>(rec->clone()), std::make_unique<AstSubroutineArgument>(i)));
         }
     }
@@ -1236,7 +1239,7 @@ std::unique_ptr<RamStatement> AstTranslator::makeSubproofSubroutine(
             auto arity = atom->getArity();
 
             // arity - 1 is the level number in body atoms
-            intermediateClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::LT,
+            intermediateClause->addToBody(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::LT,
                     std::unique_ptr<AstArgument>(atom->getArgument(arity - 1)->clone()),
                     std::make_unique<AstSubroutineArgument>(levelIndex)));
         }
@@ -1299,11 +1302,6 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
             for (const AstRelation* rel : step.expired()) {
                 appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
             }
-            if (index == schedule.size() - 1) {
-                for (const AstRelation* rel : step.computed()) {
-                    appendStmt(current, std::make_unique<RamDrop>(getRamRelation(rel, &typeEnv)));
-                }
-            }
         }
 
         // append the current step to the result
@@ -1341,4 +1339,28 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
     return prog;
 }
 
+std::unique_ptr<RamTranslationUnit> AstTranslator::translateUnit(AstTranslationUnit& tu) {
+    auto ram_start = std::chrono::high_resolution_clock::now();
+    std::unique_ptr<RamProgram> ramProg = translateProgram(tu);
+    SymbolTable& symTab = tu.getSymbolTable();
+    ErrorReport& errReport = tu.getErrorReport();
+    DebugReport& debugReport = tu.getDebugReport();
+    if (!Global::config().get("debug-report").empty()) {
+        if (ramProg) {
+            auto ram_end = std::chrono::high_resolution_clock::now();
+            std::string runtimeStr =
+                    "(" + std::to_string(std::chrono::duration<double>(ram_end - ram_start).count()) + "s)";
+            std::stringstream ramProgStr;
+            ramProgStr << *ramProg;
+            debugReport.addSection(DebugReporter::getCodeSection(
+                    "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
+        }
+
+        if (!debugReport.empty()) {
+            std::ofstream debugReportStream(Global::config().get("debug-report"));
+            debugReportStream << debugReport;
+        }
+    }
+    return std::make_unique<RamTranslationUnit>(std::move(ramProg), symTab, errReport, debugReport);
+}
 }  // end of namespace souffle

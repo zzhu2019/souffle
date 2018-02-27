@@ -23,7 +23,6 @@
 #include "AstTransforms.h"
 #include "AstTranslationUnit.h"
 #include "AstTranslator.h"
-#include "AstTuner.h"
 #include "AstUtils.h"
 #include "BddbddbBackend.h"
 #include "ComponentModel.h"
@@ -165,8 +164,6 @@ int main(int argc, char** argv) {
                             {"compile", 'c', "", "", false,
                                     "Generate C++ source code, compile to a binary executable, then run this "
                                     "executable."},
-                            {"auto-schedule", 'a', "", "", false,
-                                    "Switch on automated clause scheduling for compiler."},
                             {"generate", 'g', "FILE", "", false,
                                     "Generate C++ source code for the given Datalog program and write it to "
                                     "<FILE>."},
@@ -227,11 +224,6 @@ int main(int argc, char** argv) {
                 !(Global::config().has("generate") ||
                         (Global::config().has("dl-program") && !Global::config().has("compile")))) {
             ERROR("output directory " + Global::config().get("output-dir") + " does not exists");
-        }
-
-        /* ensure that if auto-scheduling is enabled an output file is given */
-        if (Global::config().has("auto-schedule") && !Global::config().has("dl-program")) {
-            ERROR("no executable is specified for auto-scheduling (option -o <FILE>)");
         }
 
         /* collect all input directories for the c pre-processor */
@@ -333,6 +325,7 @@ int main(int argc, char** argv) {
     astTransforms.push_back(std::make_unique<ComponentInstantiationTransformer>());
     astTransforms.push_back(std::make_unique<UniqueAggregationVariablesTransformer>());
     astTransforms.push_back(std::make_unique<AstSemanticChecker>());
+    astTransforms.push_back(std::make_unique<RemoveBooleanConstraintsTransformer>());
     astTransforms.push_back(std::make_unique<InlineRelationsTransformer>());
     astTransforms.push_back(std::make_unique<ReduceExistentialsTransformer>());
     astTransforms.push_back(std::make_unique<ExtractDisconnectedLiteralsTransformer>());
@@ -358,9 +351,6 @@ int main(int argc, char** argv) {
 
     astTransforms.push_back(std::make_unique<AstExecutionPlanChecker>());
 
-    if (Global::config().has("auto-schedule")) {
-        astTransforms.push_back(std::make_unique<AutoScheduleTransformer>());
-    }
 #ifdef USE_PROVENANCE
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
@@ -415,8 +405,6 @@ int main(int argc, char** argv) {
 
     // ------- execution -------------
 
-    auto ram_start = std::chrono::high_resolution_clock::now();
-
     /* translate AST to RAM */
     std::unique_ptr<RamTranslationUnit> ramTranslationUnit =
             AstTranslator().translateUnit(*astTranslationUnit);
@@ -440,23 +428,6 @@ int main(int argc, char** argv) {
         std::cerr << ramTranslationUnit->getErrorReport();
     }
 
-    if (!Global::config().get("debug-report").empty()) {
-        if (ramTranslationUnit->getProgram()) {
-            auto ram_end = std::chrono::high_resolution_clock::now();
-            std::string runtimeStr =
-                    "(" + std::to_string(std::chrono::duration<double>(ram_end - ram_start).count()) + "s)";
-            std::stringstream ramProgStr;
-            ramProgStr << *ramTranslationUnit->getProgram();
-            astTranslationUnit->getDebugReport().addSection(DebugReporter::getCodeSection(
-                    "ram-program", "RAM Program " + runtimeStr, ramProgStr.str()));
-        }
-
-        if (!ramTranslationUnit->getDebugReport().empty()) {
-            std::ofstream debugReportStream(Global::config().get("debug-report"));
-            debugReportStream << ramTranslationUnit->getDebugReport();
-        }
-    }
-
     if (!ramTranslationUnit->getProgram()->getMain()) {
         return 0;
     };
@@ -466,17 +437,16 @@ int main(int argc, char** argv) {
         // ------- interpreter -------------
 
         // configure interpreter
-        std::unique_ptr<Interpreter> interpreter = (Global::config().has("auto-schedule"))
-                                                           ? std::make_unique<Interpreter>(ScheduledExecution)
-                                                           : std::make_unique<Interpreter>(DirectExecution);
-        std::unique_ptr<InterpreterEnvironment> env = interpreter->execute(*ramTranslationUnit);
+        std::unique_ptr<Interpreter> interpreter = std::make_unique<Interpreter>(*ramTranslationUnit);
+
+        // execute translation unit
+        interpreter->executeMain();
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
-        if (Global::config().has("provenance") && env != nullptr) {
+        if (Global::config().has("provenance")) {
             // construct SouffleProgram from env
-            InterpreterProgInterface interface(*ramTranslationUnit, *interpreter, *env);
-
+            InterpreterProgInterface interface(*interpreter);
             if (Global::config().get("provenance") == "1") {
                 explain(interface, true, false);
             } else if (Global::config().get("provenance") == "2") {

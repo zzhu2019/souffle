@@ -156,7 +156,7 @@ private:
         visit(*neg.getAtom(), out);
     }
 
-    void visitConstraint(const AstConstraint& cnstr, std::ostream& out) override {
+    void visitBinaryConstraint(const AstBinaryConstraint& cnstr, std::ostream& out) override {
         visit(*cnstr.getLHS(), out);
         out << toBinaryConstraintSymbol(cnstr.getOperator());
         visit(*cnstr.getRHS(), out);

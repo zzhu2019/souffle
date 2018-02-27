@@ -238,7 +238,7 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
     });
 
     // - binary relation -
-    visitDepthFirst(nodes, [&](const AstConstraint& constraint) {
+    visitDepthFirst(nodes, [&](const AstBinaryConstraint& constraint) {
 
         // only interested in non-equal constraints
         auto op = constraint.getOperator();
@@ -359,8 +359,13 @@ static bool hasUnnamedVariable(const AstLiteral* lit) {
     if (const AstNegation* neg = dynamic_cast<const AstNegation*>(lit)) {
         return hasUnnamedVariable(neg->getAtom());
     }
-    if (const AstConstraint* br = dynamic_cast<const AstConstraint*>(lit)) {
-        return hasUnnamedVariable(br->getLHS()) || hasUnnamedVariable(br->getRHS());
+    if (dynamic_cast<const AstConstraint*>(lit)) {
+        if (dynamic_cast<const AstBooleanConstraint*>(lit)) {
+            return false;
+        }
+        if (const AstBinaryConstraint* br = dynamic_cast<const AstBinaryConstraint*>(lit)) {
+            return hasUnnamedVariable(br->getLHS()) || hasUnnamedVariable(br->getRHS());
+        }
     }
     std::cout << "Unsupported Literal type: " << typeid(lit).name() << "\n";
     ASSERT(false && "Unsupported Argument Type!");
@@ -374,7 +379,7 @@ void AstSemanticChecker::checkLiteral(
         checkAtom(report, program, *atom);
     }
 
-    if (const AstConstraint* constraint = dynamic_cast<const AstConstraint*>(&literal)) {
+    if (const AstBinaryConstraint* constraint = dynamic_cast<const AstBinaryConstraint*>(&literal)) {
         checkArgument(report, program, *constraint->getLHS());
         checkArgument(report, program, *constraint->getRHS());
     }
@@ -385,7 +390,7 @@ void AstSemanticChecker::checkLiteral(
             // nothing to check since underscores are allowed
         } else if (dynamic_cast<const AstNegation*>(&literal)) {
             // nothing to check since underscores are allowed
-        } else if (dynamic_cast<const AstConstraint*>(&literal)) {
+        } else if (dynamic_cast<const AstBinaryConstraint*>(&literal)) {
             report.addError("Underscore in binary relation", literal.getSrcLoc());
         } else {
             std::cout << "Unsupported Literal type: " << typeid(literal).name() << "\n";
