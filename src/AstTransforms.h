@@ -192,6 +192,20 @@ public:
 };
 
 /**
+ * Transformation pass to remove constant boolean constraints
+ * Should be called after any transformation that may generate boolean constraints
+ */
+class RemoveBooleanConstraintsTransformer : public AstTransformer {
+private:
+    bool transform(AstTranslationUnit& translationUnit) override;
+
+public:
+    std::string getName() const override {
+        return "RemoveBooleanConstraintsTransformer";
+    }
+};
+
+/**
  * Transformation pass to inline marked relations
  */
 class InlineRelationsTransformer : public AstTransformer {
