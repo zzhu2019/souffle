@@ -14,8 +14,8 @@
  *
  ***********************************************************************/
 
-#include "Global.h"
 #include "IndexSetAnalysis.h"
+#include "Global.h"
 #include "RamCondition.h"
 #include "RamOperation.h"
 #include "RamTranslationUnit.h"
