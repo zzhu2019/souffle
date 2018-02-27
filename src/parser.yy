@@ -113,6 +113,8 @@
 %token MAX                       "max aggregator"
 %token COUNT                     "count aggregator"
 %token SUM                       "sum aggregator"
+%token TRUE                      "true literal constraint"
+%token FALSE                     "false literal constraint"
 %token STRICT                    "strict marker"
 %token PLAN                      "plan keyword"
 %token IF                        ":-"
@@ -418,7 +420,22 @@ non_empty_key_value_pairs
         $$ = $1;
         $$->addKVP($3, $5);
     }
-
+  | IDENT EQUALS TRUE {
+        $$ = new AstIODirective();
+        $$->addKVP($1, "true");
+    }
+  | key_value_pairs COMMA IDENT EQUALS TRUE {
+        $$ = $1;
+        $$->addKVP($3, "true");
+    }
+ | IDENT EQUALS FALSE {
+        $$ = new AstIODirective();
+        $$->addKVP($1, "false");
+    }
+ | key_value_pairs COMMA IDENT EQUALS FALSE {
+        $$ = $1;
+        $$->addKVP($3, "false");
+    }
 
 key_value_pairs
   : non_empty_key_value_pairs {
@@ -731,22 +748,22 @@ atom
 /* Literal */
 literal
   : arg RELOP arg {
-        auto* res = new AstConstraint($2, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new AstBinaryConstraint($2, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
   | arg LT arg {
-        auto* res = new AstConstraint(BinaryConstraintOp::LT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::LT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
   | arg GT arg {
-        auto* res = new AstConstraint(BinaryConstraintOp::GT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::GT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
   | arg EQUALS arg {
-        auto* res = new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
@@ -755,12 +772,22 @@ literal
         $$ = new RuleBody(RuleBody::atom($1));
     }
   | TMATCH LPAREN arg COMMA arg RPAREN {
-        auto* res = new AstConstraint(BinaryConstraintOp::MATCH, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::MATCH, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
   | TCONTAINS LPAREN arg COMMA arg RPAREN {
-        auto* res = new AstConstraint(BinaryConstraintOp::CONTAINS, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::CONTAINS, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        res->setSrcLoc(@$);
+        $$ = new RuleBody(RuleBody::constraint(res));
+    }
+  | TRUE {
+        auto* res = new AstBooleanConstraint(true);
+        res->setSrcLoc(@$);
+        $$ = new RuleBody(RuleBody::constraint(res));
+    }
+  | FALSE {
+        auto* res = new AstBooleanConstraint(false);
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }

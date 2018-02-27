@@ -610,10 +610,10 @@ int getNextAtomSIPS(std::vector<AstAtom*>& atoms, std::set<std::string> boundArg
 BindingStore bindComposites(const AstProgram* program) {
     struct M : public AstNodeMapper {
         BindingStore& compositeBindings;
-        std::set<AstConstraint*>& constraints;
+        std::set<AstBinaryConstraint*>& constraints;
         mutable int changeCount;
 
-        M(BindingStore& compositeBindings, std::set<AstConstraint*>& constraints, int changeCount)
+        M(BindingStore& compositeBindings, std::set<AstBinaryConstraint*>& constraints, int changeCount)
                 : compositeBindings(compositeBindings), constraints(constraints), changeCount(changeCount) {}
 
         int getChangeCount() const {
@@ -634,7 +634,7 @@ BindingStore bindComposites(const AstProgram* program) {
 
                 // create new constraint (+functorX = original-functor)
                 auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
-                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                constraints.insert(new AstBinaryConstraint(BinaryConstraintOp::EQ,
                         std::unique_ptr<AstArgument>(newVariable->clone()),
                         std::unique_ptr<AstArgument>(functor->clone())));
 
@@ -653,7 +653,7 @@ BindingStore bindComposites(const AstProgram* program) {
 
                 // create new constraint (+recordX = original-record)
                 auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
-                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                constraints.insert(new AstBinaryConstraint(BinaryConstraintOp::EQ,
                         std::unique_ptr<AstArgument>(newVariable->clone()),
                         std::unique_ptr<AstArgument>(record->clone())));
 
@@ -672,14 +672,14 @@ BindingStore bindComposites(const AstProgram* program) {
     // apply the change to all clauses in the program
     for (AstRelation* rel : program->getRelations()) {
         for (AstClause* clause : rel->getClauses()) {
-            std::set<AstConstraint*> constraints;
+            std::set<AstBinaryConstraint*> constraints;
             M update(compositeBindings, constraints, changeCount);
             clause->apply(update);
 
             changeCount = update.getChangeCount();
 
-            for (AstConstraint* constraint : constraints) {
-                clause->addToBody(std::unique_ptr<AstConstraint>(constraint));
+            for (AstBinaryConstraint* constraint : constraints) {
+                clause->addToBody(std::unique_ptr<AstBinaryConstraint>(constraint));
             }
         }
     }
@@ -825,10 +825,8 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
                 }
 
                 // mark all bound arguments from the body
-                std::vector<AstConstraint*> constraints = clause->getConstraints();
-
-                for (size_t i = 0; i < constraints.size(); i++) {
-                    AstConstraint* constraint = constraints[i];
+                std::vector<AstBinaryConstraint*> constraints = clause->getBinaryConstraints();
+                for (AstBinaryConstraint* constraint : constraints) {
                     BinaryConstraintOp op = constraint->getOperator();
 
                     if (op != BinaryConstraintOp::EQ) {
@@ -1319,9 +1317,10 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                             if (compositeBindings.isVariableBoundComposite(argName)) {
                                 AstArgument* originalArgument =
                                         compositeBindings.cloneOriginalArgument(argName);
-                                magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
-                                        std::unique_ptr<AstArgument>(compositeArgument->clone()),
-                                        std::unique_ptr<AstArgument>(originalArgument)));
+                                magicClause->addToBody(
+                                        std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ,
+                                                std::unique_ptr<AstArgument>(compositeArgument->clone()),
+                                                std::unique_ptr<AstArgument>(originalArgument)));
                             }
                         }
 
@@ -1340,8 +1339,8 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                                         extractConstant(translationUnit.getSymbolTable(), varName);
 
                                 // add the constraint to the body of the clause
-                                magicClause->addToBody(std::make_unique<AstConstraint>(BinaryConstraintOp::EQ,
-                                        std::unique_ptr<AstArgument>(var->clone()),
+                                magicClause->addToBody(std::make_unique<AstBinaryConstraint>(
+                                        BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(var->clone()),
                                         std::unique_ptr<AstArgument>(embeddedConstant)));
                             }
                         }
