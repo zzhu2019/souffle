@@ -33,6 +33,15 @@ namespace souffle {
  * A RAM synthesiser: synthesises a C++ program from a RAM program.
  */
 class Synthesiser {
+protected:
+    /** RAM identifier to C++ identifier map */
+    std::map<const std::string, const std::string> identifiers;
+
+    /** Convert RAM identifier */
+    const std::string convertRamIdent(const std::string& name);
+private:
+
+};
 public:
     Synthesiser() = default;
     virtual ~Synthesiser() = default;

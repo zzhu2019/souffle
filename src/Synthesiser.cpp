@@ -44,41 +44,9 @@
 #include <omp.h>
 #endif
 
-namespace souffle {
-
-/**
- * A singleton which provides a mapping from strings to unique valid CPP identifiers.
- */
-class CPPIdentifierMap {
-public:
-    /**
-     * Obtains the singleton instance.
-     */
-    static CPPIdentifierMap& getInstance() {
-        if (instance == nullptr) {
-            instance = new CPPIdentifierMap();
-        }
-        return *instance;
-    }
-
-    /**
-     * Given a string, returns its corresponding unique valid identifier;
-     */
-    static std::string getIdentifier(const std::string& name) {
-        return getInstance().identifier(name);
-    }
-
-    ~CPPIdentifierMap() = default;
-
-private:
-    CPPIdentifierMap() {}
-
-    static CPPIdentifierMap* instance;
-
-    /**
-     * Instance method for getIdentifier above.
-     */
-    const std::string identifier(const std::string& name) {
+/** Convert RAM identifier */
+const std::string Synthesiser::convertRamIdent(const std::string& name) 
+{
         auto it = identifiers.find(name);
         if (it != identifiers.end()) {
             return it->second;
@@ -114,15 +82,9 @@ private:
     std::map<const std::string, const std::string> identifiers;
 };
 
-// See the CPPIdentifierMap, (it is a singleton class).
-CPPIdentifierMap* CPPIdentifierMap::instance = nullptr;
-
-namespace {
-
-static const char ENV_NO_INDEX[] = "SOUFFLE_USE_NO_INDEX";
-
-bool useNoIndex() {
-    static bool flag = std::getenv(ENV_NO_INDEX);
+/** check whether indexes are disabled */ 
+bool Synthesiser::areIndexesDisabled() {
+    bool flag = std::getenv("SOUFFLE_USE_NO_INDEX");
     static bool first = true;
     if (first && flag) {
         std::cout << "WARNING: indexes are ignored!\n";
@@ -131,17 +93,18 @@ bool useNoIndex() {
     return flag;
 }
 
-// Static wrapper to get relation names without going directly though the CPPIdentifierMap.
-static const std::string getRelationName(const RamRelation& rel) {
-    return "rel_" + CPPIdentifierMap::getIdentifier(rel.getName());
+/** Get relation name */
+const std::string Synthesiser::getRelationName(const RamRelation& rel) {
+    return "rel_" + convertRamIdent(rel.getName());
 }
 
-// Static wrapper to get op context names without going directly though the CPPIdentifierMap.
-static const std::string getOpContextName(const RamRelation& rel) {
+/** Get context name */
+const std::string Synthesiser::getOpContextName(const RamRelation& rel) {
     return getRelationName(rel) + "_op_ctxt";
 }
 
-std::string getRelationType(const RamRelation& rel, std::size_t arity, const IndexSet& indexes) {
+/** Get relation type */
+std::string Synthesiser::getRelationType(const RamRelation& rel, std::size_t arity, const IndexSet& indexes) {
     std::stringstream res;
     res << "ram::Relation";
     res << "<";
@@ -174,7 +137,7 @@ std::string getRelationType(const RamRelation& rel, std::size_t arity, const Ind
     }
 
     res << arity;
-    if (!useNoIndex()) {
+    if (!areIndexesDisabled()) {
         for (auto& cur : indexes.getAllOrders()) {
             res << ", ram::index<";
             res << join(cur, ",");
@@ -185,7 +148,8 @@ std::string getRelationType(const RamRelation& rel, std::size_t arity, const Ind
     return res.str();
 }
 
-std::string toIndex(SearchColumns key) {
+/* Convert SearchColums to a template index */
+std::string Synthesiser::toIndex(SearchColumns key) {
     std::stringstream tmp;
     tmp << "<";
     int i = 0;
@@ -204,7 +168,8 @@ std::string toIndex(SearchColumns key) {
     return tmp.str();
 }
 
-std::set<RamRelation> getReferencedRelations(const RamOperation& op) {
+/** Get referenced relations */
+std::set<RamRelation> Synthesiser::getReferencedRelations(const RamOperation& op) {
     std::set<RamRelation> res;
     visitDepthFirst(op, [&](const RamNode& node) {
         if (auto scan = dynamic_cast<const RamScan*>(&node)) {
@@ -223,7 +188,9 @@ std::set<RamRelation> getReferencedRelations(const RamOperation& op) {
     return res;
 }
 
+void Synthesiser::genCode(std::ostream& out, const RamStatement& stmt) {
 class CodeEmitter : public RamVisitor<void, std::ostream&> {
+
 // macros to add comments to generated code for debugging
 #ifndef PRINT_BEGIN_COMMENT
 #define PRINT_BEGIN_COMMENT(os)                                                  \
@@ -238,20 +205,6 @@ class CodeEmitter : public RamVisitor<void, std::ostream&> {
 #endif
 
     std::function<void(std::ostream&, const RamNode*)> rec;
-
-    struct printer {
-        CodeEmitter& p;
-        const RamNode& node;
-
-        printer(CodeEmitter& p, const RamNode& n) : p(p), node(n) {}
-
-        printer(const printer& other) = default;
-
-        friend std::ostream& operator<<(std::ostream& out, const printer& p) {
-            p.p.visit(p.node, out);
-            return out;
-        }
-    };
 
 public:
     CodeEmitter() {
@@ -371,7 +324,7 @@ public:
                 << "createContext());\n";
         }
 
-        out << print(insert.getOperation());
+        visit(insert.getOperation(), out);
 
         // aggregate proof counters
         if (Global::config().has("profile")) {
@@ -449,7 +402,7 @@ public:
     void visitSequence(const RamSequence& seq, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
         for (const auto& cur : seq.getStatements()) {
-            out << print(cur);
+            visit(cur, out);
         }
         PRINT_END_COMMENT(out);
     }
@@ -466,7 +419,7 @@ public:
 
         // a single statement => save the overhead
         if (stmts.size() == 1) {
-            out << print(stmts[0]);
+            out << visit(stmts[0], out);
             return;
             PRINT_END_COMMENT(out);
         }
@@ -479,7 +432,7 @@ public:
         // put each thread in another section
         for (const auto& cur : stmts) {
             out << "SECTION_START;\n";
-            out << print(cur);
+            visit(cur,out);
             out << "SECTION_END\n";
         }
 
@@ -490,7 +443,9 @@ public:
 
     void visitLoop(const RamLoop& loop, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
-        out << "for(;;) {\n" << print(loop.getBody()) << "}\n";
+        out << "for(;;) {\n";
+          visit(loop.getBody(),out);
+        out << "}\n";
         PRINT_END_COMMENT(out);
     }
 
@@ -510,7 +465,9 @@ public:
 
     void visitExit(const RamExit& exit, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
-        out << "if(" << print(exit.getCondition()) << ") break;\n";
+        out << "if(";
+        visit(exit.getCondition(),out);
+        out << ") break;\n";
         PRINT_END_COMMENT(out);
     }
 
@@ -549,12 +506,16 @@ public:
         PRINT_BEGIN_COMMENT(out);
         auto condition = search.getCondition();
         if (condition) {
-            out << "if( " << print(condition) << ") {\n" << print(search.getNestedOperation()) << "}\n";
+            out << "if( ";
+            visit(condition,out);
+            out << ") {\n";
+            visit(search.getNestedOperation(),out);
+            out << "}\n";
             if (Global::config().has("profile")) {
                 out << " else { ++private_num_failed_proofs; }";
             }
         } else {
-            out << print(search.getNestedOperation());
+            visit(search.getNestedOperation(),out);
         }
         PRINT_END_COMMENT(out);
     }
@@ -780,7 +741,9 @@ public:
 
         auto condition = aggregate.getCondition();
         if (condition) {
-            out << "if( " << print(condition) << ") {\n";
+            out << "if( ";
+            visit(condition,out);
+            out << ") {\n";
             visitSearch(aggregate, out);
             out << "}\n";
             if (Global::config().has("profile")) {
@@ -809,7 +772,9 @@ public:
         // check condition
         auto condition = project.getCondition();
         if (condition) {
-            out << "if (" << print(condition) << ") {\n";
+            out << "if (";
+            visit(condition,out);
+            out << ") {\n";
         }
 
         // create projected tuple
@@ -862,7 +827,11 @@ public:
 
     void visitAnd(const RamAnd& c, std::ostream& out) override {
         PRINT_BEGIN_COMMENT(out);
-        out << "((" << print(c.getLHS()) << ") && (" << print(c.getRHS()) << "))";
+        out << "((";
+        visit(c.getLHS(),out);
+        out << ") && (";
+        visit(c.getRHS(),out);
+        out << "))";
         PRINT_END_COMMENT(out);
     }
 
@@ -871,54 +840,78 @@ public:
         switch (rel.getOperator()) {
             // comparison operators
             case BinaryConstraintOp::EQ:
-                out << "((" << print(rel.getLHS()) << ") == (" << print(rel.getRHS()) << "))";
+                out << "((";
+                visit(rel.getLHS(),out);
+                out << ") == (";
+                visit(rel.getRHS(),out);
+                out << "))";
                 break;
             case BinaryConstraintOp::NE:
-                out << "((" << print(rel.getLHS()) << ") != (" << print(rel.getRHS()) << "))";
+                out << "((";
+                visit(rel.getLHS(),out);
+                out << ") != (";
+                visit(rel.getRHS(),out);
+                out << "))";
                 break;
             case BinaryConstraintOp::LT:
-                out << "((" << print(rel.getLHS()) << ") < (" << print(rel.getRHS()) << "))";
+                out << "((";
+                visit(rel.getLHS(),out);
+                out << ") < (";
+                visit(rel.getRHS(),out);
+                out << "))";
                 break;
             case BinaryConstraintOp::LE:
-                out << "((" << print(rel.getLHS()) << ") <= (" << print(rel.getRHS()) << "))";
+                out << "((";
+                visit(rel.getLHS(),out);
+                out << ") <= (";
+                visit(rel.getRHS(),out);
+                out << "))";
                 break;
             case BinaryConstraintOp::GT:
-                out << "((" << print(rel.getLHS()) << ") > (" << print(rel.getRHS()) << "))";
+                out << "((";
+                visit(rel.getLHS(),out);
+                out << ") > (";
+                visit(rel.getRHS(),out);
+                out << "))";
                 break;
             case BinaryConstraintOp::GE:
-                out << "((" << print(rel.getLHS()) << ") >= (" << print(rel.getRHS()) << "))";
+                out << "((";
+                visit(rel.getLHS(),out);
+                out << ") >= (";
+                visit(rel.getRHS(), out);
+                out << "))";
                 break;
 
             // strings
             case BinaryConstraintOp::MATCH: {
                 out << "regex_wrapper(symTable.resolve((size_t)";
-                out << print(rel.getLHS());
+                visit(rel.getLHS(),out);
                 out << "),symTable.resolve((size_t)";
-                out << print(rel.getRHS());
+                visit(rel.getRHS(),out);
                 out << "))";
                 break;
             }
             case BinaryConstraintOp::NOT_MATCH: {
                 out << "!regex_wrapper(symTable.resolve((size_t)";
-                out << print(rel.getLHS());
+                visit(rel.getLHS(),out);
                 out << "),symTable.resolve((size_t)";
-                out << print(rel.getRHS());
+                visit(rel.getRHS(),out);
                 out << "))";
                 break;
             }
             case BinaryConstraintOp::CONTAINS: {
                 out << "(std::string(symTable.resolve((size_t)";
-                out << print(rel.getRHS());
+                visit(rel.getRHS(),out);
                 out << ")).find(symTable.resolve((size_t)";
-                out << print(rel.getLHS());
+                visit(rel.getLHS(),out);
                 out << "))!=std::string::npos)";
                 break;
             }
             case BinaryConstraintOp::NOT_CONTAINS: {
                 out << "(std::string(symTable.resolve((size_t)";
-                out << print(rel.getRHS());
+                visit(rel.getRHS(),out);
                 out << ")).find(symTable.resolve((size_t)";
-                out << print(rel.getLHS());
+                visit(rel.getLHS(),out);
                 out << "))==std::string::npos)";
                 break;
             }
@@ -992,61 +985,27 @@ public:
         PRINT_BEGIN_COMMENT(out);
         switch (op.getOperator()) {
             case UnaryOp::ORD:
-                out << print(op.getValue());
+                visit(op.getValue(),out);
                 break;
             case UnaryOp::STRLEN:
-                out << "strlen(symTable.resolve((size_t)" << print(op.getValue()) << "))";
+                out << "strlen(symTable.resolve((size_t)";
+                visit(op.getValue(),out);
+                out << "))";
                 break;
             case UnaryOp::NEG:
-                out << "(-(" << print(op.getValue()) << "))";
+                out << "(-(";
+                visit(op.getValue(),out);
+                out << "))";
                 break;
             case UnaryOp::BNOT:
-                out << "(~(" << print(op.getValue()) << "))";
+                out << "(~(";
+                visit(op.getValue(),out);
+                out << "))";
                 break;
             case UnaryOp::LNOT:
-                out << "(!(" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::SIN:
-                out << "sin((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::COS:
-                out << "cos((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::TAN:
-                out << "tan((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::ASIN:
-                out << "asin((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::ACOS:
-                out << "acos((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::ATAN:
-                out << "atan((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::SINH:
-                out << "sinh((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::COSH:
-                out << "cosh((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::TANH:
-                out << "tanh((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::ASINH:
-                out << "asinh((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::ACOSH:
-                out << "acosh((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::ATANH:
-                out << "atanh((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::LOG:
-                out << "log((" << print(op.getValue()) << "))";
-                break;
-            case UnaryOp::EXP:
-                out << "exp((" << print(op.getValue()) << "))";
+                out << "(!(";
+                visit(op.getValue(),out);
+                out << "))";
                 break;
             default:
                 assert(0 && "Unsupported Operation!");
@@ -1060,58 +1019,107 @@ public:
         switch (op.getOperator()) {
             // arithmetic
             case BinaryOp::ADD: {
-                out << "(" << print(op.getLHS()) << ") + (" << print(op.getRHS()) << ")";
+                out << "("; 
+                visit(op.getLHS(),out);
+                out << ") + (";
+                visit(op.getRHS(),out);
+                out << ")";
                 break;
             }
             case BinaryOp::SUB: {
-                out << "(" << print(op.getLHS()) << ") - (" << print(op.getRHS()) << ")";
+                out << "(";
+                visit(op.getLHS(),out);
+                out << ") - (";
+                visit(op.getRHS());
+                out << ")";
                 break;
             }
             case BinaryOp::MUL: {
-                out << "(" << print(op.getLHS()) << ") * (" << print(op.getRHS()) << ")";
+                out << "(";
+                visit(op.getLHS(),out);
+                out << ") * (";
+                visit(op.getRHS(),out);
+                out << ")";
                 break;
             }
             case BinaryOp::DIV: {
-                out << "(" << print(op.getLHS()) << ") / (" << print(op.getRHS()) << ")";
+                out << "(";
+                visit(op.getLHS(),out);
+                out << ") / (";
+                visit(op.getRHS(),out);
+                out << ")";
                 break;
             }
             case BinaryOp::EXP: {
-                out << "(AstDomain)(std::pow((AstDomain)" << print(op.getLHS()) << ","
-                    << "(AstDomain)" << print(op.getRHS()) << "))";
+                out << "(AstDomain)(std::pow((AstDomain)";
+                visit(op.getLHS(),out);
+                out << ",(AstDomain)";
+                visit(op.getRHS(),out);
+                out << "))";
                 break;
             }
             case BinaryOp::MOD: {
-                out << "(" << print(op.getLHS()) << ") % (" << print(op.getRHS()) << ")";
+                out << "(";
+                visit(op.getLHS(),out);
+                out << ") % (";
+                visit(op.getRHS(),out);
+                out << ")";
                 break;
             }
             case BinaryOp::BAND: {
-                out << "(" << print(op.getLHS()) << ") & (" << print(op.getRHS()) << ")";
+                out << "(";
+                visit(op.getLHS(),out);
+                out << ") & (";
+                visit(op.getRHS(),out);
+                otu << ")";
                 break;
             }
             case BinaryOp::BOR: {
-                out << "(" << print(op.getLHS()) << ") | (" << print(op.getRHS()) << ")";
+                out << "(";
+                visit(op.getLHS(),out);
+                out << ") | (";
+                visit(op.getRHS(),out);
+                out << ")";
                 break;
             }
             case BinaryOp::BXOR: {
-                out << "(" << print(op.getLHS()) << ") ^ (" << print(op.getRHS()) << ")";
+                out << "(";
+                visit(op.getLHS(),out);
+                out << ") ^ (";
+                visit(op.getRHS(),out);
+                out << ")";
                 break;
             }
             case BinaryOp::LAND: {
-                out << "(" << print(op.getLHS()) << ") && (" << print(op.getRHS()) << ")";
+                out << "(";
+                visit(op.getLHS(),out);
+                out << ") && (";
+                visit(op.getRHS(),out);
+                out << ")";
                 break;
             }
             case BinaryOp::LOR: {
-                out << "(" << print(op.getLHS()) << ") || (" << print(op.getRHS()) << ")";
+                out << "(";
+                visit(op.getLHS(),out);
+                out << ") || (";
+                visit(op.getRHS(),out);
+                out << ")";
                 break;
             }
             case BinaryOp::MAX: {
-                out << "(AstDomain)(std::max((AstDomain)" << print(op.getLHS()) << ","
-                    << "(AstDomain)" << print(op.getRHS()) << "))";
+                out << "(AstDomain)(std::max((AstDomain)";
+                visit(op.getLHS(),out);
+                out << ",(AstDomain)";
+                visit(op.getRHS(),out);
+                out << "))";
                 break;
             }
             case BinaryOp::MIN: {
-                out << "(AstDomain)(std::min((AstDomain)" << print(op.getLHS()) << ","
-                    << "(AstDomain)" << print(op.getRHS()) << "))";
+                out << "(AstDomain)(std::min((AstDomain)";
+                visit(op.getLHS(),out);
+                out << ",(AstDomain)";
+                visit(op.getRHS(),out);
+                out << "))";
                 break;
             }
 
@@ -1119,9 +1127,9 @@ public:
             case BinaryOp::CAT: {
                 out << "(RamDomain)symTable.lookup(";
                 out << "(std::string(symTable.resolve((size_t)";
-                out << print(op.getLHS());
+                visit(op.getLHS(),out);
                 out << ")) + std::string(symTable.resolve((size_t)";
-                out << print(op.getRHS());
+                visit(op.getRHS(),out);
                 out << "))).c_str())";
                 break;
             }
@@ -1137,11 +1145,11 @@ public:
             case TernaryOp::SUBSTR:
                 out << "(RamDomain)symTable.lookup(";
                 out << "(substr_wrapper(symTable.resolve((size_t)";
-                out << print(op.getArg(0));
+                visit(op.getArg(0),out);
                 out << "),(";
-                out << print(op.getArg(1));
+                visit(op.getArg(1),out);
                 out << "),(";
-                out << print(op.getArg(2));
+                visit(op.getArg(2),out);
                 out << ")).c_str()))";
                 break;
             default:
@@ -1175,7 +1183,9 @@ public:
                 out << "ret.push_back(0);\n";
                 out << "err.push_back(true);\n";
             } else {
-                out << "ret.push_back(" << print(val) << ");\n";
+                out << "ret.push_back(";
+                visit(val,out);
+                out << ");\n";
                 out << "err.push_back(false);\n";
             }
         }
@@ -1188,24 +1198,13 @@ public:
         assert(false && "Unsupported Node Type!");
     }
 
-private:
-    printer print(const RamNode& node) {
-        return printer(*this, node);
-    }
-
-    printer print(const RamNode* node) {
-        return print(*node);
-    }
 };
 
-void genCode(std::ostream& out, const RamStatement& stmt) {
-    // use printer
+    // emit code
     CodeEmitter().visit(stmt, out);
 }
-}  // namespace
 
-void Synthesiser::generateCode(
-        const RamTranslationUnit& unit, std::ostream& os, const std::string& id) const {
+void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os, const std::string& id) {
     // ---------------------------------------------------------------
     //                      Auto-Index Generation
     // ---------------------------------------------------------------
