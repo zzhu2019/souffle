@@ -160,20 +160,6 @@
 %token L_AND                     "land"
 %token L_OR                      "lor"
 %token L_NOT                     "lnot"
-%token SIN                       "sin"
-%token COS                       "cos"
-%token TAN                       "tan"
-%token ASIN                      "asin"
-%token ACOS                      "acos"
-%token ATAN                      "atan"
-%token SINH                      "sinh"
-%token COSH                      "cosh"
-%token TANH                      "tanh"
-%token ASINH                     "asinh"
-%token ACOSH                     "acosh"
-%token ATANH                     "atanh"
-%token LOG                       "log"
-%token EXP                       "exp"
 
 %type <uint32_t>                         qualifiers
 %type <AstTypeIdentifier *>              type_id
@@ -540,62 +526,6 @@ arg
     }
   | arg L_AND arg {
         $$ = new AstBinaryFunctor(BinaryOp::LAND, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | SIN LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::SIN, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | COS LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::COS, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | TAN LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::TAN, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ASIN LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ASIN, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ACOS LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ACOS, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ATAN LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ATAN, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | SINH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::SINH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | COSH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::COSH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | TANH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::TANH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ASINH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ASINH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ACOSH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ACOSH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ATANH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ATANH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | LOG LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::LOG, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | EXP LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::EXP, std::unique_ptr<AstArgument>($3));
         $$->setSrcLoc(@$);
     }
   | arg PLUS arg {

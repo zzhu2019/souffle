@@ -80,34 +80,6 @@ RamDomain Interpreter::eval(const RamValue& value, const InterpreterContext& ctx
                     return visit(op.getValue());
                 case UnaryOp::STRLEN:
                     return strlen(interpreter.getSymbolTable().resolve(visit(op.getValue())));
-                case UnaryOp::SIN:
-                    return sin(visit(op.getValue()));
-                case UnaryOp::COS:
-                    return cos(visit(op.getValue()));
-                case UnaryOp::TAN:
-                    return tan(visit(op.getValue()));
-                case UnaryOp::ASIN:
-                    return asin(visit(op.getValue()));
-                case UnaryOp::ACOS:
-                    return acos(visit(op.getValue()));
-                case UnaryOp::ATAN:
-                    return atan(visit(op.getValue()));
-                case UnaryOp::SINH:
-                    return sinh(visit(op.getValue()));
-                case UnaryOp::COSH:
-                    return cosh(visit(op.getValue()));
-                case UnaryOp::TANH:
-                    return tanh(visit(op.getValue()));
-                case UnaryOp::ASINH:
-                    return asinh(visit(op.getValue()));
-                case UnaryOp::ACOSH:
-                    return acosh(visit(op.getValue()));
-                case UnaryOp::ATANH:
-                    return atanh(visit(op.getValue()));
-                case UnaryOp::LOG:
-                    return log(visit(op.getValue()));
-                case UnaryOp::EXP:
-                    return exp(visit(op.getValue()));
                 default:
                     assert(0 && "unsupported operator");
                     return 0;
