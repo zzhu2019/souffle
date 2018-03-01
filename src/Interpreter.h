@@ -52,16 +52,16 @@ private:
 
 protected:
     /** Evaluate value */
-    RamDomain eval(const RamValue& value, const InterpreterContext& ctxt = InterpreterContext());
+    RamDomain evalVal(const RamValue& value, const InterpreterContext& ctxt = InterpreterContext());
 
     /** Evaluate operation */
-    void eval(const RamOperation& op, const InterpreterContext& args = InterpreterContext());
+    void evalOp(const RamOperation& op, const InterpreterContext& args = InterpreterContext());
 
     /** Evaluate conditions */
-    bool eval(const RamCondition& cond, const InterpreterContext& ctxt = InterpreterContext());
+    bool evalCond(const RamCondition& cond, const InterpreterContext& ctxt = InterpreterContext());
 
     /** Evaluate statement */
-    void eval(const RamStatement& stmt, std::ostream* profile = nullptr);
+    void evalStmt(const RamStatement& stmt, std::ostream* profile = nullptr);
 
     /** Get symbol table */
     SymbolTable& getSymbolTable() {
