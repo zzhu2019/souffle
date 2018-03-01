@@ -180,10 +180,6 @@ std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEn
             rel->isRbtset(), rel->isHashset(), rel->isBrie(), rel->isEqRel(), rel->isData(), istemp));
 }
 
-std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv) {
-    return getRamRelation(
-            rel, typeEnv, getRelationName(rel->getName()), rel->getArity(), false, rel->isHashset());
-}
 }  // namespace
 
 std::string AstTranslator::translateRelationName(const AstRelationIdentifier& id) {

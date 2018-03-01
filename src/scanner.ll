@@ -19,6 +19,8 @@
 
 #if defined(__clang__)
 # pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
+#elif defined(__GNUG__)
+# pragma GCC diagnostic ignored "-Wsign-compare"
 #endif
 
     #include <stdio.h>
