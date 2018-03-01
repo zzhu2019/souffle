@@ -64,13 +64,13 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
             return ctxt[access.getLevel()][access.getElement()];
         }
 
-        RamDomain visitAutoIncrement(const RamAutoIncrement& ) override {
+        RamDomain visitAutoIncrement(const RamAutoIncrement&) override {
             return interpreter.incCounter();
         }
 
         // unary operators
         RamDomain visitUnaryOperator(const RamUnaryOperator& op) override {
-            RamDomain arg = visit(op.getValue()); 
+            RamDomain arg = visit(op.getValue());
             switch (op.getOperator()) {
                 case UnaryOp::NEG:
                     return -arg;
@@ -135,7 +135,8 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                 case BinaryOp::CAT: {
                     return interpreter.getSymbolTable().lookup((
                             std::string(interpreter.getSymbolTable().resolve(lhs)) +
-                            std::string(interpreter.getSymbolTable().resolve(rhs))).c_str());
+                            std::string(interpreter.getSymbolTable().resolve(
+                                    rhs))).c_str());
                 }
                 default:
                     assert(0 && "unsupported operator");
