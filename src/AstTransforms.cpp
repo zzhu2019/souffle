@@ -18,9 +18,39 @@
 #include "AstTypeAnalysis.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
+#include "Global.h"
 #include "PrecedenceGraph.h"
 
 namespace souffle {
+
+bool PipelineTransformer::transform(AstTranslationUnit& translationUnit) {
+    bool changed = false;
+
+    if (!Global::config().get("debug-report").empty()) {
+        for (unsigned int i = 0; i < pipeline.size(); i++) {
+            if (!dynamic_cast<PipelineTransformer*>(pipeline[i].get())) {
+                pipeline[i] = std::unique_ptr<AstTransformer>(new DebugReporter(std::move(pipeline[i])));
+            }
+        }
+    }
+
+    for (const auto& transform : pipeline) {
+        // if verbose => take time stamp
+        changed |= transform->apply(translationUnit);
+        // if verbose => calculate duration and print transform name and duration
+
+        /* Abort evaluation of the program if errors were encountered */
+        if (translationUnit.getErrorReport().getNumErrors() != 0) {
+            std::cerr << translationUnit.getErrorReport();
+            std::cerr << std::to_string(translationUnit.getErrorReport().getNumErrors()) +
+                                 " errors generated, evaluation aborted"
+                      << std::endl;
+            exit(1);
+        }
+    }
+
+    return changed;
+}
 
 void ResolveAliasesTransformer::resolveAliases(AstProgram& program) {
     // get all clauses

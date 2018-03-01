@@ -327,71 +327,63 @@ int main(int argc, char** argv) {
 
     /* set up additional global options based on pragma declaratives */
     (std::make_unique<AstPragmaChecker>())->apply(*astTranslationUnit);
-    std::vector<std::unique_ptr<AstTransformer>> astTransforms;
 
-    astTransforms.push_back(std::make_unique<AstComponentChecker>());
-    astTransforms.push_back(std::make_unique<ComponentInstantiationTransformer>());
-    astTransforms.push_back(std::make_unique<UniqueAggregationVariablesTransformer>());
-    astTransforms.push_back(std::make_unique<AstSemanticChecker>());
-    astTransforms.push_back(std::make_unique<InlineRelationsTransformer>());
-    astTransforms.push_back(std::make_unique<ReduceExistentialsTransformer>());
-    astTransforms.push_back(std::make_unique<ExtractDisconnectedLiteralsTransformer>());
+    // Construct the transformation pipeline
+    auto pipeline = std::make_unique<PipelineTransformer>(std::make_unique<AstComponentChecker>(),
+            std::make_unique<ComponentInstantiationTransformer>(),
+            std::make_unique<UniqueAggregationVariablesTransformer>(), std::make_unique<AstSemanticChecker>(),
+            std::make_unique<InlineRelationsTransformer>(), std::make_unique<ReduceExistentialsTransformer>(),
+            std::make_unique<ExtractDisconnectedLiteralsTransformer>());
+
     if (Global::config().get("bddbddb").empty()) {
-        astTransforms.push_back(std::make_unique<ResolveAliasesTransformer>());
+        pipeline = std::make_unique<PipelineTransformer>(
+                std::move(pipeline), std::make_unique<ResolveAliasesTransformer>());
     }
-    astTransforms.push_back(std::make_unique<RemoveRelationCopiesTransformer>());
-    astTransforms.push_back(std::make_unique<MaterializeAggregationQueriesTransformer>());
-    astTransforms.push_back(std::make_unique<RemoveEmptyRelationsTransformer>());
-    astTransforms.push_back(std::make_unique<RemoveRedundantRelationsTransformer>());
+
+    pipeline = std::make_unique<PipelineTransformer>(std::move(pipeline),
+            std::make_unique<RemoveRelationCopiesTransformer>(),
+            std::make_unique<MaterializeAggregationQueriesTransformer>(),
+            std::make_unique<RemoveEmptyRelationsTransformer>(),
+            std::make_unique<RemoveRedundantRelationsTransformer>());
 
     if (Global::config().has("magic-transform")) {
-        astTransforms.push_back(std::make_unique<NormaliseConstraintsTransformer>());
-        astTransforms.push_back(std::make_unique<MagicSetTransformer>());
-
+        pipeline = std::make_unique<PipelineTransformer>(std::move(pipeline),
+                std::make_unique<NormaliseConstraintsTransformer>(), std::make_unique<MagicSetTransformer>());
         if (Global::config().get("bddbddb").empty()) {
-            astTransforms.push_back(std::make_unique<ResolveAliasesTransformer>());
+            pipeline = std::make_unique<PipelineTransformer>(
+                    std::move(pipeline), std::make_unique<ResolveAliasesTransformer>());
         }
-        astTransforms.push_back(std::make_unique<RemoveRelationCopiesTransformer>());
-        astTransforms.push_back(std::make_unique<RemoveEmptyRelationsTransformer>());
-        astTransforms.push_back(std::make_unique<RemoveRedundantRelationsTransformer>());
+        pipeline = std::make_unique<PipelineTransformer>(std::move(pipeline),
+                std::make_unique<RemoveRelationCopiesTransformer>(),
+                std::make_unique<RemoveEmptyRelationsTransformer>(),
+                std::make_unique<RemoveRedundantRelationsTransformer>());
     }
 
-    astTransforms.push_back(std::make_unique<AstExecutionPlanChecker>());
+    pipeline = std::make_unique<PipelineTransformer>(
+            std::move(pipeline), std::make_unique<AstExecutionPlanChecker>());
 
     if (Global::config().has("auto-schedule")) {
-        astTransforms.push_back(std::make_unique<AutoScheduleTransformer>());
+        pipeline = std::make_unique<PipelineTransformer>(
+                std::move(pipeline), std::make_unique<AutoScheduleTransformer>());
     }
 #ifdef USE_PROVENANCE
     // Add provenance information by transforming to records
     if (Global::config().has("provenance")) {
-        astTransforms.push_back(std::make_unique<ProvenanceTransformer>());
+        pipeline = std::make_unique<PipelineTransformer>(
+                std::move(pipeline), std::make_unique<ProvenanceTransformer>());
     }
 #endif
 
-    // Enable debug reports for the AST astTransforms
+    // Add parsing time to the debug-report
     if (!Global::config().get("debug-report").empty()) {
         auto parser_end = std::chrono::high_resolution_clock::now();
         std::string runtimeStr =
                 "(" + std::to_string(std::chrono::duration<double>(parser_end - parser_start).count()) + "s)";
         DebugReporter::generateDebugReport(*astTranslationUnit, "Parsing", "After Parsing " + runtimeStr);
-        for (unsigned int i = 0; i < astTransforms.size(); i++) {
-            astTransforms[i] =
-                    std::unique_ptr<AstTransformer>(new DebugReporter(std::move(astTransforms[i])));
-        }
     }
 
-    for (const auto& transform : astTransforms) {
-        transform->apply(*astTranslationUnit);
-
-        /* Abort evaluation of the program if errors were encountered */
-        if (astTranslationUnit->getErrorReport().getNumErrors() != 0) {
-            std::cerr << astTranslationUnit->getErrorReport();
-            std::cerr << std::to_string(astTranslationUnit->getErrorReport().getNumErrors()) +
-                                 " errors generated, evaluation aborted"
-                      << std::endl;
-            exit(1);
-        }
-    }
+    // Apply all the transformations
+    pipeline->apply(*astTranslationUnit);
 
     // ------- (optional) conversions -------------
 

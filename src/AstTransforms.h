@@ -222,9 +222,9 @@ public:
 };
 
 /**
-* Transformation pass to reduce unnecessary computation for
-* relations that only appear in the form A(_,...,_).
-*/
+ * Transformation pass to reduce unnecessary computation for
+ * relations that only appear in the form A(_,...,_).
+ */
 class ReduceExistentialsTransformer : public AstTransformer {
 private:
     bool transform(AstTranslationUnit& translationUnit) override;
@@ -259,6 +259,33 @@ private:
 public:
     std::string getName() const override {
         return "MagicSetTransformer";
+    }
+};
+
+/**
+ * Transformer Sequence
+ */
+class PipelineTransformer : public AstTransformer {
+private:
+    std::vector<std::unique_ptr<AstTransformer>> pipeline;
+    bool transform(AstTranslationUnit& translationUnit) override;
+
+public:
+    template <typename... Args>
+    PipelineTransformer(Args... args) {
+        this->extend(std::move(args)...);
+    }
+
+    template <typename... Args>
+    void extend(Args... args) {
+        std::unique_ptr<AstTransformer> tmp[] = {std::move(args)...};
+        for (auto& cur : tmp) {
+            pipeline.push_back(std::move(cur));
+        }
+    }
+
+    std::string getName() const override {
+        return "PipelineTransformer";
     }
 };
 
