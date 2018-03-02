@@ -117,7 +117,7 @@ protected:
     }
 
     /** Swap relation */
-    void swapRelation(const RamRelation& ramRel1, const RamRelation& ramRel2) { 
+    void swapRelation(const RamRelation& ramRel1, const RamRelation& ramRel2) {
         InterpreterRelation* rel1 = &getRelation(ramRel1);
         InterpreterRelation* rel2 = &getRelation(ramRel2);
         environment[ramRel1.getName()] = rel2;

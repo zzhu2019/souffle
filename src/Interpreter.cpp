@@ -133,10 +133,10 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                     return std::min(lhs, rhs);
                 }
                 case BinaryOp::CAT: {
-                    return interpreter.getSymbolTable().lookup(
-                            (std::string(interpreter.getSymbolTable().resolve(lhs)) +
-                                    std::string(interpreter.getSymbolTable().resolve(rhs)))
-                                    .c_str());
+                    return interpreter.getSymbolTable().lookup((
+                            std::string(interpreter.getSymbolTable().resolve(lhs)) +
+                            std::string(interpreter.getSymbolTable().resolve(
+                                    rhs))).c_str());
                 }
                 default:
                     assert(0 && "unsupported operator");
