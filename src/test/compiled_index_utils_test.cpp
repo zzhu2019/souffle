@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file compiled_ram_index_utils.cpp
+ * @file compiled_index_utils.cpp
  *
  * Test cases for the RAM relation data structure.
  *
@@ -16,7 +16,7 @@
 
 #include "test.h"
 
-#include "CompiledRamRelation.h"
+#include "CompiledRelation.h"
 
 namespace souffle {
 namespace ram {

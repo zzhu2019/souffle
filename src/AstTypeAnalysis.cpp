@@ -254,7 +254,7 @@ std::map<const AstArgument*, bool> getConstTerms(const AstClause& clause) {
         }
 
         // #2 - binary relations may propagate const
-        void visitConstraint(const AstConstraint& cur) override {
+        void visitBinaryConstraint(const AstBinaryConstraint& cur) override {
             // only target equality
             if (cur.getOperator() != BinaryConstraintOp::EQ) {
                 return;
@@ -349,7 +349,7 @@ std::map<const AstArgument*, bool> getGroundedTerms(const AstClause& clause) {
         }
 
         // #4 - binary equality relations propagates groundness
-        void visitConstraint(const AstConstraint& cur) override {
+        void visitBinaryConstraint(const AstBinaryConstraint& cur) override {
             // only target equality
             if (cur.getOperator() != BinaryConstraintOp::EQ) {
                 return;
@@ -388,6 +388,31 @@ std::map<const AstArgument*, bool> getGroundedTerms(const AstClause& clause) {
         // #7 - aggregators are grounding values
         void visitAggregator(const AstAggregator& c) override {
             addConstraint(isTrue(getVar(c)));
+        }
+
+        // #8 - functors with grounded values are grounded values
+        void visitUnaryFunctor(const AstUnaryFunctor& cur) override {
+            auto fun = getVar(cur);
+            auto arg = getVar(cur.getOperand());
+
+            addConstraint(imply(arg, fun));
+        }
+
+        void visitBinaryFunctor(const AstBinaryFunctor& cur) override {
+            auto fun = getVar(cur);
+            auto lhs = getVar(cur.getLHS());
+            auto rhs = getVar(cur.getRHS());
+
+            addConstraint(imply({lhs, rhs}, fun));
+        }
+
+        void visitTernaryFunctor(const AstTernaryFunctor& cur) override {
+            auto fun = getVar(cur);
+            auto a0 = getVar(cur.getArg(0));
+            auto a1 = getVar(cur.getArg(1));
+            auto a2 = getVar(cur.getArg(2));
+
+            addConstraint(imply({a0, a1, a2}, fun));
         }
     };
 
@@ -811,7 +836,7 @@ std::map<const AstArgument*, TypeSet> TypeAnalysis::analyseTypes(
         }
 
         // binary constraint
-        void visitConstraint(const AstConstraint& rel) override {
+        void visitBinaryConstraint(const AstBinaryConstraint& rel) override {
             auto lhs = getVar(rel.getLHS());
             auto rhs = getVar(rel.getRHS());
             addConstraint(isSubtypeOf(lhs, rhs));

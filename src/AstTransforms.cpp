@@ -241,7 +241,7 @@ std::unique_ptr<AstClause> ResolveAliasesTransformer::resolveAliases(const AstCl
 
     // I) extract equations
     std::vector<Equation> equations;
-    visitDepthFirst(clause, [&](const AstConstraint& rel) {
+    visitDepthFirst(clause, [&](const AstBinaryConstraint& rel) {
         if (rel.getOperator() == BinaryConstraintOp::EQ) {
             equations.push_back(Equation(rel.getLHS(), rel.getRHS()));
         }
@@ -340,7 +340,7 @@ std::unique_ptr<AstClause> ResolveAliasesTransformer::removeTrivialEquality(cons
     std::unique_ptr<AstClause> res(clause.cloneHead());
     for (AstLiteral* cur : clause.getBodyLiterals()) {
         // filter out t = t
-        if (AstConstraint* rel = dynamic_cast<AstConstraint*>(cur)) {
+        if (AstBinaryConstraint* rel = dynamic_cast<AstBinaryConstraint*>(cur)) {
             if (rel->getOperator() == BinaryConstraintOp::EQ) {
                 if (*rel->getLHS() == *rel->getRHS()) {
                     continue;  // skip this one
@@ -417,9 +417,9 @@ void ResolveAliasesTransformer::removeComplexTermsInAtoms(AstClause& clause) {
 
     // add variable constraints to clause
     for (const auto& cur : map) {
-        clause.addToBody(std::unique_ptr<AstLiteral>(
-                new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>(cur.second->clone()),
-                        std::unique_ptr<AstArgument>(cur.first->clone()))));
+        clause.addToBody(std::unique_ptr<AstLiteral>(new AstBinaryConstraint(BinaryConstraintOp::EQ,
+                std::unique_ptr<AstArgument>(cur.second->clone()),
+                std::unique_ptr<AstArgument>(cur.first->clone()))));
     }
 }
 
@@ -810,6 +810,107 @@ bool RemoveRedundantRelationsTransformer::transform(AstTranslationUnit& translat
     return changed;
 }
 
+bool RemoveBooleanConstraintsTransformer::transform(AstTranslationUnit& translationUnit) {
+    AstProgram& program = *translationUnit.getProgram();
+
+    // If any boolean constraints exist, they will be removed
+    bool changed = false;
+    visitDepthFirst(program, [&](const AstBooleanConstraint& bc) { changed = true; });
+
+    // Remove true and false constant literals from all aggregators
+    struct M : public AstNodeMapper {
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            // Remove them from child nodes
+            node->apply(*this);
+
+            if (AstAggregator* aggr = dynamic_cast<AstAggregator*>(node.get())) {
+                bool containsTrue = false;
+                bool containsFalse = false;
+
+                for (AstLiteral* lit : aggr->getBodyLiterals()) {
+                    if (AstBooleanConstraint* bc = dynamic_cast<AstBooleanConstraint*>(lit)) {
+                        bc->isTrue() ? containsTrue = true : containsFalse = true;
+                    }
+                }
+
+                if (containsFalse || containsTrue) {
+                    // Only keep literals that aren't boolean constraints
+                    auto replacementAggregator = std::unique_ptr<AstAggregator>(aggr->clone());
+                    replacementAggregator->clearBodyLiterals();
+
+                    bool isEmpty = true;
+
+                    // Don't bother copying over body literals if any are false
+                    if (!containsFalse) {
+                        for (AstLiteral* lit : aggr->getBodyLiterals()) {
+                            // Don't add in 'true' boolean constraints
+                            if (!dynamic_cast<AstBooleanConstraint*>(lit)) {
+                                isEmpty = false;
+                                replacementAggregator->addBodyLiteral(
+                                        std::unique_ptr<AstLiteral>(lit->clone()));
+                            }
+                        }
+                    }
+
+                    if (containsFalse || isEmpty) {
+                        // Empty aggregator body!
+                        // Not currently handled, so add in a false literal in the body
+                        // E.g. max x : { } =becomes=> max 1 : {0 = 1}
+                        replacementAggregator->setTargetExpression(std::make_unique<AstNumberConstant>(1));
+
+                        // Add '0 = 1' if false was found, '1 = 1' otherwise
+                        int lhsConstant = containsFalse ? 0 : 1;
+                        replacementAggregator->addBodyLiteral(std::make_unique<AstBinaryConstraint>(
+                                BinaryConstraintOp::EQ, std::make_unique<AstNumberConstant>(lhsConstant),
+                                std::make_unique<AstNumberConstant>(1)));
+                    }
+
+                    return std::move(replacementAggregator);
+                }
+            }
+
+            // no false or true, so return the original node
+            return node;
+        }
+    };
+
+    M update;
+    program.apply(update);
+
+    // Remove true and false constant literals from all clauses
+    for (AstRelation* rel : program.getRelations()) {
+        for (AstClause* clause : rel->getClauses()) {
+            bool containsTrue = false;
+            bool containsFalse = false;
+
+            for (AstLiteral* lit : clause->getBodyLiterals()) {
+                if (AstBooleanConstraint* bc = dynamic_cast<AstBooleanConstraint*>(lit)) {
+                    bc->isTrue() ? containsTrue = true : containsFalse = true;
+                }
+            }
+
+            if (containsFalse) {
+                // Clause will always fail
+                rel->removeClause(clause);
+            } else if (containsTrue) {
+                auto replacementClause = std::unique_ptr<AstClause>(clause->cloneHead());
+
+                // Only keep non-'true' literals
+                for (AstLiteral* lit : clause->getBodyLiterals()) {
+                    if (!dynamic_cast<AstBooleanConstraint*>(lit)) {
+                        replacementClause->addToBody(std::unique_ptr<AstLiteral>(lit->clone()));
+                    }
+                }
+
+                rel->removeClause(clause);
+                rel->addClause(std::move(replacementClause));
+            }
+        }
+    }
+
+    return changed;
+}
+
 bool ExtractDisconnectedLiteralsTransformer::transform(AstTranslationUnit& translationUnit) {
     bool changed = false;
     AstProgram& program = *translationUnit.getProgram();
@@ -1146,10 +1247,10 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
      * clause it is being applied on in a given constraint set.
      */
     struct M : public AstNodeMapper {
-        std::set<AstConstraint*>& constraints;
+        std::set<AstBinaryConstraint*>& constraints;
         mutable int changeCount;
 
-        M(std::set<AstConstraint*>& constraints, int changeCount)
+        M(std::set<AstBinaryConstraint*>& constraints, int changeCount)
                 : constraints(constraints), changeCount(changeCount) {}
 
         bool hasChanged() const {
@@ -1172,7 +1273,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
                 // create new constraint (+abdulX = constant)
                 auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
-                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                constraints.insert(new AstBinaryConstraint(BinaryConstraintOp::EQ,
                         std::unique_ptr<AstArgument>(newVariable->clone()),
                         std::unique_ptr<AstArgument>(stringConstant->clone())));
 
@@ -1189,7 +1290,7 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
 
                 // create new constraint (+abdulX = constant)
                 auto newVariable = std::make_unique<AstVariable>(newVariableName.str());
-                constraints.insert(new AstConstraint(BinaryConstraintOp::EQ,
+                constraints.insert(new AstBinaryConstraint(BinaryConstraintOp::EQ,
                         std::unique_ptr<AstArgument>(newVariable->clone()),
                         std::unique_ptr<AstArgument>(numberConstant->clone())));
 
@@ -1220,15 +1321,15 @@ bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationU
                 continue;  // don't normalise facts
             }
 
-            std::set<AstConstraint*> constraints;
+            std::set<AstBinaryConstraint*> constraints;
             M update(constraints, changeCount);
             clause->apply(update);
 
             changeCount = update.getChangeCount();
             changed = changed || update.hasChanged();
 
-            for (AstConstraint* constraint : constraints) {
-                clause->addToBody(std::unique_ptr<AstConstraint>(constraint));
+            for (AstBinaryConstraint* constraint : constraints) {
+                clause->addToBody(std::unique_ptr<AstBinaryConstraint>(constraint));
             }
         }
     }

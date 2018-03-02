@@ -1,6 +1,6 @@
 /*
  * Souffle - A Datalog Compiler
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved
+ * Copyright (c) 2018, The Souffle Developers. All rights reserved.
  * Licensed under the Universal Permissive License v 1.0 as shown at:
  * - https://opensource.org/licenses/UPL
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "IndexSetAnalysis.h"
 #include "RamProgram.h"
 #include "RamRelation.h"
 #include "RamTranslationUnit.h"
@@ -34,29 +35,39 @@ namespace souffle {
  */
 class Synthesiser {
 private:
-    /** An optional stream to print logging information to an output stream */
-    std::ostream* report;
+    /** RAM identifier to C++ identifier map */
+    std::map<const std::string, const std::string> identifiers;
+
+protected:
+    /** Convert RAM identifier */
+    const std::string convertRamIdent(const std::string& name);
+
+    /** Check whether indexes are disabled */
+    bool areIndexesDisabled();
+
+    /** Get relation name */
+    const std::string getRelationName(const RamRelation& rel);
+
+    /** Get context name */
+    const std::string getOpContextName(const RamRelation& rel);
+
+    /** Get relation type */
+    std::string getRelationType(const RamRelation& rel, std::size_t arity, const IndexSet& indexes);
+
+    /* Convert SearchColums to a template index */
+    std::string toIndex(SearchColumns key);
+
+    /** Get referenced relations */
+    std::set<RamRelation> getReferencedRelations(const RamOperation& op);
+
+    /** Generate code */
+    void emitCode(std::ostream& out, const RamStatement& stmt);
 
 public:
-    /**
-     * Updates logging stream
-     */
-    void setReportTarget(std::ostream& report) {
-        this->report = &report;
-    }
+    Synthesiser() = default;
+    virtual ~Synthesiser() = default;
 
-public:
-    /** A simple constructor */
-    Synthesiser() : report(nullptr) {}
-
-    /**
-     * Generates the code for a given ram translation unit.
-     *
-     * @param tu
-     * @param os the stream to send the generated C++ code to.
-     * @param id the base identifier used in code generation, including class name.
-     */
-    void generateCode(const RamTranslationUnit& tu, std::ostream& os, const std::string& id) const;
+    /** Generate code */
+    void generateCode(const RamTranslationUnit& tu, std::ostream& os, const std::string& id);
 };
-
 }  // end of namespace souffle

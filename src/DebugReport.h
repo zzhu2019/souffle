@@ -42,8 +42,7 @@ private:
 public:
     DebugReportSection(
             std::string id, std::string title, std::vector<DebugReportSection> subsections, std::string body)
-            : id(std::move(id)), title(std::move(title)), subsections(std::move(subsections)),
-              body(std::move(body)) {}
+            : id(generateUniqueID(id)), title(title), subsections(subsections), body(body) {}
 
     /**
      * Outputs the HTML code for the index to the given stream,
@@ -66,6 +65,12 @@ public:
 
     bool hasSubsections() const {
         return !subsections.empty();
+    }
+
+private:
+    static std::string generateUniqueID(const std::string& id) {
+        static int count = 0;
+        return id + std::to_string(count++);
     }
 };
 

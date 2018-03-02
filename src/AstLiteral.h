@@ -225,10 +225,75 @@ protected:
 };
 
 /**
- * Subclass of Literal that represents a binary constraint
- * e.g., x = y.
+ * Subclass of Literal that represents a logical constraint
  */
 class AstConstraint : public AstLiteral {
+public:
+    ~AstConstraint() override = default;
+
+    const AstAtom* getAtom() const override {
+        // This kind of literal has no nested atom
+        return nullptr;
+    }
+
+    /** Negates the constraint */
+    virtual void negate() = 0;
+
+    AstConstraint* clone() const override = 0;
+};
+
+/**
+ * Subclass of Constraint that represents a constant 'true'
+ * or 'false' value.
+ */
+class AstBooleanConstraint : public AstConstraint {
+protected:
+    bool truthValue;
+
+public:
+    AstBooleanConstraint(bool truthValue) : truthValue(truthValue) {}
+
+    ~AstBooleanConstraint() override = default;
+
+    bool isTrue() const {
+        return truthValue;
+    }
+
+    void negate() override {
+        truthValue = !truthValue;
+    }
+
+    void print(std::ostream& os) const override {
+        os << (truthValue ? "true" : "false");
+    }
+
+    AstBooleanConstraint* clone() const override {
+        AstBooleanConstraint* res = new AstBooleanConstraint(truthValue);
+        res->setSrcLoc(getSrcLoc());
+        return res;
+    }
+
+    /** No nested nodes to apply to */
+    void apply(const AstNodeMapper& /*mapper*/) override {}
+
+    /** No nested child nodes */
+    std::vector<const AstNode*> getChildNodes() const override {
+        return std::vector<const AstNode*>();
+    }
+
+protected:
+    bool equal(const AstNode& node) const override {
+        assert(dynamic_cast<const AstBooleanConstraint*>(&node));
+        const AstBooleanConstraint& other = static_cast<const AstBooleanConstraint&>(node);
+        return truthValue == other.truthValue;
+    }
+};
+
+/**
+ * Subclass of Constraint that represents a binary constraint
+ * e.g., x = y.
+ */
+class AstBinaryConstraint : public AstConstraint {
 protected:
     /** The operator in this relation */
     BinaryConstraintOp operation;
@@ -240,18 +305,15 @@ protected:
     std::unique_ptr<AstArgument> rhs;
 
 public:
-    AstConstraint(BinaryConstraintOp o, std::unique_ptr<AstArgument> ls, std::unique_ptr<AstArgument> rs)
+    AstBinaryConstraint(
+            BinaryConstraintOp o, std::unique_ptr<AstArgument> ls, std::unique_ptr<AstArgument> rs)
             : operation(o), lhs(std::move(ls)), rhs(std::move(rs)) {}
 
-    AstConstraint(const std::string& op, std::unique_ptr<AstArgument> ls, std::unique_ptr<AstArgument> rs)
+    AstBinaryConstraint(
+            const std::string& op, std::unique_ptr<AstArgument> ls, std::unique_ptr<AstArgument> rs)
             : operation(toBinaryConstraintOp(op)), lhs(std::move(ls)), rhs(std::move(rs)) {}
 
-    ~AstConstraint() override = default;
-
-    /** This kind of literal has no nested atom */
-    const AstAtom* getAtom() const override {
-        return nullptr;
-    }
+    ~AstBinaryConstraint() override = default;
 
     /** Return LHS argument */
     AstArgument* getLHS() const {
@@ -274,7 +336,7 @@ public:
     }
 
     /** Negates the constraint */
-    void negate() {
+    void negate() override {
         setOperator(souffle::negatedConstraintOp(operation));
     }
 
@@ -296,9 +358,9 @@ public:
     }
 
     /** Creates a clone if this AST sub-structure */
-    AstConstraint* clone() const override {
-        AstConstraint* res = new AstConstraint(operation, std::unique_ptr<AstArgument>(lhs->clone()),
-                std::unique_ptr<AstArgument>(rhs->clone()));
+    AstBinaryConstraint* clone() const override {
+        AstBinaryConstraint* res = new AstBinaryConstraint(operation,
+                std::unique_ptr<AstArgument>(lhs->clone()), std::unique_ptr<AstArgument>(rhs->clone()));
         res->setSrcLoc(getSrcLoc());
         return res;
     }
@@ -317,8 +379,8 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstConstraint*>(&node));
-        const AstConstraint& other = static_cast<const AstConstraint&>(node);
+        assert(dynamic_cast<const AstBinaryConstraint*>(&node));
+        const AstBinaryConstraint& other = static_cast<const AstBinaryConstraint&>(node);
         return operation == other.operation && *lhs == *other.lhs && *rhs == *other.rhs;
     }
 };

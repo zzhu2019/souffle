@@ -99,7 +99,8 @@
 %token BRIE_QUALIFIER            "BRIE datastructure qualifier"
 %token BTREE_QUALIFIER           "BTREE datastructure qualifier"
 %token EQREL_QUALIFIER           "equivalence relation qualifier"
-%token HASHMAP_QUALIFIER         "hashmap relation qualifier"
+%token RBTSET_QUALIFIER          "red-black tree set relation qualifier"
+%token HASHSET_QUALIFIER         "hashset relation qualifier"
 %token OVERRIDABLE_QUALIFIER     "relation qualifier overidable"
 %token INLINE_QUALIFIER          "relation qualifier inline"
 %token TMATCH                    "match predicate"
@@ -112,6 +113,8 @@
 %token MAX                       "max aggregator"
 %token COUNT                     "count aggregator"
 %token SUM                       "sum aggregator"
+%token TRUE                      "true literal constraint"
+%token FALSE                     "false literal constraint"
 %token STRICT                    "strict marker"
 %token PLAN                      "plan keyword"
 %token IF                        ":-"
@@ -157,20 +160,6 @@
 %token L_AND                     "land"
 %token L_OR                      "lor"
 %token L_NOT                     "lnot"
-%token SIN                       "sin"
-%token COS                       "cos"
-%token TAN                       "tan"
-%token ASIN                      "asin"
-%token ACOS                      "acos"
-%token ATAN                      "atan"
-%token SINH                      "sinh"
-%token COSH                      "cosh"
-%token TANH                      "tanh"
-%token ASINH                     "asinh"
-%token ACOSH                     "acosh"
-%token ATANH                     "atanh"
-%token LOG                       "log"
-%token EXP                       "exp"
 
 %type <uint32_t>                         qualifiers
 %type <AstTypeIdentifier *>              type_id
@@ -383,20 +372,24 @@ qualifiers
         $$ = $1 | INLINE_RELATION;
     }
   | qualifiers BRIE_QUALIFIER {
-        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|HASHMAP_RELATION)) driver.error(@2, "btree/brie/eqrel/hashmap qualifier already set");
+        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|RBTSET_RELATION|HASHSET_RELATION)) driver.error(@2, "btree/brie/eqrel/rbtset/hashset qualifier already set");
         $$ = $1 | BRIE_RELATION;
     }
   | qualifiers BTREE_QUALIFIER {
-        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|HASHMAP_RELATION)) driver.error(@2, "btree/brie/eqrel/hashmap qualifier already set");
+        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|RBTSET_RELATION|HASHSET_RELATION)) driver.error(@2, "btree/brie/eqrel/rbtset/hashset qualifier already set");
         $$ = $1 | BTREE_RELATION;
     }
   | qualifiers EQREL_QUALIFIER {
-        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|HASHMAP_RELATION)) driver.error(@2, "btree/brie/eqrel/hashmap qualifier already set");
+        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|RBTSET_RELATION|HASHSET_RELATION)) driver.error(@2, "btree/brie/eqrel/rbtset/hashset qualifier already set");
         $$ = $1 | EQREL_RELATION;
     }
-  | qualifiers HASHMAP_QUALIFIER {
-        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|HASHMAP_RELATION)) driver.error(@2, "btree/brie/eqrel/hashmap qualifier already set");
-        $$ = $1 | HASHMAP_RELATION;
+  | qualifiers RBTSET_QUALIFIER {
+        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|RBTSET_RELATION|HASHSET_RELATION)) driver.error(@2, "btree/brie/eqrel/rbtset/hashset qualifier already set");
+        $$ = $1 | RBTSET_RELATION;
+    }
+  | qualifiers HASHSET_QUALIFIER {
+        if($1 & (BRIE_RELATION|BTREE_RELATION|EQREL_RELATION|RBTSET_RELATION|HASHSET_RELATION)) driver.error(@2, "btree/brie/eqrel/rbtset/hashset qualifier already set");
+        $$ = $1 | HASHSET_RELATION;
     }
   | %empty {
         $$ = 0;
@@ -427,7 +420,22 @@ non_empty_key_value_pairs
         $$ = $1;
         $$->addKVP($3, $5);
     }
-
+  | IDENT EQUALS TRUE {
+        $$ = new AstIODirective();
+        $$->addKVP($1, "true");
+    }
+  | key_value_pairs COMMA IDENT EQUALS TRUE {
+        $$ = $1;
+        $$->addKVP($3, "true");
+    }
+ | IDENT EQUALS FALSE {
+        $$ = new AstIODirective();
+        $$->addKVP($1, "false");
+    }
+ | key_value_pairs COMMA IDENT EQUALS FALSE {
+        $$ = $1;
+        $$->addKVP($3, "false");
+    }
 
 key_value_pairs
   : non_empty_key_value_pairs {
@@ -518,62 +526,6 @@ arg
     }
   | arg L_AND arg {
         $$ = new AstBinaryFunctor(BinaryOp::LAND, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | SIN LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::SIN, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | COS LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::COS, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | TAN LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::TAN, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ASIN LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ASIN, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ACOS LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ACOS, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ATAN LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ATAN, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | SINH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::SINH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | COSH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::COSH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | TANH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::TANH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ASINH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ASINH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ACOSH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ACOSH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | ATANH LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ATANH, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | LOG LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::LOG, std::unique_ptr<AstArgument>($3));
-        $$->setSrcLoc(@$);
-    }
-  | EXP LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::EXP, std::unique_ptr<AstArgument>($3));
         $$->setSrcLoc(@$);
     }
   | arg PLUS arg {
@@ -796,22 +748,22 @@ atom
 /* Literal */
 literal
   : arg RELOP arg {
-        auto* res = new AstConstraint($2, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new AstBinaryConstraint($2, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
   | arg LT arg {
-        auto* res = new AstConstraint(BinaryConstraintOp::LT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::LT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
   | arg GT arg {
-        auto* res = new AstConstraint(BinaryConstraintOp::GT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::GT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
   | arg EQUALS arg {
-        auto* res = new AstConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
@@ -820,12 +772,22 @@ literal
         $$ = new RuleBody(RuleBody::atom($1));
     }
   | TMATCH LPAREN arg COMMA arg RPAREN {
-        auto* res = new AstConstraint(BinaryConstraintOp::MATCH, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::MATCH, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
   | TCONTAINS LPAREN arg COMMA arg RPAREN {
-        auto* res = new AstConstraint(BinaryConstraintOp::CONTAINS, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        auto* res = new AstBinaryConstraint(BinaryConstraintOp::CONTAINS, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        res->setSrcLoc(@$);
+        $$ = new RuleBody(RuleBody::constraint(res));
+    }
+  | TRUE {
+        auto* res = new AstBooleanConstraint(true);
+        res->setSrcLoc(@$);
+        $$ = new RuleBody(RuleBody::constraint(res));
+    }
+  | FALSE {
+        auto* res = new AstBooleanConstraint(false);
         res->setSrcLoc(@$);
         $$ = new RuleBody(RuleBody::constraint(res));
     }
@@ -991,18 +953,15 @@ comp_type
 component_head
   : COMPONENT comp_type {
         $$ = new AstComponent();
-        $$->setComponentType(*$2);
-        delete $2;
+        $$->setComponentType(std::unique_ptr<AstComponentType>($2));
     }
   | component_head COLON comp_type {
         $$ = $1;
-        $$->addBaseComponent(*$3);
-        delete $3;
+        $$->addBaseComponent(std::unique_ptr<AstComponentType>($3));
     }
   | component_head COMMA comp_type {
         $$ = $1;
-        $$->addBaseComponent(*$3);
-        delete $3;
+        $$->addBaseComponent(std::unique_ptr<AstComponentType>($3));
     }
 
 component_body
@@ -1047,8 +1006,8 @@ component_body
 component
   : component_head LBRACE component_body RBRACE {
         $$ = $3;
-        $$->setComponentType($1->getComponentType());
-        $$->setBaseComponents($1->getBaseComponents());
+        $$->setComponentType(std::unique_ptr<AstComponentType>($1->getComponentType()->clone()));
+        $$->copyBaseComponents($1);
         delete $1;
         $$->setSrcLoc(@$);
     }
@@ -1058,9 +1017,8 @@ comp_init
   : INSTANTIATE IDENT EQUALS comp_type {
         $$ = new AstComponentInit();
         $$->setInstanceName($2);
-        $$->setComponentType(*$4);
+        $$->setComponentType(std::unique_ptr<AstComponentType>($4));
         $$->setSrcLoc(@$);
-        delete $4;
     }
 
 /* Override rules of a relation */
