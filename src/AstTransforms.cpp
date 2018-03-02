@@ -25,40 +25,39 @@ namespace souffle {
 
 bool PipelineTransformer::transform(AstTranslationUnit& translationUnit) {
     bool changed = false;
-
-    if (!Global::config().get("debug-report").empty()) {
-        for (unsigned int i = 0; i < pipeline.size(); i++) {
-            if (dynamic_cast<PipelineTransformer*>(pipeline[i].get())) {
-                continue;
-            } else if (ConditionalTransformer* ct =
-                               dynamic_cast<ConditionalTransformer*>(pipeline[i].get())) {
-                ct->setDebugReport();
-            } else {
-                pipeline[i] = std::make_unique<DebugReporter>(std::move(pipeline[i]));
-            }
-        }
+    for (auto& transformer : pipeline) {
+        changed |= applySubtransformer(translationUnit, transformer.get());
     }
-
-    for (const auto& transform : pipeline) {
-        // if verbose => take time stamp
-        changed |= transform->apply(translationUnit);
-        // if verbose => calculate duration and print transform name and duration
-
-        /* Abort evaluation of the program if errors were encountered */
-        if (translationUnit.getErrorReport().getNumErrors() != 0) {
-            std::cerr << translationUnit.getErrorReport();
-            std::cerr << std::to_string(translationUnit.getErrorReport().getNumErrors()) +
-                                 " errors generated, evaluation aborted"
-                      << std::endl;
-            exit(1);
-        }
-    }
-
     return changed;
 }
 
 bool ConditionalTransformer::transform(AstTranslationUnit& translationUnit) {
-    return condition() ? transformer->apply(translationUnit) : false;
+    return condition() ? applySubtransformer(translationUnit, transformer.get()) : false;
+}
+
+bool MetaTransformer::applySubtransformer(AstTranslationUnit& translationUnit, AstTransformer* transformer) {
+    auto start = std::chrono::high_resolution_clock::now();
+    bool changed = transformer->apply(translationUnit);
+    auto end = std::chrono::high_resolution_clock::now();
+
+    if (verbose && !dynamic_cast<MetaTransformer*>(transformer)) {
+        std::string transformerName = transformer->getName();
+        if (DebugReporter* dr = dynamic_cast<DebugReporter*>(transformer)) {
+            transformerName = dr->getWrappedTransformer()->getName();
+        }
+        std::cout << transformerName << " time: " << std::chrono::duration<double>(end - start).count() << "sec\n";
+    }
+
+    /* Abort evaluation of the program if errors were encountered */
+    if (translationUnit.getErrorReport().getNumErrors() != 0) {
+        std::cerr << translationUnit.getErrorReport();
+        std::cerr << std::to_string(translationUnit.getErrorReport().getNumErrors()) +
+                             " errors generated, evaluation aborted"
+                  << std::endl;
+        exit(1);
+    }
+
+    return changed;
 }
 
 void ResolveAliasesTransformer::resolveAliases(AstProgram& program) {

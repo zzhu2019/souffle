@@ -265,9 +265,27 @@ public:
 };
 
 /**
- * Transformer Sequence
+ * Transformer that coordinates other sub-transformations
  */
-class PipelineTransformer : public AstTransformer {
+class MetaTransformer : public AstTransformer {
+protected:
+    bool verbose = false;
+
+public:
+    /* Enable the debug-report for all sub-transformations */
+    virtual void setDebugReport() = 0;
+
+    /* Enable high verbosity */
+    virtual void setVerbose() = 0;
+
+    /* Apply a nested transformer */
+    bool applySubtransformer(AstTranslationUnit& translationUnit, AstTransformer* transformer);
+};
+
+/**
+ * Transformer that holds an arbitrary number of sub-transformations
+ */
+class PipelineTransformer : public MetaTransformer {
 private:
     std::vector<std::unique_ptr<AstTransformer>> pipeline;
     bool transform(AstTranslationUnit& translationUnit) override;
@@ -281,12 +299,34 @@ public:
         }
     }
 
+    void setDebugReport() override {
+        for (unsigned int i = 0; i < pipeline.size(); i++) {
+            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(pipeline[i].get())) {
+                mt->setDebugReport();
+            } else {
+                pipeline[i] = std::make_unique<DebugReporter>(std::move(pipeline[i]));
+            }
+        }
+    }
+
+    void setVerbose() override {
+        verbose = true;
+        for (auto& cur : pipeline) {
+            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(cur.get())) {
+                mt->setVerbose();
+            }
+        }
+    }
+
     std::string getName() const override {
         return "PipelineTransformer";
     }
 };
 
-class ConditionalTransformer : public AstTransformer {
+/**
+ * Transformer that executes a sub-transformer iff a condition holds
+ */
+class ConditionalTransformer : public MetaTransformer {
 private:
     std::function<bool()> condition;
     std::unique_ptr<AstTransformer> transformer;
@@ -299,9 +339,18 @@ public:
     ConditionalTransformer(bool cond, std::unique_ptr<AstTransformer> transformer)
             : condition([=]() { return cond; }), transformer(std::move(transformer)) {}
 
-    void setDebugReport() {
-        if (!dynamic_cast<PipelineTransformer*>(transformer.get())) {
-            transformer = std::unique_ptr<AstTransformer>(new DebugReporter(std::move(transformer)));
+    void setDebugReport() override {
+        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
+            mt->setDebugReport();
+        } else {
+            transformer = std::make_unique<DebugReporter>(std::move(transformer));
+        }
+    }
+
+    void setVerbose() override {
+        verbose = true;
+        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
+            mt->setVerbose();
         }
     }
 

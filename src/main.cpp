@@ -366,12 +366,18 @@ int main(int argc, char** argv) {
                     Global::config().has("auto-schedule"), std::make_unique<AutoScheduleTransformer>()),
             std::move(provenancePipeline));
 
-    // Add parsing time to the debug-report
+    // Set up the debug report if necessary
     if (!Global::config().get("debug-report").empty()) {
         auto parser_end = std::chrono::high_resolution_clock::now();
         std::string runtimeStr =
                 "(" + std::to_string(std::chrono::duration<double>(parser_end - parser_start).count()) + "s)";
         DebugReporter::generateDebugReport(*astTranslationUnit, "Parsing", "After Parsing " + runtimeStr);
+
+        pipeline->setDebugReport();
+    }
+
+    if (Global::config().has("verbose")) {
+        pipeline->setVerbose();
     }
 
     // Apply all the transformations

@@ -113,6 +113,10 @@ public:
     DebugReporter(std::unique_ptr<AstTransformer> wrappedTransformer)
             : wrappedTransformer(std::move(wrappedTransformer)) {}
 
+    AstTransformer* getWrappedTransformer() {
+        return wrappedTransformer.get();
+    }
+
     std::string getName() const override {
         return "DebugReporter";
     }
