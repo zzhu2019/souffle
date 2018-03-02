@@ -353,10 +353,7 @@ int main(int argc, char** argv) {
             std::make_unique<MaterializeAggregationQueriesTransformer>(),
             std::make_unique<RemoveEmptyRelationsTransformer>(),
             std::make_unique<RemoveRedundantRelationsTransformer>(), std::move(magicPipeline),
-            std::make_unique<AstExecutionPlanChecker>(),
-            std::make_unique<ConditionalTransformer>(
-                    Global::config().has("auto-schedule"), std::make_unique<AutoScheduleTransformer>()),
-            std::move(provenancePipeline));
+            std::make_unique<AstExecutionPlanChecker>(), std::move(provenancePipeline));
 
     // Set up the debug report if necessary
     if (!Global::config().get("debug-report").empty()) {
