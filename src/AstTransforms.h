@@ -306,7 +306,7 @@ public:
     }
 
     void setVerbosity(bool verbose) override {
-        this->verbose = true;
+        this->verbose = verbose;
         for (auto& cur : pipeline) {
             if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(cur.get())) {
                 mt->setVerbosity(verbose);
