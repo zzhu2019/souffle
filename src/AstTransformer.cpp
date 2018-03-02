@@ -27,4 +27,25 @@ bool AstTransformer::apply(AstTranslationUnit& translationUnit) {
     return changed;
 }
 
+bool MetaTransformer::applySubtransformer(AstTranslationUnit& translationUnit, AstTransformer* transformer) {
+    auto start = std::chrono::high_resolution_clock::now();
+    bool changed = transformer->apply(translationUnit);
+    auto end = std::chrono::high_resolution_clock::now();
+
+    if (verbose && !dynamic_cast<MetaTransformer*>(transformer)) {
+        std::cout << transformer->getName() << " time: " << std::chrono::duration<double>(end - start).count() << "sec" << std::endl;
+    }
+
+    /* Abort evaluation of the program if errors were encountered */
+    if (translationUnit.getErrorReport().getNumErrors() != 0) {
+        std::cerr << translationUnit.getErrorReport();
+        std::cerr << std::to_string(translationUnit.getErrorReport().getNumErrors()) +
+                             " errors generated, evaluation aborted"
+                  << std::endl;
+        exit(1);
+    }
+
+    return changed;
+}
+
 }  // end of namespace souffle

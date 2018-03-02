@@ -376,9 +376,8 @@ int main(int argc, char** argv) {
         pipeline->setDebugReport();
     }
 
-    if (Global::config().has("verbose")) {
-        pipeline->setVerbose();
-    }
+    // Toggle pipeline verbosity
+    pipeline->setVerbosity(Global::config().has("verbose"));
 
     // Apply all the transformations
     pipeline->apply(*astTranslationUnit);

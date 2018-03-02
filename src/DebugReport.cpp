@@ -194,7 +194,7 @@ DebugReportSection DebugReporter::getDotGraphSection(std::string id, std::string
 
 bool DebugReporter::transform(AstTranslationUnit& translationUnit) {
     auto start = std::chrono::high_resolution_clock::now();
-    bool changed = wrappedTransformer->apply(translationUnit);
+    bool changed = applySubtransformer(translationUnit, wrappedTransformer.get());
     auto end = std::chrono::high_resolution_clock::now();
     std::string runtimeStr = "(" + std::to_string(std::chrono::duration<double>(end - start).count()) + "s)";
     if (changed) {

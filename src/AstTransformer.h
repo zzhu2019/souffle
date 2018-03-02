@@ -33,4 +33,22 @@ public:
     virtual std::string getName() const = 0;
 };
 
+/**
+ * Transformer that coordinates other sub-transformations
+ */
+class MetaTransformer : public AstTransformer {
+protected:
+    bool verbose = false;
+
+public:
+    /* Enable the debug-report for all sub-transformations */
+    virtual void setDebugReport() = 0;
+
+    /* Enable high verbosity */
+    virtual void setVerbosity(bool verbose) = 0;
+
+    /* Apply a nested transformer */
+    bool applySubtransformer(AstTranslationUnit& translationUnit, AstTransformer* transformer);
+};
+
 }  // end of namespace souffle

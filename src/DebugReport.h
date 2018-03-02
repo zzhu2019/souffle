@@ -103,7 +103,7 @@ public:
  * a debug report section for the stage after applying the wrapped transformer,
  * and adds it to the translation unit's debug report.
  */
-class DebugReporter : public AstTransformer {
+class DebugReporter : public MetaTransformer {
 private:
     std::unique_ptr<AstTransformer> wrappedTransformer;
 
@@ -113,8 +113,13 @@ public:
     DebugReporter(std::unique_ptr<AstTransformer> wrappedTransformer)
             : wrappedTransformer(std::move(wrappedTransformer)) {}
 
-    AstTransformer* getWrappedTransformer() {
-        return wrappedTransformer.get();
+    void setDebugReport() override { }
+
+    void setVerbosity(bool verbose) override {
+        this->verbose = verbose;
+        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(wrappedTransformer.get())) {
+            mt->setVerbosity(verbose);
+        }
     }
 
     std::string getName() const override {

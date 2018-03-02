@@ -265,24 +265,6 @@ public:
 };
 
 /**
- * Transformer that coordinates other sub-transformations
- */
-class MetaTransformer : public AstTransformer {
-protected:
-    bool verbose = false;
-
-public:
-    /* Enable the debug-report for all sub-transformations */
-    virtual void setDebugReport() = 0;
-
-    /* Enable high verbosity */
-    virtual void setVerbose() = 0;
-
-    /* Apply a nested transformer */
-    bool applySubtransformer(AstTranslationUnit& translationUnit, AstTransformer* transformer);
-};
-
-/**
  * Transformer that holds an arbitrary number of sub-transformations
  */
 class PipelineTransformer : public MetaTransformer {
@@ -309,11 +291,11 @@ public:
         }
     }
 
-    void setVerbose() override {
-        verbose = true;
+    void setVerbosity(bool verbose) override {
+        this->verbose = true;
         for (auto& cur : pipeline) {
             if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(cur.get())) {
-                mt->setVerbose();
+                mt->setVerbosity(verbose);
             }
         }
     }
@@ -347,10 +329,10 @@ public:
         }
     }
 
-    void setVerbose() override {
-        verbose = true;
+    void setVerbosity(bool verbose) override {
+        this->verbose = verbose;
         if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
-            mt->setVerbose();
+            mt->setVerbosity(verbose);
         }
     }
 
