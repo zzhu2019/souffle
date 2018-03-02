@@ -22,6 +22,18 @@
 
 namespace souffle {
 
+bool PipelineTransformer::transform(AstTranslationUnit& translationUnit) {
+    bool changed = false;
+    for (auto& transformer : pipeline) {
+        changed |= applySubtransformer(translationUnit, transformer.get());
+    }
+    return changed;
+}
+
+bool ConditionalTransformer::transform(AstTranslationUnit& translationUnit) {
+    return condition() ? applySubtransformer(translationUnit, transformer.get()) : false;
+}
+
 void ResolveAliasesTransformer::resolveAliases(AstProgram& program) {
     // get all clauses
     std::vector<const AstClause*> clauses;
