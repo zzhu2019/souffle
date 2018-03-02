@@ -323,12 +323,11 @@ int main(int argc, char** argv) {
     /* construct the transformation pipeline */
 
     // Magic-Set pipeline
-    auto magicPipeline = std::make_unique<ConditionalTransformer>(
-            Global::config().has("magic-transform"),
+    auto magicPipeline = std::make_unique<ConditionalTransformer>(Global::config().has("magic-transform"),
             std::make_unique<PipelineTransformer>(std::make_unique<NormaliseConstraintsTransformer>(),
                     std::make_unique<MagicSetTransformer>(),
                     std::make_unique<ConditionalTransformer>(Global::config().get("bddbddb").empty(),
-                                                          std::make_unique<ResolveAliasesTransformer>()),
+                            std::make_unique<ResolveAliasesTransformer>()),
                     std::make_unique<RemoveRelationCopiesTransformer>(),
                     std::make_unique<RemoveEmptyRelationsTransformer>(),
                     std::make_unique<RemoveRedundantRelationsTransformer>()));
@@ -342,8 +341,8 @@ int main(int argc, char** argv) {
 #endif
 
     // Main pipeline
-    auto pipeline = std::make_unique<PipelineTransformer>(
-            std::make_unique<AstComponentChecker>(), std::make_unique<ComponentInstantiationTransformer>(),
+    auto pipeline = std::make_unique<PipelineTransformer>(std::make_unique<AstComponentChecker>(),
+            std::make_unique<ComponentInstantiationTransformer>(),
             std::make_unique<UniqueAggregationVariablesTransformer>(), std::make_unique<AstSemanticChecker>(),
             std::make_unique<RemoveBooleanConstraintsTransformer>(),
             std::make_unique<InlineRelationsTransformer>(), std::make_unique<ReduceExistentialsTransformer>(),

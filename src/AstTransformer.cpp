@@ -33,7 +33,8 @@ bool MetaTransformer::applySubtransformer(AstTranslationUnit& translationUnit, A
     auto end = std::chrono::high_resolution_clock::now();
 
     if (verbose && !dynamic_cast<MetaTransformer*>(transformer)) {
-        std::cout << transformer->getName() << " time: " << std::chrono::duration<double>(end - start).count() << "sec" << std::endl;
+        std::cout << transformer->getName() << " time: " << std::chrono::duration<double>(end - start).count()
+                  << "sec" << std::endl;
     }
 
     /* Abort evaluation of the program if errors were encountered */

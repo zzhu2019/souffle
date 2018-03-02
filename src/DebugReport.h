@@ -118,7 +118,7 @@ public:
     DebugReporter(std::unique_ptr<AstTransformer> wrappedTransformer)
             : wrappedTransformer(std::move(wrappedTransformer)) {}
 
-    void setDebugReport() override { }
+    void setDebugReport() override {}
 
     void setVerbosity(bool verbose) override {
         this->verbose = verbose;

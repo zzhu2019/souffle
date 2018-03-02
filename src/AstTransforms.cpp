@@ -18,7 +18,6 @@
 #include "AstTypeAnalysis.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
-#include "Global.h"
 #include "PrecedenceGraph.h"
 
 namespace souffle {
