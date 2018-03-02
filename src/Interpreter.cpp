@@ -133,10 +133,10 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                     return std::min(lhs, rhs);
                 }
                 case BinaryOp::CAT: {
-                    return interpreter.getSymbolTable().lookup((
-                            std::string(interpreter.getSymbolTable().resolve(lhs)) +
-                            std::string(interpreter.getSymbolTable().resolve(
-                                    rhs))).c_str());
+                    return interpreter.getSymbolTable().lookup(
+                            (std::string(interpreter.getSymbolTable().resolve(lhs)) +
+                                    std::string(interpreter.getSymbolTable().resolve(rhs)))
+                                    .c_str());
                 }
                 default:
                     assert(0 && "unsupported operator");
@@ -746,8 +746,7 @@ void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
         }
 
         bool visitSwap(const RamSwap& swap) override {
-            interpreter.swapRelation(swap.getFirstRelation(),
-                                     swap.getSecondRelation());
+            interpreter.swapRelation(swap.getFirstRelation(), swap.getSecondRelation());
             return true;
         }
 
