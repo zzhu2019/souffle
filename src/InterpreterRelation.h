@@ -81,35 +81,8 @@ public:
 
     InterpreterRelation(const InterpreterRelation& other) = delete;
 
-    InterpreterRelation(InterpreterRelation&& other)
-            : arity(other.arity), num_tuples(other.num_tuples), tail(other.tail),
-              totalIndex(other.totalIndex) {
-        // take over ownership
-        head.swap(other.head);
-        indices.swap(other.indices);
-
-        allocatedBlocks.swap(other.allocatedBlocks);
-    }
-
     virtual ~InterpreterRelation() {
         for (auto x : allocatedBlocks) delete[] x;
-    }
-
-    // TODO (#421): check whether still required
-    InterpreterRelation& operator=(const InterpreterRelation& other) = delete;
-
-    InterpreterRelation& operator=(InterpreterRelation&& other) {
-        ASSERT(getArity() == other.getArity());
-
-        num_tuples = other.num_tuples;
-        tail = other.tail;
-        totalIndex = other.totalIndex;
-
-        // take over ownership
-        head.swap(other.head);
-        indices.swap(other.indices);
-
-        return *this;
     }
 
     /** Get arity of relation */
