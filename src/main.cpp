@@ -329,50 +329,54 @@ int main(int argc, char** argv) {
     (std::make_unique<AstPragmaChecker>())->apply(*astTranslationUnit);
 
     // Construct the transformation pipeline
-    auto pipeline = std::make_unique<PipelineTransformer>(std::make_unique<AstComponentChecker>(),
+
+    // Provenance pipeline
+#ifdef USE_PROVENANCE
+    auto provenancePipeline = std::make_unique<PipelineTransformer>(
+        std::make_unique<ConditionalTransformer>(
+            Global::config().has("provenance"),
+            std::make_unique<ProvenanceTransformer>()
+        )
+    );
+#else
+    auto provenancePipeline = std::make_unique<PipelineTransformer>();
+#endif
+
+    // Magic-Set pipeline
+    auto magicPipeline = std::make_unique<ConditionalTransformer>(
+            Global::config().has("magic-transform"),
+            std::make_unique<PipelineTransformer>(
+                std::make_unique<NormaliseConstraintsTransformer>(),
+                std::make_unique<MagicSetTransformer>(),
+                std::make_unique<ConditionalTransformer>(
+                    Global::config().get("bddbddb").empty(),
+                    std::make_unique<ResolveAliasesTransformer>()),
+                std::make_unique<RemoveRelationCopiesTransformer>(),
+                std::make_unique<RemoveEmptyRelationsTransformer>(),
+                std::make_unique<RemoveRedundantRelationsTransformer>()));
+
+    // Main pipeline
+    auto pipeline = std::make_unique<PipelineTransformer>(
+            std::make_unique<AstComponentChecker>(),
             std::make_unique<ComponentInstantiationTransformer>(),
-            std::make_unique<UniqueAggregationVariablesTransformer>(), std::make_unique<AstSemanticChecker>(),
-            std::make_unique<InlineRelationsTransformer>(), std::make_unique<ReduceExistentialsTransformer>(),
-            std::make_unique<ExtractDisconnectedLiteralsTransformer>());
-
-    if (Global::config().get("bddbddb").empty()) {
-        pipeline = std::make_unique<PipelineTransformer>(
-                std::move(pipeline), std::make_unique<ResolveAliasesTransformer>());
-    }
-
-    pipeline = std::make_unique<PipelineTransformer>(std::move(pipeline),
+            std::make_unique<UniqueAggregationVariablesTransformer>(),
+            std::make_unique<AstSemanticChecker>(),
+            std::make_unique<InlineRelationsTransformer>(),
+            std::make_unique<ReduceExistentialsTransformer>(),
+            std::make_unique<ExtractDisconnectedLiteralsTransformer>(),
+            std::make_unique<ConditionalTransformer>(
+                    Global::config().get("bddbddb").empty(),
+                    std::make_unique<ResolveAliasesTransformer>()),
             std::make_unique<RemoveRelationCopiesTransformer>(),
             std::make_unique<MaterializeAggregationQueriesTransformer>(),
             std::make_unique<RemoveEmptyRelationsTransformer>(),
-            std::make_unique<RemoveRedundantRelationsTransformer>());
-
-    if (Global::config().has("magic-transform")) {
-        pipeline = std::make_unique<PipelineTransformer>(std::move(pipeline),
-                std::make_unique<NormaliseConstraintsTransformer>(), std::make_unique<MagicSetTransformer>());
-        if (Global::config().get("bddbddb").empty()) {
-            pipeline = std::make_unique<PipelineTransformer>(
-                    std::move(pipeline), std::make_unique<ResolveAliasesTransformer>());
-        }
-        pipeline = std::make_unique<PipelineTransformer>(std::move(pipeline),
-                std::make_unique<RemoveRelationCopiesTransformer>(),
-                std::make_unique<RemoveEmptyRelationsTransformer>(),
-                std::make_unique<RemoveRedundantRelationsTransformer>());
-    }
-
-    pipeline = std::make_unique<PipelineTransformer>(
-            std::move(pipeline), std::make_unique<AstExecutionPlanChecker>());
-
-    if (Global::config().has("auto-schedule")) {
-        pipeline = std::make_unique<PipelineTransformer>(
-                std::move(pipeline), std::make_unique<AutoScheduleTransformer>());
-    }
-#ifdef USE_PROVENANCE
-    // Add provenance information by transforming to records
-    if (Global::config().has("provenance")) {
-        pipeline = std::make_unique<PipelineTransformer>(
-                std::move(pipeline), std::make_unique<ProvenanceTransformer>());
-    }
-#endif
+            std::make_unique<RemoveRedundantRelationsTransformer>(),
+            std::move(magicPipeline),
+            std::make_unique<AstExecutionPlanChecker>(),
+            std::make_unique<ConditionalTransformer>(
+                    Global::config().has("auto-schedule"),
+                    std::make_unique<AutoScheduleTransformer>()),
+            std::move(provenancePipeline));
 
     // Add parsing time to the debug-report
     if (!Global::config().get("debug-report").empty()) {

@@ -28,8 +28,12 @@ bool PipelineTransformer::transform(AstTranslationUnit& translationUnit) {
 
     if (!Global::config().get("debug-report").empty()) {
         for (unsigned int i = 0; i < pipeline.size(); i++) {
-            if (!dynamic_cast<PipelineTransformer*>(pipeline[i].get())) {
-                pipeline[i] = std::unique_ptr<AstTransformer>(new DebugReporter(std::move(pipeline[i])));
+            if (dynamic_cast<PipelineTransformer*>(pipeline[i].get())) {
+                continue;
+            } else if (ConditionalTransformer* ct = dynamic_cast<ConditionalTransformer*>(pipeline[i].get())) {
+                ct->setDebugReport();
+            } else {
+                pipeline[i] = std::make_unique<DebugReporter>(std::move(pipeline[i]));
             }
         }
     }
@@ -50,6 +54,10 @@ bool PipelineTransformer::transform(AstTranslationUnit& translationUnit) {
     }
 
     return changed;
+}
+
+bool ConditionalTransformer::transform(AstTranslationUnit& translationUnit) {
+    return condition() ? transformer->apply(translationUnit) : false;
 }
 
 void ResolveAliasesTransformer::resolveAliases(AstProgram& program) {

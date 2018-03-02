@@ -18,6 +18,8 @@
 #include "AstTransformer.h"
 #include "AstTranslationUnit.h"
 
+#include <functional>
+
 namespace souffle {
 
 /**
@@ -273,11 +275,6 @@ private:
 public:
     template <typename... Args>
     PipelineTransformer(Args... args) {
-        this->extend(std::move(args)...);
-    }
-
-    template <typename... Args>
-    void extend(Args... args) {
         std::unique_ptr<AstTransformer> tmp[] = {std::move(args)...};
         for (auto& cur : tmp) {
             pipeline.push_back(std::move(cur));
@@ -286,6 +283,28 @@ public:
 
     std::string getName() const override {
         return "PipelineTransformer";
+    }
+};
+
+class ConditionalTransformer : public AstTransformer {
+private:
+    std::function<bool()> condition;
+    std::unique_ptr<AstTransformer> transformer;
+    bool transform(AstTranslationUnit& translationUnit) override;
+
+public:
+    ConditionalTransformer(std::function<bool()> cond, std::unique_ptr<AstTransformer> transformer) : condition(cond), transformer(std::move(transformer)) {}
+
+    ConditionalTransformer(bool cond, std::unique_ptr<AstTransformer> transformer) : condition([=]() {return cond;}), transformer(std::move(transformer)) {}
+
+    void setDebugReport() {
+        if (!dynamic_cast<PipelineTransformer*>(transformer.get())) {
+            transformer = std::unique_ptr<AstTransformer>(new DebugReporter(std::move(transformer)));
+        }
+    }
+
+    std::string getName() const override {
+        return "ConditionalTransformer";
     }
 };
 
