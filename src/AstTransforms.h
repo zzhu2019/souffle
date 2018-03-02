@@ -293,9 +293,11 @@ private:
     bool transform(AstTranslationUnit& translationUnit) override;
 
 public:
-    ConditionalTransformer(std::function<bool()> cond, std::unique_ptr<AstTransformer> transformer) : condition(cond), transformer(std::move(transformer)) {}
+    ConditionalTransformer(std::function<bool()> cond, std::unique_ptr<AstTransformer> transformer)
+            : condition(cond), transformer(std::move(transformer)) {}
 
-    ConditionalTransformer(bool cond, std::unique_ptr<AstTransformer> transformer) : condition([=]() {return cond;}), transformer(std::move(transformer)) {}
+    ConditionalTransformer(bool cond, std::unique_ptr<AstTransformer> transformer)
+            : condition([=]() { return cond; }), transformer(std::move(transformer)) {}
 
     void setDebugReport() {
         if (!dynamic_cast<PipelineTransformer*>(transformer.get())) {

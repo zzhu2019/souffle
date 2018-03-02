@@ -30,7 +30,8 @@ bool PipelineTransformer::transform(AstTranslationUnit& translationUnit) {
         for (unsigned int i = 0; i < pipeline.size(); i++) {
             if (dynamic_cast<PipelineTransformer*>(pipeline[i].get())) {
                 continue;
-            } else if (ConditionalTransformer* ct = dynamic_cast<ConditionalTransformer*>(pipeline[i].get())) {
+            } else if (ConditionalTransformer* ct =
+                               dynamic_cast<ConditionalTransformer*>(pipeline[i].get())) {
                 ct->setDebugReport();
             } else {
                 pipeline[i] = std::make_unique<DebugReporter>(std::move(pipeline[i]));
