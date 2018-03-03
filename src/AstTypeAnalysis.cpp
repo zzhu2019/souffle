@@ -19,6 +19,7 @@
 #include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
 #include "Constraints.h"
+#include "Global.h"
 #include "Util.h"
 
 namespace souffle {
@@ -769,14 +770,91 @@ void TypeEnvironmentAnalysis::updateTypeEnvironment(const AstProgram& program) {
     }
 }
 
+/* Return a new clause with type-annotated variables */
+AstClause* createAnnotatedClause(
+        const AstClause* clause, const std::map<const AstArgument*, TypeSet> argumentTypes) {
+    // Annotates each variable with its type based on a given type analysis result
+    struct TypeAnnotator : public AstNodeMapper {
+        const std::map<const AstArgument*, TypeSet>& types;
+
+        TypeAnnotator(const std::map<const AstArgument*, TypeSet>& types) : types(types) {}
+
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            if (AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+                std::stringstream newVarName;
+                newVarName << var->getName() << "&isin;" << types.find(var)->second;
+                return std::make_unique<AstVariable>(newVarName.str());
+            } else if (AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())) {
+                std::stringstream newVarName;
+                newVarName << "_"
+                           << "&isin;" << types.find(var)->second;
+                return std::make_unique<AstVariable>(newVarName.str());
+            }
+            node->apply(*this);
+            return node;
+        }
+    };
+
+    /* Note:
+     * Because the type of each argument is stored in the form [address -> type-set],
+     * the type-analysis result does not immediately apply to the clone due to differing
+     * addresses.
+     * Two ways around this:
+     *  (1) Perform the type-analysis again for the cloned clause
+     *  (2) Keep track of the addresses of equivalent arguments in the cloned clause
+     * Method (2) was chosen to avoid having to recompute the analysis each time.
+     */
+    AstClause* annotatedClause = clause->clone();
+
+    // Maps x -> y, where x is the address of an argument in the original clause, and y
+    // is the address of the equivalent argument in the clone.
+    std::map<const AstArgument*, const AstArgument*> memoryMap;
+
+    std::vector<const AstArgument*> originalAddresses;
+    visitDepthFirst(*clause, [&](const AstArgument& arg) { originalAddresses.push_back(&arg); });
+
+    std::vector<const AstArgument*> cloneAddresses;
+    visitDepthFirst(*annotatedClause, [&](const AstArgument& arg) { cloneAddresses.push_back(&arg); });
+
+    assert(cloneAddresses.size() == originalAddresses.size());
+
+    for (int i = 0; i < originalAddresses.size(); i++) {
+        memoryMap[originalAddresses[i]] = cloneAddresses[i];
+    }
+
+    // Map the types to the clause clone
+    std::map<const AstArgument*, TypeSet> cloneArgumentTypes;
+    for (auto& pair : argumentTypes) {
+        cloneArgumentTypes[memoryMap[pair.first]] = pair.second;
+    }
+
+    // Create the type-annotated clause
+    TypeAnnotator annotator(cloneArgumentTypes);
+    annotatedClause->apply(annotator);
+    return annotatedClause;
+}
+
 void TypeAnalysis::run(const AstTranslationUnit& translationUnit) {
     TypeEnvironmentAnalysis* typeEnvAnalysis = translationUnit.getAnalysis<TypeEnvironmentAnalysis>();
     for (const AstRelation* rel : translationUnit.getProgram()->getRelations()) {
         for (const AstClause* clause : rel->getClauses()) {
+            // Perform the type analysis
             std::map<const AstArgument*, TypeSet> clauseArgumentTypes = analyseTypes(
                     typeEnvAnalysis->getTypeEnvironment(), *clause, translationUnit.getProgram());
             argumentTypes.insert(clauseArgumentTypes.begin(), clauseArgumentTypes.end());
+
+            if (!Global::config().get("debug-report").empty()) {
+                // Store an annotated clause for printing purposes
+                AstClause* annotatedClause = createAnnotatedClause(clause, clauseArgumentTypes);
+                annotatedClauses.push_back(std::unique_ptr<AstClause>(annotatedClause));
+            }
         }
+    }
+}
+
+void TypeAnalysis::print(std::ostream& os) const {
+    for (const auto& curr : annotatedClauses) {
+        os << *curr << std::endl;
     }
 }
 
