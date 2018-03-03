@@ -67,11 +67,14 @@ public:
 class TypeAnalysis : public AstAnalysis {
 private:
     std::map<const AstArgument*, TypeSet> argumentTypes;
+    std::vector<std::unique_ptr<AstClause>> annotatedClauses;
 
 public:
     static constexpr const char* name = "type-analysis";
 
     void run(const AstTranslationUnit& translationUnit) override;
+
+    void print(std::ostream& os) const override;
 
     /**
      * Get the computed types for the given argument.

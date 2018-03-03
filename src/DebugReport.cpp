@@ -16,6 +16,7 @@
 
 #include "DebugReport.h"
 #include "AstTranslationUnit.h"
+#include "AstTypeAnalysis.h"
 #include "MagicSet.h"
 #include "PrecedenceGraph.h"
 
@@ -214,6 +215,10 @@ void DebugReporter::generateDebugReport(
 
     DebugReportSection datalogSection = getCodeSection(id + "-dl", "Datalog", datalogSpec.str());
 
+    std::stringstream typeAnalysis;
+    translationUnit.getAnalysis<TypeAnalysis>()->print(typeAnalysis);
+    DebugReportSection typeAnalysisSection = getCodeSection(id + "-ta", "Type Analysis", typeAnalysis.str());
+
     std::stringstream precGraphDot;
     translationUnit.getAnalysis<PrecedenceGraph>()->print(precGraphDot);
     DebugReportSection precedenceGraphSection =
@@ -230,7 +235,9 @@ void DebugReporter::generateDebugReport(
             getCodeSection(id + "-topsort-scc-graph", "SCC Topological Sort Order", topsortSCCGraph.str());
 
     translationUnit.getDebugReport().addSection(DebugReportSection(id, title,
-            {datalogSection, precedenceGraphSection, sccGraphSection, topsortSCCGraphSection}, ""));
+            {datalogSection, typeAnalysisSection, precedenceGraphSection, sccGraphSection,
+                    topsortSCCGraphSection},
+            ""));
 }
 
 }  // end of namespace souffle
