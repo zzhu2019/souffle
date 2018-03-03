@@ -746,8 +746,7 @@ void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
         }
 
         bool visitSwap(const RamSwap& swap) override {
-            std::swap(interpreter.getRelation(swap.getFirstRelation()),
-                    interpreter.getRelation(swap.getSecondRelation()));
+            interpreter.swapRelation(swap.getFirstRelation(), swap.getSecondRelation());
             return true;
         }
 

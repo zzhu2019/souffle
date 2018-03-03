@@ -18,6 +18,8 @@
 #include "AstTransformer.h"
 #include "AstTranslationUnit.h"
 
+#include <functional>
+
 namespace souffle {
 
 /**
@@ -236,9 +238,9 @@ public:
 };
 
 /**
-* Transformation pass to reduce unnecessary computation for
-* relations that only appear in the form A(_,...,_).
-*/
+ * Transformation pass to reduce unnecessary computation for
+ * relations that only appear in the form A(_,...,_).
+ */
 class ReduceExistentialsTransformer : public AstTransformer {
 private:
     bool transform(AstTranslationUnit& translationUnit) override;
@@ -273,6 +275,83 @@ private:
 public:
     std::string getName() const override {
         return "MagicSetTransformer";
+    }
+};
+
+/**
+ * Transformer that holds an arbitrary number of sub-transformations
+ */
+class PipelineTransformer : public MetaTransformer {
+private:
+    std::vector<std::unique_ptr<AstTransformer>> pipeline;
+    bool transform(AstTranslationUnit& translationUnit) override;
+
+public:
+    template <typename... Args>
+    PipelineTransformer(Args... args) {
+        std::unique_ptr<AstTransformer> tmp[] = {std::move(args)...};
+        for (auto& cur : tmp) {
+            pipeline.push_back(std::move(cur));
+        }
+    }
+
+    void setDebugReport() override {
+        for (unsigned int i = 0; i < pipeline.size(); i++) {
+            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(pipeline[i].get())) {
+                mt->setDebugReport();
+            } else {
+                pipeline[i] = std::make_unique<DebugReporter>(std::move(pipeline[i]));
+            }
+        }
+    }
+
+    void setVerbosity(bool verbose) override {
+        this->verbose = verbose;
+        for (auto& cur : pipeline) {
+            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(cur.get())) {
+                mt->setVerbosity(verbose);
+            }
+        }
+    }
+
+    std::string getName() const override {
+        return "PipelineTransformer";
+    }
+};
+
+/**
+ * Transformer that executes a sub-transformer iff a condition holds
+ */
+class ConditionalTransformer : public MetaTransformer {
+private:
+    std::function<bool()> condition;
+    std::unique_ptr<AstTransformer> transformer;
+    bool transform(AstTranslationUnit& translationUnit) override;
+
+public:
+    ConditionalTransformer(std::function<bool()> cond, std::unique_ptr<AstTransformer> transformer)
+            : condition(cond), transformer(std::move(transformer)) {}
+
+    ConditionalTransformer(bool cond, std::unique_ptr<AstTransformer> transformer)
+            : condition([=]() { return cond; }), transformer(std::move(transformer)) {}
+
+    void setDebugReport() override {
+        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
+            mt->setDebugReport();
+        } else {
+            transformer = std::make_unique<DebugReporter>(std::move(transformer));
+        }
+    }
+
+    void setVerbosity(bool verbose) override {
+        this->verbose = verbose;
+        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
+            mt->setVerbosity(verbose);
+        }
+    }
+
+    std::string getName() const override {
+        return "ConditionalTransformer";
     }
 };
 
