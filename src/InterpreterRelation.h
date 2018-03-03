@@ -17,11 +17,12 @@
 #pragma once
 
 #include "InterpreterIndex.h"
-#include "ParallelUtils.h"
 #include "RamTypes.h"
 
-#include <list>
+#include <deque>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 namespace souffle {
@@ -32,38 +33,15 @@ namespace souffle {
 class InterpreterRelation {
 private:
     /** Arity of relation */
-    size_t arity;
+    const size_t arity;
 
     /** Size of blocks containing tuples */
     static const int BLOCK_SIZE = 1024;
 
-    /** Block data structure for storing tuples */
-    struct Block {
-        size_t size;
-        size_t used;
-        // TODO (#541): replace linked list by STL linked list
-        // block becomes payload of STL linked list only
-        std::unique_ptr<Block> next;
-        std::unique_ptr<RamDomain[]> data;
-
-        Block(size_t s = BLOCK_SIZE) : size(s), used(0), next(nullptr), data(new RamDomain[size]) {}
-
-        size_t getFreeSpace() const {
-            return size - used;
-        }
-    };
-
     /** Number of tuples in relation */
     size_t num_tuples;
 
-    /** Head of block list */
-    std::unique_ptr<Block> head;
-
-    /** Tail of block list */
-    Block* tail;
-
-    /** List of all allocated blocks */
-    std::list<RamDomain*> allocatedBlocks;
+    std::deque<std::unique_ptr<RamDomain[]>> blockList;
 
     /** List of indices */
     mutable std::map<InterpreterIndexOrder, std::unique_ptr<InterpreterIndex>> indices;
@@ -72,18 +50,14 @@ private:
     mutable InterpreterIndex* totalIndex;
 
     /** Lock for parallel execution */
-    mutable Lock lock;
+    mutable std::mutex lock;
 
 public:
-    InterpreterRelation(size_t relArity)
-            : arity(relArity), num_tuples(0), head(std::make_unique<Block>()), tail(head.get()),
-              totalIndex(nullptr) {}
+    InterpreterRelation(size_t relArity) : arity(relArity), num_tuples(0), totalIndex(nullptr) {}
 
     InterpreterRelation(const InterpreterRelation& other) = delete;
 
-    virtual ~InterpreterRelation() {
-        for (auto x : allocatedBlocks) delete[] x;
-    }
+    virtual ~InterpreterRelation() = default;
 
     /** Get arity of relation */
     size_t getArity() const {
@@ -116,18 +90,17 @@ public:
             return;
         }
 
-        // prepare tail
-        if (tail->getFreeSpace() < arity || arity == 0) {
-            tail->next = std::make_unique<Block>();
-            tail = tail->next.get();
+        int blockIndex = num_tuples / (BLOCK_SIZE / arity);
+        int tupleIndex = (num_tuples % (BLOCK_SIZE / arity)) * arity;
+
+        if (tupleIndex == 0) {
+            blockList.push_back(std::make_unique<RamDomain[]>(BLOCK_SIZE));
         }
 
-        // insert element into tail
-        RamDomain* newTuple = &tail->data[tail->used];
+        RamDomain* newTuple = &blockList[blockIndex][tupleIndex];
         for (size_t i = 0; i < arity; ++i) {
             newTuple[i] = tuple[i];
         }
-        tail->used += arity;
 
         // update all indexes with new tuple
         for (const auto& cur : indices) {
@@ -155,9 +128,7 @@ public:
 
     /** Purge table */
     void purge() {
-        std::unique_ptr<Block> newHead = std::make_unique<Block>();
-        head.swap(newHead);
-        tail = head.get();
+        blockList.clear();
         for (const auto& cur : indices) {
             cur.second->purge();
         }
@@ -192,8 +163,7 @@ public:
         // see whether there is an order with a matching prefix
         InterpreterIndex* res = nullptr;
         {
-            auto lease = lock.acquire();
-            (void)lease;
+            std::lock_guard<std::mutex> guard(lock);
             for (auto it = indices.begin(); !res && it != indices.end(); ++it) {
                 if (order.isCompatible(it->first)) {
                     res = it->second.get();
@@ -220,8 +190,7 @@ public:
         // TODO: improve index usage by re-using indices with common prefix
         InterpreterIndex* res = nullptr;
         {
-            auto lease = lock.acquire();
-            (void)lease;
+            std::lock_guard<std::mutex> guard(lock);
             auto pos = indices.find(order);
             if (pos == indices.end()) {
                 std::unique_ptr<InterpreterIndex>& newIndex = indices[order];
@@ -258,14 +227,16 @@ public:
 
     /** Iterator for relation */
     class iterator : public std::iterator<std::forward_iterator_tag, RamDomain*> {
-        Block* cur;
+        const InterpreterRelation* const relation;
+        size_t index;
         RamDomain* tuple;
-        size_t arity;
 
     public:
-        iterator() : cur(nullptr), tuple(nullptr), arity(0) {}
+        iterator() : relation(nullptr), index(0), tuple(nullptr) {}
 
-        iterator(Block* c, RamDomain* t, size_t a) : cur(c), tuple(t), arity(a) {}
+        iterator(const InterpreterRelation* const relation)
+                : relation(relation), index(0),
+                  tuple(relation->arity == 0 ? reinterpret_cast<int*>(this) : &relation->blockList[0][0]) {}
 
         const RamDomain* operator*() {
             return tuple;
@@ -280,24 +251,23 @@ public:
         }
 
         iterator& operator++() {
-            // check for end
-            if (!cur) {
-                return *this;
-            }
-
             // support 0-arity
-            if (arity == 0) {
-                // move to end
-                *this = iterator();
+            if (relation->arity == 0) {
+                tuple = nullptr;
                 return *this;
             }
 
             // support all other arities
-            tuple += arity;
-            if (tuple >= &cur->data[cur->used]) {
-                cur = cur->next.get();
-                tuple = (cur) ? cur->data.get() : nullptr;
+            ++index;
+            if (index == relation->num_tuples) {
+                tuple = nullptr;
+                return *this;
             }
+
+            int blockIndex = index / (BLOCK_SIZE / relation->arity);
+            int tupleIndex = (index % (BLOCK_SIZE / relation->arity)) * relation->arity;
+
+            tuple = &relation->blockList[blockIndex][tupleIndex];
             return *this;
         }
     };
@@ -309,16 +279,7 @@ public:
             return end();
         }
 
-        // support 0-arity
-        auto arity = getArity();
-        if (arity == 0) {
-            Block dummyBlock;
-            RamDomain dummyTuple;
-            return iterator(&dummyBlock, &dummyTuple, 0);
-        }
-
-        // support non-empty non-zero arity relation
-        return iterator(head.get(), &head->data[0], arity);
+        return iterator(this);
     }
 
     /** get iterator begin of relation */
