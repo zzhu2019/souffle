@@ -17,12 +17,12 @@
 #pragma once
 
 #include "InterpreterIndex.h"
+#include "ParallelUtils.h"
 #include "RamTypes.h"
 
 #include <deque>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <vector>
 
 namespace souffle {
@@ -50,7 +50,7 @@ private:
     mutable InterpreterIndex* totalIndex;
 
     /** Lock for parallel execution */
-    mutable std::mutex lock;
+    mutable Lock lock;
 
 public:
     InterpreterRelation(size_t relArity) : arity(relArity), num_tuples(0), totalIndex(nullptr) {}
@@ -163,7 +163,9 @@ public:
         // see whether there is an order with a matching prefix
         InterpreterIndex* res = nullptr;
         {
-            std::lock_guard<std::mutex> guard(lock);
+            auto lease = lock.acquire();
+            (void)lease;
+
             for (auto it = indices.begin(); !res && it != indices.end(); ++it) {
                 if (order.isCompatible(it->first)) {
                     res = it->second.get();
@@ -190,7 +192,8 @@ public:
         // TODO: improve index usage by re-using indices with common prefix
         InterpreterIndex* res = nullptr;
         {
-            std::lock_guard<std::mutex> guard(lock);
+            auto lease = lock.acquire();
+            (void)lease;
             auto pos = indices.find(order);
             if (pos == indices.end()) {
                 std::unique_ptr<InterpreterIndex>& newIndex = indices[order];
