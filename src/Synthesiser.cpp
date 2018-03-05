@@ -288,11 +288,6 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             // enclose operation in its own scope
             out << "{\n";
 
-            // create proof counters
-            if (Global::config().has("profile")) {
-                out << "std::atomic<uint64_t> num_failed_proofs(0);\n";
-            }
-
             // check whether loop nest can be parallelized
             bool parallel = false;
             if (const RamScan* scan = dynamic_cast<const RamScan*>(&insert.getOperation())) {
@@ -310,11 +305,6 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 }
             }
 
-            // add local counters
-            if (Global::config().has("profile")) {
-                out << "uint64_t private_num_failed_proofs = 0;\n";
-            }
-
             // create operation contexts for this operation
             for (const RamRelation& rel : synthesiser.getReferencedRelations(insert.getOperation())) {
                 // TODO (#467): this causes bugs for subprogram compilation for record types if artificial
@@ -325,11 +315,6 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             }
 
             visit(insert.getOperation(), out);
-
-            // aggregate proof counters
-            if (Global::config().has("profile")) {
-                out << "num_failed_proofs += private_num_failed_proofs;\n";
-            }
 
             if (parallel) {
                 out << "PARALLEL_END;\n";  // end parallel
@@ -511,9 +496,6 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 out << ") {\n";
                 visit(search.getNestedOperation(), out);
                 out << "}\n";
-                if (Global::config().has("profile")) {
-                    out << " else { ++private_num_failed_proofs; }";
-                }
             } else {
                 visit(search.getNestedOperation(), out);
             }
@@ -581,9 +563,6 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             out << "});\n";
             out << "auto range = " << relName << "->"
                 << "equalRange" << index << "(key," << ctxName << ");\n";
-            if (Global::config().has("profile")) {
-                out << "if (range.empty()) ++private_num_failed_proofs;\n";
-            }
             if (scan.isPureExistenceCheck()) {
                 out << "if(!range.empty()) {\n";
             } else {
@@ -746,9 +725,6 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 out << ") {\n";
                 visitSearch(aggregate, out);
                 out << "}\n";
-                if (Global::config().has("profile")) {
-                    out << " else { ++private_num_failed_proofs; }";
-                }
             } else {
                 visitSearch(aggregate, out);
             }
@@ -793,32 +769,17 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             }
 
             // insert tuple
-            if (Global::config().has("profile")) {
-                out << "if (!(" << relName << "->"
-                    << "insert(tuple," << ctxName << "))) { ++private_num_failed_proofs; }\n";
-            } else {
-                out << relName << "->"
-                    << "insert(tuple," << ctxName << ");\n";
-            }
+            out << relName << "->"
+                << "insert(tuple," << ctxName << ");\n";
 
             // end filter
             if (project.hasFilter()) {
                 out << "}";
-
-                // add fail counter
-                if (Global::config().has("profile")) {
-                    out << " else { ++private_num_failed_proofs; }";
-                }
             }
 
             // end condition
             if (condition) {
                 out << "}\n";
-
-                // add fail counter
-                if (Global::config().has("profile")) {
-                    out << " else { ++private_num_failed_proofs; }";
-                }
             }
             PRINT_END_COMMENT(out);
         }
