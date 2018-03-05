@@ -40,38 +40,20 @@ class SymbolTable {
 
 private:
     /** Map indices to strings. */
-    std::vector<char*> numToStr;
+    std::vector<std::string> numToStr;
 
     /** Map strings to indices. */
     std::unordered_map<std::string, size_t> strToNum;
 
-    /** Convenience method to copy strings between symbol tables and resolve their references. */
-    inline void copyAll() {
-        for (auto& cur : numToStr) {
-            cur = strdup(cur);
-        }
-        for (auto& cur : strToNum) {
-            const_cast<std::string&>(cur.first) = numToStr[cur.second];
-        }
-    }
-
-    /** Convenience method to free memory allocated for strings. */
-    inline void freeAll() {
-        for (auto cur : numToStr) {
-            free(cur);
-        }
-    }
-
     /** Convenience method to place a new symbol in the table, if it does not exist, and return the index of
      * it. */
-    inline const size_t newSymbolOfIndex(const char* symbol) {
+    inline const size_t newSymbolOfIndex(std::string symbol) {
         size_t idx;
         auto it = strToNum.find(symbol);
         if (it == strToNum.end()) {
-            char* str = strdup(symbol);
             idx = numToStr.size();
-            strToNum[str] = idx;
-            numToStr.push_back(str);
+            strToNum[symbol] = idx;
+            numToStr.push_back(std::move(symbol));
         } else {
             idx = it->second;
         }
@@ -79,11 +61,10 @@ private:
     }
 
     /** Convenience method to place a new symbol in the table, if it does not exist. */
-    inline void newSymbol(const char* symbol) {
+    inline void newSymbol(std::string symbol) {
         if (strToNum.find(symbol) == strToNum.end()) {
-            char* str = strdup(symbol);
-            strToNum[str] = numToStr.size();
-            numToStr.push_back(str);
+            strToNum[symbol] = numToStr.size();
+            numToStr.push_back(std::move(symbol));
         }
     }
 
@@ -92,9 +73,7 @@ public:
     SymbolTable() {}
 
     /** Copy constructor, performs a deep copy. */
-    SymbolTable(const SymbolTable& other) : numToStr(other.numToStr), strToNum(other.strToNum) {
-        copyAll();
-    }
+    SymbolTable(const SymbolTable& other) : numToStr(other.numToStr), strToNum(other.strToNum) {}
 
     /** Copy constructor for r-value reference. */
     SymbolTable(SymbolTable&& other) noexcept {
@@ -103,19 +82,15 @@ public:
     }
 
     /** Destructor, frees memory allocated for all strings. */
-    virtual ~SymbolTable() {
-        freeAll();
-    }
+    virtual ~SymbolTable() = default;
 
     /** Assignment operator, performs a deep copy and frees memory allocated for all strings. */
     SymbolTable& operator=(const SymbolTable& other) {
         if (this == &other) {
             return *this;
         }
-        freeAll();
         numToStr = other.numToStr;
         strToNum = other.strToNum;
-        copyAll();
         return *this;
     }
 
@@ -127,17 +102,17 @@ public:
     }
 
     /** Find the index of a symbol in the table, inserting a new symbol if it does not exist there already. */
-    const size_t lookup(const char* symbol) {
+    const size_t lookup(const std::string& symbol) {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
         return newSymbolOfIndex(symbol);
     }
 
     /** Finds the index of a symbol in the table, giving an error if it's not found */
-    const size_t lookupExisting(const char* str) const {
+    const size_t lookupExisting(const std::string& symbol) const {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
-        auto result = strToNum.find(str);
+        auto result = strToNum.find(symbol);
         if (result == strToNum.end()) {
             std::cerr << "Error string not found in call to SymbolTable::lookupExisting.\n";
             exit(1);
@@ -153,7 +128,7 @@ public:
 
     /** Find a symbol in the table by its index, note that this gives an error if the index is out of bounds.
      */
-    const char* resolve(const size_t idx) const {
+    const std::string& resolve(const size_t idx) const {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
         if (idx >= size()) {
@@ -164,7 +139,7 @@ public:
         return numToStr[idx];
     }
 
-    const char* unsafeResolve(const size_t idx) const {
+    const std::string& unsafeResolve(const size_t idx) const {
         return numToStr[idx];
     }
 
@@ -187,10 +162,10 @@ public:
 
     /** Insert a single symbol into the table, not that this operation should not be used if inserting symbols
      * in bulk. */
-    void insert(const char* symbol) {
+    void insert(std::string symbol) {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
-        newSymbol(symbol);
+        newSymbol(std::move(symbol));
     }
 
     /** Print the symbol table to the given stream. */
