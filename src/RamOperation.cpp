@@ -81,7 +81,7 @@ std::unique_ptr<RamValue> getIndexElement(RamCondition* c, size_t& element, size
 void RamScan::addCondition(std::unique_ptr<RamCondition> c, const RamOperation& root) {
     // use condition to narrow scan if possible
     if (c->getLevel() == level) {
-        size_t element;
+        size_t element = 0;
         if (std::unique_ptr<RamValue> value = getIndexElement(c.get(), element, level)) {
             keys |= (1 << element);
             if (queryPattern[element] == nullptr) {
@@ -177,7 +177,7 @@ void RamLookup::print(std::ostream& os, int tabpos) const {
 void RamAggregate::addCondition(std::unique_ptr<RamCondition> c, const RamOperation& root) {
     // use condition to narrow scan if possible
     if (c->getLevel() == level) {
-        size_t element;
+        size_t element = 0;
         if (std::unique_ptr<RamValue> value = getIndexElement(c.get(), element, level)) {
             if (element > 0 || relation->getName().find("__agg") == std::string::npos) {
                 keys |= (1 << element);
