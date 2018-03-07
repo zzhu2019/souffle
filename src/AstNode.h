@@ -114,7 +114,7 @@ public:
     std::unique_ptr<T> operator()(std::unique_ptr<T> node) const {
         std::unique_ptr<AstNode> resPtr =
                 (*this)(std::unique_ptr<AstNode>(static_cast<AstNode*>(node.release())));
-        assert(dynamic_cast<T*>(resPtr.get()) && "Invalid target node!");
+        assert(nullptr != dynamic_cast<T*>(resPtr.get()) && "Invalid target node!");
         return std::unique_ptr<T>(dynamic_cast<T*>(resPtr.release()));
     }
 };

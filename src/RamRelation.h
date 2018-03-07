@@ -197,7 +197,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamRelation*>(&node));
+        assert(nullptr != dynamic_cast<const RamRelation*>(&node));
         const RamRelation& other = static_cast<const RamRelation&>(node);
         return name == other.name && arity == other.arity && attributeNames == other.attributeNames &&
                attributeTypeQualifiers == other.attributeTypeQualifiers && mask == other.mask &&
@@ -248,7 +248,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamRelation*>(&node));
+        assert(nullptr != dynamic_cast<const RamRelation*>(&node));
         const RamRelation& other = static_cast<const RamRelation&>(node);
         return getName() == other.getName();
     }

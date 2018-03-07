@@ -31,7 +31,7 @@ class AstPragma : public AstNode {
 protected:
     /** An internal function to determine equality to another node */
     virtual bool equal(const AstNode& node) const {
-        assert(dynamic_cast<const AstPragma*>(&node));
+        assert(nullptr != dynamic_cast<const AstPragma*>(&node));
         const AstPragma& other = static_cast<const AstPragma&>(node);
         return other.key == key && other.value == value;
     }

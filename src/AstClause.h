@@ -106,7 +106,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstExecutionOrder*>(&node));
+        assert(nullptr != dynamic_cast<const AstExecutionOrder*>(&node));
         const AstExecutionOrder& other = static_cast<const AstExecutionOrder&>(node);
         return order == other.order;
     }
@@ -210,7 +210,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstExecutionPlan*>(&node));
+        assert(nullptr != dynamic_cast<const AstExecutionPlan*>(&node));
         const AstExecutionPlan& other = static_cast<const AstExecutionPlan&>(node);
         if (maxVersion != other.maxVersion) {
             return false;
@@ -450,7 +450,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstClause*>(&node));
+        assert(nullptr != dynamic_cast<const AstClause*>(&node));
         const AstClause& other = static_cast<const AstClause&>(node);
         return *head == *other.head && equal_targets(atoms, other.atoms) &&
                equal_targets(negations, other.negations) && equal_targets(constraints, other.constraints);

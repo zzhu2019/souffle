@@ -162,7 +162,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstAtom*>(&node));
+        assert(nullptr != dynamic_cast<const AstAtom*>(&node));
         const AstAtom& other = static_cast<const AstAtom&>(node);
         return name == other.name && equal_targets(arguments, other.arguments);
     }
@@ -218,7 +218,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstNegation*>(&node));
+        assert(nullptr != dynamic_cast<const AstNegation*>(&node));
         const AstNegation& other = static_cast<const AstNegation&>(node);
         return *atom == *other.atom;
     }
@@ -283,7 +283,7 @@ public:
 
 protected:
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstBooleanConstraint*>(&node));
+        assert(nullptr != dynamic_cast<const AstBooleanConstraint*>(&node));
         const AstBooleanConstraint& other = static_cast<const AstBooleanConstraint&>(node);
         return truthValue == other.truthValue;
     }
@@ -379,7 +379,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstBinaryConstraint*>(&node));
+        assert(nullptr != dynamic_cast<const AstBinaryConstraint*>(&node));
         const AstBinaryConstraint& other = static_cast<const AstBinaryConstraint&>(node);
         return operation == other.operation && *lhs == *other.lhs && *rhs == *other.rhs;
     }

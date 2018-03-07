@@ -97,7 +97,7 @@ public:
 
 protected:
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstComponentType*>(&node));
+        assert(nullptr != dynamic_cast<const AstComponentType*>(&node));
         const AstComponentType& other = static_cast<const AstComponentType&>(node);
         return name == other.name && typeParams == other.typeParams;
     }
@@ -166,7 +166,7 @@ public:
 protected:
     /** An internal function to determine equality to another node */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstComponentInit*>(&node));
+        assert(nullptr != dynamic_cast<const AstComponentInit*>(&node));
         const AstComponentInit& other = static_cast<const AstComponentInit&>(node);
         return instanceName == other.instanceName && componentType == other.componentType;
     }
@@ -442,7 +442,7 @@ public:
 protected:
     /** An internal function to determine equality to another node */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstComponent*>(&node));
+        assert(nullptr != dynamic_cast<const AstComponent*>(&node));
         const AstComponent& other = static_cast<const AstComponent&>(node);
 
         // compare all fields

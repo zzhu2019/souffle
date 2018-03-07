@@ -182,7 +182,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstPrimitiveType*>(&node));
+        assert(nullptr != dynamic_cast<const AstPrimitiveType*>(&node));
         const AstPrimitiveType& other = static_cast<const AstPrimitiveType&>(node);
         return getName() == other.getName() && num == other.num;
     }
@@ -227,7 +227,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstUnionType*>(&node));
+        assert(nullptr != dynamic_cast<const AstUnionType*>(&node));
         const AstUnionType& other = static_cast<const AstUnionType&>(node);
         return getName() == other.getName() && types == other.types;
     }
@@ -295,7 +295,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstRecordType*>(&node));
+        assert(nullptr != dynamic_cast<const AstRecordType*>(&node));
         const AstRecordType& other = static_cast<const AstRecordType&>(node);
         return getName() == other.getName() && fields == other.fields;
     }

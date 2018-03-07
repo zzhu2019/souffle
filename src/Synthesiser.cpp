@@ -877,7 +877,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     break;
                 }
                 default:
-                    assert(0 && "Unsupported Operation!");
+                    assert(false && "Unsupported Operation!");
                     break;
             }
             PRINT_END_COMMENT(out);
@@ -969,7 +969,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     out << "))";
                     break;
                 default:
-                    assert(0 && "Unsupported Operation!");
+                    assert(false && "Unsupported Operation!");
                     break;
             }
             PRINT_END_COMMENT(out);
@@ -1095,7 +1095,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     break;
                 }
                 default:
-                    assert(0 && "Unsupported Operation!");
+                    assert(false && "Unsupported Operation!");
             }
             PRINT_END_COMMENT(out);
         }
@@ -1114,7 +1114,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     out << ")))";
                     break;
                 default:
-                    assert(0 && "Unsupported Operation!");
+                    assert(false && "Unsupported Operation!");
             }
             PRINT_END_COMMENT(out);
         }

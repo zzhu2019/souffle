@@ -83,7 +83,7 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                 case UnaryOp::STRLEN:
                     return interpreter.getSymbolTable().resolve(arg).size();
                 default:
-                    assert(0 && "unsupported operator");
+                    assert(false && "unsupported operator");
                     return 0;
             }
         }
@@ -139,7 +139,7 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                                     rhs))).c_str());
                 }
                 default:
-                    assert(0 && "unsupported operator");
+                    assert(false && "unsupported operator");
                     return 0;
             }
         }
@@ -162,7 +162,7 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                     return interpreter.getSymbolTable().lookup(sub_str.c_str());
                 }
                 default:
-                    assert(0 && "unsupported operator");
+                    assert(false && "unsupported operator");
                     return 0;
             }
         }
@@ -310,7 +310,7 @@ bool Interpreter::evalCond(const RamCondition& cond, const InterpreterContext& c
                     return text.find(pattern) == std::string::npos;
                 }
                 default:
-                    assert(0 && "unsupported operator");
+                    assert(false && "unsupported operator");
                     return 0;
             }
         }

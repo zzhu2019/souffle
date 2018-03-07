@@ -124,11 +124,11 @@ public:
         return name;
     }
     const char* getAttrType(size_t arg) const override {
-        assert(0 <= arg && arg < Arity && "attribute out of bound");
+        assert(false <= arg && arg < Arity && "attribute out of bound");
         return tupleType[arg];
     }
     const char* getAttrName(size_t arg) const override {
-        assert(0 <= arg && arg < Arity && "attribute out of bound");
+        assert(false <= arg && arg < Arity && "attribute out of bound");
         return tupleName[arg];
     }
     size_t getArity() const override {

@@ -81,7 +81,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamRelationStatement*>(&node));
+        assert(nullptr != dynamic_cast<const RamRelationStatement*>(&node));
         const RamRelationStatement& other = static_cast<const RamRelationStatement&>(node);
         return getRelation() == other.getRelation();
     }
@@ -273,7 +273,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamMerge*>(&node));
+        assert(nullptr != dynamic_cast<const RamMerge*>(&node));
         const RamMerge& other = static_cast<const RamMerge&>(node);
         return getTargetRelation() == other.getTargetRelation() &&
                getSourceRelation() == other.getSourceRelation();
@@ -335,7 +335,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamSwap*>(&node));
+        assert(nullptr != dynamic_cast<const RamSwap*>(&node));
         const RamSwap& other = static_cast<const RamSwap&>(node);
         return getFirstRelation() == other.getFirstRelation() &&
                getSecondRelation() == other.getSecondRelation();
@@ -397,7 +397,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamFact*>(&node));
+        assert(nullptr != dynamic_cast<const RamFact*>(&node));
         const RamFact& other = static_cast<const RamFact&>(node);
         return RamRelationStatement::equal(other) && equal_targets(values, other.values);
     }
@@ -447,7 +447,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamInsert*>(&node));
+        assert(nullptr != dynamic_cast<const RamInsert*>(&node));
         const RamInsert& other = static_cast<const RamInsert&>(node);
         return getOperation() == other.getOperation();
     }
@@ -531,7 +531,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamSequence*>(&node));
+        assert(nullptr != dynamic_cast<const RamSequence*>(&node));
         const RamSequence& other = static_cast<const RamSequence&>(node);
 
         return equal_targets(statements, other.statements);
@@ -604,7 +604,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamParallel*>(&node));
+        assert(nullptr != dynamic_cast<const RamParallel*>(&node));
         const RamParallel& other = static_cast<const RamParallel&>(node);
         return equal_targets(statements, other.statements);
     }
@@ -662,7 +662,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamLoop*>(&node));
+        assert(nullptr != dynamic_cast<const RamLoop*>(&node));
         const RamLoop& other = static_cast<const RamLoop&>(node);
         return *body == *other.body;
     }
@@ -713,7 +713,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamExit*>(&node));
+        assert(nullptr != dynamic_cast<const RamExit*>(&node));
         const RamExit& other = static_cast<const RamExit&>(node);
         return *condition == *other.condition;
     }
@@ -782,7 +782,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamLogTimer*>(&node));
+        assert(nullptr != dynamic_cast<const RamLogTimer*>(&node));
         const RamLogTimer& other = static_cast<const RamLogTimer&>(node);
         return *statement == *other.statement && message == other.message;
     }
@@ -845,7 +845,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamLogTimer*>(&node));
+        assert(nullptr != dynamic_cast<const RamLogTimer*>(&node));
         const RamLogTimer& other = static_cast<const RamLogTimer&>(node);
         return getStatement() == other.getStatement() && getMessage() == other.getMessage();
     }
@@ -884,7 +884,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamLogSize*>(&node));
+        assert(nullptr != dynamic_cast<const RamLogSize*>(&node));
         const RamLogSize& other = static_cast<const RamLogSize&>(node);
         RamRelationStatement::equal(other);
         return getMessage() == other.getMessage();
@@ -926,7 +926,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamPrintSize*>(&node));
+        assert(nullptr != dynamic_cast<const RamPrintSize*>(&node));
         const RamPrintSize& other = static_cast<const RamPrintSize&>(node);
         RamRelationStatement::equal(other);
         return message == other.message;

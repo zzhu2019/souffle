@@ -114,7 +114,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamProgram*>(&node));
+        assert(nullptr != dynamic_cast<const RamProgram*>(&node));
         const RamProgram& other = static_cast<const RamProgram&>(node);
         bool areSubroutinesEqual = true;
         for (auto& cur : subroutines) {

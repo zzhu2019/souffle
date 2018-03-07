@@ -131,7 +131,7 @@ public:
     std::unique_ptr<T> operator()(std::unique_ptr<T> node) const {
         std::unique_ptr<AstNode> resPtr =
                 (*this)(std::unique_ptr<AstNode>(static_cast<AstNode*>(node.release())));
-        assert(dynamic_cast<T*>(resPtr.get()) && "Invalid node type mapping.");
+        assert(nullptr != dynamic_cast<T*>(resPtr.get()) && "Invalid node type mapping.");
         return std::unique_ptr<T>(dynamic_cast<T*>(resPtr.release()));
     }
 

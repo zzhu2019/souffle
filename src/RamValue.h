@@ -117,7 +117,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamUnaryOperator*>(&node));
+        assert(nullptr != dynamic_cast<const RamUnaryOperator*>(&node));
         const RamUnaryOperator& other = static_cast<const RamUnaryOperator&>(node);
         return getOperator() == other.getOperator() && getArgument() == other.getArgument();
     }
@@ -216,7 +216,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamBinaryOperator*>(&node));
+        assert(nullptr != dynamic_cast<const RamBinaryOperator*>(&node));
         const RamBinaryOperator& other = static_cast<const RamBinaryOperator&>(node);
         return getOperator() == other.getOperator() && getLHSArgument() == other.getLHSArgument() &&
                getRHSArgument() == other.getRHSArgument();
@@ -299,7 +299,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamTernaryOperator*>(&node));
+        assert(nullptr != dynamic_cast<const RamTernaryOperator*>(&node));
         const RamTernaryOperator& other = static_cast<const RamTernaryOperator&>(node);
         return getOperator() == other.getOperator() && getArgument(0) == other.getArgument(0) &&
                getArgument(1) == other.getArgument(1) && getArgument(2) == other.getArgument(2);
@@ -367,7 +367,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamElementAccess*>(&node));
+        assert(nullptr != dynamic_cast<const RamElementAccess*>(&node));
         const RamElementAccess& other = static_cast<const RamElementAccess&>(node);
         return getLevel() == other.getLevel() && getElement() == other.getElement() &&
                getName() == other.getName();
@@ -418,7 +418,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamNumber*>(&node));
+        assert(nullptr != dynamic_cast<const RamNumber*>(&node));
         const RamNumber& other = static_cast<const RamNumber&>(node);
         return getConstant() == other.getConstant();
     }
@@ -462,7 +462,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamAutoIncrement*>(&node));
+        assert(nullptr != dynamic_cast<const RamAutoIncrement*>(&node));
         return true;
     }
 };
@@ -550,7 +550,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamPack*>(&node));
+        assert(nullptr != dynamic_cast<const RamPack*>(&node));
         const RamPack& other = static_cast<const RamPack&>(node);
         return equal_targets(arguments, other.arguments);
     }
@@ -603,7 +603,7 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamArgument*>(&node));
+        assert(nullptr != dynamic_cast<const RamArgument*>(&node));
         const RamArgument& other = static_cast<const RamArgument&>(node);
         return getArgNumber() == other.getArgNumber();
     }

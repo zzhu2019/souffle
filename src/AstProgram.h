@@ -222,7 +222,7 @@ private:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstProgram*>(&node));
+        assert(nullptr != dynamic_cast<const AstProgram*>(&node));
         const AstProgram& other = static_cast<const AstProgram&>(node);
 
         // check list sizes

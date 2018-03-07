@@ -569,7 +569,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
         valueIndex.setAggregatorLocation(cur, Location({aggLoc, 0}));
 
         // bind aggregator variables to locations
-        assert(dynamic_cast<const AstAtom*>(cur.getBodyLiterals()[0]));
+        assert(nullptr != dynamic_cast<const AstAtom*>(cur.getBodyLiterals()[0]));
         const AstAtom& atom = static_cast<const AstAtom&>(*cur.getBodyLiterals()[0]);
         for (size_t pos = 0; pos < atom.getArguments().size(); ++pos) {
             if (const AstVariable* var = dynamic_cast<const AstVariable*>(atom.getArgument(pos))) {

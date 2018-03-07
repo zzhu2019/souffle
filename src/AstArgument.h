@@ -95,7 +95,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstVariable*>(&node));
+        assert(nullptr != dynamic_cast<const AstVariable*>(&node));
         const AstVariable& other = static_cast<const AstVariable&>(node);
         return name == other.name;
     }
@@ -129,7 +129,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstUnnamedVariable*>(&node));
+        assert(nullptr != dynamic_cast<const AstUnnamedVariable*>(&node));
         return true;
     }
 };
@@ -162,7 +162,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstCounter*>(&node));
+        assert(nullptr != dynamic_cast<const AstCounter*>(&node));
         return true;
     }
 };
@@ -191,7 +191,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstConstant*>(&node));
+        assert(nullptr != dynamic_cast<const AstConstant*>(&node));
         const AstConstant& other = static_cast<const AstConstant&>(node);
         return idx == other.idx;
     }
@@ -343,7 +343,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstUnaryFunctor*>(&node));
+        assert(nullptr != dynamic_cast<const AstUnaryFunctor*>(&node));
         const AstUnaryFunctor& other = static_cast<const AstUnaryFunctor&>(node);
         return fun == other.fun && *operand == *other.operand;
     }
@@ -439,7 +439,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstBinaryFunctor*>(&node));
+        assert(nullptr != dynamic_cast<const AstBinaryFunctor*>(&node));
         const AstBinaryFunctor& other = static_cast<const AstBinaryFunctor&>(node);
         return fun == other.fun && *lhs == *other.lhs && *rhs == *other.rhs;
     }
@@ -529,7 +529,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstTernaryFunctor*>(&node));
+        assert(nullptr != dynamic_cast<const AstTernaryFunctor*>(&node));
         const AstTernaryFunctor& other = static_cast<const AstTernaryFunctor&>(node);
         return fun == other.fun && *arg[0] == *other.arg[0] && *arg[1] == *other.arg[1] &&
                *arg[2] == *other.arg[2];
@@ -590,7 +590,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstRecordInit*>(&node));
+        assert(nullptr != dynamic_cast<const AstRecordInit*>(&node));
         const AstRecordInit& other = static_cast<const AstRecordInit&>(node);
         return equal_targets(args, other.args);
     }
@@ -644,7 +644,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstTypeCast*>(&node));
+        assert(nullptr != dynamic_cast<const AstTypeCast*>(&node));
         const AstTypeCast& other = static_cast<const AstTypeCast&>(node);
         return type == other.type && *value == *other.value;
     }
@@ -729,7 +729,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstAggregator*>(&node));
+        assert(nullptr != dynamic_cast<const AstAggregator*>(&node));
         const AstAggregator& other = static_cast<const AstAggregator&>(node);
         return fun == other.fun && equal_ptr(expr, other.expr) && equal_targets(body, other.body);
     }
@@ -771,7 +771,7 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstSubroutineArgument*>(&node));
+        assert(nullptr != dynamic_cast<const AstSubroutineArgument*>(&node));
         const AstSubroutineArgument& other = static_cast<const AstSubroutineArgument&>(node);
         return number == other.number;
     }
