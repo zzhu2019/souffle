@@ -53,9 +53,8 @@ TEST(SymbolTable, Copy) {
     EXPECT_STREQ("Hello", a->resolve(a_idx));
     EXPECT_STREQ("Hello", b->resolve(b_idx));
 
-    // should be different string references but the same actual string
+    // should be the same actual string
     EXPECT_STREQ(a->resolve(a_idx), b->resolve(b_idx));
-    EXPECT_NE(a->resolve(a_idx), b->resolve(b_idx));
 
     // b should survive
     delete a;
@@ -84,11 +83,6 @@ TEST(SymbolTable, Assign) {
     EXPECT_STREQ("Hello", a->resolve(a_idx));
     EXPECT_STREQ("Hello", b.resolve(b_idx));
     EXPECT_STREQ("Hello", c.resolve(c_idx));
-
-    // should be different strings
-    EXPECT_NE(a->resolve(a_idx), b.resolve(b_idx));
-    EXPECT_NE(a->resolve(a_idx), c.resolve(c_idx));
-    EXPECT_NE(b.resolve(b_idx), c.resolve(c_idx));
 
     // b and c should survive
     delete a;
