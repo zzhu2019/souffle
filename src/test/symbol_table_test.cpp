@@ -103,17 +103,18 @@ TEST(SymbolTable, Inserts) {
     T N = 10000000;  // number of symbols to insert
 
     SymbolTable X;
-    char* x;
+    std::string x;
 
-    char** A = new char*[N];  // create an array of symbols
+    std::vector<std::string> A;
+    A.reserve(N);
 
     for (T i = 0; i < N; ++i) {
-        x = reinterpret_cast<char*>(&i);
+        x = std::to_string(i) + "string";
         start = now();
         X.insert(x);  // insert one at a time
         end = now();
         n += duration_in_ns(start, end);  // record the time
-        A[i] = x;                         // also put in the array
+        A.push_back(x);                   // also put in the array
     }
 
     if (ECHO_TIME)
@@ -122,7 +123,7 @@ TEST(SymbolTable, Inserts) {
 
     // try inserting all the elements that were just inserted
     start = now();
-    X.insert((const char**)A, N);
+    X.insert(A);
     end = now();
     n = duration_in_ns(start, end);
 
@@ -132,13 +133,11 @@ TEST(SymbolTable, Inserts) {
 
     // test insert for elements that don't exist yet
     start = now();
-    Y.insert((const char**)A, N);
+    Y.insert(A);
     end = now();
     n = duration_in_ns(start, end);
 
     if (ECHO_TIME) std::cout << "Time to insert " << N << " new elements: " << n << " ns" << std::endl;
-
-    delete[] A;
 }
 
 }  // end namespace test
