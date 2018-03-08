@@ -17,6 +17,7 @@
 #pragma once
 
 #include "ParallelUtils.h"
+#include "RamTypes.h"
 #include "Util.h"
 
 #include <iostream>
@@ -47,24 +48,24 @@ private:
 
     /** Convenience method to place a new symbol in the table, if it does not exist, and return the index of
      * it. */
-    inline const size_t newSymbolOfIndex(std::string symbol) {
-        size_t idx;
+    inline const size_t newSymbolOfIndex(const std::string& symbol) {
+        size_t index;
         auto it = strToNum.find(symbol);
         if (it == strToNum.end()) {
-            idx = numToStr.size();
-            strToNum[symbol] = idx;
-            numToStr.push_back(std::move(symbol));
+            index = numToStr.size();
+            strToNum[symbol] = index;
+            numToStr.push_back(symbol);
         } else {
-            idx = it->second;
+            index = it->second;
         }
-        return idx;
+        return index;
     }
 
     /** Convenience method to place a new symbol in the table, if it does not exist. */
-    inline void newSymbol(std::string symbol) {
+    inline void newSymbol(const std::string& symbol) {
         if (strToNum.find(symbol) == strToNum.end()) {
             strToNum[symbol] = numToStr.size();
-            numToStr.push_back(std::move(symbol));
+            numToStr.push_back(symbol);
         }
     }
 
@@ -102,45 +103,44 @@ public:
     }
 
     /** Find the index of a symbol in the table, inserting a new symbol if it does not exist there already. */
-    const size_t lookup(const std::string& symbol) {
+    const RamDomain lookup(const std::string& symbol) {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
-        return newSymbolOfIndex(symbol);
+        return static_cast<RamDomain>(newSymbolOfIndex(symbol));
     }
 
     /** Finds the index of a symbol in the table, giving an error if it's not found */
-    const size_t lookupExisting(const std::string& symbol) const {
+    const RamDomain lookupExisting(const std::string& symbol) const {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
         auto result = strToNum.find(symbol);
         if (result == strToNum.end()) {
             std::cerr << "Error string not found in call to SymbolTable::lookupExisting.\n";
             exit(1);
-        } else {
-            return result->second;
         }
+        return static_cast<RamDomain>(result->second);
     }
 
     /** Find the index of a symbol in the table, inserting a new symbol if it does not exist there already. */
-    const size_t unsafeLookup(const char* symbol) {
+    const RamDomain unsafeLookup(const std::string& symbol) {
         return newSymbolOfIndex(symbol);
     }
 
     /** Find a symbol in the table by its index, note that this gives an error if the index is out of bounds.
      */
-    const std::string& resolve(const size_t idx) const {
+    const std::string& resolve(const size_t index) const {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
-        if (idx >= size()) {
+        if (index >= size()) {
             // TODO: use different error reporting here!!
             std::cerr << "Error index out of bounds in call to SymbolTable::resolve.\n";
             exit(1);
         }
-        return numToStr[idx];
+        return numToStr[index];
     }
 
-    const std::string& unsafeResolve(const size_t idx) const {
-        return numToStr[idx];
+    const std::string& unsafeResolve(const size_t index) const {
+        return numToStr[index];
     }
 
     /* Return the size of the symbol table, being the number of symbols it currently holds. */
@@ -150,22 +150,22 @@ public:
 
     /** Bulk insert symbols into the table, note that this operation is more efficient than repeated inserts
      * of single symbols. */
-    void insert(const char** symbols, const size_t n) {
+    void insert(const std::vector<std::string>& symbols) {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
-        strToNum.reserve(size() + n);
-        numToStr.reserve(size() + n);
-        for (size_t idx = 0; idx < n; idx++) {
-            newSymbol(symbols[idx]);
+        strToNum.reserve(size() + symbols.size());
+        numToStr.reserve(size() + symbols.size());
+        for (auto& symbol : symbols) {
+            newSymbol(symbol);
         }
     }
 
     /** Insert a single symbol into the table, not that this operation should not be used if inserting symbols
      * in bulk. */
-    void insert(std::string symbol) {
+    void insert(const std::string& symbol) {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
-        newSymbol(std::move(symbol));
+        newSymbol(symbol);
     }
 
     /** Print the symbol table to the given stream. */
