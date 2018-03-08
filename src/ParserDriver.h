@@ -38,7 +38,7 @@ struct scanner_data {
     AstSrcLocation yylloc;
 
     /* Stack of parsed files */
-    const char* yyfilename;
+    const char* yyfilename = nullptr;
 };
 
 class ParserDriver {

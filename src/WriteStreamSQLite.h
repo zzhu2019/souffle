@@ -257,10 +257,10 @@ private:
     size_t arity;
 
     std::unordered_map<uint64_t, uint64_t> dbSymbolTable;
-    sqlite3_stmt* insertStatement;
-    sqlite3_stmt* symbolInsertStatement;
-    sqlite3_stmt* symbolSelectStatement;
-    sqlite3* db;
+    sqlite3_stmt* insertStatement = nullptr;
+    sqlite3_stmt* symbolInsertStatement = nullptr;
+    sqlite3_stmt* symbolSelectStatement = nullptr;
+    sqlite3* db = nullptr;
 };
 
 class WriteSQLiteFactory : public WriteStreamFactory {

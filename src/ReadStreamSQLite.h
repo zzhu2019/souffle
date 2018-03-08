@@ -154,8 +154,8 @@ protected:
     }
     const std::string& dbFilename;
     const std::string& relationName;
-    sqlite3_stmt* selectStatement;
-    sqlite3* db;
+    sqlite3_stmt* selectStatement = nullptr;
+    sqlite3* db = nullptr;
 };
 
 class ReadSQLiteFactory : public ReadStreamFactory {

@@ -26,7 +26,7 @@ protected:
 
 private:
     bool recursive = false;
-    int version;
+    int version = 0;
 
 public:
     Rule(std::string name, std::string id) : name(name), identifier(id) {}

@@ -30,10 +30,10 @@ private:
     std::vector<std::string> tab_completion;
     std::vector<std::string> history;
     std::string output;
-    char current_char;
-    size_t cursor_pos;
-    size_t hist_pos;
-    size_t tab_pos;
+    char current_char = 0;
+    size_t cursor_pos = 0;
+    size_t hist_pos = 0;
+    size_t tab_pos = 0;
     bool in_tab_complete;
     bool in_history;
     std::string original_hist_val;
@@ -41,7 +41,7 @@ private:
     std::string current_tab_val;
     std::string original_tab_val;
     std::vector<std::string> current_tab_completes;
-    size_t original_hist_cursor_pos;
+    size_t original_hist_cursor_pos = 0;
 
 public:
     InputReader() : prompt("Input: "), in_tab_complete(false), in_history(false) {

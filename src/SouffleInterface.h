@@ -142,7 +142,7 @@ public:
     /**
      * allows printing using WriteStream
      */
-    const RamDomain* data;
+    const RamDomain* data = nullptr;
 
     /**
      * return number of elements in the tuple
@@ -321,8 +321,10 @@ protected:
     // to static initialization order fiasco. The static
     // container needs to be a primitive type such as pointer
     // set to NULL.
-    ProgramFactory* link;  // link to next factory
-    std::string name;      // name of factory
+    // link to next factory
+    ProgramFactory* link = nullptr;
+    // name of factory
+    std::string name;
 
 protected:
     /**

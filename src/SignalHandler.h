@@ -37,9 +37,9 @@ private:
     bool isSet;
 
     // previous signal handler routines
-    void (*prevFpeHandler)(int);
-    void (*prevIntHandler)(int);
-    void (*prevSegVHandler)(int);
+    void (*prevFpeHandler)(int) = nullptr;
+    void (*prevIntHandler)(int) = nullptr;
+    void (*prevSegVHandler)(int) = nullptr;
 
     /**
      * Signal handler for various types of signals.

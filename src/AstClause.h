@@ -273,7 +273,7 @@ protected:
 public:
     /** Construct an empty clause with empty list of literals and
         its head set to NULL */
-    AstClause() : head(nullptr), fixedPlan(false), plan(nullptr), generated(false) {}
+    AstClause() : head(nullptr), fixedPlan(false), plan(nullptr), generated(false), clauseNum(0) {}
 
     ~AstClause() override = default;
 

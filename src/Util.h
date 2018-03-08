@@ -930,7 +930,7 @@ inline long duration_in_ns(const time_point& start, const time_point& end) {
  *  Check whether a file exists in the file system
  */
 inline bool existFile(const std::string& name) {
-    struct stat buffer;
+    struct stat buffer = {};
     if (stat(name.c_str(), &buffer) == 0) {
         if ((buffer.st_mode & S_IFREG) != 0) {
             return true;
@@ -943,7 +943,7 @@ inline bool existFile(const std::string& name) {
  *  Check whether a directory exists in the file system
  */
 inline bool existDir(const std::string& name) {
-    struct stat buffer;
+    struct stat buffer = {};
     if (stat(name.c_str(), &buffer) == 0) {
         if ((buffer.st_mode & S_IFDIR) != 0) {
             return true;

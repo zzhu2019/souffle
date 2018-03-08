@@ -37,9 +37,9 @@ private:
     ExplainProvenance& prov;
 
     bool ncurses;
-    WINDOW* treePad;
-    WINDOW* queryWindow;
-    int maxx, maxy;
+    WINDOW* treePad = nullptr;
+    WINDOW* queryWindow = nullptr;
+    int maxx = 0, maxy = 0;
 
     int depthLimit;
 
