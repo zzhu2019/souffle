@@ -845,35 +845,35 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
                 // strings
                 case BinaryConstraintOp::MATCH: {
-                    out << "regex_wrapper(symTable.resolve((size_t)";
+                    out << "regex_wrapper(symTable.resolve(";
                     visit(rel.getLHS(), out);
-                    out << "),symTable.resolve((size_t)";
+                    out << "),symTable.resolve(";
                     visit(rel.getRHS(), out);
                     out << "))";
                     break;
                 }
                 case BinaryConstraintOp::NOT_MATCH: {
-                    out << "!regex_wrapper(symTable.resolve((size_t)";
+                    out << "!regex_wrapper(symTable.resolve(";
                     visit(rel.getLHS(), out);
-                    out << "),symTable.resolve((size_t)";
+                    out << "),symTable.resolve(";
                     visit(rel.getRHS(), out);
                     out << "))";
                     break;
                 }
                 case BinaryConstraintOp::CONTAINS: {
-                    out << "(std::string(symTable.resolve((size_t)";
+                    out << "(symTable.resolve(";
                     visit(rel.getRHS(), out);
-                    out << ")).find(symTable.resolve((size_t)";
+                    out << ").find(symTable.resolve(";
                     visit(rel.getLHS(), out);
-                    out << "))!=std::string::npos)";
+                    out << ")) != std::string::npos)";
                     break;
                 }
                 case BinaryConstraintOp::NOT_CONTAINS: {
-                    out << "(std::string(symTable.resolve((size_t)";
+                    out << "(symTable.resolve(";
                     visit(rel.getRHS(), out);
-                    out << ")).find(symTable.resolve((size_t)";
+                    out << ").find(symTable.resolve(";
                     visit(rel.getLHS(), out);
-                    out << "))==std::string::npos)";
+                    out << ")) == std::string::npos)";
                     break;
                 }
                 default:
@@ -1104,7 +1104,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             PRINT_BEGIN_COMMENT(out);
             switch (op.getOperator()) {
                 case TernaryOp::SUBSTR:
-                    out << "(RamDomain)symTable.lookup(";
+                    out << "symTable.lookup(";
                     out << "substr_wrapper(symTable.resolve(";
                     visit(op.getArg(0), out);
                     out << "),(";
@@ -1190,7 +1190,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     // print wrapper for regex
     os << "class " << classname << " : public SouffleProgram {\n";
     os << "private:\n";
-    os << "static inline bool regex_wrapper(const char *pattern, const char *text) {\n";
+    os << "static inline bool regex_wrapper(const std::string& pattern, const std::string& text) {\n";
     os << "   bool result = false; \n";
     os << "   try { result = std::regex_match(text, std::regex(pattern)); } catch(...) { \n";
     os << "     std::cerr << \"warning: wrong pattern provided for match(\\\"\" << pattern << \"\\\",\\\"\" "
