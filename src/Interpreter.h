@@ -61,7 +61,7 @@ protected:
     bool evalCond(const RamCondition& cond, const InterpreterContext& ctxt = InterpreterContext());
 
     /** Evaluate statement */
-    void evalStmt(const RamStatement& stmt, std::ostream* profile = nullptr);
+    void evalStmt(const RamStatement& stmt);
 
     /** Get symbol table */
     SymbolTable& getSymbolTable() {

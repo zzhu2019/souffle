@@ -369,16 +369,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
         void visitLogSize(const RamLogSize& print, std::ostream& out) override {
             PRINT_BEGIN_COMMENT(out);
-            const std::string ext = fileExtension(Global::config().get("profile"));
-            out << "{ auto lease = getOutputLock().acquire(); \n";
-            out << "(void)lease;\n";
-            out << "profile << R\"(" << print.getMessage() << ")\" << ";
-            out << synthesiser.getRelationName(print.getRelation()) << "->size() << ";
-            if (ext == "json") {
-                out << "\"},\" << ";
-            }
-            out << "std::endl;\n";
-            out << "}";
+            out << "ProfileEventSingleton::instance().makeQuantityEvent( R\"(";
+            out << print.getMessage() << ")\",";
+            out << synthesiser.getRelationName(print.getRelation()) << "->size());";
             PRINT_END_COMMENT(out);
         }
 
@@ -464,7 +457,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             const std::string ext = fileExtension(Global::config().get("profile"));
 
             // create local timer
-            out << "\tLogger logger(R\"(" << timer.getMessage() << ")\",profile, \"" << ext << "\");\n";
+            out << "\tLogger logger(R\"(" << timer.getMessage() << ")\");\n";
 
             // insert statement to be measured
             visit(timer.getStatement(), out);
@@ -1340,6 +1333,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "std::ofstream profile(profiling_fname);\n";
         os << "profile << \"" << AstLogStatement::startDebug() << "\" << std::endl;\n";
         emitCode(os, *(prog.getMain()));
+        os << "ProfileEventSingleton::instance().dump(profile);\n";
     } else {
         emitCode(os, *(prog.getMain()));
     }

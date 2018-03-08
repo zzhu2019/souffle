@@ -30,6 +30,7 @@
 #include "SignalHandler.h"
 #include "TypeSystem.h"
 #include "UnaryFunctorOps.h"
+#include "ProfileEvent.h"
 
 #include <algorithm>
 #include <chrono>
@@ -575,14 +576,13 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
 }
 
 /** Evaluate RAM statement */
-void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
+void Interpreter::evalStmt(const RamStatement& stmt) {
     class StatementEvaluator : public RamVisitor<bool> {
         Interpreter& interpreter;
-        std::ostream* profile;
 
     public:
-        StatementEvaluator(Interpreter& interp, std::ostream* profile)
-                : interpreter(interp), profile(profile) {}
+        StatementEvaluator(Interpreter& interp)
+                : interpreter(interp) {}
 
         // -- Statements -----------------------------
 
@@ -632,8 +632,7 @@ void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
         }
 
         bool visitLogTimer(const RamLogTimer& timer) override {
-            Logger logger(
-                    timer.getMessage().c_str(), *profile, fileExtension(Global::config().get("profile")));
+            Logger logger(timer.getMessage().c_str());
             return visit(timer.getStatement());
         }
 
@@ -667,15 +666,8 @@ void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
         }
 
         bool visitLogSize(const RamLogSize& print) override {
-            auto lease = getOutputLock().acquire();
-            (void)lease;
             const InterpreterRelation& rel = interpreter.getRelation(print.getRelation());
-            *profile << print.getMessage() << rel.size();
-            const std::string ext = fileExtension(Global::config().get("profile"));
-            if (ext == "json") {
-                *profile << "},";
-            }
-            *profile << "\n";
+            ProfileEventSingleton::instance().makeQuantityEvent(print.getMessage(), rel.size());
             return true;
         }
 
@@ -760,7 +752,7 @@ void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
     };
 
     // create and run interpreter for statements
-    StatementEvaluator(*this, profile).visit(stmt);
+    StatementEvaluator(*this).visit(stmt);
 }
 
 /** Execute main program of a translation unit */
@@ -768,6 +760,7 @@ void Interpreter::executeMain() {
     SignalHandler::instance()->set();
     const RamStatement& main = *translationUnit.getP().getMain();
 
+    evalStmt(main);
     if (Global::config().has("profile")) {
         std::string fname = Global::config().get("profile");
         // open output stream
@@ -776,9 +769,7 @@ void Interpreter::executeMain() {
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
         os << AstLogStatement::startDebug() << std::endl;
-        evalStmt(main, &os);
-    } else {
-        evalStmt(main);
+        ProfileEventSingleton::instance().dump(os);
     }
     SignalHandler::instance()->reset();
 }

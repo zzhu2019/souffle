@@ -18,13 +18,13 @@
 #pragma once
 
 #include "ParallelUtils.h"
+#include "ProfileEvent.h"
 
 #include <chrono>
 #include <iostream>
 #include <utility>
 
 namespace souffle {
-
 /**
  * Obtains a reference to the lock synchronizing output operations.
  */
@@ -42,46 +42,14 @@ inline Lock& getOutputLock() {
  * processed tuples may be added in the future.
  */
 class Logger {
-    // the type of clock to be utilized by this class
-    using clock = std::chrono::steady_clock;
-    using time = clock::time_point;
-
-    // a label to be printed when reporting the execution time
-    const char* label;
-
-    // the start time
-    time start;
-
-    // an output stream to report to
-    std::ostream& out;
-
-    // extension of log file determining message format
-    const std::string ext;
-
+private:
+    ProfileTimingEvent *event;
 public:
-    Logger(const char* label, std::ostream& out = std::cout, std::string ext = "")
-            : label(label), out(out), ext(std::move(ext)) {
-        start = clock::now();
-    }
+    Logger(const std::string &label)
+            : event(ProfileEventSingleton::instance().makeTimingEvent(label)) { }
 
     ~Logger() {
-        auto duration = clock::now() - start;
-
-        auto lease = getOutputLock().acquire();
-        (void)lease;  // avoid warning
-
-        out << label << std::chrono::duration_cast<std::chrono::duration<double>>(duration).count();
-
-        if (ext == "json") {
-            out << "}";
-            if (std::string(label).find("@runtime") != std::string::npos) {
-                out << "\n]";
-            } else {
-                out << ",";
-            }
-        }
-
-        out << "\n";
+        event->stop(); 
     }
 };
 
