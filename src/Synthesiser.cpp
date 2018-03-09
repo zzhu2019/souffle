@@ -1089,9 +1089,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     out << "symTable.lookup(";
                     out << "symTable.resolve(";
                     visit(op.getLHS(), out);
-                    out << ") + std::string(symTable.resolve(";
+                    out << ") + symTable.resolve(";
                     visit(op.getRHS(), out);
-                    out << ")))";
+                    out << "))";
                     break;
                 }
                 default:

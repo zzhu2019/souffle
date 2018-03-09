@@ -20,11 +20,11 @@
 #include "RamTypes.h"
 #include "Util.h"
 
+#include <deque>
 #include <iostream>
 #include <set>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 namespace souffle {
 
@@ -41,7 +41,7 @@ class SymbolTable {
 
 private:
     /** Map indices to strings. */
-    std::vector<std::string> numToStr;
+    std::deque<std::string> numToStr;
 
     /** Map strings to indices. */
     std::unordered_map<std::string, size_t> strToNum;
@@ -154,7 +154,6 @@ public:
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
         strToNum.reserve(size() + symbols.size());
-        numToStr.reserve(size() + symbols.size());
         for (auto& symbol : symbols) {
             newSymbol(symbol);
         }
