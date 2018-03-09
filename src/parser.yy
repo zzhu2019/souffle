@@ -168,7 +168,8 @@
 %type <AstComponent *>                   component component_head component_body
 %type <AstComponentType *>               comp_type
 %type <AstComponentInit *>               comp_init
-%type <AstRelation *>                    attributes non_empty_attributes relation
+%type <AstRelation *>                    attributes non_empty_attributes relation_body
+%type <std::vector<AstRelation *>>       relation_list relation_head
 %type <AstArgument *>                    arg
 %type <AstAtom *>                        arg_list non_empty_arg_list atom
 %type <std::vector<AstAtom*>>            head
@@ -210,8 +211,8 @@ unit
   : unit type {
         driver.addType(std::unique_ptr<AstType>($2));
     }
-  | unit relation {
-        driver.addRelation(std::unique_ptr<AstRelation>($2));
+  | unit relation_head {
+        for(const auto& cur : $2) driver.addRelation(std::unique_ptr<AstRelation>(cur));
     }
   | unit iodirective {
         driver.addIODirectiveChain(std::unique_ptr<AstIODirective>($2));
@@ -395,11 +396,28 @@ qualifiers
         $$ = 0;
     }
 
-relation
-  : DECL IDENT LPAREN attributes RPAREN qualifiers {
-        $$ = $4;
-        $4->setName($2);
-        $4->setQualifier($6);
+relation_head
+  : DECL relation_list {
+      $$.swap($2);
+    }
+
+relation_list
+  : relation_body {
+      $$.push_back($1);
+    }
+  | IDENT COMMA relation_list {
+      $$.swap($3);
+      auto tmp = $$.back()->clone();
+      tmp->setName($1);
+      tmp->setSrcLoc(@$);
+      $$.push_back(tmp);
+    }
+
+relation_body
+  : IDENT LPAREN attributes RPAREN qualifiers {
+        $$ = $3;
+        $$->setName($1);
+        $$->setQualifier($5);
         $$->setSrcLoc(@$);
     }
 
@@ -969,9 +987,9 @@ component_body
         $$ = $1;
         $$->addType(std::unique_ptr<AstType>($2));
     }
-  | component_body relation {
+  | component_body relation_head {
         $$ = $1;
-        $$->addRelation(std::unique_ptr<AstRelation>($2));
+        for(const auto& cur : $2) $$->addRelation(std::unique_ptr<AstRelation>(cur));
     }
   | component_body iodirective {
         $$ = $1;
