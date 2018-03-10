@@ -15,7 +15,7 @@
  ***********************************************************************/
 #pragma once
 
-#include "AstTransformer.h"
+#include "ast/AstTransformer.h"
 
 #include <memory>
 #include <ostream>

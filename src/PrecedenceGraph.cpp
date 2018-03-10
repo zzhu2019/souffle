@@ -17,10 +17,10 @@
  ***********************************************************************/
 
 #include "PrecedenceGraph.h"
-#include "AstClause.h"
-#include "AstRelation.h"
-#include "AstUtils.h"
-#include "AstVisitor.h"
+#include "ast/AstClause.h"
+#include "ast/AstRelation.h"
+#include "ast/AstUtils.h"
+#include "ast/AstVisitor.h"
 #include "Global.h"
 
 #include <algorithm>

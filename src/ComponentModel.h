@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include "AstAnalysis.h"
-#include "AstComponent.h"
-#include "AstRelation.h"
-#include "AstTranslationUnit.h"
+#include "ast/AstAnalysis.h"
+#include "ast/AstComponent.h"
+#include "ast/AstRelation.h"
+#include "ast/AstTranslationUnit.h"
 
 #include <memory>
 #include <string>

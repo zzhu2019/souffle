@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "AstType.h"
+#include "ast/AstType.h"
 #include "IterUtils.h"
 #include "Util.h"
 

@@ -34,10 +34,10 @@
     #include <unistd.h>
     #include <cstring>
 
-    #include "AstProgram.h"
+    #include "ast/AstProgram.h"
     #include "StringPool.h"
 
-    #include "AstSrcLocation.h"
+    #include "ast/AstSrcLocation.h"
     #define YYLTYPE AstSrcLocation
 
     #include "ParserDriver.h"

@@ -13,9 +13,9 @@
  ***********************************************************************/
 
 #include "ComponentModel.h"
-#include "AstComponent.h"
-#include "AstProgram.h"
-#include "AstVisitor.h"
+#include "ast/AstComponent.h"
+#include "ast/AstProgram.h"
+#include "ast/AstVisitor.h"
 #include "ErrorReport.h"
 
 namespace souffle {

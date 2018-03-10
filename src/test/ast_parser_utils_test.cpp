@@ -14,8 +14,8 @@
  *
  ***********************************************************************/
 
-#include "AstClause.h"
-#include "AstParserUtils.h"
+#include "ast/AstClause.h"
+#include "ast/AstParserUtils.h"
 #include "test.h"
 
 namespace souffle {

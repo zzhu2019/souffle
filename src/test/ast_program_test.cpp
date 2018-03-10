@@ -14,8 +14,8 @@
  *
  ***********************************************************************/
 
-#include "AstProgram.h"
-#include "AstTranslationUnit.h"
+#include "ast/AstProgram.h"
+#include "ast/AstTranslationUnit.h"
 #include "ParserDriver.h"
 #include "SymbolTable.h"
 #include "test.h"

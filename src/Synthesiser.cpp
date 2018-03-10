@@ -15,9 +15,9 @@
  ***********************************************************************/
 
 #include "Synthesiser.h"
-#include "AstLogStatement.h"
-#include "AstRelation.h"
-#include "AstVisitor.h"
+#include "ast/AstLogStatement.h"
+#include "ast/AstRelation.h"
+#include "ast/AstVisitor.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"

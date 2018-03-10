@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include "AstTransforms.h"
-#include "AstVisitor.h"
+#include "ast/AstTransforms.h"
+#include "ast/AstVisitor.h"
 
 #include <string>
 #include <vector>

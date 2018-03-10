@@ -14,8 +14,8 @@
  *
  ***********************************************************************/
 
-#include "AstProgram.h"
-#include "AstTranslator.h"
+#include "ast/AstProgram.h"
+#include "ast/AstTranslator.h"
 #include "RamExecutor.h"
 #include "RamStatement.h"
 #include "test.h"

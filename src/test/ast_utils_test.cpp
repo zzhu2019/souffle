@@ -14,11 +14,11 @@
  *
  ***********************************************************************/
 
-#include "AstTransforms.h"
-#include "AstTranslationUnit.h"
-#include "AstTypeAnalysis.h"
-#include "AstUtils.h"
-#include "AstVisitor.h"
+#include "ast/AstTransforms.h"
+#include "ast/AstTranslationUnit.h"
+#include "ast/AstTypeAnalysis.h"
+#include "ast/AstUtils.h"
+#include "ast/AstVisitor.h"
 #include "ParserDriver.h"
 #include "test.h"
 

@@ -15,8 +15,8 @@
  ***********************************************************************/
 
 #include "BddbddbBackend.h"
-#include "AstTranslationUnit.h"
-#include "AstVisitor.h"
+#include "ast/AstTranslationUnit.h"
+#include "ast/AstVisitor.h"
 #include "RamTypes.h"
 
 #include <limits>

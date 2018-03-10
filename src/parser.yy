@@ -34,20 +34,20 @@
     #include <unistd.h>
 
     #include "Util.h"
-    #include "AstProgram.h"
-    #include "AstClause.h"
-    #include "AstComponent.h"
-    #include "AstRelation.h"
-    #include "AstIODirective.h"
-    #include "AstArgument.h"
-    #include "AstNode.h"
+    #include "ast/AstProgram.h"
+    #include "ast/AstClause.h"
+    #include "ast/AstComponent.h"
+    #include "ast/AstRelation.h"
+    #include "ast/AstIODirective.h"
+    #include "ast/AstArgument.h"
+    #include "ast/AstNode.h"
     #include "UnaryFunctorOps.h"
     #include "BinaryFunctorOps.h"
     #include "BinaryConstraintOps.h"
-    #include "AstParserUtils.h"
+    #include "ast/AstParserUtils.h"
 
-    #include "AstSrcLocation.h"
-    #include "AstTypes.h"
+    #include "ast/AstSrcLocation.h"
+    #include "ast/AstTypes.h"
 
     using namespace souffle;
 

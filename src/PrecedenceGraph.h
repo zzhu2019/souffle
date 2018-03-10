@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include "AstAnalysis.h"
-#include "AstProgram.h"
-#include "AstTranslationUnit.h"
+#include "ast/AstAnalysis.h"
+#include "ast/AstProgram.h"
+#include "ast/AstTranslationUnit.h"
 #include "GraphUtils.h"
 
 #include <iostream>

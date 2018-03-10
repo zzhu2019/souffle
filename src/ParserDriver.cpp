@@ -15,8 +15,8 @@
  ***********************************************************************/
 
 #include "ParserDriver.h"
-#include "AstProgram.h"
-#include "AstTranslationUnit.h"
+#include "ast/AstProgram.h"
+#include "ast/AstTranslationUnit.h"
 #include "ErrorReport.h"
 
 typedef struct yy_buffer_state* YY_BUFFER_STATE;

@@ -15,10 +15,10 @@
  ***********************************************************************/
 
 #include "Interpreter.h"
-#include "AstLogStatement.h"
-#include "AstRelation.h"
-#include "AstTranslator.h"
-#include "AstVisitor.h"
+#include "ast/AstLogStatement.h"
+#include "ast/AstRelation.h"
+#include "ast/AstTranslator.h"
+#include "ast/AstVisitor.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"

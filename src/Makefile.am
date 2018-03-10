@@ -59,41 +59,41 @@ souffle_sources = \
               parser.cc             parser.hh           \
               scanner.cc            stack.hh            \
               ParserDriver.cpp      ParserDriver.h      \
-              AstArgument.cpp       AstArgument.h       \
-              AstAttribute.h                            \
-              AstClause.cpp         AstClause.h         \
-              AstComponent.h                            \
-              AstPragma.cpp         AstPragma.h         \
-              AstIODirective.h                          \
-              AstLiteral.h                              \
-              AstNode.h                                 \
-              AstParserUtils.cpp    AstParserUtils.h    \
-              AstProgram.cpp        AstProgram.h        \
-              AstRelation.h                             \
-              AstRelationIdentifier.h                   \
-              AstSrcLocation.cpp    AstSrcLocation.h    \
-              AstTypeAnalysis.cpp   AstTypeAnalysis.h   \
-              AstType.h                                 \
-              AstUtils.cpp          AstUtils.h          \
-              AstVisitor.h                              \
-              AstAnalysis.h                             \
-              AstTransformer.cpp    AstTransformer.h    \
-              AstTranslationUnit.h  ErrorReport.h       \
+              ast/AstArgument.cpp       ast/AstArgument.h       \
+              ast/AstAttribute.h                            \
+              ast/AstClause.cpp         ast/AstClause.h         \
+              ast/AstComponent.h                            \
+              ast/AstPragma.cpp         ast/AstPragma.h         \
+              ast/AstIODirective.h                          \
+              ast/AstLiteral.h                              \
+              ast/AstNode.h                                 \
+              ast/AstParserUtils.cpp    ast/AstParserUtils.h    \
+              ast/AstProgram.cpp        ast/AstProgram.h        \
+              ast/AstRelation.h                             \
+              ast/AstRelationIdentifier.h                   \
+              ast/AstSrcLocation.cpp    ast/AstSrcLocation.h    \
+              ast/AstTypeAnalysis.cpp   ast/AstTypeAnalysis.h   \
+              ast/AstType.h                                 \
+              ast/AstUtils.cpp          ast/AstUtils.h          \
+              ast/AstVisitor.h                              \
+              ast/AstAnalysis.h                             \
+              ast/AstTransformer.cpp    ast/AstTransformer.h    \
+              ast/AstTranslationUnit.h  ErrorReport.h       \
               BddbddbBackend.h      BddbddbBackend.cpp  \
               DebugReport.cpp       DebugReport.h       \
               ComponentModel.cpp    ComponentModel.h    \
-              AstSemanticChecker.cpp                    \
-              AstSemanticChecker.h                      \
-              AstComponentChecker.cpp                   \
-              AstComponentChecker.h                     \
-              AstTransforms.cpp     AstTransforms.h     \
+              ast/AstSemanticChecker.cpp                    \
+              ast/AstSemanticChecker.h                      \
+              ast/AstComponentChecker.cpp                   \
+              ast/AstComponentChecker.h                     \
+              ast/AstTransforms.cpp     ast/AstTransforms.h     \
               UnaryFunctorOps.h                         \
               BinaryFunctorOps.h                        \
               TernaryFunctorOps.h                       \
               BinaryConstraintOps.h                     \
               Constraints.h                             \
               GraphUtils.h                              \
-              AstTranslator.cpp     AstTranslator.h     \
+              ast/AstTranslator.cpp     ast/AstTranslator.h     \
               Synthesiser.cpp       Synthesiser.h       \
               RamAnalysis.h                             \
               RamCondition.h                            \
@@ -129,7 +129,7 @@ souffle_sources = \
               IndexSetAnalysis.cpp   IndexSetAnalysis.h \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h            \
-              AstLogStatement.h
+              ast/AstLogStatement.h
 
 # -- build souffle as a library so it can be reused in testing
 noinst_LTLIBRARIES = libsouffle.la
@@ -165,7 +165,7 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         Util.h                  \
                         Macro.h                 \
                         RamTypes.h              \
-                        AstTypes.h              \
+                        ast/AstTypes.h              \
                         IterUtils.h             \
                         SymbolTable.h           \
                         Logger.h                \

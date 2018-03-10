@@ -15,8 +15,8 @@
  ***********************************************************************/
 
 #include "DebugReport.h"
-#include "AstTranslationUnit.h"
-#include "AstTypeAnalysis.h"
+#include "ast/AstTranslationUnit.h"
+#include "ast/AstTypeAnalysis.h"
 #include "MagicSet.h"
 #include "PrecedenceGraph.h"
 

@@ -15,7 +15,7 @@
  ***********************************************************************/
 #pragma once
 
-#include "AstSrcLocation.h"
+#include "ast/AstSrcLocation.h"
 
 #include <algorithm>
 #include <cassert>

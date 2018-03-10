@@ -14,7 +14,7 @@
  *
  ***********************************************************************/
 
-#include "AstTransforms.h"
+#include "ast/AstTransforms.h"
 
 namespace souffle {
 
