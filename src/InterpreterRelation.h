@@ -239,7 +239,7 @@ public:
 
         iterator(const InterpreterRelation* const relation)
                 : relation(relation), index(0),
-                  tuple(relation->arity == 0 ? reinterpret_cast<int*>(this) : &relation->blockList[0][0]) {}
+                  tuple(relation->arity == 0 ? reinterpret_cast<RamDomain*>(this) : &relation->blockList[0][0]) {}
 
         const RamDomain* operator*() {
             return tuple;
