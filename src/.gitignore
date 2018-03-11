@@ -4,7 +4,6 @@ souffle.dSYM
 souffle
 souffle-compile
 souffle-config
-souffle-wave
 souffle-prof
 
 stack.hh
@@ -16,6 +15,5 @@ libsouffle*
 *.output
 
 test-suite.log
-wavelib/cpplexer/re2clex/.dirstamp
 
 souffle.dSYM
