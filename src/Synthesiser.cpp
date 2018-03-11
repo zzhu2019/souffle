@@ -558,9 +558,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             auto index = synthesiser.toIndex(keys);
 
             // if it is a equality-range query
-            out << "const Tuple<RamDomain," << arity << "> key({";
+            out << "const Tuple<RamDomain," << arity << "> key({{";
             printKeyTuple();
-            out << "});\n";
+            out << "}});\n";
             out << "auto range = " << relName << "->"
                 << "equalRange" << index << "(key," << ctxName << ");\n";
             if (scan.isPureExistenceCheck()) {
@@ -663,9 +663,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
                 // get index
                 auto index = synthesiser.toIndex(keys);
-                out << "const " << tuple_type << " key({";
+                out << "const " << tuple_type << " key({{";
                 printKeyTuple();
-                out << "});\n";
+                out << "}});\n";
                 out << "auto range = " << relName << "->"
                     << "equalRange" << index << "(key," << ctxName << ");\n";
             }
@@ -755,10 +755,10 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
             // create projected tuple
             if (project.getValues().empty()) {
-                out << "Tuple<RamDomain," << arity << "> tuple({});\n";
+                out << "Tuple<RamDomain," << arity << "> tuple({{}});\n";
             } else {
-                out << "Tuple<RamDomain," << arity << "> tuple({(RamDomain)("
-                    << join(project.getValues(), "),(RamDomain)(", rec) << ")});\n";
+                out << "Tuple<RamDomain," << arity << "> tuple({{(RamDomain)("
+                    << join(project.getValues(), "),(RamDomain)(", rec) << ")}});\n";
 
                 // check filter
             }
@@ -901,8 +901,8 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             // if it is total we use the contains function
             if (ne.isTotal()) {
                 out << "!" << relName << "->"
-                    << "contains(Tuple<RamDomain," << arity << ">({" << join(ne.getValues(), ",", rec)
-                    << "})," << ctxName << ")";
+                    << "contains(Tuple<RamDomain," << arity << ">({{" << join(ne.getValues(), ",", rec)
+                    << "}})," << ctxName << ")";
                 return;
                 PRINT_END_COMMENT(out);
             }
@@ -911,7 +911,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             out << relName << "->"
                 << "equalRange";
             out << synthesiser.toIndex(ne.getKey());
-            out << "(Tuple<RamDomain," << arity << ">({";
+            out << "(Tuple<RamDomain," << arity << ">({{";
             out << join(ne.getValues(), ",", [&](std::ostream& out, RamValue* value) {
                 if (!value) {
                     out << "0";
@@ -919,7 +919,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     visit(*value, out);
                 }
             });
-            out << "})," << ctxName << ").empty()";
+            out << "}})," << ctxName << ").empty()";
             PRINT_END_COMMENT(out);
         }
 
@@ -1182,7 +1182,6 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "#include \"souffle/CompiledSouffle.h\"\n";
     if (Global::config().has("provenance")) {
         os << "#include \"souffle/Explain.h\"\n";
-        os << "#include <ncurses.h>\n";
     }
     os << "\n";
     os << "namespace souffle {\n";
@@ -1255,8 +1254,8 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
             os << "> wrapper_" << name << ";\n";
 
             // construct types
-            std::string tupleType = "std::array<const char *," + std::to_string(arity) + ">{";
-            std::string tupleName = "std::array<const char *," + std::to_string(arity) + ">{";
+            std::string tupleType = "std::array<const char *," + std::to_string(arity) + ">{{";
+            std::string tupleName = "std::array<const char *," + std::to_string(arity) + ">{{";
 
             if (rel.getArity()) {
                 tupleType += "\"" + rel.getArgTypeQualifier(0) + "\"";
@@ -1269,8 +1268,8 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
                     tupleName += ",\"" + rel.getArg(i) + "\"";
                 }
             }
-            tupleType += "}";
-            tupleName += "}";
+            tupleType += "}}";
+            tupleName += "}}";
 
             initCons += ",\nwrapper_" + name + "(" + "*" + name + ",symTable,\"" + raw_name + "\"," +
                         tupleType + "," + tupleName + ")";
@@ -1361,13 +1360,13 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "}\n";  // end of runFunction() method
 
     // add methods to run with and without performing IO (mainly for the interface)
-    os << "public:\nvoid run() { runFunction<false>(); }\n";
-    os << "public:\nvoid runAll(std::string inputDirectory = \".\", std::string outputDirectory = \".\") { "
+    os << "public:\nvoid run() override { runFunction<false>(); }\n";
+    os << "public:\nvoid runAll(std::string inputDirectory = \".\", std::string outputDirectory = \".\") override { "
           "runFunction<true>(inputDirectory, outputDirectory); }\n";
 
     // issue printAll method
     os << "public:\n";
-    os << "void printAll(std::string outputDirectory = \".\") {\n";
+    os << "void printAll(std::string outputDirectory = \".\") override {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) {
         if (auto store = dynamic_cast<const RamStore*>(&node)) {
             for (IODirectives ioDirectives : store->getIODirectives()) {
@@ -1398,7 +1397,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
 
     // issue loadAll method
     os << "public:\n";
-    os << "void loadAll(std::string inputDirectory = \".\") {\n";
+    os << "void loadAll(std::string inputDirectory = \".\") override {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamLoad& load) {
         // get some table details
         os << "try {";
@@ -1436,7 +1435,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
 
     // dump inputs
     os << "public:\n";
-    os << "void dumpInputs(std::ostream& out = std::cout) {\n";
+    os << "void dumpInputs(std::ostream& out = std::cout) override {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamLoad& load) {
         auto& name = getRelationName(load.getRelation());
         auto& mask = load.getRelation().getSymbolMask();
@@ -1447,7 +1446,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
 
     // dump outputs
     os << "public:\n";
-    os << "void dumpOutputs(std::ostream& out = std::cout) {\n";
+    os << "void dumpOutputs(std::ostream& out = std::cout) override {\n";
     visitDepthFirst(*(prog.getMain()), [&](const RamStore& store) {
         auto& name = getRelationName(store.getRelation());
         auto& mask = store.getRelation().getSymbolMask();
@@ -1457,7 +1456,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "}\n";  // end of dumpOutputs() method
 
     os << "public:\n";
-    os << "const SymbolTable &getSymbolTable() const {\n";
+    os << "const SymbolTable &getSymbolTable() const override {\n";
     os << "return symTable;\n";
     os << "}\n";  // end of getSymbolTable() method
 

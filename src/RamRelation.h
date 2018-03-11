@@ -65,13 +65,12 @@ protected:
     bool brie;     // brie data-structure
     bool eqrel;    // equivalence relation
 
-    bool isdata;  // Datalog relation in the program
     bool istemp;  // Temporary relation for semi-naive evaluation
 
 public:
     RamRelation()
             : RamNode(RN_Relation), arity(0), mask(arity), input(false), output(false), computed(false),
-              btree(false), rbtset(false), hashset(false), brie(false), eqrel(false), isdata(false),
+              btree(false), rbtset(false), hashset(false), brie(false), eqrel(false), 
               istemp(false) {}
 
     RamRelation(const std::string& name, unsigned arity, const bool istemp, const bool hashset = false)
@@ -84,12 +83,12 @@ public:
             std::vector<std::string> attributeTypeQualifiers = {}, const SymbolMask& mask = SymbolMask(0),
             const bool input = false, const bool computed = false, const bool output = false,
             const bool btree = false, const bool rbtset = false, const bool hashset = false,
-            const bool brie = false, const bool eqrel = false, const bool isdata = false,
+            const bool brie = false, const bool eqrel = false,
             const bool istemp = false)
             : RamNode(RN_Relation), name(name), arity(arity), attributeNames(attributeNames),
               attributeTypeQualifiers(attributeTypeQualifiers), mask(mask), input(input), output(output),
               computed(computed), btree(btree), rbtset(rbtset), hashset(hashset), brie(brie), eqrel(eqrel),
-              isdata(isdata), istemp(istemp) {
+              istemp(istemp) {
         assert(this->attributeNames.size() == arity || this->attributeNames.empty());
         assert(this->attributeTypeQualifiers.size() == arity || this->attributeTypeQualifiers.empty());
     }
@@ -157,10 +156,6 @@ public:
         return istemp;
     }
 
-    const bool isData() const {
-        return isdata;
-    }
-
     unsigned getArity() const {
         return arity;
     }
@@ -194,7 +189,7 @@ public:
     /** Create clone */
     RamRelation* clone() const override {
         RamRelation* res = new RamRelation(name, arity, attributeNames, attributeTypeQualifiers, mask, input,
-                computed, output, btree, rbtset, hashset, brie, eqrel, isdata, istemp);
+                computed, output, btree, rbtset, hashset, brie, eqrel, istemp);
         return res;
     }
 
@@ -211,7 +206,7 @@ protected:
                isInput() == other.isInput() && isOutput() == other.isOutput() &&
                isComputed() == other.isComputed() && isBTree() == other.isBTree() &&
                isRbtset() == other.isRbtset() && isHashset() == other.isHashset() &&
-               isBrie() == other.isBrie() && isEqRel() == other.isEqRel() && isData() == other.isData() &&
+               isBrie() == other.isBrie() && isEqRel() == other.isEqRel()  &&
                isTemp() == other.isTemp();
     }
 };
