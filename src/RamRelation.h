@@ -70,8 +70,7 @@ protected:
 public:
     RamRelation()
             : RamNode(RN_Relation), arity(0), mask(arity), input(false), output(false), computed(false),
-              btree(false), rbtset(false), hashset(false), brie(false), eqrel(false), 
-              istemp(false) {}
+              btree(false), rbtset(false), hashset(false), brie(false), eqrel(false), istemp(false) {}
 
     RamRelation(const std::string& name, unsigned arity, const bool istemp, const bool hashset = false)
             : RamRelation(name, arity) {
@@ -83,8 +82,7 @@ public:
             std::vector<std::string> attributeTypeQualifiers = {}, const SymbolMask& mask = SymbolMask(0),
             const bool input = false, const bool computed = false, const bool output = false,
             const bool btree = false, const bool rbtset = false, const bool hashset = false,
-            const bool brie = false, const bool eqrel = false,
-            const bool istemp = false)
+            const bool brie = false, const bool eqrel = false, const bool istemp = false)
             : RamNode(RN_Relation), name(name), arity(arity), attributeNames(attributeNames),
               attributeTypeQualifiers(attributeTypeQualifiers), mask(mask), input(input), output(output),
               computed(computed), btree(btree), rbtset(rbtset), hashset(hashset), brie(brie), eqrel(eqrel),
@@ -206,8 +204,7 @@ protected:
                isInput() == other.isInput() && isOutput() == other.isOutput() &&
                isComputed() == other.isComputed() && isBTree() == other.isBTree() &&
                isRbtset() == other.isRbtset() && isHashset() == other.isHashset() &&
-               isBrie() == other.isBrie() && isEqRel() == other.isEqRel()  &&
-               isTemp() == other.isTemp();
+               isBrie() == other.isBrie() && isEqRel() == other.isEqRel() && isTemp() == other.isTemp();
     }
 };
 

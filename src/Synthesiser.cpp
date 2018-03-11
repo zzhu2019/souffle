@@ -1361,7 +1361,8 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
 
     // add methods to run with and without performing IO (mainly for the interface)
     os << "public:\nvoid run() override { runFunction<false>(); }\n";
-    os << "public:\nvoid runAll(std::string inputDirectory = \".\", std::string outputDirectory = \".\") override { "
+    os << "public:\nvoid runAll(std::string inputDirectory = \".\", std::string outputDirectory = \".\") "
+          "override { "
           "runFunction<true>(inputDirectory, outputDirectory); }\n";
 
     // issue printAll method
