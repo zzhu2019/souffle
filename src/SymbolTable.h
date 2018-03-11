@@ -36,10 +36,10 @@ namespace souffle {
  * SymbolTable stores Datalog symbols and converts them to numbers and vice versa.
  */
 class SymbolTable {
+private:
     /** A lock to synchronize parallel accesses */
     mutable Lock access;
 
-private:
     /** Map indices to strings. */
     std::deque<std::string> numToStr;
 
