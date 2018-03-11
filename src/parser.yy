@@ -94,7 +94,6 @@
 %token PRAGMA                    "pragma directive"
 %token OUTPUT_QUALIFIER          "relation qualifier output"
 %token INPUT_QUALIFIER           "relation qualifier input"
-%token DATA_QUALIFIER            "relation qualifier data"
 %token PRINTSIZE_QUALIFIER       "relation qualifier printsize"
 %token BRIE_QUALIFIER            "BRIE datastructure qualifier"
 %token BTREE_QUALIFIER           "BTREE datastructure qualifier"
@@ -355,10 +354,6 @@ qualifiers
   | qualifiers INPUT_QUALIFIER {
         if($1 & INPUT_RELATION) driver.error(@2, "input qualifier already set");
         $$ = $1 | INPUT_RELATION;
-    }
-  | qualifiers DATA_QUALIFIER {
-        if($1 & DATA_RELATION) driver.error(@2, "input qualifier already set");
-        $$ = $1 | DATA_RELATION;
     }
   | qualifiers PRINTSIZE_QUALIFIER {
         if($1 & PRINTSIZE_RELATION) driver.error(@2, "printsize qualifier already set");
