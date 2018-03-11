@@ -131,10 +131,10 @@ public:
         assert(0 <= arg && arg < Arity && "attribute out of bound");
         return tupleName[arg];
     }
-    size_t getArity() const {
+    size_t getArity() const override {
         return Arity;
     }
-    SymbolTable& getSymbolTable() const {
+    SymbolTable& getSymbolTable() const override {
         return symTable;
     }
 };

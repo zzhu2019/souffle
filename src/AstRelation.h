@@ -46,8 +46,6 @@
 /* Rules of a relation defined in a component can be overwritten by sub-component */
 #define OVERRIDABLE_RELATION (0x8)
 
-#define DATA_RELATION (0x10)
-
 /* Relation is inlined */
 #define INLINE_RELATION (0x20)
 
@@ -153,11 +151,6 @@ public:
         return (qualifier & INPUT_RELATION) != 0;
     }
 
-    /** Check whether relation is to/from memory */
-    bool isData() const {
-        return (qualifier & DATA_RELATION) != 0;
-    }
-
     /** Check whether relation is a brie relation */
     bool isBrie() const {
         return (qualifier & BRIE_RELATION) != 0;
@@ -242,9 +235,6 @@ public:
             os << "input ";
         }
         if (isOutput()) {
-            os << "output ";
-        }
-        if (isData()) {
             os << "output ";
         }
         if (isPrintSize()) {

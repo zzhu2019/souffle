@@ -95,7 +95,6 @@
 "contains"                            { return yy::parser::make_TCONTAINS(yylloc); }
 "output"                              { return yy::parser::make_OUTPUT_QUALIFIER(yylloc); }
 "input"                               { return yy::parser::make_INPUT_QUALIFIER(yylloc); }
-"data"                                { return yy::parser::make_DATA_QUALIFIER(yylloc); }
 "overridable"                         { return yy::parser::make_OVERRIDABLE_QUALIFIER(yylloc); }
 "printsize"                           { return yy::parser::make_PRINTSIZE_QUALIFIER(yylloc); }
 "eqrel"                               { return yy::parser::make_EQREL_QUALIFIER(yylloc); }
