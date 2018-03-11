@@ -15,8 +15,9 @@
  ***********************************************************************/
 
 #include "ParserDriver.h"
-#include "ast/AstProgram.h"
-#include "ast/AstTranslationUnit.h"
+#include "ast/Program.h"
+#include "ast/TranslationUnit.h"
+#include "DebugReport.h"
 #include "ErrorReport.h"
 
 typedef struct yy_buffer_state* YY_BUFFER_STATE;
@@ -31,10 +32,10 @@ ParserDriver::ParserDriver() : trace_scanning(false), trace_parsing(false) {}
 
 ParserDriver::~ParserDriver() = default;
 
-std::unique_ptr<AstTranslationUnit> ParserDriver::parse(const std::string& filename, FILE* in,
+std::unique_ptr<ast::TranslationUnit> ParserDriver::parse(const std::string& filename, FILE* in,
         SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport) {
-    translationUnit = std::unique_ptr<AstTranslationUnit>(new AstTranslationUnit(
-            std::unique_ptr<AstProgram>(new AstProgram()), symbolTable, errorReport, debugReport));
+    translationUnit = std::unique_ptr<ast::TranslationUnit>(new ast::TranslationUnit(
+            std::unique_ptr<ast::Program>(new ast::Program()), symbolTable, errorReport, debugReport));
     yyscan_t scanner;
     scanner_data data;
     data.yyfilename = filename.c_str();
@@ -52,10 +53,10 @@ std::unique_ptr<AstTranslationUnit> ParserDriver::parse(const std::string& filen
     return std::move(translationUnit);
 }
 
-std::unique_ptr<AstTranslationUnit> ParserDriver::parse(const std::string& code, SymbolTable& symbolTable,
+std::unique_ptr<ast::TranslationUnit> ParserDriver::parse(const std::string& code, SymbolTable& symbolTable,
         ErrorReport& errorReport, DebugReport& debugReport) {
-    translationUnit = std::unique_ptr<AstTranslationUnit>(new AstTranslationUnit(
-            std::unique_ptr<AstProgram>(new AstProgram()), symbolTable, errorReport, debugReport));
+    translationUnit = std::unique_ptr<ast::TranslationUnit>(new ast::TranslationUnit(
+            std::unique_ptr<ast::Program>(new ast::Program()), symbolTable, errorReport, debugReport));
 
     scanner_data data;
     data.yyfilename = "<in-memory>";
@@ -73,25 +74,25 @@ std::unique_ptr<AstTranslationUnit> ParserDriver::parse(const std::string& code,
     return std::move(translationUnit);
 }
 
-std::unique_ptr<AstTranslationUnit> ParserDriver::parseTranslationUnit(const std::string& filename, FILE* in,
+std::unique_ptr<ast::TranslationUnit> ParserDriver::parseTranslationUnit(const std::string& filename, FILE* in,
         SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport) {
     ParserDriver parser;
     return parser.parse(filename, in, symbolTable, errorReport, debugReport);
 }
 
-std::unique_ptr<AstTranslationUnit> ParserDriver::parseTranslationUnit(const std::string& code,
+std::unique_ptr<ast::TranslationUnit> ParserDriver::parseTranslationUnit(const std::string& code,
         SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport) {
     ParserDriver parser;
     return parser.parse(code, symbolTable, errorReport, debugReport);
 }
 
-void ParserDriver::addPragma(std::unique_ptr<AstPragma> p) {
+void ParserDriver::addPragma(std::unique_ptr<ast::Pragma> p) {
     translationUnit->getProgram()->addPragma(std::move(p));
 }
 
-void ParserDriver::addRelation(std::unique_ptr<AstRelation> r) {
+void ParserDriver::addRelation(std::unique_ptr<ast::Relation> r) {
     const auto& name = r->getName();
-    if (AstRelation* prev = translationUnit->getProgram()->getRelation(name)) {
+    if (ast::Relation* prev = translationUnit->getProgram()->getRelation(name)) {
         Diagnostic err(Diagnostic::ERROR,
                 DiagnosticMessage("Redefinition of relation " + toString(name), r->getSrcLoc()),
                 {DiagnosticMessage("Previous definition", prev->getSrcLoc())});
@@ -113,15 +114,15 @@ void ParserDriver::addRelation(std::unique_ptr<AstRelation> r) {
     }
 }
 
-void ParserDriver::addIODirectiveChain(std::unique_ptr<AstIODirective> d) {
+void ParserDriver::addIODirectiveChain(std::unique_ptr<ast::IODirective> d) {
     for (auto& currentName : d->getNames()) {
-        auto clone = std::unique_ptr<AstIODirective>(d->clone());
+        auto clone = std::unique_ptr<ast::IODirective>(d->clone());
         clone->setName(currentName);
         addIODirective(std::move(clone));
     }
 }
 
-void ParserDriver::addIODirective(std::unique_ptr<AstIODirective> d) {
+void ParserDriver::addIODirective(std::unique_ptr<ast::IODirective> d) {
     if (d->isOutput()) {
         translationUnit->getProgram()->addIODirective(std::move(d));
         return;
@@ -142,9 +143,9 @@ void ParserDriver::addIODirective(std::unique_ptr<AstIODirective> d) {
     translationUnit->getProgram()->addIODirective(std::move(d));
 }
 
-void ParserDriver::addType(std::unique_ptr<AstType> type) {
+void ParserDriver::addType(std::unique_ptr<ast::Type> type) {
     const auto& name = type->getName();
-    if (const AstType* prev = translationUnit->getProgram()->getType(name)) {
+    if (const ast::Type* prev = translationUnit->getProgram()->getType(name)) {
         Diagnostic err(Diagnostic::ERROR,
                 DiagnosticMessage("Redefinition of type " + toString(name), type->getSrcLoc()),
                 {DiagnosticMessage("Previous definition", prev->getSrcLoc())});
@@ -154,13 +155,13 @@ void ParserDriver::addType(std::unique_ptr<AstType> type) {
     }
 }
 
-void ParserDriver::addClause(std::unique_ptr<AstClause> c) {
+void ParserDriver::addClause(std::unique_ptr<ast::Clause> c) {
     translationUnit->getProgram()->addClause(std::move(c));
 }
-void ParserDriver::addComponent(std::unique_ptr<AstComponent> c) {
+void ParserDriver::addComponent(std::unique_ptr<ast::Component> c) {
     translationUnit->getProgram()->addComponent(std::move(c));
 }
-void ParserDriver::addInstantiation(std::unique_ptr<AstComponentInit> ci) {
+void ParserDriver::addInstantiation(std::unique_ptr<ast::ComponentInit> ci) {
     translationUnit->getProgram()->addInstantiation(std::move(ci));
 }
 
@@ -168,7 +169,7 @@ souffle::SymbolTable& ParserDriver::getSymbolTable() {
     return translationUnit->getSymbolTable();
 }
 
-void ParserDriver::error(const AstSrcLocation& loc, const std::string& msg) {
+void ParserDriver::error(const ast::SrcLocation& loc, const std::string& msg) {
     translationUnit->getErrorReport().addError(msg, loc);
 }
 void ParserDriver::error(const std::string& msg) {

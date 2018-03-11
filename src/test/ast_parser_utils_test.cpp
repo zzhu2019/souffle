@@ -14,11 +14,11 @@
  *
  ***********************************************************************/
 
-#include "ast/AstClause.h"
-#include "ast/AstParserUtils.h"
+#include "ast/Clause.h"
+#include "ast/ParserUtils.h"
 #include "test.h"
 
-namespace souffle {
+namespace souffle::ast {
 
 namespace test {
 
@@ -26,13 +26,13 @@ TEST(RuleBody, Basic) {
     RuleBody body;
 
     // start with an A
-    auto a = RuleBody::atom(new AstAtom("A"));
+    auto a = RuleBody::atom(new Atom("A"));
     EXPECT_EQ("A()", toString(a));
 
-    a.conjunct(RuleBody::atom(new AstAtom("B")));
+    a.conjunct(RuleBody::atom(new Atom("B")));
     EXPECT_EQ("A(),B()", toString(a));
 
-    a.disjunct(RuleBody::atom(new AstAtom("C")));
+    a.disjunct(RuleBody::atom(new Atom("C")));
     EXPECT_EQ("A(),B();C()", toString(a));
 }
 
@@ -40,18 +40,18 @@ TEST(RuleBody, Negation) {
     RuleBody body = RuleBody::getTrue();
 
     RuleBody AB = RuleBody::getTrue();
-    AB.conjunct(RuleBody::atom(new AstAtom("A")));
-    AB.conjunct(RuleBody::atom(new AstAtom("B")));
+    AB.conjunct(RuleBody::atom(new Atom("A")));
+    AB.conjunct(RuleBody::atom(new Atom("B")));
     EXPECT_EQ("A(),B()", toString(AB));
 
     RuleBody CD = RuleBody::getTrue();
-    CD.conjunct(RuleBody::atom(new AstAtom("C")));
-    CD.conjunct(RuleBody::atom(new AstAtom("D")));
+    CD.conjunct(RuleBody::atom(new Atom("C")));
+    CD.conjunct(RuleBody::atom(new Atom("D")));
     EXPECT_EQ("C(),D()", toString(CD));
 
     RuleBody EF = RuleBody::getTrue();
-    EF.conjunct(RuleBody::atom(new AstAtom("E")));
-    EF.conjunct(RuleBody::atom(new AstAtom("F")));
+    EF.conjunct(RuleBody::atom(new Atom("E")));
+    EF.conjunct(RuleBody::atom(new Atom("F")));
     EXPECT_EQ("E(),F()", toString(EF));
 
     RuleBody full = RuleBody::getFalse();
@@ -74,18 +74,18 @@ TEST(RuleBody, ClauseBodyExtraction) {
     RuleBody body = RuleBody::getTrue();
 
     RuleBody AB = RuleBody::getTrue();
-    AB.conjunct(RuleBody::atom(new AstAtom("A")));
-    AB.conjunct(RuleBody::atom(new AstAtom("B")));
+    AB.conjunct(RuleBody::atom(new Atom("A")));
+    AB.conjunct(RuleBody::atom(new Atom("B")));
     EXPECT_EQ("A(),B()", toString(AB));
 
     RuleBody CD = RuleBody::getTrue();
-    CD.conjunct(RuleBody::atom(new AstAtom("C")));
-    CD.conjunct(RuleBody::atom(new AstAtom("D")));
+    CD.conjunct(RuleBody::atom(new Atom("C")));
+    CD.conjunct(RuleBody::atom(new Atom("D")));
     EXPECT_EQ("C(),D()", toString(CD));
 
     RuleBody EF = RuleBody::getTrue();
-    EF.conjunct(RuleBody::atom(new AstAtom("E")));
-    EF.conjunct(RuleBody::atom(new AstAtom("F")));
+    EF.conjunct(RuleBody::atom(new Atom("E")));
+    EF.conjunct(RuleBody::atom(new Atom("F")));
     EXPECT_EQ("E(),F()", toString(EF));
 
     RuleBody full = RuleBody::getFalse();

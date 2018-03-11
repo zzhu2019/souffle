@@ -14,18 +14,18 @@
  *
  ***********************************************************************/
 
-#include "ast/AstAnalysis.h"
-#include "ast/AstComponentChecker.h"
-#include "ast/AstPragma.h"
-#include "ast/AstProgram.h"
-#include "ast/AstSemanticChecker.h"
-#include "ast/AstTransformer.h"
-#include "ast/AstTransforms.h"
-#include "ast/AstTranslationUnit.h"
-#include "ast/AstTranslator.h"
-#include "ast/AstUtils.h"
+#include "ast/Analysis.h"
+#include "ast/ComponentChecker.h"
+#include "ast/Pragma.h"
+#include "ast/Program.h"
+#include "ast/SemanticChecker.h"
+#include "ast/Transformer.h"
+#include "ast/Transforms.h"
+#include "ast/TranslationUnit.h"
+#include "ast/Translator.h"
+#include "ast/Utils.h"
 #include "BddbddbBackend.h"
-#include "ComponentModel.h"
+#include "ast/ComponentModel.h"
 #include "Global.h"
 #include "Interpreter.h"
 #include "InterpreterInterface.h"
@@ -289,7 +289,7 @@ int main(int argc, char** argv) {
     SymbolTable symTab;
     ErrorReport errReport(Global::config().has("no-warn"));
     DebugReport debugReport;
-    std::unique_ptr<AstTranslationUnit> astTranslationUnit =
+    std::unique_ptr<ast::TranslationUnit> astTranslationUnit =
             ParserDriver::parseTranslationUnit("<stdin>", in, symTab, errReport, debugReport);
 
     // close input pipe
@@ -318,42 +318,42 @@ int main(int argc, char** argv) {
     // ------- rewriting / optimizations -------------
 
     /* set up additional global options based on pragma declaratives */
-    (std::make_unique<AstPragmaChecker>())->apply(*astTranslationUnit);
+    (std::make_unique<ast::PragmaChecker>())->apply(*astTranslationUnit);
 
     /* construct the transformation pipeline */
 
     // Magic-Set pipeline
-    auto magicPipeline = std::make_unique<ConditionalTransformer>(Global::config().has("magic-transform"),
-            std::make_unique<PipelineTransformer>(std::make_unique<NormaliseConstraintsTransformer>(),
-                    std::make_unique<MagicSetTransformer>(),
-                    std::make_unique<ConditionalTransformer>(Global::config().get("bddbddb").empty(),
-                            std::make_unique<ResolveAliasesTransformer>()),
-                    std::make_unique<RemoveRelationCopiesTransformer>(),
-                    std::make_unique<RemoveEmptyRelationsTransformer>(),
-                    std::make_unique<RemoveRedundantRelationsTransformer>()));
+    auto magicPipeline = std::make_unique<ast::ConditionalTransformer>(Global::config().has("magic-transform"),
+            std::make_unique<ast::PipelineTransformer>(std::make_unique<ast::NormaliseConstraintsTransformer>(),
+                    std::make_unique<ast::MagicSetTransformer>(),
+                    std::make_unique<ast::ConditionalTransformer>(Global::config().get("bddbddb").empty(),
+                            std::make_unique<ast::ResolveAliasesTransformer>()),
+                    std::make_unique<ast::RemoveRelationCopiesTransformer>(),
+                    std::make_unique<ast::RemoveEmptyRelationsTransformer>(),
+                    std::make_unique<ast::RemoveRedundantRelationsTransformer>()));
 
 #ifdef USE_PROVENANCE
     // Provenance pipeline
-    auto provenancePipeline = std::make_unique<PipelineTransformer>(std::make_unique<ConditionalTransformer>(
-            Global::config().has("provenance"), std::make_unique<ProvenanceTransformer>()));
+    auto provenancePipeline = std::make_unique<ast::PipelineTransformer>(std::make_unique<ast::ConditionalTransformer>(
+            Global::config().has("provenance"), std::make_unique<ast::ProvenanceTransformer>()));
 #else
-    auto provenancePipeline = std::make_unique<PipelineTransformer>();
+    auto provenancePipeline = std::make_unique<ast::PipelineTransformer>();
 #endif
 
     // Main pipeline
-    auto pipeline = std::make_unique<PipelineTransformer>(std::make_unique<AstComponentChecker>(),
-            std::make_unique<ComponentInstantiationTransformer>(),
-            std::make_unique<UniqueAggregationVariablesTransformer>(), std::make_unique<AstSemanticChecker>(),
-            std::make_unique<RemoveBooleanConstraintsTransformer>(),
-            std::make_unique<InlineRelationsTransformer>(), std::make_unique<ReduceExistentialsTransformer>(),
-            std::make_unique<ExtractDisconnectedLiteralsTransformer>(),
-            std::make_unique<ConditionalTransformer>(
-                    Global::config().get("bddbddb").empty(), std::make_unique<ResolveAliasesTransformer>()),
-            std::make_unique<RemoveRelationCopiesTransformer>(),
-            std::make_unique<MaterializeAggregationQueriesTransformer>(),
-            std::make_unique<RemoveEmptyRelationsTransformer>(),
-            std::make_unique<RemoveRedundantRelationsTransformer>(), std::move(magicPipeline),
-            std::make_unique<AstExecutionPlanChecker>(), std::move(provenancePipeline));
+    auto pipeline = std::make_unique<ast::PipelineTransformer>(std::make_unique<ast::ComponentChecker>(),
+            std::make_unique<ast::ComponentInstantiationTransformer>(),
+            std::make_unique<ast::UniqueAggregationVariablesTransformer>(), std::make_unique<ast::SemanticChecker>(),
+            std::make_unique<ast::RemoveBooleanConstraintsTransformer>(),
+            std::make_unique<ast::InlineRelationsTransformer>(), std::make_unique<ast::ReduceExistentialsTransformer>(),
+            std::make_unique<ast::ExtractDisconnectedLiteralsTransformer>(),
+            std::make_unique<ast::ConditionalTransformer>(
+                    Global::config().get("bddbddb").empty(), std::make_unique<ast::ResolveAliasesTransformer>()),
+            std::make_unique<ast::RemoveRelationCopiesTransformer>(),
+            std::make_unique<ast::MaterializeAggregationQueriesTransformer>(),
+            std::make_unique<ast::RemoveEmptyRelationsTransformer>(),
+            std::make_unique<ast::RemoveRedundantRelationsTransformer>(), std::move(magicPipeline),
+            std::make_unique<ast::ExecutionPlanChecker>(), std::move(provenancePipeline));
 
     // Set up the debug report if necessary
     if (!Global::config().get("debug-report").empty()) {
@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
 
     /* translate AST to RAM */
     std::unique_ptr<RamTranslationUnit> ramTranslationUnit =
-            AstTranslator().translateUnit(*astTranslationUnit);
+            ast::Translator().translateUnit(*astTranslationUnit);
 
     std::vector<std::unique_ptr<RamTransformer>> ramTransforms;
     ramTransforms.push_back(std::unique_ptr<RamTransformer>(new RamSemanticChecker()));

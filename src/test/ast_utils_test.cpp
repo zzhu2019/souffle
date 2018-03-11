@@ -14,59 +14,59 @@
  *
  ***********************************************************************/
 
-#include "ast/AstTransforms.h"
-#include "ast/AstTranslationUnit.h"
-#include "ast/AstTypeAnalysis.h"
-#include "ast/AstUtils.h"
-#include "ast/AstVisitor.h"
+#include "ast/Transforms.h"
+#include "ast/TranslationUnit.h"
+#include "ast/TypeAnalysis.h"
+#include "ast/Utils.h"
+#include "ast/Visitor.h"
 #include "ParserDriver.h"
 #include "test.h"
 
-namespace souffle {
+namespace souffle::ast {
 
 namespace test {
 
-TEST(Ast, CloneAndEquals) {
+TEST(, CloneAndEquals) {
     // TODO: add test for records
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
 
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                  .decl r(a:number,b:number,c:number,d:number)
                  r(X,Y,Z,W) :- a(X), 10 = Y, Y = Z, 8 + W = 12 + 14. 
             )",
             sym, e, d);
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     EXPECT_EQ(program, program);
 
     // clone and check for equality
-    AstProgram* clone = program.clone();
+    Program* clone = program.clone();
     EXPECT_NE(clone, &program);
     EXPECT_EQ(*clone, program);
     delete clone;
 }
 
-TEST(AstUtils, Const) {
+TEST(Utils, Const) {
     // TODO: add test for records
 
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                  .decl r(a:number,b:number,c:number,d:number)
                  r(X,Y,Z,W) :- a(X), 10 = Y, Y = Z, 8 + W = 12 + 14. 
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
-    AstClause* clause = program.getRelation("r")->getClause(0);
+    Clause* clause = program.getRelation("r")->getClause(0);
 
     // check construction
     EXPECT_EQ("r(X,Y,Z,W) :- \n   a(X),\n   10 = Y,\n   Y = Z,\n   (8+W) = (12+14).", toString(*clause));
@@ -82,35 +82,35 @@ TEST(AstUtils, Const) {
     EXPECT_TRUE(isConst[head->getArgument(3)]);   // W
 }
 
-TEST(AstUtils, Grounded) {
+TEST(Utils, Grounded) {
     // create an example clause:
-    AstClause* clause = new AstClause();
+    Clause* clause = new Clause();
 
     // something like:
     //   r(X,Y,Z) :- a(X), X = Y, !b(Z).
 
     // r(X,Y,Z)
-    AstAtom* head = new AstAtom("r");
-    head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("X")));
-    head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("Y")));
-    head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("Z")));
-    clause->setHead(std::unique_ptr<AstAtom>(head));
+    Atom* head = new Atom("r");
+    head->addArgument(std::unique_ptr<Argument>(new Variable("X")));
+    head->addArgument(std::unique_ptr<Argument>(new Variable("Y")));
+    head->addArgument(std::unique_ptr<Argument>(new Variable("Z")));
+    clause->setHead(std::unique_ptr<Atom>(head));
 
     // a(X)
-    AstAtom* a = new AstAtom("a");
-    a->addArgument(std::unique_ptr<AstArgument>(new AstVariable("X")));
-    clause->addToBody(std::unique_ptr<AstLiteral>(a));
+    Atom* a = new Atom("a");
+    a->addArgument(std::unique_ptr<Argument>(new Variable("X")));
+    clause->addToBody(std::unique_ptr<Literal>(a));
 
     // X = Y
-    AstLiteral* e1 = new AstBinaryConstraint("=", std::unique_ptr<AstArgument>(new AstVariable("X")),
-            std::unique_ptr<AstArgument>(new AstVariable("Y")));
-    clause->addToBody(std::unique_ptr<AstLiteral>(e1));
+    Literal* e1 = new BinaryConstraint("=", std::unique_ptr<Argument>(new Variable("X")),
+            std::unique_ptr<Argument>(new Variable("Y")));
+    clause->addToBody(std::unique_ptr<Literal>(e1));
 
     // !b(Z)
-    AstAtom* b = new AstAtom("b");
-    b->addArgument(std::unique_ptr<AstArgument>(new AstVariable("Z")));
-    AstNegation* neg = new AstNegation(std::unique_ptr<AstAtom>(b));
-    clause->addToBody(std::unique_ptr<AstLiteral>(neg));
+    Atom* b = new Atom("b");
+    b->addArgument(std::unique_ptr<Argument>(new Variable("Z")));
+    Negation* neg = new Negation(std::unique_ptr<Atom>(b));
+    clause->addToBody(std::unique_ptr<Literal>(neg));
 
     // check construction
     EXPECT_EQ("r(X,Y,Z) :- \n   a(X),\n   !b(Z),\n   X = Y.", toString(*clause));
@@ -127,11 +127,11 @@ TEST(AstUtils, Grounded) {
     delete clause;
 }
 
-TEST(AstUtils, GroundedRecords) {
+TEST(Utils, GroundedRecords) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                  .type N
                  .type R = [ a : N, B : N ]
@@ -145,7 +145,7 @@ TEST(AstUtils, GroundedRecords) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     auto clause = program.getRelation("s")->getClause(0);
 
@@ -155,8 +155,8 @@ TEST(AstUtils, GroundedRecords) {
     // obtain groundness
     auto isGrounded = getGroundedTerms(*clause);
 
-    const AstAtom* s = clause->getHead();
-    const AstAtom* r = dynamic_cast<const AstAtom*>(clause->getBodyLiteral(0));
+    const Atom* s = clause->getHead();
+    const Atom* r = dynamic_cast<const Atom*>(clause->getBodyLiteral(0));
 
     EXPECT_TRUE(s);
     EXPECT_TRUE(r);
@@ -166,12 +166,12 @@ TEST(AstUtils, GroundedRecords) {
     EXPECT_TRUE(isGrounded[r->getArgument(0)]);
 }
 
-TEST(AstUtils, SimpleTypes) {
+TEST(Utils, SimpleTypes) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                  .type A
                  .type B
@@ -191,34 +191,34 @@ TEST(AstUtils, SimpleTypes) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     // check types in clauses
-    AstClause* a = program.getRelation("a")->getClause(0);
-    AstClause* b = program.getRelation("b")->getClause(0);
-    AstClause* u = program.getRelation("u")->getClause(0);
+    Clause* a = program.getRelation("a")->getClause(0);
+    Clause* b = program.getRelation("b")->getClause(0);
+    Clause* u = program.getRelation("u")->getClause(0);
 
     auto typeAnalysis = tu->getAnalysis<TypeAnalysis>();
 
-    auto getX = [](const AstClause* c) { return c->getHead()->getArgument(0); };
+    auto getX = [](const Clause* c) { return c->getHead()->getArgument(0); };
 
     EXPECT_EQ("{A}", toString(typeAnalysis->getTypes(getX(a))));
     EXPECT_EQ("{B}", toString(typeAnalysis->getTypes(getX(b))));
     EXPECT_EQ("{U}", toString(typeAnalysis->getTypes(getX(u))));
 
-    AstClause* a1 = program.getRelation("a")->getClause(1);
+    Clause* a1 = program.getRelation("a")->getClause(1);
     EXPECT_EQ("{}", toString(typeAnalysis->getTypes(getX(a1))));
 
-    AstClause* a2 = program.getRelation("a")->getClause(2);
+    Clause* a2 = program.getRelation("a")->getClause(2);
     EXPECT_EQ("{A}", toString(typeAnalysis->getTypes(getX(a2))));
 }
 
-TEST(AstUtils, NumericTypes) {
+TEST(Utils, NumericTypes) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                  .symbol_type A
                  .number_type B
@@ -235,28 +235,28 @@ TEST(AstUtils, NumericTypes) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     // check types in clauses
-    AstClause* a = program.getRelation("a")->getClause(0);
-    AstClause* b = program.getRelation("b")->getClause(0);
-    AstClause* u = program.getRelation("u")->getClause(0);
+    Clause* a = program.getRelation("a")->getClause(0);
+    Clause* b = program.getRelation("b")->getClause(0);
+    Clause* u = program.getRelation("u")->getClause(0);
 
     auto typeAnalysis = tu->getAnalysis<TypeAnalysis>();
 
-    auto getX = [](const AstClause* c) { return c->getHead()->getArgument(0); };
+    auto getX = [](const Clause* c) { return c->getHead()->getArgument(0); };
 
     EXPECT_EQ("{}", toString(typeAnalysis->getTypes(getX(a))));
     EXPECT_EQ("{B}", toString(typeAnalysis->getTypes(getX(b))));
     EXPECT_EQ("{U}", toString(typeAnalysis->getTypes(getX(u))));
 }
 
-TEST(AstUtils, SubtypeChain) {
+TEST(Utils, SubtypeChain) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                 .type D
                 .type C = D
@@ -271,12 +271,12 @@ TEST(AstUtils, SubtypeChain) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     // check types in clauses
-    AstClause* a = program.getRelation("R4")->getClause(0);
+    Clause* a = program.getRelation("R4")->getClause(0);
 
-    auto getX = [](const AstClause* c) { return c->getHead()->getArgument(0); };
+    auto getX = [](const Clause* c) { return c->getHead()->getArgument(0); };
 
     // check proper type handling
     auto& env = tu->getAnalysis<TypeEnvironmentAnalysis>()->getTypeEnvironment();
@@ -295,12 +295,12 @@ TEST(AstUtils, SubtypeChain) {
     EXPECT_EQ("{D}", toString(typeAnalysis->getTypes(getX(a))));
 }
 
-TEST(AstUtils, FactTypes) {
+TEST(Utils, FactTypes) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                  .symbol_type A
                  .number_type B
@@ -319,28 +319,28 @@ TEST(AstUtils, FactTypes) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     // check types in clauses
-    AstClause* a = program.getRelation("a")->getClause(0);
-    AstClause* b = program.getRelation("b")->getClause(0);
-    AstClause* u = program.getRelation("u")->getClause(0);
+    Clause* a = program.getRelation("a")->getClause(0);
+    Clause* b = program.getRelation("b")->getClause(0);
+    Clause* u = program.getRelation("u")->getClause(0);
 
     auto typeAnalysis = tu->getAnalysis<TypeAnalysis>();
 
-    auto getX = [](const AstClause* c) { return c->getHead()->getArgument(0); };
+    auto getX = [](const Clause* c) { return c->getHead()->getArgument(0); };
 
     EXPECT_EQ("{A}", toString(typeAnalysis->getTypes(getX(a))));
     EXPECT_EQ("{B}", toString(typeAnalysis->getTypes(getX(b))));
     EXPECT_EQ("{U}", toString(typeAnalysis->getTypes(getX(u))));
 }
 
-TEST(AstUtils, NestedFunctions) {
+TEST(Utils, NestedFunctions) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                 .type D
                 .decl r(x:D)
@@ -349,23 +349,23 @@ TEST(AstUtils, NestedFunctions) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     // check types in clauses
-    AstClause* a = program.getRelation("r")->getClause(0);
+    Clause* a = program.getRelation("r")->getClause(0);
 
-    auto getX = [](const AstClause* c) { return c->getHead()->getArgument(0); };
+    auto getX = [](const Clause* c) { return c->getHead()->getArgument(0); };
 
     // check proper type deduction
     EXPECT_EQ("{D}", toString(tu->getAnalysis<TypeAnalysis>()->getTypes(getX(a))));
 }
 
-TEST(AstUtils, GroundTermPropagation) {
+TEST(Utils, GroundTermPropagation) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                 .type D
                 .decl p(a:D,b:D)
@@ -374,16 +374,16 @@ TEST(AstUtils, GroundTermPropagation) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     // check types in clauses
-    AstClause* a = program.getRelation("p")->getClause(0);
+    Clause* a = program.getRelation("p")->getClause(0);
 
     EXPECT_EQ("p(a,b) :- \n   p(x,y),\n   r = [x,y],\n   s = r,\n   s = [w,v],\n   [w,v] = [a,b].",
             toString(*a));
 
-    std::unique_ptr<AstClause> res = ResolveAliasesTransformer::resolveAliases(*a);
-    std::unique_ptr<AstClause> cleaned = ResolveAliasesTransformer::removeTrivialEquality(*res);
+    std::unique_ptr<Clause> res = ResolveAliasesTransformer::resolveAliases(*a);
+    std::unique_ptr<Clause> cleaned = ResolveAliasesTransformer::removeTrivialEquality(*res);
 
     EXPECT_EQ(
             "p(x,y) :- \n   p(x,y),\n   [x,y] = [x,y],\n   [x,y] = [x,y],\n   [x,y] = [x,y],\n   [x,y] = "
@@ -392,12 +392,12 @@ TEST(AstUtils, GroundTermPropagation) {
     EXPECT_EQ("p(x,y) :- \n   p(x,y).", toString(*cleaned));
 }
 
-TEST(AstUtils, GroundTermPropagation2) {
+TEST(Utils, GroundTermPropagation2) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                .type D
                .decl p(a:D,b:D)
@@ -406,26 +406,26 @@ TEST(AstUtils, GroundTermPropagation2) {
            )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     // check types in clauses
-    AstClause* a = program.getRelation("p")->getClause(0);
+    Clause* a = program.getRelation("p")->getClause(0);
 
     EXPECT_EQ("p(a,b) :- \n   p(x,y),\n   x = y,\n   x = a,\n   y = b.", toString(*a));
 
-    std::unique_ptr<AstClause> res = ResolveAliasesTransformer::resolveAliases(*a);
-    std::unique_ptr<AstClause> cleaned = ResolveAliasesTransformer::removeTrivialEquality(*res);
+    std::unique_ptr<Clause> res = ResolveAliasesTransformer::resolveAliases(*a);
+    std::unique_ptr<Clause> cleaned = ResolveAliasesTransformer::removeTrivialEquality(*res);
 
     EXPECT_EQ("p(b,b) :- \n   p(b,b),\n   b = b,\n   b = b,\n   b = b.", toString(*res));
     EXPECT_EQ("p(b,b) :- \n   p(b,b).", toString(*cleaned));
 }
 
-TEST(AstUtils, ResolveGroundedAliases) {
+TEST(Utils, ResolveGroundedAliases) {
     // load some test program
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                 .type D
                 .decl p(a:D,b:D)
@@ -434,7 +434,7 @@ TEST(AstUtils, ResolveGroundedAliases) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     EXPECT_EQ("p(a,b) :- \n   p(x,y),\n   r = [x,y],\n   s = r,\n   s = [w,v],\n   [w,v] = [a,b].",
             toString(*program.getRelation("p")->getClause(0)));
@@ -444,12 +444,12 @@ TEST(AstUtils, ResolveGroundedAliases) {
     EXPECT_EQ("p(x,y) :- \n   p(x,y).", toString(*program.getRelation("p")->getClause(0)));
 }
 
-TEST(AstUtils, ResolveAliasesWithTermsInAtoms) {
+TEST(Utils, ResolveAliasesWithTermsInAtoms) {
     // load some test program
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                 .type D
                 .decl p(a:D,b:D)
@@ -458,7 +458,7 @@ TEST(AstUtils, ResolveAliasesWithTermsInAtoms) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     EXPECT_EQ("p(x,c) :- \n   p(x,b),\n   p(b,c),\n   c = (b+1),\n   x = (c+2).",
             toString(*program.getRelation("p")->getClause(0)));
@@ -471,12 +471,12 @@ TEST(AstUtils, ResolveAliasesWithTermsInAtoms) {
             toString(*program.getRelation("p")->getClause(0)));
 }
 
-TEST(AstUtils, RemoveRelationCopies) {
+TEST(Utils, RemoveRelationCopies) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                 .type D = number
                 .decl a(a:D,b:D)
@@ -493,7 +493,7 @@ TEST(AstUtils, RemoveRelationCopies) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     EXPECT_EQ(4, program.getRelations().size());
 
@@ -502,12 +502,12 @@ TEST(AstUtils, RemoveRelationCopies) {
     EXPECT_EQ(2, program.getRelations().size());
 }
 
-TEST(AstUtils, RemoveRelationCopiesOutput) {
+TEST(Utils, RemoveRelationCopiesOutput) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // load some test program
-    std::unique_ptr<AstTranslationUnit> tu = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> tu = ParserDriver::parseTranslationUnit(
             R"(
                 .type D = number
                 .decl a(a:D,b:D)
@@ -524,7 +524,7 @@ TEST(AstUtils, RemoveRelationCopiesOutput) {
             )",
             sym, e, d);
 
-    AstProgram& program = *tu->getProgram();
+    Program& program = *tu->getProgram();
 
     EXPECT_EQ(4, program.getRelations().size());
 

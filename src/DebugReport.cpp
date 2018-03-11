@@ -15,9 +15,9 @@
  ***********************************************************************/
 
 #include "DebugReport.h"
-#include "ast/AstTranslationUnit.h"
-#include "ast/AstTypeAnalysis.h"
-#include "MagicSet.h"
+#include "ast/TranslationUnit.h"
+#include "ast/TypeAnalysis.h"
+#include "ast/MagicSet.h"
 #include "PrecedenceGraph.h"
 
 #include <cstdio>
@@ -193,7 +193,7 @@ DebugReportSection DebugReporter::getDotGraphSection(std::string id, std::string
     return DebugReportSection(id, title, {}, graphHTML.str());
 }
 
-bool DebugReporter::transform(AstTranslationUnit& translationUnit) {
+bool DebugReporter::transform(ast::TranslationUnit& translationUnit) {
     auto start = std::chrono::high_resolution_clock::now();
     bool changed = applySubtransformer(translationUnit, wrappedTransformer.get());
     auto end = std::chrono::high_resolution_clock::now();
@@ -209,14 +209,14 @@ bool DebugReporter::transform(AstTranslationUnit& translationUnit) {
 }
 
 void DebugReporter::generateDebugReport(
-        AstTranslationUnit& translationUnit, std::string id, std::string title) {
+        ast::TranslationUnit& translationUnit, std::string id, std::string title) {
     std::stringstream datalogSpec;
     translationUnit.getProgram()->print(datalogSpec);
 
     DebugReportSection datalogSection = getCodeSection(id + "-dl", "Datalog", datalogSpec.str());
 
     std::stringstream typeAnalysis;
-    translationUnit.getAnalysis<TypeAnalysis>()->print(typeAnalysis);
+    translationUnit.getAnalysis<ast::TypeAnalysis>()->print(typeAnalysis);
     DebugReportSection typeAnalysisSection = getCodeSection(id + "-ta", "Type Analysis", typeAnalysis.str());
 
     std::stringstream precGraphDot;

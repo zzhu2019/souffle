@@ -15,10 +15,10 @@
  ***********************************************************************/
 
 #include "Interpreter.h"
-#include "ast/AstLogStatement.h"
-#include "ast/AstRelation.h"
-#include "ast/AstTranslator.h"
-#include "ast/AstVisitor.h"
+#include "ast/LogStatement.h"
+#include "ast/Relation.h"
+#include "ast/Translator.h"
+#include "ast/Visitor.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
@@ -777,7 +777,7 @@ void Interpreter::executeMain() {
         if (!os.is_open()) {
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
-        os << AstLogStatement::startDebug() << std::endl;
+        os << ast::LogStatement::startDebug() << std::endl;
         evalStmt(main, &os);
     } else {
         evalStmt(main);

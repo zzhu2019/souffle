@@ -14,28 +14,28 @@
  *
  ***********************************************************************/
 
-#include "ast/AstProgram.h"
-#include "ast/AstTranslationUnit.h"
+#include "ast/Program.h"
+#include "ast/TranslationUnit.h"
 #include "ParserDriver.h"
 #include "SymbolTable.h"
 #include "test.h"
 
-namespace souffle {
+namespace souffle::ast {
 
 namespace test {
 
-TEST(AstProgram, Parse) {
+TEST(Program, Parse) {
     SymbolTable sym;
     ErrorReport e;
     DebugReport d;
     // check the empty program
-    std::unique_ptr<AstTranslationUnit> empty = ParserDriver::parseTranslationUnit("", sym, e, d);
+    std::unique_ptr<TranslationUnit> empty = ParserDriver::parseTranslationUnit("", sym, e, d);
 
     EXPECT_TRUE(empty->getProgram()->getTypes().empty());
     EXPECT_TRUE(empty->getProgram()->getRelations().empty());
 
     // check something simple
-    std::unique_ptr<AstTranslationUnit> prog = ParserDriver::parseTranslationUnit(
+    std::unique_ptr<TranslationUnit> prog = ParserDriver::parseTranslationUnit(
             R"(
                    .type Node
                    .decl e ( a : Node , b : Node )

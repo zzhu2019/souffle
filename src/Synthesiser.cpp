@@ -15,9 +15,9 @@
  ***********************************************************************/
 
 #include "Synthesiser.h"
-#include "ast/AstLogStatement.h"
-#include "ast/AstRelation.h"
-#include "ast/AstVisitor.h"
+#include "ast/LogStatement.h"
+#include "ast/Relation.h"
+#include "ast/Visitor.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
@@ -1012,9 +1012,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     break;
                 }
                 case BinaryOp::EXP: {
-                    out << "(AstDomain)(std::pow((AstDomain)";
+                    out << "(ast::Domain)(std::pow((ast::Domain)";
                     visit(op.getLHS(), out);
-                    out << ",(AstDomain)";
+                    out << ",(ast::Domain)";
                     visit(op.getRHS(), out);
                     out << "))";
                     break;
@@ -1068,17 +1068,17 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     break;
                 }
                 case BinaryOp::MAX: {
-                    out << "(AstDomain)(std::max((AstDomain)";
+                    out << "(ast::Domain)(std::max((ast::Domain)";
                     visit(op.getLHS(), out);
-                    out << ",(AstDomain)";
+                    out << ",(ast::Domain)";
                     visit(op.getRHS(), out);
                     out << "))";
                     break;
                 }
                 case BinaryOp::MIN: {
-                    out << "(AstDomain)(std::min((AstDomain)";
+                    out << "(ast::Domain)(std::min((ast::Domain)";
                     visit(op.getLHS(), out);
-                    out << ",(AstDomain)";
+                    out << ",(ast::Domain)";
                     visit(op.getRHS(), out);
                     out << "))";
                     break;
@@ -1338,7 +1338,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "// -- query evaluation --\n";
     if (Global::config().has("profile")) {
         os << "std::ofstream profile(profiling_fname);\n";
-        os << "profile << \"" << AstLogStatement::startDebug() << "\" << std::endl;\n";
+        os << "profile << \"" << ast::LogStatement::startDebug() << "\" << std::endl;\n";
         emitCode(os, *(prog.getMain()));
     } else {
         emitCode(os, *(prog.getMain()));

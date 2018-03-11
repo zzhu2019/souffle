@@ -21,7 +21,9 @@
 
 namespace souffle {
 
-class AstTranslationUnit;
+namespace ast {
+class TranslationUnit;
+}
 
 /**
  * Converts the given souffle-datalog translation unit into bdddbddb input code
@@ -32,7 +34,7 @@ class AstTranslationUnit;
  * @throws UnsupportedConstructException if constructs that can not be expressed
  *        within bddbddb have been encountered
  */
-void toBddbddb(std::ostream& out, const AstTranslationUnit& translationUnit);
+void toBddbddb(std::ostream& out, const ast::TranslationUnit& translationUnit);
 
 /**
  * The kind of exception to be raised if an error in the conversion to a

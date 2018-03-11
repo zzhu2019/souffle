@@ -20,7 +20,7 @@
 %define api.token.constructor
 %define api.value.type variant
 %define parse.assert
-%define api.location.type {AstSrcLocation}
+%define api.location.type {ast::SrcLocation}
 
 %code requires {
     #include <config.h>
@@ -34,20 +34,20 @@
     #include <unistd.h>
 
     #include "Util.h"
-    #include "ast/AstProgram.h"
-    #include "ast/AstClause.h"
-    #include "ast/AstComponent.h"
-    #include "ast/AstRelation.h"
-    #include "ast/AstIODirective.h"
-    #include "ast/AstArgument.h"
-    #include "ast/AstNode.h"
+    #include "ast/Program.h"
+    #include "ast/Clause.h"
+    #include "ast/Component.h"
+    #include "ast/Relation.h"
+    #include "ast/IODirective.h"
+    #include "ast/Argument.h"
+    #include "ast/Node.h"
     #include "UnaryFunctorOps.h"
     #include "BinaryFunctorOps.h"
     #include "BinaryConstraintOps.h"
-    #include "ast/AstParserUtils.h"
+    #include "ast/ParserUtils.h"
 
-    #include "ast/AstSrcLocation.h"
-    #include "ast/AstTypes.h"
+    #include "ast/SrcLocation.h"
+    #include "ast/Types.h"
 
     using namespace souffle;
 
@@ -89,7 +89,7 @@
 %token END 0                     "end of file"
 %token <std::string> STRING      "symbol"
 %token <std::string> IDENT       "identifier"
-%token <AstDomain> NUMBER        "number"
+%token <ast::Domain> NUMBER        "number"
 %token <std::string> RELOP       "relational operator"
 %token PRAGMA                    "pragma directive"
 %token OUTPUT_QUALIFIER          "relation qualifier output"
@@ -161,29 +161,29 @@
 %token L_NOT                     "lnot"
 
 %type <uint32_t>                         qualifiers
-%type <AstTypeIdentifier *>              type_id
-%type <AstRelationIdentifier *>          rel_id
-%type <AstType *>                        type
-%type <AstComponent *>                   component component_head component_body
-%type <AstComponentType *>               comp_type
-%type <AstComponentInit *>               comp_init
-%type <AstRelation *>                    attributes non_empty_attributes relation_body
-%type <std::vector<AstRelation *>>       relation_list relation_head
-%type <AstArgument *>                    arg
-%type <AstAtom *>                        arg_list non_empty_arg_list atom
-%type <std::vector<AstAtom*>>            head
-%type <RuleBody *>                       literal term disjunction conjunction body
-%type <AstClause *>                      fact
-%type <AstPragma *>                      pragma
-%type <std::vector<AstClause*>>          rule rule_def
-%type <AstExecutionOrder *>              exec_order exec_order_list
-%type <AstExecutionPlan *>               exec_plan exec_plan_list
-%type <AstRecordInit *>                  recordlist
-%type <AstRecordType *>                  recordtype
-%type <AstUnionType *>                   uniontype
-%type <std::vector<AstTypeIdentifier>>   type_params type_param_list
+%type <ast::TypeIdentifier *>              type_id
+%type <ast::RelationIdentifier *>          rel_id
+%type <ast::Type *>                        type
+%type <ast::Component *>                   component component_head component_body
+%type <ast::ComponentType *>               comp_type
+%type <ast::ComponentInit *>               comp_init
+%type <ast::Relation *>                    attributes non_empty_attributes relation_body
+%type <std::vector<ast::Relation *>>       relation_list relation_head
+%type <ast::Argument *>                    arg
+%type <ast::Atom *>                        arg_list non_empty_arg_list atom
+%type <std::vector<ast::Atom*>>            head
+%type <ast::RuleBody *>                       literal term disjunction conjunction body
+%type <ast::Clause *>                      fact
+%type <ast::Pragma *>                      pragma
+%type <std::vector<ast::Clause*>>          rule rule_def
+%type <ast::ExecutionOrder *>              exec_order exec_order_list
+%type <ast::ExecutionPlan *>               exec_plan exec_plan_list
+%type <ast::RecordInit *>                  recordlist
+%type <ast::RecordType *>                  recordtype
+%type <ast::UnionType *>                   uniontype
+%type <std::vector<ast::TypeIdentifier>>   type_params type_param_list
 %type <std::string>                      comp_override
-%type <AstIODirective *>                 key_value_pairs non_empty_key_value_pairs iodirective iodirective_body
+%type <ast::IODirective *>                 key_value_pairs non_empty_key_value_pairs iodirective iodirective_body
 %printer { yyoutput << $$; } <*>;
 
 %precedence AS
@@ -208,28 +208,28 @@ program
 /* Top-level statement */
 unit
   : unit type {
-        driver.addType(std::unique_ptr<AstType>($2));
+        driver.addType(std::unique_ptr<ast::Type>($2));
     }
   | unit relation_head {
-        for(const auto& cur : $2) driver.addRelation(std::unique_ptr<AstRelation>(cur));
+        for(const auto& cur : $2) driver.addRelation(std::unique_ptr<ast::Relation>(cur));
     }
   | unit iodirective {
-        driver.addIODirectiveChain(std::unique_ptr<AstIODirective>($2));
+        driver.addIODirectiveChain(std::unique_ptr<ast::IODirective>($2));
     }
   | unit fact {
-        driver.addClause(std::unique_ptr<AstClause>($2));
+        driver.addClause(std::unique_ptr<ast::Clause>($2));
     }
   | unit rule {
-        for(const auto& cur : $2) driver.addClause(std::unique_ptr<AstClause>(cur));
+        for(const auto& cur : $2) driver.addClause(std::unique_ptr<ast::Clause>(cur));
     }
   | unit component {
-        driver.addComponent(std::unique_ptr<AstComponent>($2));
+        driver.addComponent(std::unique_ptr<ast::Component>($2));
     }
   | unit comp_init {
-        driver.addInstantiation(std::unique_ptr<AstComponentInit>($2));
+        driver.addInstantiation(std::unique_ptr<ast::ComponentInit>($2));
     }
   | unit pragma {
-        driver.addPragma(std::unique_ptr<AstPragma>($2));
+        driver.addPragma(std::unique_ptr<ast::Pragma>($2));
     }
   | %empty {
     }
@@ -237,12 +237,12 @@ unit
 /* Pragma directives */
 pragma
   : PRAGMA STRING STRING {
-        $$ = new AstPragma($2,$3);
+        $$ = new ast::Pragma($2,$3);
         $$->setSrcLoc(@$);
     }
 
   | PRAGMA STRING {
-        $$ = new AstPragma($2, "");
+        $$ = new ast::Pragma($2, "");
         $$->setSrcLoc(@$);
     }
 
@@ -251,7 +251,7 @@ pragma
 /* Type Identifier */
 type_id
   : IDENT {
-        $$ = new AstTypeIdentifier($1);
+        $$ = new ast::TypeIdentifier($1);
     }
   | type_id DOT IDENT {
         $$ = $1;
@@ -261,15 +261,15 @@ type_id
 /* Type Declaration */
 type
   : NUMBER_TYPE IDENT {
-        $$ = new AstPrimitiveType($2, true);
+        $$ = new ast::PrimitiveType($2, true);
         $$->setSrcLoc(@$);
     }
   | SYMBOL_TYPE IDENT {
-        $$ = new AstPrimitiveType($2, false);
+        $$ = new ast::PrimitiveType($2, false);
         $$->setSrcLoc(@$);
     }
   | TYPE IDENT {
-        $$ = new AstPrimitiveType($2);
+        $$ = new ast::PrimitiveType($2);
         $$->setSrcLoc(@$);
     }
   | TYPE IDENT EQUALS uniontype {
@@ -283,14 +283,14 @@ type
         $$->setSrcLoc(@$);
     }
   | TYPE IDENT EQUALS LBRACKET RBRACKET {
-        $$ = new AstRecordType();
+        $$ = new ast::RecordType();
         $$->setName($2);
         $$->setSrcLoc(@$);
     }
 
 recordtype
   : IDENT COLON type_id {
-        $$ = new AstRecordType();
+        $$ = new ast::RecordType();
         $$->add($1, *$3); delete $3;
     }
   | recordtype COMMA IDENT COLON type_id {
@@ -300,7 +300,7 @@ recordtype
 
 uniontype
   : type_id {
-        $$ = new AstUnionType();
+        $$ = new ast::UnionType();
         $$->add(*$1); delete $1;
     }
   | uniontype PIPE type_id {
@@ -313,7 +313,7 @@ uniontype
 
 rel_id
   : IDENT {
-        $$ = new AstRelationIdentifier($1);
+        $$ = new ast::RelationIdentifier($1);
     }
   | rel_id DOT IDENT {
         $$ = $1;
@@ -324,17 +324,17 @@ rel_id
 /* Relations */
 non_empty_attributes
   : IDENT COLON type_id {
-        $$ = new AstRelation();
-        AstAttribute *a = new AstAttribute($1, *$3);
+        $$ = new ast::Relation();
+        ast::Attribute *a = new ast::Attribute($1, *$3);
         a->setSrcLoc(@3);
-        $$->addAttribute(std::unique_ptr<AstAttribute>(a));
+        $$->addAttribute(std::unique_ptr<ast::Attribute>(a));
         delete $3;
     }
   | attributes COMMA IDENT COLON type_id {
         $$ = $1;
-        AstAttribute *a = new AstAttribute($3, *$5);
+        ast::Attribute *a = new ast::Attribute($3, *$5);
         a->setSrcLoc(@5);
-        $$->addAttribute(std::unique_ptr<AstAttribute>(a));
+        $$->addAttribute(std::unique_ptr<ast::Attribute>(a));
         delete $5;
     }
 
@@ -343,7 +343,7 @@ attributes
         $$ = $1;
     }
   | %empty {
-        $$ = new AstRelation();
+        $$ = new ast::Relation();
     }
 
 qualifiers
@@ -418,7 +418,7 @@ relation_body
 
 non_empty_key_value_pairs
   : IDENT EQUALS STRING {
-        $$ = new AstIODirective();
+        $$ = new ast::IODirective();
         $$->addKVP($1, $3);
     }
   | key_value_pairs COMMA IDENT EQUALS STRING {
@@ -426,7 +426,7 @@ non_empty_key_value_pairs
         $$->addKVP($3, $5);
     }
   | IDENT EQUALS IDENT {
-        $$ = new AstIODirective();
+        $$ = new ast::IODirective();
         $$->addKVP($1, $3);
     }
   | key_value_pairs COMMA IDENT EQUALS IDENT {
@@ -434,7 +434,7 @@ non_empty_key_value_pairs
         $$->addKVP($3, $5);
     }
   | IDENT EQUALS TRUE {
-        $$ = new AstIODirective();
+        $$ = new ast::IODirective();
         $$->addKVP($1, "true");
     }
   | key_value_pairs COMMA IDENT EQUALS TRUE {
@@ -442,7 +442,7 @@ non_empty_key_value_pairs
         $$->addKVP($3, "true");
     }
  | IDENT EQUALS FALSE {
-        $$ = new AstIODirective();
+        $$ = new ast::IODirective();
         $$->addKVP($1, "false");
     }
  | key_value_pairs COMMA IDENT EQUALS FALSE {
@@ -455,7 +455,7 @@ key_value_pairs
         $$ = $1;
     }
   | %empty {
-        $$ = new AstIODirective();
+        $$ = new ast::IODirective();
         $$->setSrcLoc(@$);
     }
 
@@ -467,7 +467,7 @@ iodirective_body
         delete $1;
     }
   | rel_id {
-        $$ = new AstIODirective();
+        $$ = new ast::IODirective();
         $$->setName(*$1);
         $$->setSrcLoc(@1);
         delete $1;
@@ -499,124 +499,124 @@ iodirective
 /* Atom */
 arg
   : STRING {
-        $$ = new AstStringConstant(driver.getSymbolTable(), $1.c_str());
+        $$ = new ast::StringConstant(driver.getSymbolTable(), $1.c_str());
         $$->setSrcLoc(@$);
     }
   | UNDERSCORE {
-        $$ = new AstUnnamedVariable();
+        $$ = new ast::UnnamedVariable();
         $$->setSrcLoc(@$);
     }
   | DOLLAR {
-        $$ = new AstCounter();
+        $$ = new ast::Counter();
         $$->setSrcLoc(@$);
     }
   | IDENT {
-        $$ = new AstVariable($1);
+        $$ = new ast::Variable($1);
         $$->setSrcLoc(@$);
     }
   | NUMBER {
-        $$ = new AstNumberConstant($1);
+        $$ = new ast::NumberConstant($1);
         $$->setSrcLoc(@$);
     }
   | LPAREN arg RPAREN {
         $$ = $2;
     }
   | arg BW_OR arg {
-        $$ = new AstBinaryFunctor(BinaryOp::BOR, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::BOR, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg BW_XOR arg {
-        $$ = new AstBinaryFunctor(BinaryOp::BXOR, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::BXOR, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg BW_AND arg {
-        $$ = new AstBinaryFunctor(BinaryOp::BAND, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::BAND, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg L_OR arg {
-        $$ = new AstBinaryFunctor(BinaryOp::LOR, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::LOR, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg L_AND arg {
-        $$ = new AstBinaryFunctor(BinaryOp::LAND, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::LAND, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg PLUS arg {
-        $$ = new AstBinaryFunctor(BinaryOp::ADD, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::ADD, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg MINUS arg {
-        $$ = new AstBinaryFunctor(BinaryOp::SUB, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::SUB, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg STAR arg {
-        $$ = new AstBinaryFunctor(BinaryOp::MUL, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::MUL, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg SLASH arg {
-        $$ = new AstBinaryFunctor(BinaryOp::DIV, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::DIV, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg PERCENT arg {
-        $$ = new AstBinaryFunctor(BinaryOp::MOD, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::MOD, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | arg CARET arg {
-        $$ = new AstBinaryFunctor(BinaryOp::EXP, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        $$ = new ast::BinaryFunctor(BinaryOp::EXP, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | MAX LPAREN arg COMMA arg RPAREN {
-        $$ = new AstBinaryFunctor(BinaryOp::MAX, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        $$ = new ast::BinaryFunctor(BinaryOp::MAX, std::unique_ptr<ast::Argument>($3), std::unique_ptr<ast::Argument>($5));
         $$->setSrcLoc(@$);
     }
   | MIN LPAREN arg COMMA arg RPAREN {
-        $$ = new AstBinaryFunctor(BinaryOp::MIN, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        $$ = new ast::BinaryFunctor(BinaryOp::MIN, std::unique_ptr<ast::Argument>($3), std::unique_ptr<ast::Argument>($5));
         $$->setSrcLoc(@$);
     }
   | CAT LPAREN arg COMMA arg RPAREN {
-        $$ = new AstBinaryFunctor(BinaryOp::CAT, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        $$ = new ast::BinaryFunctor(BinaryOp::CAT, std::unique_ptr<ast::Argument>($3), std::unique_ptr<ast::Argument>($5));
         $$->setSrcLoc(@$);
     }
   | ORD LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::ORD, std::unique_ptr<AstArgument>($3));
+        $$ = new ast::UnaryFunctor(UnaryOp::ORD, std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | STRLEN LPAREN arg RPAREN {
-        $$ = new AstUnaryFunctor(UnaryOp::STRLEN, std::unique_ptr<AstArgument>($3));
+        $$ = new ast::UnaryFunctor(UnaryOp::STRLEN, std::unique_ptr<ast::Argument>($3));
         $$->setSrcLoc(@$);
     }
   | SUBSTR LPAREN arg COMMA arg COMMA arg RPAREN {
-        $$ = new AstTernaryFunctor(TernaryOp::SUBSTR,
-                std::unique_ptr<AstArgument>($3),
-                std::unique_ptr<AstArgument>($5),
-                std::unique_ptr<AstArgument>($7));
+        $$ = new ast::TernaryFunctor(TernaryOp::SUBSTR,
+                std::unique_ptr<ast::Argument>($3),
+                std::unique_ptr<ast::Argument>($5),
+                std::unique_ptr<ast::Argument>($7));
         $$->setSrcLoc(@$);
     }
   | arg AS IDENT {
-        $$ = new AstTypeCast(std::unique_ptr<AstArgument>($1), $3);
+        $$ = new ast::TypeCast(std::unique_ptr<ast::Argument>($1), $3);
         $$->setSrcLoc(@$);
     }
   | MINUS arg %prec NEG {
-        std::unique_ptr<AstArgument> arg;
-        if (const AstNumberConstant* original = dynamic_cast<const AstNumberConstant*>($2)) {
-            $$ = new AstNumberConstant(-1*original->getIndex());
+        std::unique_ptr<ast::Argument> arg;
+        if (const ast::NumberConstant* original = dynamic_cast<const ast::NumberConstant*>($2)) {
+            $$ = new ast::NumberConstant(-1*original->getIndex());
             $$->setSrcLoc($2->getSrcLoc());
             delete $2;
         } else {
-            $$ = new AstUnaryFunctor(UnaryOp::NEG, std::unique_ptr<AstArgument>($2));
+            $$ = new ast::UnaryFunctor(UnaryOp::NEG, std::unique_ptr<ast::Argument>($2));
             $$->setSrcLoc(@$);
         }
     }
   | BW_NOT arg {
-        $$ = new AstUnaryFunctor(UnaryOp::BNOT, std::unique_ptr<AstArgument>($2));
+        $$ = new ast::UnaryFunctor(UnaryOp::BNOT, std::unique_ptr<ast::Argument>($2));
         $$->setSrcLoc(@$);
     }
   | L_NOT arg {
-        $$ = new AstUnaryFunctor(UnaryOp::LNOT, std::unique_ptr<AstArgument>($2));
+        $$ = new ast::UnaryFunctor(UnaryOp::LNOT, std::unique_ptr<ast::Argument>($2));
         $$->setSrcLoc(@$);
     }
   | LBRACKET RBRACKET {
-        $$ = new AstRecordInit();
+        $$ = new ast::RecordInit();
         $$->setSrcLoc(@$);
     }
   | LBRACKET recordlist RBRACKET {
@@ -624,24 +624,24 @@ arg
         $$->setSrcLoc(@$);
     }
   | NIL {
-        $$ = new AstNullConstant();
+        $$ = new ast::NullConstant();
         $$->setSrcLoc(@$);
     }
   | COUNT COLON atom {
-        auto res = new AstAggregator(AstAggregator::count);
-        res->addBodyLiteral(std::unique_ptr<AstLiteral>($3));
+        auto res = new ast::Aggregator(ast::Aggregator::count);
+        res->addBodyLiteral(std::unique_ptr<ast::Literal>($3));
         $$ = res;
         $$->setSrcLoc(@$);
     }
   | COUNT COLON LBRACE body RBRACE {
-        auto res = new AstAggregator(AstAggregator::count);
+        auto res = new ast::Aggregator(ast::Aggregator::count);
         auto bodies = $4->toClauseBodies();
         if (bodies.size() != 1) {
             std::cerr << "ERROR: currently not supporting non-conjunctive aggregation clauses!";
             exit(1);
         }
         for(const auto& cur : bodies[0]->getBodyLiterals()) {
-            res->addBodyLiteral(std::unique_ptr<AstLiteral>(cur->clone()));
+            res->addBodyLiteral(std::unique_ptr<ast::Literal>(cur->clone()));
         }
         delete bodies[0];
         delete $4;
@@ -649,22 +649,22 @@ arg
         $$->setSrcLoc(@$);
     }
   | SUM arg COLON atom {
-        auto res = new AstAggregator(AstAggregator::sum);
-        res->setTargetExpression(std::unique_ptr<AstArgument>($2));
-        res->addBodyLiteral(std::unique_ptr<AstLiteral>($4));
+        auto res = new ast::Aggregator(ast::Aggregator::sum);
+        res->setTargetExpression(std::unique_ptr<ast::Argument>($2));
+        res->addBodyLiteral(std::unique_ptr<ast::Literal>($4));
         $$ = res;
         $$->setSrcLoc(@$);
     }
   | SUM arg COLON LBRACE body RBRACE {
-        auto res = new AstAggregator(AstAggregator::sum);
-        res->setTargetExpression(std::unique_ptr<AstArgument>($2));
+        auto res = new ast::Aggregator(ast::Aggregator::sum);
+        res->setTargetExpression(std::unique_ptr<ast::Argument>($2));
         auto bodies = $5->toClauseBodies();
         if (bodies.size() != 1) {
             std::cerr << "ERROR: currently not supporting non-conjunctive aggregation clauses!";
             exit(1);
         }
         for(const auto& cur : bodies[0]->getBodyLiterals()) {
-	    res->addBodyLiteral(std::unique_ptr<AstLiteral>(cur->clone()));
+	    res->addBodyLiteral(std::unique_ptr<ast::Literal>(cur->clone()));
         }
         delete bodies[0];
         delete $5;
@@ -672,22 +672,22 @@ arg
         $$->setSrcLoc(@$);
     }
   | MIN arg COLON atom {
-        auto res = new AstAggregator(AstAggregator::min);
-        res->setTargetExpression(std::unique_ptr<AstArgument>($2));
-        res->addBodyLiteral(std::unique_ptr<AstLiteral>($4));
+        auto res = new ast::Aggregator(ast::Aggregator::min);
+        res->setTargetExpression(std::unique_ptr<ast::Argument>($2));
+        res->addBodyLiteral(std::unique_ptr<ast::Literal>($4));
         $$ = res;
         $$->setSrcLoc(@$);
     }
   | MIN arg COLON LBRACE body RBRACE {
-        auto res = new AstAggregator(AstAggregator::min);
-        res->setTargetExpression(std::unique_ptr<AstArgument>($2));
+        auto res = new ast::Aggregator(ast::Aggregator::min);
+        res->setTargetExpression(std::unique_ptr<ast::Argument>($2));
         auto bodies = $5->toClauseBodies();
         if (bodies.size() != 1) {
             std::cerr << "ERROR: currently not supporting non-conjunctive aggregation clauses!";
             exit(1);
         }
         for(const auto& cur : bodies[0]->getBodyLiterals()) {
-            res->addBodyLiteral(std::unique_ptr<AstLiteral>(cur->clone()));
+            res->addBodyLiteral(std::unique_ptr<ast::Literal>(cur->clone()));
         }
         delete bodies[0];
         delete $5;
@@ -695,22 +695,22 @@ arg
         $$->setSrcLoc(@$);
     }
   | MAX arg COLON atom {
-        auto res = new AstAggregator(AstAggregator::max);
-        res->setTargetExpression(std::unique_ptr<AstArgument>($2));
-        res->addBodyLiteral(std::unique_ptr<AstLiteral>($4));
+        auto res = new ast::Aggregator(ast::Aggregator::max);
+        res->setTargetExpression(std::unique_ptr<ast::Argument>($2));
+        res->addBodyLiteral(std::unique_ptr<ast::Literal>($4));
         $$ = res;
         $$->setSrcLoc(@$);
     }
   | MAX arg COLON LBRACE body RBRACE {
-        auto res = new AstAggregator(AstAggregator::max);
-        res->setTargetExpression(std::unique_ptr<AstArgument>($2));
+        auto res = new ast::Aggregator(ast::Aggregator::max);
+        res->setTargetExpression(std::unique_ptr<ast::Argument>($2));
         auto bodies = $5->toClauseBodies();
         if (bodies.size() != 1) {
             std::cerr << "ERROR: currently not supporting non-conjunctive aggregation clauses!";
             exit(1);
         }
         for(const auto& cur : bodies[0]->getBodyLiterals()) {
-            res->addBodyLiteral(std::unique_ptr<AstLiteral>(cur->clone()));
+            res->addBodyLiteral(std::unique_ptr<ast::Literal>(cur->clone()));
         }
         delete bodies[0];
         delete $5;
@@ -724,22 +724,22 @@ arg
 
 recordlist
   : arg {
-        $$ = new AstRecordInit();
-        $$->add(std::unique_ptr<AstArgument>($1));
+        $$ = new ast::RecordInit();
+        $$->add(std::unique_ptr<ast::Argument>($1));
     }
   | recordlist COMMA arg {
         $$ = $1;
-        $$->add(std::unique_ptr<AstArgument>($3));
+        $$->add(std::unique_ptr<ast::Argument>($3));
     }
 
 non_empty_arg_list
   : arg {
-        $$ = new AstAtom();
-        $$->addArgument(std::unique_ptr<AstArgument>($1));
+        $$ = new ast::Atom();
+        $$->addArgument(std::unique_ptr<ast::Argument>($1));
     }
   | arg_list COMMA arg {
         $$ = $1;
-        $$->addArgument(std::unique_ptr<AstArgument>($3));
+        $$->addArgument(std::unique_ptr<ast::Argument>($3));
     }
 
 arg_list
@@ -747,7 +747,7 @@ arg_list
         $$ = $1;
     }
   | %empty {
-        $$ = new AstAtom();
+        $$ = new ast::Atom();
     }
 
 atom
@@ -761,55 +761,55 @@ atom
 /* Literal */
 literal
   : arg RELOP arg {
-        auto* res = new AstBinaryConstraint($2, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new ast::BinaryConstraint($2, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         res->setSrcLoc(@$);
-        $$ = new RuleBody(RuleBody::constraint(res));
+        $$ = new ast::RuleBody(ast::RuleBody::constraint(res));
     }
   | arg LT arg {
-        auto* res = new AstBinaryConstraint(BinaryConstraintOp::LT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new ast::BinaryConstraint(BinaryConstraintOp::LT, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         res->setSrcLoc(@$);
-        $$ = new RuleBody(RuleBody::constraint(res));
+        $$ = new ast::RuleBody(ast::RuleBody::constraint(res));
     }
   | arg GT arg {
-        auto* res = new AstBinaryConstraint(BinaryConstraintOp::GT, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new ast::BinaryConstraint(BinaryConstraintOp::GT, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         res->setSrcLoc(@$);
-        $$ = new RuleBody(RuleBody::constraint(res));
+        $$ = new ast::RuleBody(ast::RuleBody::constraint(res));
     }
   | arg EQUALS arg {
-        auto* res = new AstBinaryConstraint(BinaryConstraintOp::EQ, std::unique_ptr<AstArgument>($1), std::unique_ptr<AstArgument>($3));
+        auto* res = new ast::BinaryConstraint(BinaryConstraintOp::EQ, std::unique_ptr<ast::Argument>($1), std::unique_ptr<ast::Argument>($3));
         res->setSrcLoc(@$);
-        $$ = new RuleBody(RuleBody::constraint(res));
+        $$ = new ast::RuleBody(ast::RuleBody::constraint(res));
     }
   | atom {
         $1->setSrcLoc(@$);
-        $$ = new RuleBody(RuleBody::atom($1));
+        $$ = new ast::RuleBody(ast::RuleBody::atom($1));
     }
   | TMATCH LPAREN arg COMMA arg RPAREN {
-        auto* res = new AstBinaryConstraint(BinaryConstraintOp::MATCH, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        auto* res = new ast::BinaryConstraint(BinaryConstraintOp::MATCH, std::unique_ptr<ast::Argument>($3), std::unique_ptr<ast::Argument>($5));
         res->setSrcLoc(@$);
-        $$ = new RuleBody(RuleBody::constraint(res));
+        $$ = new ast::RuleBody(ast::RuleBody::constraint(res));
     }
   | TCONTAINS LPAREN arg COMMA arg RPAREN {
-        auto* res = new AstBinaryConstraint(BinaryConstraintOp::CONTAINS, std::unique_ptr<AstArgument>($3), std::unique_ptr<AstArgument>($5));
+        auto* res = new ast::BinaryConstraint(BinaryConstraintOp::CONTAINS, std::unique_ptr<ast::Argument>($3), std::unique_ptr<ast::Argument>($5));
         res->setSrcLoc(@$);
-        $$ = new RuleBody(RuleBody::constraint(res));
+        $$ = new ast::RuleBody(ast::RuleBody::constraint(res));
     }
   | TRUE {
-        auto* res = new AstBooleanConstraint(true);
+        auto* res = new ast::BooleanConstraint(true);
         res->setSrcLoc(@$);
-        $$ = new RuleBody(RuleBody::constraint(res));
+        $$ = new ast::RuleBody(ast::RuleBody::constraint(res));
     }
   | FALSE {
-        auto* res = new AstBooleanConstraint(false);
+        auto* res = new ast::BooleanConstraint(false);
         res->setSrcLoc(@$);
-        $$ = new RuleBody(RuleBody::constraint(res));
+        $$ = new ast::RuleBody(ast::RuleBody::constraint(res));
     }
 
 /* Fact */
 fact
   : atom DOT {
-        $$ = new AstClause();
-        $$->setHead(std::unique_ptr<AstAtom>($1));
+        $$ = new ast::Clause();
+        $$->setHead(std::unique_ptr<ast::Atom>($1));
         $$->setSrcLoc(@$);
     }
 
@@ -866,7 +866,7 @@ body
 /* execution order list */
 exec_order_list
   : NUMBER {
-        $$ = new AstExecutionOrder();
+        $$ = new ast::ExecutionOrder();
         $$->appendAtomIndex($1);
     }
   | exec_order_list COMMA NUMBER {
@@ -884,12 +884,12 @@ exec_order
 /* execution plan list */
 exec_plan_list
   : NUMBER COLON exec_order {
-        $$ = new AstExecutionPlan();
-        $$->setOrderFor($1, std::unique_ptr<AstExecutionOrder>($3));
+        $$ = new ast::ExecutionPlan();
+        $$->setOrderFor($1, std::unique_ptr<ast::ExecutionOrder>($3));
     }
   | exec_plan_list COMMA NUMBER COLON exec_order {
         $$ = $1;
-        $$->setOrderFor($3, std::unique_ptr<AstExecutionOrder>($5));
+        $$->setOrderFor($3, std::unique_ptr<ast::ExecutionOrder>($5));
     }
 
 /* execution plan */
@@ -904,9 +904,9 @@ rule_def
   : head IF body DOT {
         auto bodies = $3->toClauseBodies();
         for(const auto& head : $1) {
-            for(AstClause* body : bodies) {
-                AstClause* cur = body->clone();
-                cur->setHead(std::unique_ptr<AstAtom>(head->clone()));
+            for(ast::Clause* body : bodies) {
+                ast::Clause* cur = body->clone();
+                cur->setHead(std::unique_ptr<ast::Atom>(head->clone()));
                 cur->setSrcLoc(@$);
                 cur->setGenerated($1.size() != 1 || bodies.size() != 1);
                 $$.push_back(cur);
@@ -915,7 +915,7 @@ rule_def
         for(auto& head : $1) {
             delete head;
         }
-        for(AstClause* body : bodies) {
+        for(ast::Clause* body : bodies) {
             delete body;
         }
         delete $3;
@@ -932,7 +932,7 @@ rule
     }
   | rule exec_plan {
         $$ = $1;
-        for(const auto& cur : $$) cur->setExecutionPlan(std::unique_ptr<AstExecutionPlan>($2->clone()));
+        for(const auto& cur : $$) cur->setExecutionPlan(std::unique_ptr<ast::ExecutionPlan>($2->clone()));
     }
 
 /* Type Parameters */
@@ -958,46 +958,46 @@ type_params
 
 comp_type
   : IDENT type_params {
-        $$ = new AstComponentType($1,$2);
+        $$ = new ast::ComponentType($1,$2);
     }
 
 /* Component */
 
 component_head
   : COMPONENT comp_type {
-        $$ = new AstComponent();
-        $$->setComponentType(std::unique_ptr<AstComponentType>($2));
+        $$ = new ast::Component();
+        $$->setComponentType(std::unique_ptr<ast::ComponentType>($2));
     }
   | component_head COLON comp_type {
         $$ = $1;
-        $$->addBaseComponent(std::unique_ptr<AstComponentType>($3));
+        $$->addBaseComponent(std::unique_ptr<ast::ComponentType>($3));
     }
   | component_head COMMA comp_type {
         $$ = $1;
-        $$->addBaseComponent(std::unique_ptr<AstComponentType>($3));
+        $$->addBaseComponent(std::unique_ptr<ast::ComponentType>($3));
     }
 
 component_body
   : component_body type {
         $$ = $1;
-        $$->addType(std::unique_ptr<AstType>($2));
+        $$->addType(std::unique_ptr<ast::Type>($2));
     }
   | component_body relation_head {
         $$ = $1;
-        for(const auto& cur : $2) $$->addRelation(std::unique_ptr<AstRelation>(cur));
+        for(const auto& cur : $2) $$->addRelation(std::unique_ptr<ast::Relation>(cur));
     }
   | component_body iodirective {
         $$ = $1;
-        $$->addIODirective(std::unique_ptr<AstIODirective>($2));
+        $$->addIODirective(std::unique_ptr<ast::IODirective>($2));
     }
   | component_body fact {
         $$ = $1;
-        $$->addClause(std::unique_ptr<AstClause>($2));
+        $$->addClause(std::unique_ptr<ast::Clause>($2));
     }
   | component_body rule {
         $$ = $1;
         for(const auto& cur : $2) {
-            $$->addClause(std::unique_ptr<AstClause>(cur));
+            $$->addClause(std::unique_ptr<ast::Clause>(cur));
         }
     }
   | component_body comp_override {
@@ -1006,20 +1006,20 @@ component_body
     }
   | component_body component {
         $$ = $1;
-        $$->addComponent(std::unique_ptr<AstComponent>($2));
+        $$->addComponent(std::unique_ptr<ast::Component>($2));
     }
   | component_body comp_init {
         $$ = $1;
-        $$->addInstantiation(std::unique_ptr<AstComponentInit>($2));
+        $$->addInstantiation(std::unique_ptr<ast::ComponentInit>($2));
     }
   | %empty {
-        $$ = new AstComponent();
+        $$ = new ast::Component();
     }
 
 component
   : component_head LBRACE component_body RBRACE {
         $$ = $3;
-        $$->setComponentType(std::unique_ptr<AstComponentType>($1->getComponentType()->clone()));
+        $$->setComponentType(std::unique_ptr<ast::ComponentType>($1->getComponentType()->clone()));
         $$->copyBaseComponents($1);
         delete $1;
         $$->setSrcLoc(@$);
@@ -1028,9 +1028,9 @@ component
 /* Component Instantition */
 comp_init
   : INSTANTIATE IDENT EQUALS comp_type {
-        $$ = new AstComponentInit();
+        $$ = new ast::ComponentInit();
         $$->setInstanceName($2);
-        $$->setComponentType(std::unique_ptr<AstComponentType>($4));
+        $$->setComponentType(std::unique_ptr<ast::ComponentType>($4));
         $$->setSrcLoc(@$);
     }
 

@@ -14,7 +14,7 @@
  *
  ***********************************************************************/
 
-#include "ast/AstProgram.h"
+#include "ast/Program.h"
 #include "test.h"
 
 #include <functional>

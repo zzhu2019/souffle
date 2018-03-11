@@ -1,0 +1,81 @@
+/*
+ * Souffle - A Datalog Compiler
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved
+ * Licensed under the Universal Permissive License v 1.0 as shown at:
+ * - https://opensource.org/licenses/UPL
+ * - <souffle root>/licenses/SOUFFLE-UPL.txt
+ */
+
+/************************************************************************
+ *
+ * @file ParserUtils.h
+ *
+ * Defines class RuleBody to represents rule bodies.
+ *
+ ***********************************************************************/
+
+#pragma once
+
+#include "Literal.h"
+#include "Util.h"
+
+#include <memory>
+#include <vector>
+
+namespace souffle {
+namespace ast {
+
+class RuleBody {
+    // a struct to represent literals
+    struct literal {
+        // whether this literal is negated or not
+        bool negated;
+
+        // the atom referenced by tis literal
+        std::unique_ptr<Literal> atom;
+
+        literal clone() const {
+            return literal({negated, std::unique_ptr<Literal>(atom->clone())});
+        }
+    };
+
+    using clause = std::vector<literal>;
+    std::vector<clause> dnf;
+
+public:
+    RuleBody() {}
+
+    void negate();
+
+    void conjunct(RuleBody&& other);
+
+    void disjunct(RuleBody&& other);
+
+    std::vector<Clause*> toClauseBodies() const;
+
+    // -- factory functions --
+
+    static RuleBody getTrue();
+
+    static RuleBody getFalse();
+
+    static RuleBody atom(Atom* atom);
+
+    static RuleBody constraint(Constraint* constraint);
+
+    friend std::ostream& operator<<(std::ostream& out, const RuleBody& body);
+
+private:
+    static bool equal(const literal& a, const literal& b);
+
+    static bool equal(const clause& a, const clause& b);
+
+    static bool isSubsetOf(const clause& a, const clause& b);
+
+    static void insert(clause& cl, literal&& lit);
+
+    static void insert(std::vector<clause>& cnf, clause&& cls);
+};
+
+}  // namespace ast
+}  // namespace souffle

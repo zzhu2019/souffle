@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "ast/AstType.h"
+#include "ast/Type.h"
 #include "IterUtils.h"
 #include "Util.h"
 
@@ -42,17 +42,17 @@ protected:
 
 private:
     /** The name of this type. */
-    AstTypeIdentifier name;
+    ast::TypeIdentifier name;
 
 public:
-    Type(const TypeEnvironment& environment, const AstTypeIdentifier& name)
+    Type(const TypeEnvironment& environment, const ast::TypeIdentifier& name)
             : environment(environment), name(name) {}
 
     Type(const Type& other) = delete;
 
     virtual ~Type() = default;
 
-    const AstTypeIdentifier& getName() const {
+    const ast::TypeIdentifier& getName() const {
         return name;
     }
 
@@ -98,7 +98,7 @@ class PrimitiveType : public Type {
     /** The base type -- may be symbol or numerical */
     const Type& baseType;
 
-    PrimitiveType(const TypeEnvironment& environment, const AstTypeIdentifier& name, const Type& base)
+    PrimitiveType(const TypeEnvironment& environment, const ast::TypeIdentifier& name, const Type& base)
             : Type(environment, name), baseType(base) {}
 
 public:
@@ -119,7 +119,7 @@ class UnionType : public Type {
     /** The contained element types */
     std::vector<const Type*> elementTypes;
 
-    UnionType(const TypeEnvironment& environment, const AstTypeIdentifier& name) : Type(environment, name) {}
+    UnionType(const TypeEnvironment& environment, const ast::TypeIdentifier& name) : Type(environment, name) {}
 
 public:
     void add(const Type& type);
@@ -148,7 +148,7 @@ private:
     /** The list of contained fields */
     std::vector<Field> fields;
 
-    RecordType(const TypeEnvironment& environment, const AstTypeIdentifier& name) : Type(environment, name) {}
+    RecordType(const TypeEnvironment& environment, const ast::TypeIdentifier& name) : Type(environment, name) {}
 
 public:
     void add(const std::string& name, const Type& type);
@@ -303,7 +303,7 @@ public:
  */
 class TypeEnvironment {
     /** The type utilized for identifying types */
-    typedef AstTypeIdentifier identifier;
+    typedef ast::TypeIdentifier identifier;
 
 private:
     /** The list of covered types */

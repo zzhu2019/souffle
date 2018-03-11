@@ -15,7 +15,7 @@
  ***********************************************************************/
 #pragma once
 
-#include "ast/AstTransformer.h"
+#include "ast/Transformer.h"
 
 #include <memory>
 #include <ostream>
@@ -24,8 +24,9 @@
 #include <vector>
 
 namespace souffle {
-
-class AstTranslationUnit;
+namespace ast {
+class TranslationUnit;
+}
 
 /**
  * Class representing a section of a HTML report.
@@ -108,21 +109,21 @@ public:
  * a debug report section for the stage after applying the wrapped transformer,
  * and adds it to the translation unit's debug report.
  */
-class DebugReporter : public MetaTransformer {
+class DebugReporter : public ast::MetaTransformer {
 private:
-    std::unique_ptr<AstTransformer> wrappedTransformer;
+    std::unique_ptr<ast::Transformer> wrappedTransformer;
 
-    bool transform(AstTranslationUnit& translationUnit) override;
+    bool transform(ast::TranslationUnit& translationUnit) override;
 
 public:
-    DebugReporter(std::unique_ptr<AstTransformer> wrappedTransformer)
+    DebugReporter(std::unique_ptr<ast::Transformer> wrappedTransformer)
             : wrappedTransformer(std::move(wrappedTransformer)) {}
 
     void setDebugReport() override {}
 
     void setVerbosity(bool verbose) override {
         this->verbose = verbose;
-        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(wrappedTransformer.get())) {
+        if (ast::MetaTransformer* mt = dynamic_cast<ast::MetaTransformer*>(wrappedTransformer.get())) {
             mt->setVerbosity(verbose);
         }
     }
@@ -138,7 +139,7 @@ public:
      * @param id the unique id of the generated section
      * @param title the text to display as the heading of the section
      */
-    static void generateDebugReport(AstTranslationUnit& translationUnit, std::string id, std::string title);
+    static void generateDebugReport(ast::TranslationUnit& translationUnit, std::string id, std::string title);
 
     /**
      * Generate a debug report section for code (preserving formatting), with the given id and title.

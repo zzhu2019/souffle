@@ -15,7 +15,7 @@
  ***********************************************************************/
 #pragma once
 
-#include "ast/AstSrcLocation.h"
+#include "ast/SrcLocation.h"
 
 #include <algorithm>
 #include <cassert>
@@ -30,10 +30,10 @@ class DiagnosticMessage {
 private:
     std::string message;
     bool hasLoc;
-    AstSrcLocation location;
+    ast::SrcLocation location;
 
 public:
-    DiagnosticMessage(std::string message, AstSrcLocation location)
+    DiagnosticMessage(std::string message, ast::SrcLocation location)
             : message(std::move(message)), hasLoc(true), location(std::move(location)) {}
 
     DiagnosticMessage(std::string message) : message(std::move(message)), hasLoc(false) {}
@@ -42,7 +42,7 @@ public:
         return message;
     }
 
-    const AstSrcLocation& getLocation() const {
+    const ast::SrcLocation& getLocation() const {
         assert(hasLoc);
         return location;
     }
@@ -166,12 +166,12 @@ public:
     }
 
     /** Adds an error with the given message and location */
-    void addError(const std::string& message, AstSrcLocation location) {
+    void addError(const std::string& message, ast::SrcLocation location) {
         diagnostics.insert(Diagnostic(Diagnostic::ERROR, DiagnosticMessage(message, location)));
     }
 
     /** Adds a warning with the given message and location */
-    void addWarning(const std::string& message, AstSrcLocation location) {
+    void addWarning(const std::string& message, ast::SrcLocation location) {
         if (!nowarn) {
             diagnostics.insert(Diagnostic(Diagnostic::WARNING, DiagnosticMessage(message, location)));
         }

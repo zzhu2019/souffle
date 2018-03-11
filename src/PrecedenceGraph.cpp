@@ -17,10 +17,10 @@
  ***********************************************************************/
 
 #include "PrecedenceGraph.h"
-#include "ast/AstClause.h"
-#include "ast/AstRelation.h"
-#include "ast/AstUtils.h"
-#include "ast/AstVisitor.h"
+#include "ast/Clause.h"
+#include "ast/Relation.h"
+#include "ast/Utils.h"
+#include "ast/Visitor.h"
 #include "Global.h"
 
 #include <algorithm>
@@ -28,19 +28,19 @@
 
 namespace souffle {
 
-void PrecedenceGraph::run(const AstTranslationUnit& translationUnit) {
+void PrecedenceGraph::run(const ast::TranslationUnit& translationUnit) {
     /* Get relations */
-    std::vector<AstRelation*> relations = translationUnit.getProgram()->getRelations();
+    std::vector<ast::Relation*> relations = translationUnit.getProgram()->getRelations();
 
-    for (AstRelation* r : relations) {
+    for (ast::Relation* r : relations) {
         backingGraph.insert(r);
         for (size_t i = 0; i < r->clauseSize(); i++) {
-            AstClause* c = r->getClause(i);
-            const std::set<const AstRelation*>& dependencies =
+            ast::Clause* c = r->getClause(i);
+            const std::set<const ast::Relation*>& dependencies =
                     getBodyRelations(c, translationUnit.getProgram());
-            for (std::set<const AstRelation*>::const_iterator irs = dependencies.begin();
+            for (std::set<const ast::Relation*>::const_iterator irs = dependencies.begin();
                     irs != dependencies.end(); ++irs) {
-                const AstRelation* source = (*irs);
+                const ast::Relation* source = (*irs);
                 backingGraph.insert(source, r);
             }
         }
@@ -51,14 +51,14 @@ void PrecedenceGraph::print(std::ostream& os) const {
     /* Print dependency graph */
     os << "digraph {\n";
     /* Print node of dependence graph */
-    for (const AstRelation* rel : backingGraph.vertices()) {
+    for (const ast::Relation* rel : backingGraph.vertices()) {
         if (rel) {
             os << "\t\"" << rel->getName() << "\" [label = \"" << rel->getName() << "\"];\n";
         }
     }
-    for (const AstRelation* rel : backingGraph.vertices()) {
+    for (const ast::Relation* rel : backingGraph.vertices()) {
         if (rel) {
-            for (const AstRelation* adjRel : backingGraph.successors(rel)) {
+            for (const ast::Relation* adjRel : backingGraph.successors(rel)) {
                 if (adjRel) {
                     os << "\t\"" << rel->getName() << "\" -> \"" << adjRel->getName() << "\";\n";
                 }
@@ -68,16 +68,16 @@ void PrecedenceGraph::print(std::ostream& os) const {
     os << "}\n";
 }
 
-void RedundantRelations::run(const AstTranslationUnit& translationUnit) {
+void RedundantRelations::run(const ast::TranslationUnit& translationUnit) {
     precedenceGraph = translationUnit.getAnalysis<PrecedenceGraph>();
 
-    std::set<const AstRelation*> work;
-    std::set<const AstRelation*> notRedundant;
+    std::set<const ast::Relation*> work;
+    std::set<const ast::Relation*> notRedundant;
 
-    const std::vector<AstRelation*>& relations = translationUnit.getProgram()->getRelations();
+    const std::vector<ast::Relation*>& relations = translationUnit.getProgram()->getRelations();
 
     /* Add all output relations to the work set */
-    for (const AstRelation* r : relations) {
+    for (const ast::Relation* r : relations) {
         if (r->isComputed()) {
             work.insert(r);
         }
@@ -87,13 +87,13 @@ void RedundantRelations::run(const AstTranslationUnit& translationUnit) {
        output relations. */
     while (!work.empty()) {
         /* Chose one element in the work set and add it to notRedundant */
-        const AstRelation* u = *(work.begin());
+        const ast::Relation* u = *(work.begin());
         work.erase(work.begin());
         notRedundant.insert(u);
 
         /* Find all predecessors of u and add them to the worklist
             if they are not in the set notRedundant */
-        for (const AstRelation* predecessor : precedenceGraph->graph().predecessors(u)) {
+        for (const ast::Relation* predecessor : precedenceGraph->graph().predecessors(u)) {
             if (!notRedundant.count(predecessor)) {
                 work.insert(predecessor);
             }
@@ -102,7 +102,7 @@ void RedundantRelations::run(const AstTranslationUnit& translationUnit) {
 
     /* All remaining relations are redundant. */
     redundantRelations.clear();
-    for (const AstRelation* r : relations) {
+    for (const ast::Relation* r : relations) {
         if (!notRedundant.count(r)) {
             redundantRelations.insert(r);
         }
@@ -113,8 +113,8 @@ void RedundantRelations::print(std::ostream& os) const {
     os << redundantRelations << std::endl;
 }
 
-void RecursiveClauses::run(const AstTranslationUnit& translationUnit) {
-    visitDepthFirst(*translationUnit.getProgram(), [&](const AstClause& clause) {
+void RecursiveClauses::run(const ast::TranslationUnit& translationUnit) {
+    visitDepthFirst(*translationUnit.getProgram(), [&](const ast::Clause& clause) {
         if (computeIsRecursive(clause, translationUnit)) {
             recursiveClauses.insert(&clause);
         }
@@ -126,17 +126,17 @@ void RecursiveClauses::print(std::ostream& os) const {
 }
 
 bool RecursiveClauses::computeIsRecursive(
-        const AstClause& clause, const AstTranslationUnit& translationUnit) const {
-    const AstProgram& program = *translationUnit.getProgram();
+        const ast::Clause& clause, const ast::TranslationUnit& translationUnit) const {
+    const ast::Program& program = *translationUnit.getProgram();
 
     // we want to reach the atom of the head through the body
-    const AstRelation* trg = getHeadRelation(&clause, &program);
+    const ast::Relation* trg = getHeadRelation(&clause, &program);
 
-    std::set<const AstRelation*> reached;
-    std::vector<const AstRelation*> worklist;
+    std::set<const ast::Relation*> reached;
+    std::vector<const ast::Relation*> worklist;
 
     // set up start list
-    for (const AstAtom* cur : clause.getAtoms()) {
+    for (const ast::Atom* cur : clause.getAtoms()) {
         auto rel = program.getRelation(cur->getName());
         if (rel == trg) {
             return true;
@@ -147,7 +147,7 @@ bool RecursiveClauses::computeIsRecursive(
     // process remaining elements
     while (!worklist.empty()) {
         // get next to process
-        const AstRelation* cur = worklist.back();
+        const ast::Relation* cur = worklist.back();
         worklist.pop_back();
 
         // skip null pointers (errors in the input code)
@@ -161,8 +161,8 @@ bool RecursiveClauses::computeIsRecursive(
         }
 
         // check all atoms in the relations
-        for (const AstClause* cl : cur->getClauses()) {
-            for (const AstAtom* at : cl->getAtoms()) {
+        for (const ast::Clause* cl : cur->getClauses()) {
+            for (const ast::Atom* at : cl->getAtoms()) {
                 auto rel = program.getRelation(at->getName());
                 if (rel == trg) {
                     return true;
@@ -176,7 +176,7 @@ bool RecursiveClauses::computeIsRecursive(
     return false;
 }
 
-void SCCGraph::run(const AstTranslationUnit& translationUnit) {
+void SCCGraph::run(const ast::TranslationUnit& translationUnit) {
     precedenceGraph = translationUnit.getAnalysis<PrecedenceGraph>();
     sccToRelation.clear();
     relationToScc.clear();
@@ -184,15 +184,15 @@ void SCCGraph::run(const AstTranslationUnit& translationUnit) {
     successors.clear();
 
     /* Compute SCC */
-    std::vector<AstRelation*> relations = translationUnit.getProgram()->getRelations();
+    std::vector<ast::Relation*> relations = translationUnit.getProgram()->getRelations();
     unsigned counter = 0;
     unsigned numSCCs = 0;
-    std::stack<const AstRelation*> S, P;
-    std::map<const AstRelation*, int> preOrder;  // Pre-order number of a node (for Gabow's Algo)
-    for (const AstRelation* relation : relations) {
+    std::stack<const ast::Relation*> S, P;
+    std::map<const ast::Relation*, int> preOrder;  // Pre-order number of a node (for Gabow's Algo)
+    for (const ast::Relation* relation : relations) {
         relationToScc[relation] = preOrder[relation] = -1;
     }
-    for (const AstRelation* relation : relations) {
+    for (const ast::Relation* relation : relations) {
         if (preOrder[relation] == -1) {
             scR(relation, preOrder, counter, S, P, numSCCs);
         }
@@ -201,8 +201,8 @@ void SCCGraph::run(const AstTranslationUnit& translationUnit) {
     /* Build SCC graph */
     successors.resize(numSCCs);
     predecessors.resize(numSCCs);
-    for (const AstRelation* u : relations) {
-        for (const AstRelation* v : precedenceGraph->graph().predecessors(u)) {
+    for (const ast::Relation* u : relations) {
+        for (const ast::Relation* v : precedenceGraph->graph().predecessors(u)) {
             int scc_u = relationToScc[u];
             int scc_v = relationToScc[v];
             ASSERT(scc_u >= 0 && scc_u < int(numSCCs) && "Wrong range");
@@ -216,7 +216,7 @@ void SCCGraph::run(const AstTranslationUnit& translationUnit) {
 
     /* Store the relations for each SCC */
     sccToRelation.resize(numSCCs);
-    for (const AstRelation* relation : relations) {
+    for (const ast::Relation* relation : relations) {
         sccToRelation[relationToScc[relation]].insert(relation);
     }
 }
@@ -224,12 +224,12 @@ void SCCGraph::run(const AstTranslationUnit& translationUnit) {
 /* Compute strongly connected components using Gabow's algorithm (cf. Algorithms in
  * Java by Robert Sedgewick / Part 5 / Graph *  algorithms). The algorithm has linear
  * runtime. */
-void SCCGraph::scR(const AstRelation* w, std::map<const AstRelation*, int>& preOrder, unsigned& counter,
-        std::stack<const AstRelation*>& S, std::stack<const AstRelation*>& P, unsigned& numSCCs) {
+void SCCGraph::scR(const ast::Relation* w, std::map<const ast::Relation*, int>& preOrder, unsigned& counter,
+        std::stack<const ast::Relation*>& S, std::stack<const ast::Relation*>& P, unsigned& numSCCs) {
     preOrder[w] = counter++;
     S.push(w);
     P.push(w);
-    for (const AstRelation* t : precedenceGraph->graph().predecessors(w)) {
+    for (const ast::Relation* t : precedenceGraph->graph().predecessors(w)) {
         if (preOrder[t] == -1) {
             scR(t, preOrder, counter, S, P, numSCCs);
         } else if (relationToScc[t] == -1) {
@@ -244,7 +244,7 @@ void SCCGraph::scR(const AstRelation* w, std::map<const AstRelation*, int>& preO
         return;
     }
 
-    const AstRelation* v;
+    const ast::Relation* v;
     do {
         v = S.top();
         S.pop();
@@ -261,7 +261,7 @@ void SCCGraph::print(std::ostream& os) const {
     for (unsigned scc = 0; scc < size(); scc++) {
         os << "\t" << name << "_" << scc << "[label = \"";
         os << join(relations(scc), ",\\n",
-                [](std::ostream& out, const AstRelation* rel) { out << rel->getName(); });
+                [](std::ostream& out, const ast::Relation* rel) { out << rel->getName(); });
         os << "\" ];" << std::endl;
     }
     for (unsigned scc = 0; scc < size(); scc++) {
@@ -366,7 +366,7 @@ void TopologicallySortedSCCGraph::computeTopologicalOrdering(unsigned scc, std::
     }
 }
 
-void TopologicallySortedSCCGraph::run(const AstTranslationUnit& translationUnit) {
+void TopologicallySortedSCCGraph::run(const ast::TranslationUnit& translationUnit) {
     // obtain the scc graph
     sccGraph = translationUnit.getAnalysis<SCCGraph>();
     // clear the list of ordered sccs
@@ -395,7 +395,7 @@ void TopologicallySortedSCCGraph::print(std::ostream& os) const {
     for (unsigned i = 0; i < numSCCs; i++) {
         os << "[";
         os << join(sccGraph->relations(sccOrder[i]), ", ",
-                [](std::ostream& out, const AstRelation* rel) { out << rel->getName(); });
+                [](std::ostream& out, const ast::Relation* rel) { out << rel->getName(); });
         os << "]\n";
     }
     os << "\n";
@@ -404,11 +404,11 @@ void TopologicallySortedSCCGraph::print(std::ostream& os) const {
 
 void RelationScheduleStep::print(std::ostream& os) const {
     os << "computed: ";
-    for (const AstRelation* compRel : computed()) {
+    for (const ast::Relation* compRel : computed()) {
         os << compRel->getName() << ", ";
     }
     os << "\nexpired: ";
-    for (const AstRelation* compRel : expired()) {
+    for (const ast::Relation* compRel : expired()) {
         os << compRel->getName() << ", ";
     }
     os << "\n";
@@ -420,33 +420,33 @@ void RelationScheduleStep::print(std::ostream& os) const {
     os << "\n";
 }
 
-void RelationSchedule::run(const AstTranslationUnit& translationUnit) {
+void RelationSchedule::run(const ast::TranslationUnit& translationUnit) {
     topsortSCCGraph = translationUnit.getAnalysis<TopologicallySortedSCCGraph>();
     precedenceGraph = translationUnit.getAnalysis<PrecedenceGraph>();
 
     unsigned numSCCs = translationUnit.getAnalysis<SCCGraph>()->size();
-    std::vector<std::set<const AstRelation*>> relationExpirySchedule =
+    std::vector<std::set<const ast::Relation*>> relationExpirySchedule =
             computeRelationExpirySchedule(translationUnit);
 
     relationSchedule.clear();
     for (unsigned i = 0; i < numSCCs; i++) {
         unsigned scc = topsortSCCGraph->order()[i];
-        const std::set<const AstRelation*> computedRelations =
+        const std::set<const ast::Relation*> computedRelations =
                 translationUnit.getAnalysis<SCCGraph>()->relations(scc);
         relationSchedule.emplace_back(computedRelations, relationExpirySchedule[i],
                 translationUnit.getAnalysis<SCCGraph>()->isRecursive(scc));
     }
 }
 
-std::vector<std::set<const AstRelation*>> RelationSchedule::computeRelationExpirySchedule(
-        const AstTranslationUnit& translationUnit) {
-    std::vector<std::set<const AstRelation*>> relationExpirySchedule;
+std::vector<std::set<const ast::Relation*>> RelationSchedule::computeRelationExpirySchedule(
+        const ast::TranslationUnit& translationUnit) {
+    std::vector<std::set<const ast::Relation*>> relationExpirySchedule;
     /* Compute for each step in the reverse topological order
        of evaluating the SCC the set of alive relations. */
     unsigned numSCCs = topsortSCCGraph->order().size();
 
     /* Alive set for each step */
-    std::vector<std::set<const AstRelation*>> alive(numSCCs);
+    std::vector<std::set<const ast::Relation*>> alive(numSCCs);
     /* Resize expired relations sets */
     relationExpirySchedule.resize(numSCCs);
     const auto& sccGraph = translationUnit.getAnalysis<SCCGraph>();
@@ -459,8 +459,8 @@ std::vector<std::set<const AstRelation*>> RelationSchedule::computeRelationExpir
 
         /* Add predecessors of relations computed in this step */
         unsigned scc = topsortSCCGraph->order()[numSCCs - orderedSCC];
-        for (const AstRelation* r : sccGraph->relations(scc)) {
-            for (const AstRelation* predecessor : precedenceGraph->graph().predecessors(r)) {
+        for (const ast::Relation* r : sccGraph->relations(scc)) {
+            for (const ast::Relation* predecessor : precedenceGraph->graph().predecessors(r)) {
                 alive[orderedSCC].insert(predecessor);
             }
         }
@@ -480,11 +480,11 @@ void RelationSchedule::print(std::ostream& os) const {
     for (const RelationScheduleStep& step : relationSchedule) {
         os << step;
         os << "computed: ";
-        for (const AstRelation* compRel : step.computed()) {
+        for (const ast::Relation* compRel : step.computed()) {
             os << compRel->getName() << ", ";
         }
         os << "\nexpired: ";
-        for (const AstRelation* compRel : step.expired()) {
+        for (const ast::Relation* compRel : step.expired()) {
             os << compRel->getName() << ", ";
         }
         os << "\n";

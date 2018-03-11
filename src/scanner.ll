@@ -34,11 +34,11 @@
     #include <unistd.h>
     #include <cstring>
 
-    #include "ast/AstProgram.h"
+    #include "ast/Program.h"
     #include "StringPool.h"
 
-    #include "ast/AstSrcLocation.h"
-    #define YYLTYPE AstSrcLocation
+    #include "ast/SrcLocation.h"
+    #define YYLTYPE ast::SrcLocation
 
     #include "ParserDriver.h"
     #include "RamTypes.h"
@@ -55,9 +55,9 @@
 
     /* Execute when matching */
 #define YY_USER_ACTION  { \
-    yylloc.start = AstSrcLocation::Point({ yylineno, yycolumn }); \
+    yylloc.start = ast::SrcLocation::Point({ yylineno, yycolumn }); \
     yycolumn += yyleng;             \
-    yylloc.end   = AstSrcLocation::Point({ yylineno, yycolumn }); \
+    yylloc.end   = ast::SrcLocation::Point({ yylineno, yycolumn }); \
     yylloc.filename = yyfilename;   \
 }
 

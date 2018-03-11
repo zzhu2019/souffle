@@ -23,11 +23,13 @@
 YY_DECL;
 
 namespace souffle {
-
-class AstTranslationUnit;
-class AstRelation;
-class AstType;
-class AstProgram;
+namespace ast {
+class TranslationUnit;
+class Relation;
+class Type;
+class Program;
+class Pragma;
+}
 class DebugReport;
 class ErrorReport;
 class SymbolTable;
@@ -35,7 +37,7 @@ class SymbolTable;
 typedef void* yyscan_t;
 
 struct scanner_data {
-    AstSrcLocation yylloc;
+    ast::SrcLocation yylloc;
 
     /* Stack of parsed files */
     const char* yyfilename;
@@ -46,33 +48,33 @@ public:
     ParserDriver();
     virtual ~ParserDriver();
 
-    std::unique_ptr<AstTranslationUnit> translationUnit;
+    std::unique_ptr<ast::TranslationUnit> translationUnit;
 
-    void addRelation(std::unique_ptr<AstRelation> r);
-    void addIODirective(std::unique_ptr<AstIODirective> d);
-    void addIODirectiveChain(std::unique_ptr<AstIODirective> d);
-    void addType(std::unique_ptr<AstType> type);
-    void addClause(std::unique_ptr<AstClause> c);
-    void addComponent(std::unique_ptr<AstComponent> c);
-    void addInstantiation(std::unique_ptr<AstComponentInit> ci);
-    void addPragma(std::unique_ptr<AstPragma> p);
+    void addRelation(std::unique_ptr<ast::Relation> r);
+    void addIODirective(std::unique_ptr<ast::IODirective> d);
+    void addIODirectiveChain(std::unique_ptr<ast::IODirective> d);
+    void addType(std::unique_ptr<ast::Type> type);
+    void addClause(std::unique_ptr<ast::Clause> c);
+    void addComponent(std::unique_ptr<ast::Component> c);
+    void addInstantiation(std::unique_ptr<ast::ComponentInit> ci);
+    void addPragma(std::unique_ptr<ast::Pragma> p);
 
     souffle::SymbolTable& getSymbolTable();
 
     bool trace_scanning;
 
-    std::unique_ptr<AstTranslationUnit> parse(const std::string& filename, FILE* in, SymbolTable& symbolTable,
+    std::unique_ptr<ast::TranslationUnit> parse(const std::string& filename, FILE* in, SymbolTable& symbolTable,
             ErrorReport& errorReport, DebugReport& debugReport);
-    std::unique_ptr<AstTranslationUnit> parse(const std::string& code, SymbolTable& symbolTable,
+    std::unique_ptr<ast::TranslationUnit> parse(const std::string& code, SymbolTable& symbolTable,
             ErrorReport& errorReport, DebugReport& debugReport);
-    static std::unique_ptr<AstTranslationUnit> parseTranslationUnit(const std::string& filename, FILE* in,
+    static std::unique_ptr<ast::TranslationUnit> parseTranslationUnit(const std::string& filename, FILE* in,
             SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport);
-    static std::unique_ptr<AstTranslationUnit> parseTranslationUnit(const std::string& code,
+    static std::unique_ptr<ast::TranslationUnit> parseTranslationUnit(const std::string& code,
             SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport);
 
     bool trace_parsing;
 
-    void error(const AstSrcLocation& loc, const std::string& msg);
+    void error(const ast::SrcLocation& loc, const std::string& msg);
     void error(const std::string& msg);
 };
 
