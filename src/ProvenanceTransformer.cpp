@@ -66,11 +66,11 @@ std::unique_ptr<AstRelation> makeInfoRelation(
                     new AstAttribute(std::string("rel_") + std::to_string(i), AstTypeIdentifier("symbol"))));
 
             if (dynamic_cast<AstAtom*>(lit)) {
-                infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
-                        new AstStringConstant(translationUnit.getSymbolTable(), relName.c_str())));
+                infoClauseHead->addArgument(
+                        std::make_unique<AstStringConstant>(translationUnit.getSymbolTable(), relName));
             } else if (dynamic_cast<AstNegation*>(lit)) {
-                infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
-                        new AstStringConstant(translationUnit.getSymbolTable(), ("!" + relName).c_str())));
+                infoClauseHead->addArgument(std::make_unique<AstStringConstant>(
+                        translationUnit.getSymbolTable(), ("!" + relName)));
             }
         }
     }
@@ -80,8 +80,8 @@ std::unique_ptr<AstRelation> makeInfoRelation(
     originalClause.print(ss);
 
     infoRelation->addAttribute(std::make_unique<AstAttribute>("clause_repr", AstTypeIdentifier("symbol")));
-    infoClauseHead->addArgument(std::unique_ptr<AstArgument>(
-            new AstStringConstant(translationUnit.getSymbolTable(), ss.str().c_str())));
+    infoClauseHead->addArgument(
+            std::make_unique<AstStringConstant>(translationUnit.getSymbolTable(), ss.str()));
 
     // set clause head and add clause to info relation
     infoClause->setHead(std::unique_ptr<AstAtom>(infoClauseHead));
