@@ -128,19 +128,20 @@ public:
 
     /** Find a symbol in the table by its index, note that this gives an error if the index is out of bounds.
      */
-    const std::string& resolve(const size_t index) const {
+    const std::string& resolve(const RamDomain index) const {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
-        if (index >= size()) {
+        size_t pos = static_cast<size_t>(index);
+        if (pos >= size()) {
             // TODO: use different error reporting here!!
             std::cerr << "Error index out of bounds in call to SymbolTable::resolve.\n";
             exit(1);
         }
-        return numToStr[index];
+        return numToStr[pos];
     }
 
-    const std::string& unsafeResolve(const size_t index) const {
-        return numToStr[index];
+    const std::string& unsafeResolve(const RamDomain index) const {
+        return numToStr[static_cast<size_t>(index)];
     }
 
     /* Return the size of the symbol table, being the number of symbols it currently holds. */
