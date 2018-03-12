@@ -760,8 +760,13 @@ void Interpreter::executeMain() {
     SignalHandler::instance()->set();
     const RamStatement& main = *translationUnit.getP().getMain();
 
-    evalStmt(main);
-    if (Global::config().has("profile")) {
+    if (!Global::config().has("profile")) {
+        evalStmt(main);
+    } else {
+        // Enable profiling for execution of main
+        ProfileEventSingleton::instance().startTimer();
+        evalStmt(main);
+        ProfileEventSingleton::instance().stopTimer();
         std::string fname = Global::config().get("profile");
         // open output stream
         std::ofstream os(fname);

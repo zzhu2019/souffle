@@ -14,7 +14,6 @@
  *
  ***********************************************************************/
 
-#pragma once
 
 #include <list>
 #include <chrono>
@@ -25,12 +24,20 @@
 #include <thread>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
+#include <functional>
+#include <sys/time.h>
+#include <sys/resource.h>
+//#include "stdlib.h"
+//#include "stdio.h"
+//#include "string.h"
 
-#pragma once 
+#pragma once
 
 namespace souffle {
 
 typedef uint32_t ProfileKey; 
+typedef uint32_t Interval;
 typedef std::chrono::system_clock::time_point ProfileTimePoint;
 
 /** 
@@ -69,6 +76,7 @@ public:
 
     /** Get text */
     const std::string getText(ProfileKey key) {
+        std::lock_guard<std::mutex> guard(keyMutex);
         assert(key < last && "corrupted key");
         return text[key];
     }
@@ -152,15 +160,151 @@ class ProfileQuantityEvent : public ProfileEvent
             os << std::endl;
         }
 };
+/**
+ * Profile Utilisation Event
+ */
+class ProfileUtilisationEvent : public ProfileEvent
+{
+private:
+    /** resouce statistics */
+    struct rusage ru;
+    //static unsigned long long lastTotalUser, lastTotalUserLow, lastTotalSys, lastTotalIdle;
+
+
+public:
+    ProfileUtilisationEvent(const std::string &txt) : ProfileEvent(txt) {
+        getrusage(RUSAGE_SELF, &ru);
+       // FILE *file = fopen("/proc/stat","r");
+       // fscanf(file, "cpu %llu %llu %llu %llu", &lastTotalUser, &lastTotalUserLow, &lastTotalSys, lastTotalIdle);
+       // fclose;
+    }
+/*double getCurrentValue(){
+    double percent;
+    FILE* file;
+    unsigned long long totalUser, totalUserLow, totalSys, totalIdle, total;
+
+    file = fopen("/proc/stat", "r");
+    fscanf(file, "cpu %llu %llu %llu %llu", &totalUser, &totalUserLow,
+        &totalSys, &totalIdle);
+    fclose(file);
+
+    if (totalUser < ProfileUtilisationEvent::lastTotalUser || totalUserLow < ProfileUtilisationEvent::lastTotalUserLow ||
+        totalSys <  ProfileUtilisationEvent::lastTotalSys || totalIdle <  ProfileUtilisationEvent::lastTotalIdle){
+        //Overflow detection. Just skip this value.
+        percent = -1.0;
+    }
+    else{
+        total = (totalUser -  ProfileUtilisationEvent::lastTotalUser) + (totalUserLow -  ProfileUtilisationEvent::lastTotalUserLow) +
+            (totalSys - ProfileUtilisationEvent::lastTotalSys);
+        percent = total;
+        total += (totalIdle -  ProfileUtilisationEvent::lastTotalIdle);
+        percent /= total;
+        percent *= 100;
+    }
+
+    ProfileUtilisationEvent::lastTotalUser = totalUser;
+    ProfileUtilisationEvent::lastTotalUserLow = totalUserLow;
+    ProfileUtilisationEvent::lastTotalSys = totalSys;
+    ProfileUtilisationEvent::lastTotalIdle = totalIdle;
+
+    return percent;
+}*/
+
+    /** Print event */
+    void print(std::ostream &os) override {
+        os << ProfileKeySingleton::instance().getText(getKey());
+        /* system CPU time used */
+        double t = (double) ru.ru_stime.tv_sec * 1000000.0 + (double) ru.ru_stime.tv_usec;
+        os << std::to_string(t);
+        //os << "," << getCurrentValue();
+        os << std::endl;
+    }
+
+};
+
+/**
+ * Profile Memory Event
+ */
+class ProfileMemoryEvent : public ProfileEvent
+{
+private:
+    /** resource statistics */
+    struct rusage ru;
+public:
+    ProfileMemoryEvent(const std::string &txt) : ProfileEvent(txt) {
+        getrusage(RUSAGE_SELF, &ru);
+    }
+
+    /** Print event */
+    void print(std::ostream &os) override {
+        os << ProfileKeySingleton::instance().getText(getKey());
+        os << std::to_string(ru.ru_maxrss);  /* maximum resident set size */
+        os << std::endl;
+    }
+};
+
 
 /**
  * Profile Event Singleton
  */
 class ProfileEventSingleton {
 private:
+/**  Profile Timer */
+class ProfileTimer
+{
+private:
+    /** time interval between per utilisation read */
+    Interval t;
+
+    /** timer is running */
+    bool running;
+
+    /** thread timer runs on */
+    std::thread th;
+
+    /** run method for thread th */
+    void run() {
+        ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
+        ProfileEventSingleton::instance().makeMemoryEvent("memory");
+    }
+
+    Interval getInterval() {
+        return t;
+    }
+
+    bool getRunning() {
+        return running;
+    }
+
+public:
+    ProfileTimer(Interval in=1) : t(in), running(false) {}
+
+    /** start timer on the thread th */
+    void start() {
+        running = true;
+
+        th = std::thread([this]() {
+            while (this->getRunning()) {
+                this->run();
+                auto x = std::chrono::steady_clock::now() + std::chrono::milliseconds(this->getInterval());
+                std::this_thread::sleep_until(x);
+            }
+        });
+    }
+
+    /** stop timer on the thread th */
+    void stop() {
+        running = false;
+	th.join();
+    }
+};
+
+private:
    ProfileEventSingleton() = default;
    std::list<ProfileEvent *> events;
    std::mutex eventMutex;
+   ProfileTimer timer;
+
 public:
    ~ProfileEventSingleton() { 
       for (auto const &cur : events) { 
@@ -188,11 +332,37 @@ public:
        return e;
    }
 
+   /** Make new utilisation event */
+   ProfileUtilisationEvent *makeUtilisationEvent(const std::string &txt) {
+       ProfileUtilisationEvent *e = new ProfileUtilisationEvent(txt);
+       std::lock_guard<std::mutex> guard(eventMutex);
+       events.push_back(e);
+       return e;
+   }
+
+   /** Make new memory event */
+   ProfileMemoryEvent *makeMemoryEvent(const std::string &txt) {
+       ProfileMemoryEvent *e = new ProfileMemoryEvent(txt);
+       std::lock_guard<std::mutex> guard(eventMutex);
+       events.push_back(e);
+       return e;
+   }
+
    /** Dump all events */
    void dump(std::ostream &os) { 
        for(auto const &cur : events) { 
            cur->print(os);
        }
+   }
+
+   /** Start timer */
+   void startTimer() {
+      timer.start();
+   }
+
+   /** Stop timer */
+   void stopTimer() {
+       timer.stop();
    }
 };
 

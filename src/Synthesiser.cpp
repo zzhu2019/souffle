@@ -25,6 +25,7 @@
 #include "IndexSetAnalysis.h"
 #include "Logger.h"
 #include "Macro.h"
+#include "ProfileEvent.h"
 #include "RamRelation.h"
 #include "RamVisitor.h"
 #include "SignalHandler.h"
@@ -1332,7 +1333,9 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     if (Global::config().has("profile")) {
         os << "std::ofstream profile(profiling_fname);\n";
         os << "profile << \"" << AstLogStatement::startDebug() << "\" << std::endl;\n";
+        os << "ProfileEventSingleton::instance().startTimer();\n";
         emitCode(os, *(prog.getMain()));
+        os << "ProfileEventSingleton::instance().stopTimer();\n";
         os << "ProfileEventSingleton::instance().dump(profile);\n";
     } else {
         emitCode(os, *(prog.getMain()));
