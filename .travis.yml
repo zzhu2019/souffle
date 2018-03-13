@@ -112,6 +112,13 @@ jobs:
     - *gcc_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
 
+# Testing stage with 64bit RamDomains (-j8,-c -j8, no 32bit Semantic tests)
+  - <<: *linuxgcc
+    before_script: ".travis/init_test_64bit.sh" 
+    env:
+    - *gcc_environment
+    - SOUFFLE_CATEGORY=Unit,Syntactic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
+
 # Testing stage (-j8,-c -j8)
   - <<: *linuxgcc
     env:
