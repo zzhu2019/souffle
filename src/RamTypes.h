@@ -18,7 +18,7 @@
 
 #include <limits>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace souffle {
 

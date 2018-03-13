@@ -16,10 +16,10 @@
 
 #pragma once
 #include <atomic>
+#include <cassert>
+#include <csignal>
 #include <iostream>
 #include <string>
-#include <assert.h>
-#include <signal.h>
 
 namespace souffle {
 

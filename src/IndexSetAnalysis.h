@@ -21,10 +21,10 @@
 #include "RamTypes.h"
 #include "Util.h"
 
+#include <cstring>
 #include <set>
 #include <string>
 #include <vector>
-#include <string.h>
 
 #define NIL 0
 #define INF -1

@@ -16,11 +16,11 @@
 
 #pragma once
 
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <typeinfo>
 #include <vector>
-#include <assert.h>
 
 namespace souffle {
 

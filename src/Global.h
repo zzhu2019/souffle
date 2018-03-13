@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include <ctype.h>
+#include <cctype>
 #include <getopt.h>
 
 namespace souffle {

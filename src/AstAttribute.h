@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include <ctype.h>
+#include <cctype>
 
 namespace souffle {
 

@@ -23,9 +23,9 @@
 #include <memory>
 #include <typeinfo>
 
+#include <cstddef>
+#include <cstring>
 #include <libgen.h>
-#include <stddef.h>
-#include <string.h>
 #include <unistd.h>
 
 namespace souffle {

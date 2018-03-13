@@ -8,11 +8,11 @@
 
 #pragma once
 
+#include <cstdio>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
 

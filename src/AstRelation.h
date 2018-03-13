@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include <ctype.h>
+#include <cctype>
 
 /** Types of relation qualifiers defined as bits in a word */
 
