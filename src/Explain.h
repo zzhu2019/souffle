@@ -43,8 +43,8 @@ private:
 
     int depthLimit;
 
-    /** output stream */ 
-    std::ostream *output;
+    /** output stream */
+    std::ostream* output;
 
     /** flag for outputting in JSON format */
     bool json;
@@ -98,19 +98,19 @@ private:
     // print provenance tree
     void printTree(std::unique_ptr<TreeNode> tree) {
         if (tree) {
-            if (!json) { 
-               tree->place(0, 0);
-               ScreenBuffer screenBuffer(tree->getWidth(), tree->getHeight());
-               tree->render(screenBuffer);
-            if (ncurses && !output) {
-                wprintw(treePad, screenBuffer.getString().c_str());
-            } else {
-                if (output) {
-                    *output << screenBuffer.getString();
-                } else { 
-                    std::cout << screenBuffer.getString();
+            if (!json) {
+                tree->place(0, 0);
+                ScreenBuffer screenBuffer(tree->getWidth(), tree->getHeight());
+                tree->render(screenBuffer);
+                if (ncurses && !output) {
+                    wprintw(treePad, screenBuffer.getString().c_str());
+                } else {
+                    if (output) {
+                        *output << screenBuffer.getString();
+                    } else {
+                        std::cout << screenBuffer.getString();
+                    }
                 }
-            }
             } else {
                 if (!output) {
                     std::cout << "{ proof:\n";
@@ -118,7 +118,7 @@ private:
                     std::cout << ",";
                     prov.printRulesJSON(std::cout);
                     std::cout << "}\n";
-                } else { 
+                } else {
                     *output << "{ proof:\n";
                     tree->printJSON(*output, 1);
                     *output << ",";
@@ -135,9 +135,9 @@ private:
             wprintw(treePad, s.c_str());
         } else {
             if (output) {
-               *output << s;
+                *output << s;
             } else {
-               std::cout << s;
+                std::cout << s;
             }
         }
     }
@@ -182,9 +182,10 @@ private:
     }
 
 public:
-    Explain(ExplainProvenance& p, bool ncurses, int d = 4) : prov(p), ncurses(ncurses), depthLimit(d), output(nullptr), json(false) {}
-    ~Explain() { 
-        if(output) {
+    Explain(ExplainProvenance& p, bool ncurses, int d = 4)
+            : prov(p), ncurses(ncurses), depthLimit(d), output(nullptr), json(false) {}
+    ~Explain() {
+        if (output) {
             delete output;
         }
     }
@@ -277,8 +278,8 @@ public:
                     continue;
                 }
             } else if (command[0] == "output") {
-                if (command.size() == 2) { 
-                    output = new std::ofstream(command[1]); 
+                if (command.size() == 2) {
+                    output = new std::ofstream(command[1]);
                 } else if (command.size() == 1) {
                     delete output;
                     output = nullptr;

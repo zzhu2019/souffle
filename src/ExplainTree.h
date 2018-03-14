@@ -101,7 +101,7 @@ public:
     // render node in screen buffer
     virtual void render(ScreenBuffer& s) = 0;
 
-    virtual void printJSON(std::ostream &os, int pos) = 0;
+    virtual void printJSON(std::ostream& os, int pos) = 0;
 };
 
 /***
@@ -159,19 +159,22 @@ public:
     }
 
     // print JSON
-    void printJSON(std::ostream &os, int pos) { 
-        std::string tab(pos,'\t');
-        os << tab << "{ premises: \"" << stringify(txt) << "\",\n"; 
-        os << tab << "  rule-number: \"" << label << "\",\n"; 
+    void printJSON(std::ostream& os, int pos) {
+        std::string tab(pos, '\t');
+        os << tab << "{ premises: \"" << stringify(txt) << "\",\n";
+        os << tab << "  rule-number: \"" << label << "\",\n";
         os << tab << "  children: [\n";
         bool first = true;
         for (const std::unique_ptr<TreeNode>& k : children) {
-            if (first) first = false; else os << ",\n"; 
-            k->printJSON(os,pos+1);
+            if (first)
+                first = false;
+            else
+                os << ",\n";
+            k->printJSON(os, pos + 1);
         }
         os << tab << "]\n";
         os << tab << "}";
-    } 
+    }
 };
 
 /***
@@ -195,10 +198,10 @@ public:
     }
 
     // print JSON
-    void printJSON(std::ostream &os, int pos) { 
-        std::string tab(pos,'\t');
-        os << tab << "{ axiom: \"" << stringify(txt) << "\"}"; 
-    } 
+    void printJSON(std::ostream& os, int pos) {
+        std::string tab(pos, '\t');
+        os << tab << "{ axiom: \"" << stringify(txt) << "\"}";
+    }
 };
 
 }  // end of namespace souffle
