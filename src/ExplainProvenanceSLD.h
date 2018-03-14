@@ -257,8 +257,8 @@ public:
                 first = false;
             else
                 os << ",\n";
-            os << "\t{ \"rule-number\": \"(R" << cur.first.second << ")\", \"rule\": \"" << stringify(cur.second)
-               << "\"}";
+            os << "\t{ \"rule-number\": \"(R" << cur.first.second << ")\", \"rule\": \""
+               << stringify(cur.second) << "\"}";
         }
         os << "\n]\n";
     }
