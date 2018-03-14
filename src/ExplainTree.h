@@ -161,9 +161,9 @@ public:
     // print JSON
     void printJSON(std::ostream& os, int pos) {
         std::string tab(pos, '\t');
-        os << tab << "{ premises: \"" << stringify(txt) << "\",\n";
-        os << tab << "  rule-number: \"" << label << "\",\n";
-        os << tab << "  children: [\n";
+        os << tab << "{ \"premises\": \"" << stringify(txt) << "\",\n";
+        os << tab << "  \"rule-number\": \"" << label << "\",\n";
+        os << tab << "  \"children\": [\n";
         bool first = true;
         for (const std::unique_ptr<TreeNode>& k : children) {
             if (first)
@@ -200,7 +200,7 @@ public:
     // print JSON
     void printJSON(std::ostream& os, int pos) {
         std::string tab(pos, '\t');
-        os << tab << "{ axiom: \"" << stringify(txt) << "\"}";
+        os << tab << "{ \"axiom\": \"" << stringify(txt) << "\"}";
     }
 };
 

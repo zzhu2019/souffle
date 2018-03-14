@@ -113,13 +113,13 @@ private:
                 }
             } else {
                 if (!output) {
-                    std::cout << "{ proof:\n";
+                    std::cout << "{ \"proof\":\n";
                     tree->printJSON(std::cout, 1);
                     std::cout << ",";
                     prov.printRulesJSON(std::cout);
                     std::cout << "}\n";
                 } else {
-                    *output << "{ proof:\n";
+                    *output << "{ \"proof\":\n";
                     tree->printJSON(*output, 1);
                     *output << ",";
                     prov.printRulesJSON(*output);
