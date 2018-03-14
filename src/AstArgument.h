@@ -201,16 +201,16 @@ protected:
  * Subclass of Argument that represents a datalog constant value
  */
 class AstStringConstant : public AstConstant {
-    SymbolTable* symTable;
-    AstStringConstant(SymbolTable* symTable, size_t index) : AstConstant(index), symTable(symTable) {}
+    SymbolTable& symTable;
+    AstStringConstant(SymbolTable& symTable, size_t index) : AstConstant(index), symTable(symTable) {}
 
 public:
-    AstStringConstant(SymbolTable& symTable, const char* c)
-            : AstConstant(symTable.lookup(c)), symTable(&symTable) {}
+    AstStringConstant(SymbolTable& symTable, const std::string& c)
+            : AstConstant(symTable.lookup(c)), symTable(symTable) {}
 
     /** @return String representation of this Constant */
-    const std::string getConstant() const {
-        return symTable->resolve(getIndex());
+    const std::string& getConstant() const {
+        return symTable.resolve(getIndex());
     }
 
     /**  Print argument to the given output stream */

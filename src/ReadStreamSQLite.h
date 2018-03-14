@@ -67,13 +67,13 @@ protected:
                 element = "n/a";
             }
             if (symbolMask.isSymbol(column)) {
-                tuple[column] = symbolTable.unsafeLookup(element.c_str());
+                tuple[column] = symbolTable.unsafeLookup(element);
             } else {
                 try {
 #if RAM_DOMAIN_SIZE == 64
-                    tuple[column] = std::stoll(element.c_str());
+                    tuple[column] = std::stoll(element);
 #else
-                    tuple[column] = std::stoi(element.c_str());
+                    tuple[column] = std::stoi(element);
 #endif
                 } catch (...) {
                     std::stringstream errorMessage;
