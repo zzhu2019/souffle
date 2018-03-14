@@ -69,12 +69,12 @@ bool MaxMatching::bfSearch() {
     SearchColumns u;
     std::queue<SearchColumns> bfQueue;
     // Build layers
-    for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
-        if (getMatch(it->first) == NIL) {
-            distance[it->first] = 0;
-            bfQueue.push(it->first);
+    for (auto& it : graph) {
+        if (getMatch(it.first) == NIL) {
+            distance[it.first] = 0;
+            bfQueue.push(it.first);
         } else {
-            distance[it->first] = INF;
+            distance[it.first] = INF;
         }
     }
     distance[NIL] = INF;
@@ -83,8 +83,8 @@ bool MaxMatching::bfSearch() {
         bfQueue.pop();
         ASSERT(u != NIL);
         const Edges& children = graph[u];
-        for (Edges::iterator it = children.begin(); it != children.end(); ++it) {
-            SearchColumns mv = getMatch(*it);
+        for (auto it : children) {
+            SearchColumns mv = getMatch(it);
             if (getDistance(mv) == INF) {
                 distance[mv] = getDistance(u) + 1;
                 if (mv != NIL) {
@@ -100,8 +100,7 @@ bool MaxMatching::bfSearch() {
 bool MaxMatching::dfSearch(SearchColumns u) {
     if (u != 0) {
         Edges& children = graph[u];
-        for (Edges::iterator it = children.begin(); it != children.end(); ++it) {
-            SearchColumns v = *it;
+        for (auto v : children) {
             if (getDistance(getMatch(v)) == getDistance(u) + 1) {
                 if (dfSearch(getMatch(v))) {
                     match[u] = v;
@@ -120,9 +119,9 @@ bool MaxMatching::dfSearch(SearchColumns u) {
 /** Calculate max-matching */
 const MaxMatching::Matchings& MaxMatching::solve() {
     while (bfSearch()) {
-        for (Graph::iterator it = graph.begin(); it != graph.end(); ++it) {
-            if (getMatch(it->first) == NIL) {
-                dfSearch(it->first);
+        for (auto& it : graph) {
+            if (getMatch(it.first) == NIL) {
+                dfSearch(it.first);
             }
         }
     }
@@ -189,11 +188,11 @@ void IndexSet::solve() {
     }
 
     // Construct the matching poblem
-    for (SearchSet::const_iterator it = searches.begin(); it != searches.end(); ++it) {
+    for (auto search : searches) {
         // For this node check if other nodes are strict subsets
-        for (SearchSet::const_iterator itt = searches.begin(); itt != searches.end(); ++itt) {
-            if (isStrictSubset(*it, *itt)) {
-                matching.addEdge(*it, toB(*itt));
+        for (auto itt : searches) {
+            if (isStrictSubset(search, itt)) {
+                matching.addEdge(search, toB(itt));
             }
         }
     }
@@ -209,12 +208,12 @@ void IndexSet::solve() {
     // Should never get no chains back as we never call calculate on an empty graph
     ASSERT(!chains.empty());
 
-    for (ChainOrderMap::const_iterator it = chains.begin(); it != chains.end(); ++it) {
+    for (const auto& chain : chains) {
         std::vector<int> ids;
-        SearchColumns initDelta = *(it->begin());
+        SearchColumns initDelta = *(chain.begin());
         insertIndex(ids, initDelta);
 
-        for (Chain::iterator iit = it->begin(); next(iit) != it->end(); ++iit) {
+        for (Chain::iterator iit = chain.begin(); next(iit) != chain.end(); ++iit) {
             SearchColumns delta = *(next(iit)) - *iit;
             insertIndex(ids, delta);
         }
@@ -225,14 +224,14 @@ void IndexSet::solve() {
     }
 
     // Construct the matching poblem
-    for (SearchSet::const_iterator it = searches.begin(); it != searches.end(); ++it) {
-        int idx = map(*it);
-        size_t l = card(*it);
+    for (auto search : searches) {
+        int idx = map(search);
+        size_t l = card(search);
         SearchColumns k = 0;
         for (size_t i = 0; i < l; i++) {
             k = k + (1 << (orders[idx][i]));
         }
-        ASSERT(k == *it && "incorrect lexicographical order");
+        ASSERT(k == search && "incorrect lexicographical order");
     }
 }
 
@@ -267,9 +266,9 @@ const IndexSet::ChainOrderMap IndexSet::getChainsFromMatching(
 
     // Case: if no unmatched nodes then we have an anti-chain
     if (umKeys.empty()) {
-        for (SearchSet::const_iterator nit = nodes.begin(); nit != nodes.end(); ++nit) {
+        for (auto node : nodes) {
             std::set<SearchColumns> a;
-            a.insert(*nit);
+            a.insert(node);
             chainToOrder.push_back(a);
             return chainToOrder;
         }
@@ -281,8 +280,8 @@ const IndexSet::ChainOrderMap IndexSet::getChainsFromMatching(
     SearchSet usedKeys;
 
     // Case: nodes < umKeys or if nodes == umKeys then anti chain - this is handled by this loop
-    for (SearchSet::iterator it = umKeys.begin(); it != umKeys.end(); ++it) {
-        Chain c = getChain(*it, match);
+    for (auto umKey : umKeys) {
+        Chain c = getChain(umKey, match);
         ASSERT(!c.empty());
         chainToOrder.push_back(c);
     }

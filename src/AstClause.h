@@ -171,14 +171,14 @@ public:
         if (!plans.empty()) {
             out << "\n\n   .plan ";
             bool first = true;
-            for (auto it = plans.begin(); it != plans.end(); ++it) {
+            for (const auto& plan : plans) {
                 if (first) {
                     first = false;
                 } else {
                     out << ",";
                 }
-                out << (*it).first << ":";
-                (*it).second->print(out);
+                out << plan.first << ":";
+                plan.second->print(out);
             }
         }
     }

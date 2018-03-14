@@ -151,11 +151,12 @@ bool RuleBody::equal(const clause& a, const clause& b) {
     if (a.size() != b.size()) {
         return false;
     }
-    for (std::size_t i = 0; i < a.size(); ++i) {
+    for (const auto& i : a) {
         bool found = false;
-        for (std::size_t j = 0; !found && j < b.size(); ++j) {
-            if (equal(a[i], b[j])) {
+        for (const auto& j : b) {
+            if (equal(i, j)) {
                 found = true;
+                break;
             }
         }
         if (!found) {
@@ -169,11 +170,12 @@ bool RuleBody::isSubsetOf(const clause& a, const clause& b) {
     if (a.size() > b.size()) {
         return false;
     }
-    for (std::size_t i = 0; i < a.size(); ++i) {
+    for (const auto& i : a) {
         bool found = false;
-        for (std::size_t j = 0; !found && j < b.size(); ++j) {
-            if (equal(a[i], b[j])) {
+        for (const auto& j : b) {
+            if (equal(i, j)) {
                 found = true;
+                break;
             }
         }
         if (!found) {

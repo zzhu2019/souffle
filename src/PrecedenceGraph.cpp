@@ -38,9 +38,7 @@ void PrecedenceGraph::run(const AstTranslationUnit& translationUnit) {
             AstClause* c = r->getClause(i);
             const std::set<const AstRelation*>& dependencies =
                     getBodyRelations(c, translationUnit.getProgram());
-            for (std::set<const AstRelation*>::const_iterator irs = dependencies.begin();
-                    irs != dependencies.end(); ++irs) {
-                const AstRelation* source = (*irs);
+            for (auto source : dependencies) {
                 backingGraph.insert(source, r);
             }
         }

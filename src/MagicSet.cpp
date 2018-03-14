@@ -776,8 +776,7 @@ void Adornment::run(const AstTranslationUnit& translationUnit) {
     // -----------------
     // begin adornment algorithm
     // adornment is performed for each output query separately
-    for (size_t querynum = 0; querynum < outputQueries.size(); querynum++) {
-        AstRelationIdentifier outputQuery = outputQueries[querynum];
+    for (auto outputQuery : outputQueries) {
         std::vector<AdornedPredicate> currentPredicates;
         std::set<AdornedPredicate> seenPredicates;
         std::vector<AdornedClause> adornedClauses;

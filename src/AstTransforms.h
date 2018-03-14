@@ -296,11 +296,11 @@ public:
     }
 
     void setDebugReport() override {
-        for (unsigned int i = 0; i < pipeline.size(); i++) {
-            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(pipeline[i].get())) {
+        for (auto& i : pipeline) {
+            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(i.get())) {
                 mt->setDebugReport();
             } else {
-                pipeline[i] = std::make_unique<DebugReporter>(std::move(pipeline[i]));
+                i = std::make_unique<DebugReporter>(std::move(i));
             }
         }
     }

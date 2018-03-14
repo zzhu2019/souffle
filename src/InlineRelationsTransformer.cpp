@@ -330,9 +330,9 @@ std::vector<std::vector<AstLiteral*>> combineNegatedLiterals(
     std::vector<AstLiteral*> litGroup = litGroups[0];
     if (litGroups.size() == 1) {
         // !(a1 ^ a2 ^ a3 ^ ...) --into-> !a1 v !a2 v !a3 v ...
-        for (size_t i = 0; i < litGroup.size(); i++) {
+        for (auto& i : litGroup) {
             std::vector<AstLiteral*> newVec;
-            newVec.push_back(negateLiteral(litGroup[i]));
+            newVec.push_back(negateLiteral(i));
             negation.push_back(newVec);
         }
 
@@ -397,10 +397,10 @@ std::vector<std::vector<AstLiteral*>> formNegatedLiterals(AstProgram& program, A
             combineNegatedLiterals(addedBodyLiterals);
 
     // Add in the necessary constraints to all the body literals
-    for (size_t i = 0; i < negatedAddedBodyLiterals.size(); i++) {
+    for (auto& negatedAddedBodyLiteral : negatedAddedBodyLiterals) {
         for (std::vector<AstBinaryConstraint*> constraintGroup : addedConstraints) {
             for (AstBinaryConstraint* constraint : constraintGroup) {
-                negatedAddedBodyLiterals[i].push_back(constraint->clone());
+                negatedAddedBodyLiteral.push_back(constraint->clone());
             }
         }
     }

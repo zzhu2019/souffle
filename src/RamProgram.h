@@ -52,9 +52,9 @@ public:
         out << "PROGRAM" << std::endl;
         out << *main;
         out << "\nEND PROGRAM" << std::endl;
-        for (auto it = subroutines.begin(); it != subroutines.end(); it++) {
-            out << std::endl << "SUBROUTINE " << it->first << std::endl;
-            out << *it->second;
+        for (const auto& subroutine : subroutines) {
+            out << std::endl << "SUBROUTINE " << subroutine.first << std::endl;
+            out << *subroutine.second;
             out << "\nEND SUBROUTINE" << std::endl;
         }
     }

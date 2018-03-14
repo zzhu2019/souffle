@@ -225,9 +225,9 @@ protected:
         SearchSet unmatched;
 
         // For all nodes n such that n is not in match
-        for (SearchSet::const_iterator it = nodes.begin(); it != nodes.end(); ++it) {
-            if (match.find(*it) == match.end()) {
-                unmatched.insert(*it);
+        for (auto node : nodes) {
+            if (match.find(node) == match.end()) {
+                unmatched.insert(node);
             }
         }
         return unmatched;

@@ -453,8 +453,8 @@ bool RemoveRelationCopiesTransformer::removeRelationCopies(AstProgram& program) 
                             if (isRec(*cur)) {
                                 // records are decomposed and their arguments are checked
                                 const auto& rec_args = static_cast<const AstRecordInit&>(*cur).getArguments();
-                                for (size_t i = 0; i < rec_args.size(); ++i) {
-                                    args.push_back(rec_args[i]);
+                                for (auto rec_arg : rec_args) {
+                                    args.push_back(rec_arg);
                                 }
                             } else {
                                 onlyVars = false;
