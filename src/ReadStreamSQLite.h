@@ -164,8 +164,7 @@ public:
             const IODirectives& ioDirectives, const bool provenance) override {
         std::string dbName = ioDirectives.get("dbname");
         std::string relationName = ioDirectives.getRelationName();
-        return std::unique_ptr<ReadStreamSQLite>(
-                new ReadStreamSQLite(dbName, relationName, symbolMask, symbolTable, provenance));
+        return std::make_unique<ReadStreamSQLite>(dbName, relationName, symbolMask, symbolTable, provenance);
     }
     const std::string& getName() const override {
         static const std::string name = "sqlite";

@@ -20,6 +20,7 @@
 #include "Util.h"
 
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -192,8 +193,7 @@ public:
                 std::stringstream joinedTuple;
                 joinedTuple << join(numsToArgs(bodyRelAtomName, subproofTuple, &subproofTupleError), ", ");
                 auto joinedTupleStr = joinedTuple.str();
-                internalNode->add_child(
-                        std::unique_ptr<TreeNode>(new LeafNode(bodyRel + "(" + joinedTupleStr + ")")));
+                internalNode->add_child(std::make_unique<LeafNode>(bodyRel + "(" + joinedTupleStr + ")"));
             } else {
                 internalNode->add_child(
                         explain(bodyRel, subproofTuple, subproofRuleNum, subproofLevelNum, depthLimit - 1));

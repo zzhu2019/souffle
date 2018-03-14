@@ -15,10 +15,12 @@
  ***********************************************************************/
 
 #include "AstTransforms.h"
+
 #include "AstTypeAnalysis.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
 #include "PrecedenceGraph.h"
+#include <memory>
 
 namespace souffle {
 
@@ -416,9 +418,9 @@ void ResolveAliasesTransformer::removeComplexTermsInAtoms(AstClause& clause) {
 
     // add variable constraints to clause
     for (const auto& cur : map) {
-        clause.addToBody(std::unique_ptr<AstLiteral>(new AstBinaryConstraint(BinaryConstraintOp::EQ,
+        clause.addToBody(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::EQ,
                 std::unique_ptr<AstArgument>(cur.second->clone()),
-                std::unique_ptr<AstArgument>(cur.first->clone()))));
+                std::unique_ptr<AstArgument>(cur.first->clone())));
     }
 }
 
@@ -632,8 +634,8 @@ bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
             std::map<const AstArgument*, TypeSet> argTypes =
                     TypeAnalysis::analyseTypes(env, *aggClause, &program);
             for (const auto& cur : head->getArguments()) {
-                rel->addAttribute(std::unique_ptr<AstAttribute>(new AstAttribute(
-                        toString(*cur), (isNumberType(argTypes[cur])) ? "number" : "symbol")));
+                rel->addAttribute(std::make_unique<AstAttribute>(
+                        toString(*cur), (isNumberType(argTypes[cur])) ? "number" : "symbol"));
             }
 
             rel->addClause(std::unique_ptr<AstClause>(aggClause));

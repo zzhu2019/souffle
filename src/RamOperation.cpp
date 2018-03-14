@@ -185,9 +185,8 @@ void RamAggregate::addCondition(std::unique_ptr<RamCondition> c, const RamOperat
                     pattern[element] = std::move(value);
                 } else {
                     std::unique_ptr<RamValue> field(new RamElementAccess(level, element));
-                    RamSearch::addCondition(
-                            std::unique_ptr<RamCondition>(new RamBinaryRelation(
-                                    BinaryConstraintOp::EQ, std::move(field), std::move(value))),
+                    RamSearch::addCondition(std::make_unique<RamBinaryRelation>(BinaryConstraintOp::EQ,
+                                                    std::move(field), std::move(value)),
                             root);
                 }
             } else {
@@ -195,8 +194,7 @@ void RamAggregate::addCondition(std::unique_ptr<RamCondition> c, const RamOperat
                 std::unique_ptr<RamCondition> eq(
                         new RamBinaryRelation(BinaryConstraintOp::EQ, std::move(field), std::move(value)));
                 if (condition != nullptr) {
-                    condition =
-                            std::unique_ptr<RamCondition>(new RamAnd(std::move(condition), std::move(eq)));
+                    condition = std::make_unique<RamAnd>(std::move(condition), std::move(eq));
                 } else {
                     condition.swap(eq);
                 }
@@ -279,7 +277,7 @@ void RamProject::addCondition(std::unique_ptr<RamCondition> c, const RamOperatio
     assert(c->getLevel() <= level);
 
     if (condition) {
-        condition = std::unique_ptr<RamCondition>(new RamAnd(std::move(condition), std::move(c)));
+        condition = std::make_unique<RamAnd>(std::move(condition), std::move(c));
     } else {
         condition.swap(c);
     }

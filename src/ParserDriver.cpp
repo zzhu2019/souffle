@@ -15,9 +15,11 @@
  ***********************************************************************/
 
 #include "ParserDriver.h"
+
 #include "AstProgram.h"
 #include "AstTranslationUnit.h"
 #include "ErrorReport.h"
+#include <memory>
 
 typedef struct yy_buffer_state* YY_BUFFER_STATE;
 extern YY_BUFFER_STATE yy_scan_string(const char*, yyscan_t scanner);
@@ -33,8 +35,8 @@ ParserDriver::~ParserDriver() = default;
 
 std::unique_ptr<AstTranslationUnit> ParserDriver::parse(const std::string& filename, FILE* in,
         SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport) {
-    translationUnit = std::unique_ptr<AstTranslationUnit>(new AstTranslationUnit(
-            std::unique_ptr<AstProgram>(new AstProgram()), symbolTable, errorReport, debugReport));
+    translationUnit = std::make_unique<AstTranslationUnit>(
+            std::unique_ptr<AstProgram>(new AstProgram()), symbolTable, errorReport, debugReport);
     yyscan_t scanner;
     scanner_data data;
     data.yyfilename = filename.c_str();
@@ -54,8 +56,8 @@ std::unique_ptr<AstTranslationUnit> ParserDriver::parse(const std::string& filen
 
 std::unique_ptr<AstTranslationUnit> ParserDriver::parse(const std::string& code, SymbolTable& symbolTable,
         ErrorReport& errorReport, DebugReport& debugReport) {
-    translationUnit = std::unique_ptr<AstTranslationUnit>(new AstTranslationUnit(
-            std::unique_ptr<AstProgram>(new AstProgram()), symbolTable, errorReport, debugReport));
+    translationUnit = std::make_unique<AstTranslationUnit>(
+            std::unique_ptr<AstProgram>(new AstProgram()), symbolTable, errorReport, debugReport);
 
     scanner_data data;
     data.yyfilename = "<in-memory>";
