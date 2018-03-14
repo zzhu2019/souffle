@@ -248,6 +248,20 @@ public:
             return rule->second;
         }
     }
+
+    void printRulesJSON(std::ostream& os) override {
+        os << "\"rules\": [\n";
+        bool first = true;
+        for (auto const& cur : rules) {
+            if (first)
+                first = false;
+            else
+                os << ",\n";
+            os << "\t{ \"rule-number\": \"(R" << cur.first.second << ")\", \"rule\": \""
+               << stringify(cur.second) << "\"}";
+        }
+        os << "\n]\n";
+    }
 };
 
 }  // end of namespace souffle

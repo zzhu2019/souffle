@@ -43,6 +43,12 @@ private:
 
     int depthLimit;
 
+    /** output stream */
+    std::ostream* output;
+
+    /** flag for outputting in JSON format */
+    bool json;
+
     // parse relation, split into relation name and values
     std::pair<std::string, std::vector<std::string>> parseTuple(std::string str) {
         std::string relName;
@@ -92,23 +98,47 @@ private:
     // print provenance tree
     void printTree(std::unique_ptr<TreeNode> tree) {
         if (tree) {
-            tree->place(0, 0);
-            ScreenBuffer screenBuffer(tree->getWidth(), tree->getHeight());
-            tree->render(screenBuffer);
-            if (ncurses) {
-                wprintw(treePad, screenBuffer.getString().c_str());
+            if (!json) {
+                tree->place(0, 0);
+                ScreenBuffer screenBuffer(tree->getWidth(), tree->getHeight());
+                tree->render(screenBuffer);
+                if (ncurses && !output) {
+                    wprintw(treePad, screenBuffer.getString().c_str());
+                } else {
+                    if (output) {
+                        *output << screenBuffer.getString();
+                    } else {
+                        std::cout << screenBuffer.getString();
+                    }
+                }
             } else {
-                std::cout << screenBuffer.getString();
+                if (!output) {
+                    std::cout << "{ \"proof\":\n";
+                    tree->printJSON(std::cout, 1);
+                    std::cout << ",";
+                    prov.printRulesJSON(std::cout);
+                    std::cout << "}\n";
+                } else {
+                    *output << "{ \"proof\":\n";
+                    tree->printJSON(*output, 1);
+                    *output << ",";
+                    prov.printRulesJSON(*output);
+                    *output << "}\n";
+                }
             }
         }
     }
 
     // print string
     void printStr(std::string s) {
-        if (ncurses) {
+        if (ncurses && !output) {
             wprintw(treePad, s.c_str());
         } else {
-            std::cout << s;
+            if (output) {
+                *output << s;
+            } else {
+                std::cout << s;
+            }
         }
     }
 
@@ -152,10 +182,16 @@ private:
     }
 
 public:
-    Explain(ExplainProvenance& p, bool ncurses, int d = 4) : prov(p), ncurses(ncurses), depthLimit(d) {}
+    Explain(ExplainProvenance& p, bool ncurses, int d = 4)
+            : prov(p), ncurses(ncurses), depthLimit(d), output(nullptr), json(false) {}
+    ~Explain() {
+        if (output) {
+            delete output;
+        }
+    }
 
     void explain() {
-        if (ncurses) {
+        if (ncurses && !output) {
             initialiseWindow();
             std::signal(SIGWINCH, NULL);
         }
@@ -165,7 +201,7 @@ public:
         std::string line;
 
         while (1) {
-            if (ncurses) {
+            if (ncurses && !output) {
                 // reset command line on each loop
                 werase(queryWindow);
                 wrefresh(queryWindow);
@@ -241,6 +277,23 @@ public:
                     printStr("Usage: printrel <relation name>\n");
                     continue;
                 }
+            } else if (command[0] == "output") {
+                if (command.size() == 2) {
+                    output = new std::ofstream(command[1]);
+                } else if (command.size() == 1) {
+                    delete output;
+                    output = nullptr;
+                } else {
+                    printStr("Usage: output  [<filename>]\n");
+                }
+            } else if (command[0] == "format") {
+                if (command[1] == "json") {
+                    json = true;
+                } else if (command[1] == "proof") {
+                    json = false;
+                } else {
+                    printStr("Usage: format json/proof\n");
+                }
             } else if (command[0] == "exit") {
                 printStr("Exiting explain\n");
                 break;
@@ -255,16 +308,18 @@ public:
                         "generated if a derivation tree exceeds height limit\n"
                         "rule <rule number>: Prints a rule\n"
                         "printrel <relation name>: Prints the tuples of a relation\n"
+                        "output [<filename>]: Write output into a file/disable output\n"
+                        "format json/proof: switch format between json and proof-trees\n"
                         "exit: Exits this interface\n\n");
             }
 
             // refresh treePad and allow scrolling
-            if (ncurses) {
+            if (ncurses && !output) {
                 prefresh(treePad, 0, 0, 0, 0, maxy - 3, maxx - 1);
                 scrollTree(maxx, maxy);
             }
         }
-        if (ncurses) {
+        if (ncurses && !output) {
             endwin();
         }
     }

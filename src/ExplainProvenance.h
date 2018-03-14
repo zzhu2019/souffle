@@ -115,6 +115,8 @@ public:
 
     virtual std::string getRule(std::string relName, size_t ruleNum) = 0;
 
+    virtual void printRulesJSON(std::ostream& os) = 0;
+
     virtual std::string getRelationOutput(std::string relName) {
         auto rel = prog.getRelation(relName);
         if (rel == nullptr) {
