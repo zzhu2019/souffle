@@ -250,7 +250,7 @@ public:
     }
 
     void printRulesJSON(std::ostream& os) override {
-        os << "rules: [\n";
+        os << "\"rules\": [\n";
         bool first = true;
         for (auto const& cur : rules) {
             if (first)
