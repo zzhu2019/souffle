@@ -81,7 +81,7 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                 case UnaryOp::ORD:
                     return arg;
                 case UnaryOp::STRLEN:
-                    return strlen(interpreter.getSymbolTable().resolve(arg));
+                    return interpreter.getSymbolTable().resolve(arg).size();
                 default:
                     assert(0 && "unsupported operator");
                     return 0;

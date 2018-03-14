@@ -100,13 +100,13 @@ protected:
             }
             ++columnsFilled;
             if (symbolMask.isSymbol(column)) {
-                tuple[inputMap[column]] = symbolTable.unsafeLookup(element.c_str());
+                tuple[inputMap[column]] = symbolTable.unsafeLookup(element);
             } else {
                 try {
 #if RAM_DOMAIN_SIZE == 64
-                    tuple[inputMap[column]] = std::stoll(element.c_str());
+                    tuple[inputMap[column]] = std::stoll(element);
 #else
-                    tuple[inputMap[column]] = std::stoi(element.c_str());
+                    tuple[inputMap[column]] = std::stoi(element);
 #endif
                 } catch (...) {
                     if (!error) {

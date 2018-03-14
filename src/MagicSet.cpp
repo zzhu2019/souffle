@@ -991,7 +991,7 @@ AstArgument* extractConstant(SymbolTable& symbolTable, std::string normalisedCon
 
     if (indicatorChar == 's') {
         // string argument
-        return new AstStringConstant(symbolTable, stringRep.c_str());
+        return new AstStringConstant(symbolTable, stringRep);
     } else if (indicatorChar == 'n') {
         // numeric argument
         return new AstNumberConstant(stoi(stringRep));

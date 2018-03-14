@@ -845,35 +845,35 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
                 // strings
                 case BinaryConstraintOp::MATCH: {
-                    out << "regex_wrapper(symTable.resolve((size_t)";
+                    out << "regex_wrapper(symTable.resolve(";
                     visit(rel.getLHS(), out);
-                    out << "),symTable.resolve((size_t)";
+                    out << "),symTable.resolve(";
                     visit(rel.getRHS(), out);
                     out << "))";
                     break;
                 }
                 case BinaryConstraintOp::NOT_MATCH: {
-                    out << "!regex_wrapper(symTable.resolve((size_t)";
+                    out << "!regex_wrapper(symTable.resolve(";
                     visit(rel.getLHS(), out);
-                    out << "),symTable.resolve((size_t)";
+                    out << "),symTable.resolve(";
                     visit(rel.getRHS(), out);
                     out << "))";
                     break;
                 }
                 case BinaryConstraintOp::CONTAINS: {
-                    out << "(std::string(symTable.resolve((size_t)";
+                    out << "(symTable.resolve(";
                     visit(rel.getRHS(), out);
-                    out << ")).find(symTable.resolve((size_t)";
+                    out << ").find(symTable.resolve(";
                     visit(rel.getLHS(), out);
-                    out << "))!=std::string::npos)";
+                    out << ")) != std::string::npos)";
                     break;
                 }
                 case BinaryConstraintOp::NOT_CONTAINS: {
-                    out << "(std::string(symTable.resolve((size_t)";
+                    out << "(symTable.resolve(";
                     visit(rel.getRHS(), out);
-                    out << ")).find(symTable.resolve((size_t)";
+                    out << ").find(symTable.resolve(";
                     visit(rel.getLHS(), out);
-                    out << "))==std::string::npos)";
+                    out << ")) == std::string::npos)";
                     break;
                 }
                 default:
@@ -949,9 +949,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     visit(op.getValue(), out);
                     break;
                 case UnaryOp::STRLEN:
-                    out << "strlen(symTable.resolve((size_t)";
+                    out << "symTable.resolve((size_t)";
                     visit(op.getValue(), out);
-                    out << "))";
+                    out << ").size()";
                     break;
                 case UnaryOp::NEG:
                     out << "(-(";
@@ -1086,12 +1086,12 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
                 // strings
                 case BinaryOp::CAT: {
-                    out << "(RamDomain)symTable.lookup(";
-                    out << "(std::string(symTable.resolve((size_t)";
+                    out << "symTable.lookup(";
+                    out << "symTable.resolve(";
                     visit(op.getLHS(), out);
-                    out << ")) + std::string(symTable.resolve((size_t)";
+                    out << ") + symTable.resolve(";
                     visit(op.getRHS(), out);
-                    out << "))).c_str())";
+                    out << "))";
                     break;
                 }
                 default:
@@ -1104,14 +1104,14 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             PRINT_BEGIN_COMMENT(out);
             switch (op.getOperator()) {
                 case TernaryOp::SUBSTR:
-                    out << "(RamDomain)symTable.lookup(";
-                    out << "(substr_wrapper(symTable.resolve((size_t)";
+                    out << "symTable.lookup(";
+                    out << "substr_wrapper(symTable.resolve(";
                     visit(op.getArg(0), out);
                     out << "),(";
                     visit(op.getArg(1), out);
                     out << "),(";
                     visit(op.getArg(2), out);
-                    out << ")).c_str()))";
+                    out << ")))";
                     break;
                 default:
                     assert(0 && "Unsupported Operation!");
@@ -1190,16 +1190,16 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     // print wrapper for regex
     os << "class " << classname << " : public SouffleProgram {\n";
     os << "private:\n";
-    os << "static inline bool regex_wrapper(const char *pattern, const char *text) {\n";
+    os << "static inline bool regex_wrapper(const std::string& pattern, const std::string& text) {\n";
     os << "   bool result = false; \n";
     os << "   try { result = std::regex_match(text, std::regex(pattern)); } catch(...) { \n";
     os << "     std::cerr << \"warning: wrong pattern provided for match(\\\"\" << pattern << \"\\\",\\\"\" "
           "<< text << \"\\\")\\n\";\n}\n";
     os << "   return result;\n";
     os << "}\n";
-    os << "static inline std::string substr_wrapper(const char *str, size_t idx, size_t len) {\n";
-    os << "   std::string sub_str, result; \n";
-    os << "   try { result = std::string(str).substr(idx,len); } catch(...) { \n";
+    os << "static inline std::string substr_wrapper(const std::string& str, size_t idx, size_t len) {\n";
+    os << "   std::string result; \n";
+    os << "   try { result = str.substr(idx,len); } catch(...) { \n";
     os << "     std::cerr << \"warning: wrong index position provided by substr(\\\"\";\n";
     os << "     std::cerr << str << \"\\\",\" << (int32_t)idx << \",\" << (int32_t)len << \") "
           "functor.\\n\";\n";
@@ -1299,12 +1299,12 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
 
     if (symTable.size() > 0) {
         os << "// -- initialize symbol table --\n";
-        os << "static const char *symbols[]={\n";
+        os << "static const std::vector<std::string> symbols = {\n";
         for (size_t i = 0; i < symTable.size(); i++) {
             os << "\tR\"(" << symTable.resolve(i) << ")\",\n";
         }
         os << "};\n";
-        os << "symTable.insert(symbols," << symTable.size() << ");\n";
+        os << "symTable.insert(symbols);\n";
         os << "\n";
     }
 

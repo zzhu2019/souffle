@@ -499,7 +499,7 @@ iodirective
 /* Atom */
 arg
   : STRING {
-        $$ = new AstStringConstant(driver.getSymbolTable(), $1.c_str());
+        $$ = new AstStringConstant(driver.getSymbolTable(), $1);
         $$->setSrcLoc(@$);
     }
   | UNDERSCORE {
