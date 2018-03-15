@@ -821,7 +821,7 @@ AstClause* createAnnotatedClause(
 
     assert(cloneAddresses.size() == originalAddresses.size());
 
-    for (int i = 0; i < originalAddresses.size(); i++) {
+    for (size_t i = 0; i < originalAddresses.size(); i++) {
         memoryMap[originalAddresses[i]] = cloneAddresses[i];
     }
 
