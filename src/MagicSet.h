@@ -93,7 +93,7 @@ public:
 
         std::vector<AstLiteral*> bodyLiterals = arg.clause->getBodyLiterals();
         for (AstLiteral* lit : bodyLiterals) {
-            if (dynamic_cast<AstAtom*>(lit) == 0) {
+            if (dynamic_cast<AstAtom*>(lit) == nullptr) {
                 const AstAtom* corresAtom = lit->getAtom();
                 if (corresAtom != nullptr) {
                     if (firstadded) {

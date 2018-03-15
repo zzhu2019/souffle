@@ -193,7 +193,7 @@ public:
     void explain() {
         if (ncurses && !output) {
             initialiseWindow();
-            std::signal(SIGWINCH, NULL);
+            std::signal(SIGWINCH, nullptr);
         }
 
         // process commands
