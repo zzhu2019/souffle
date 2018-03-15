@@ -32,10 +32,10 @@ class BddbddbConverter : private AstVisitor<void, std::ostream&> {
     // literals aggregated to be added to the end of a rule while converting
     std::vector<std::string> extra_literals;
 
-    int varCounter;
+    int varCounter = 0;
 
 public:
-    BddbddbConverter() : varCounter(0) {}
+    BddbddbConverter() {}
 
     void convert(std::ostream& out, const AstProgram& program) {
         visit(program, out);

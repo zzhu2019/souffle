@@ -26,7 +26,7 @@
  */
 class InputReader {
 private:
-    std::string prompt;
+    std::string prompt = "Input: ";
     std::vector<std::string> tab_completion;
     std::vector<std::string> history;
     std::string output;
@@ -34,8 +34,8 @@ private:
     size_t cursor_pos = 0;
     size_t hist_pos = 0;
     size_t tab_pos = 0;
-    bool in_tab_complete;
-    bool in_history;
+    bool in_tab_complete = false;
+    bool in_history = false;
     std::string original_hist_val;
     std::string current_hist_val;
     std::string current_tab_val;
@@ -44,7 +44,7 @@ private:
     size_t original_hist_cursor_pos = 0;
 
 public:
-    InputReader() : prompt("Input: "), in_tab_complete(false), in_history(false) {
+    InputReader() {
         clearTabCompletion();
         clearHistory();
     }

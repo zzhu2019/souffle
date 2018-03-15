@@ -9,10 +9,10 @@ template <class T>
 class NullableVector {
 private:
     std::vector<T> vector;
-    bool valid;
+    bool valid = false;
 
 public:
-    NullableVector() : valid(false) {}
+    NullableVector() {}
     NullableVector(std::vector<T> vector) : vector(std::move(vector)), valid(true) {}
 
     bool isValid() const {

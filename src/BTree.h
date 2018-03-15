@@ -1035,11 +1035,11 @@ public:
         node const* cur;
 
         // the index of the element currently addressed within the referenced node
-        field_index_type pos;
+        field_index_type pos = 0;
 
     public:
         // default constructor -- creating an end-iterator
-        iterator() : cur(nullptr), pos(0) {}
+        iterator() : cur(nullptr) {}
 
         // creates an iterator referencing a specific element within a given node
         iterator(node const* cur, field_index_type pos) : cur(cur), pos(pos) {}

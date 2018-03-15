@@ -34,7 +34,7 @@ private:
     std::atomic<const char*> msg;
 
     // state of signal handler
-    bool isSet;
+    bool isSet = false;
 
     // previous signal handler routines
     void (*prevFpeHandler)(int) = nullptr;
@@ -69,7 +69,7 @@ private:
         exit(1);
     }
 
-    SignalHandler() : msg(nullptr), isSet(false) {}
+    SignalHandler() : msg(nullptr) {}
 
 public:
     // get singleton

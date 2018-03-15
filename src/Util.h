@@ -1154,13 +1154,13 @@ class shared_mutex {
     std::mutex mut_;
     std::condition_variable gate1_;
     std::condition_variable gate2_;
-    unsigned state_;
+    unsigned state_ = 0;
 
     static const unsigned write_entered_ = 1U << (sizeof(unsigned) * CHAR_BIT - 1);
     static const unsigned n_readers_ = ~write_entered_;
 
 public:
-    shared_mutex() : state_(0) {}
+    shared_mutex() {}
 
     // Exclusive ownership
     void lock() {

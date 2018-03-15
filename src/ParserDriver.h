@@ -59,7 +59,7 @@ public:
 
     souffle::SymbolTable& getSymbolTable();
 
-    bool trace_scanning;
+    bool trace_scanning = false;
 
     std::unique_ptr<AstTranslationUnit> parse(const std::string& filename, FILE* in, SymbolTable& symbolTable,
             ErrorReport& errorReport, DebugReport& debugReport);
@@ -70,7 +70,7 @@ public:
     static std::unique_ptr<AstTranslationUnit> parseTranslationUnit(const std::string& code,
             SymbolTable& symbolTable, ErrorReport& errorReport, DebugReport& debugReport);
 
-    bool trace_parsing;
+    bool trace_parsing = false;
 
     void error(const AstSrcLocation& loc, const std::string& msg);
     void error(const std::string& msg);

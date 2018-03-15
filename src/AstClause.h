@@ -125,10 +125,10 @@ private:
     std::map<int, std::unique_ptr<AstExecutionOrder>> plans;
 
     /** remember maximal version number */
-    int maxVersion;
+    int maxVersion = -1;
 
 public:
-    AstExecutionPlan() : maxVersion(-1) {}
+    AstExecutionPlan() {}
 
     /** Updates the execution order for a special version of a rule */
     void setOrderFor(int version, std::unique_ptr<AstExecutionOrder> plan) {
@@ -259,21 +259,21 @@ protected:
     std::vector<std::unique_ptr<AstConstraint>> constraints;
 
     /** Determines whether the given execution order should be enforced */
-    bool fixedPlan;
+    bool fixedPlan = false;
 
     /** The user defined execution plan -- if any */
     std::unique_ptr<AstExecutionPlan> plan;
 
     /** Determines whether this is an internally generated clause resulting from resolving syntactic sugar */
-    bool generated;
+    bool generated = false;
 
     /** Stores a unique number for each clause in a relation */
-    size_t clauseNum;
+    size_t clauseNum = 0;
 
 public:
     /** Construct an empty clause with empty list of literals and
         its head set to NULL */
-    AstClause() : head(nullptr), fixedPlan(false), plan(nullptr), generated(false), clauseNum(0) {}
+    AstClause() : head(nullptr), plan(nullptr) {}
 
     ~AstClause() override = default;
 

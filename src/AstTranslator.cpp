@@ -905,9 +905,9 @@ namespace {
 void nameUnnamedVariables(AstClause* clause) {
     // the node mapper conducting the actual renaming
     struct Instantiator : public AstNodeMapper {
-        mutable int counter;
+        mutable int counter = 0;
 
-        Instantiator() : counter(0) {}
+        Instantiator() {}
 
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
             // apply recursive

@@ -76,14 +76,14 @@ public:
  */
 class TreeNode {
 protected:
-    std::string txt;  // text of tree node
-    uint32_t width;   // width of node (including sub-trees)
-    uint32_t height;  // height of node (including sub-trees)
-    int xpos;         // x-position of text
-    int ypos;         // y-position of text
+    std::string txt;      // text of tree node
+    uint32_t width = 0;   // width of node (including sub-trees)
+    uint32_t height = 0;  // height of node (including sub-trees)
+    int xpos = 0;         // x-position of text
+    int ypos = 0;         // y-position of text
 
 public:
-    TreeNode(std::string t = "") : txt(std::move(t)), width(0), height(0), xpos(0), ypos(0) {}
+    TreeNode(std::string t = "") : txt(std::move(t)) {}
     virtual ~TreeNode() {}
 
     // get width

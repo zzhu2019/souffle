@@ -84,7 +84,7 @@ protected:
 
     /** Qualifier of relation (i.e., output or not an output relation) */
     // TODO: Change to a set of qualifiers
-    int qualifier;
+    int qualifier = 0;
 
     /** Clauses associated with this relation. Clauses could be
      * either facts or rules.
@@ -96,7 +96,7 @@ protected:
     std::vector<std::unique_ptr<AstIODirective>> ioDirectives;
 
 public:
-    AstRelation() : qualifier(0) {}
+    AstRelation() {}
 
     ~AstRelation() override = default;
 

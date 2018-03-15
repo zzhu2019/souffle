@@ -43,7 +43,7 @@ protected:
     std::string name;
 
     /** Arity, i.e., number of attributes */
-    unsigned arity;
+    unsigned arity = 0;
 
     /** Name of attributes */
     std::vector<std::string> attributeNames;
@@ -56,22 +56,20 @@ protected:
 
     /** Relation qualifiers */
     // TODO: Simplify interface
-    bool input;     // input relation
-    bool output;    // output relation
-    bool computed;  // either output or printed
+    bool input = false;     // input relation
+    bool output = false;    // output relation
+    bool computed = false;  // either output or printed
 
-    bool btree;    // btree data-structure
-    bool rbtset;   // red-black tree set data structure
-    bool hashset;  // hash set data-structure
-    bool brie;     // brie data-structure
-    bool eqrel;    // equivalence relation
+    bool btree = false;    // btree data-structure
+    bool rbtset = false;   // red-black tree set data structure
+    bool hashset = false;  // hash set data-structure
+    bool brie = false;     // brie data-structure
+    bool eqrel = false;    // equivalence relation
 
-    bool istemp;  // Temporary relation for semi-naive evaluation
+    bool istemp = false;  // Temporary relation for semi-naive evaluation
 
 public:
-    RamRelation()
-            : RamNode(RN_Relation), arity(0), mask(arity), input(false), output(false), computed(false),
-              btree(false), rbtset(false), hashset(false), brie(false), eqrel(false), istemp(false) {}
+    RamRelation() : RamNode(RN_Relation), mask(arity) {}
 
     RamRelation(const std::string& name, unsigned arity, const bool istemp, const bool hashset = false)
             : RamRelation(name, arity) {

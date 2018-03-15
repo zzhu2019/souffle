@@ -67,10 +67,10 @@ public:
     // wrapper class for abstract iterator
     class iterator {
     protected:
-        iterator_base* iter;
+        iterator_base* iter = nullptr;
 
     public:
-        iterator() : iter(nullptr) {}
+        iterator() {}
         iterator(iterator_base* arg) : iter(arg) {}
         ~iterator() {
             delete iter;
