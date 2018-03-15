@@ -167,11 +167,11 @@ private:
 public:
     static constexpr const char* name = "adorned-clauses";
 
-    ~Adornment() = default;
+    ~Adornment() override = default;
 
-    virtual void run(const AstTranslationUnit& translationUnit);
+    void run(const AstTranslationUnit& translationUnit) override;
 
-    void print(std::ostream& os) const;
+    void print(std::ostream& os) const override;
 
     const std::vector<std::vector<AdornedClause>>& getAdornedClauses() const {
         return adornmentClauses;

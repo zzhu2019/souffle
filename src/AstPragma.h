@@ -31,27 +31,27 @@ namespace souffle {
 class AstPragma : public AstNode {
 protected:
     /** An internal function to determine equality to another node */
-    virtual bool equal(const AstNode& node) const {
+    bool equal(const AstNode& node) const override {
         assert(nullptr != dynamic_cast<const AstPragma*>(&node));
         const auto& other = static_cast<const AstPragma&>(node);
         return other.key == key && other.value == value;
     }
 
 public:
-    virtual ~AstPragma() = default;
+    ~AstPragma() override = default;
 
     AstPragma() = default;
 
     AstPragma(std::string k, std::string v) : key(std::move(k)), value(std::move(v)) {}
 
     /** Obtains a list of all embedded child nodes */
-    virtual std::vector<const AstNode*> getChildNodes() const {
+    std::vector<const AstNode*> getChildNodes() const override {
         // type is just cached, not essential
         return std::vector<const AstNode*>();
     }
 
     /** Creates a clone of this AST sub-structure */
-    virtual AstPragma* clone() const {
+    AstPragma* clone() const override {
         auto res = new AstPragma();
         res->key = key;
         res->value = value;
@@ -60,10 +60,10 @@ public:
     }
 
     /** No nested nodes to apply to */
-    virtual void apply(const AstNodeMapper& mapper) {}
+    void apply(const AstNodeMapper& mapper) override {}
 
     /** Output to a given output stream */
-    virtual void print(std::ostream& os) const {
+    void print(std::ostream& os) const override {
         os << ".pragma " << key << " " << value << "\n";
     }
 
@@ -85,10 +85,10 @@ public:
 
 class AstPragmaChecker : public AstTransformer {
 private:
-    virtual bool transform(AstTranslationUnit&);
+    bool transform(AstTranslationUnit&) override;
 
 public:
-    virtual std::string getName() const {
+    std::string getName() const override {
         return "AstPragmaChecker";
     }
 };

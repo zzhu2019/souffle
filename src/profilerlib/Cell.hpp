@@ -27,18 +27,18 @@ class Cell<double> : public CellInterface {
 public:
     double val;
     Cell(double value) : val(value){};
-    double getDoubVal() {
+    double getDoubVal() override {
         return val;
     }
-    long getLongVal() {
+    long getLongVal() override {
         std::cerr << "getting long on double cell\n";
         throw this;
     }
-    std::string getStringVal() {
+    std::string getStringVal() override {
         std::cerr << "getting string on double cell\n";
         throw this;
     }
-    std::string toString(int precision) {
+    std::string toString(int precision) override {
         return Tools::formatTime(val);
     }
 };
@@ -48,18 +48,18 @@ class Cell<std::string> : public CellInterface {
 public:
     std::string val;
     Cell(std::string value) : val(std::move(value)){};
-    double getDoubVal() {
+    double getDoubVal() override {
         std::cerr << "getting double on string cell\n";
         throw this;
     }
-    long getLongVal() {
+    long getLongVal() override {
         std::cerr << "getting long on string cell\n";
         throw this;
     }
-    std::string getStringVal() {
+    std::string getStringVal() override {
         return val;
     }
-    std::string toString(int precision) {
+    std::string toString(int precision) override {
         return Tools::cleanString(val);
     }
 };
@@ -69,18 +69,18 @@ class Cell<long> : public CellInterface {
 public:
     long val;
     Cell(long value) : val(value){};
-    double getDoubVal() {
+    double getDoubVal() override {
         std::cerr << "getting double on long cell\n";
         throw this;
     }
-    std::string getStringVal() {
+    std::string getStringVal() override {
         std::cerr << "getting string on long cell\n";
         throw this;
     }
-    long getLongVal() {
+    long getLongVal() override {
         return val;
     }
-    std::string toString(int precision) {
+    std::string toString(int precision) override {
         return Tools::formatNum(precision, val);
     };
 };
@@ -89,19 +89,19 @@ template <>
 class Cell<void> : public CellInterface, std::false_type {
 public:
     Cell() = default;
-    double getDoubVal() {
+    double getDoubVal() override {
         std::cerr << "getting double on void cell";
         throw this;
     }
-    long getLongVal() {
+    long getLongVal() override {
         std::cerr << "getting long on void cell";
         throw this;
     }
-    std::string getStringVal() {
+    std::string getStringVal() override {
         std::cerr << "getting string on void cell\n";
         throw this;
     }
-    std::string toString(int precision) {
+    std::string toString(int precision) override {
         return "-";
     }
 };

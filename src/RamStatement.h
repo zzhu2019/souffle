@@ -828,7 +828,7 @@ public:
     }
 
     /** Obtain list of child nodes */
-    virtual std::vector<const RamNode*> getChildNodes() const override {
+    std::vector<const RamNode*> getChildNodes() const override {
         return toVector<const RamNode*>(statement.get());
     }
 

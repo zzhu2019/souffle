@@ -123,7 +123,7 @@ public:
     }
 
     // place node and its sub-trees
-    void place(uint32_t x, uint32_t y) {
+    void place(uint32_t x, uint32_t y) override {
         // there must exist at least one kid
         assert(children.size() > 0 && "no children");
 
@@ -149,7 +149,7 @@ public:
     };
 
     // render node text and separator line
-    void render(ScreenBuffer& s) {
+    void render(ScreenBuffer& s) override {
         s.write(xpos + (width - txt.length()) / 2, ypos, txt);
         for (const std::unique_ptr<TreeNode>& k : children) {
             k->render(s);
@@ -160,7 +160,7 @@ public:
     }
 
     // print JSON
-    void printJSON(std::ostream& os, int pos) {
+    void printJSON(std::ostream& os, int pos) override {
         std::string tab(pos, '\t');
         os << tab << R"({ "premises": ")" << stringify(txt) << "\",\n";
         os << tab << R"(  "rule-number": ")" << label << "\",\n";
@@ -186,7 +186,7 @@ public:
     LeafNode(const std::string& t = "") : TreeNode(t) {}
 
     // place leaf node
-    void place(uint32_t x, uint32_t y) {
+    void place(uint32_t x, uint32_t y) override {
         xpos = x;
         ypos = y;
         width = txt.length();
@@ -194,12 +194,12 @@ public:
     }
 
     // render text of leaf node
-    void render(ScreenBuffer& s) {
+    void render(ScreenBuffer& s) override {
         s.write(xpos, ypos, txt);
     }
 
     // print JSON
-    void printJSON(std::ostream& os, int pos) {
+    void printJSON(std::ostream& os, int pos) override {
         std::string tab(pos, '\t');
         os << tab << R"({ "axiom": ")" << stringify(txt) << "\"}";
     }
