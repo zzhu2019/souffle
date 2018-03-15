@@ -74,7 +74,7 @@ private:
         // extract each argument
         std::string argsList = relMatch[2];
         std::smatch argsMatcher;
-        std::regex argRegex("[0-9]+|\"[^\"]*\"", std::regex_constants::extended);
+        std::regex argRegex(R"([0-9]+|"[^"]*")", std::regex_constants::extended);
 
         while (std::regex_search(argsList, argsMatcher, argRegex)) {
             // match the start of the arguments

@@ -162,8 +162,8 @@ public:
     // print JSON
     void printJSON(std::ostream& os, int pos) {
         std::string tab(pos, '\t');
-        os << tab << "{ \"premises\": \"" << stringify(txt) << "\",\n";
-        os << tab << "  \"rule-number\": \"" << label << "\",\n";
+        os << tab << R"({ "premises": ")" << stringify(txt) << "\",\n";
+        os << tab << R"(  "rule-number": ")" << label << "\",\n";
         os << tab << "  \"children\": [\n";
         bool first = true;
         for (const std::unique_ptr<TreeNode>& k : children) {
@@ -201,7 +201,7 @@ public:
     // print JSON
     void printJSON(std::ostream& os, int pos) {
         std::string tab(pos, '\t');
-        os << tab << "{ \"axiom\": \"" << stringify(txt) << "\"}";
+        os << tab << R"({ "axiom": ")" << stringify(txt) << "\"}";
     }
 };
 
