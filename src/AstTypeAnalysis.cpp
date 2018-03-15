@@ -61,7 +61,7 @@ struct AstConstraintAnalysisVar : public Variable<const AstArgument*, PropertySp
  */
 template <typename AnalysisVar>
 class AstConstraintAnalysis : public AstVisitor<void> {
-    typedef typename AnalysisVar::property_space::value_type value_type;
+    using value_type = typename AnalysisVar::property_space::value_type;
 
     /** The list of constraints making underlying this analysis */
     Problem<AnalysisVar> constraints;
@@ -71,8 +71,8 @@ class AstConstraintAnalysis : public AstVisitor<void> {
 
 protected:
     // a few type definitions
-    typedef std::shared_ptr<Constraint<AnalysisVar>> constraint_type;
-    typedef std::map<const AstArgument*, value_type> solution_type;
+    using constraint_type = std::shared_ptr<Constraint<AnalysisVar>>;
+    using solution_type = std::map<const AstArgument*, value_type>;
 
     /**
      * A utility function mapping an AstArgument to its associated analysis variable.
@@ -172,10 +172,10 @@ struct false_factory {
 struct bool_disjunct_lattic : public property_space<bool, bool_or, false_factory> {};
 
 /** A base type for analysis based on the boolean disjunct lattice */
-typedef AstConstraintAnalysisVar<bool_disjunct_lattic> BoolDisjunctVar;
+using BoolDisjunctVar = AstConstraintAnalysisVar<bool_disjunct_lattic>;
 
 /** A base type for constraints on the boolean disjunct lattice */
-typedef std::shared_ptr<Constraint<BoolDisjunctVar>> BoolDisjunctConstraint;
+using BoolDisjunctConstraint = std::shared_ptr<Constraint<BoolDisjunctVar>>;
 
 /**
  * A constraint factory for a constraint ensuring that the value assigned to the
@@ -468,10 +468,10 @@ struct all_type_factory {
 struct type_lattice : public property_space<TypeSet, sub_type, all_type_factory> {};
 
 /** The definition of the type of variable to be utilized in the type analysis */
-typedef AstConstraintAnalysisVar<type_lattice> TypeVar;
+using TypeVar = AstConstraintAnalysisVar<type_lattice>;
 
 /** The definition of the type of constraint to be utilized in the type analysis */
-typedef std::shared_ptr<Constraint<TypeVar>> TypeConstraint;
+using TypeConstraint = std::shared_ptr<Constraint<TypeVar>>;
 
 /**
  * A constraint factory ensuring that all the types associated to the variable

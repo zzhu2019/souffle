@@ -53,8 +53,8 @@
 
 namespace souffle {
 
-typedef uint32_t rank_t;
-typedef uint32_t parent_t;
+using rank_t = uint32_t;
+using parent_t = uint32_t;
 
 // number of bits each are (sizeof(rank_t) == sizeof(parent_t))
 constexpr uint8_t split_size = 32u;

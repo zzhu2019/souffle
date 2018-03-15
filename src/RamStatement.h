@@ -350,7 +350,7 @@ class RamFact : public RamRelationStatement {
 protected:
     /** Arguments of fact */
     // TODO (#541): Reoccuring type -> push to RamValue.h
-    typedef std::vector<std::unique_ptr<RamValue>> value_list;
+    using value_list = std::vector<std::unique_ptr<RamValue>>;
     value_list values;
 
 public:

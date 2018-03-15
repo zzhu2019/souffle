@@ -36,7 +36,7 @@ class AstProgram;
  */
 class AstExecutionOrder : public AstNode {
 public:
-    typedef typename std::vector<unsigned int>::const_iterator const_iterator;
+    using const_iterator = typename std::vector<unsigned int>::const_iterator;
 
 private:
     /** The actual order, starting with 1 (!) */
@@ -118,7 +118,7 @@ protected:
  */
 class AstExecutionPlan : public AstNode {
 public:
-    typedef typename std::map<int, AstExecutionOrder>::const_iterator const_iterator;
+    using const_iterator = typename std::map<int, AstExecutionOrder>::const_iterator;
 
 private:
     /** Mapping versions of clauses to execution plans */

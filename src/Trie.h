@@ -107,7 +107,7 @@ struct default_merge {
 template <typename T, unsigned BITS = 6, typename merge_op = detail::default_merge<T>,
         typename copy_op = detail::identity<T>>
 class SparseArray {
-    typedef uint64_t key_type;
+    using key_type = uint64_t;
 
     // some internal constants
     static const int BIT_PER_STEP = BITS;
@@ -116,13 +116,13 @@ class SparseArray {
 
 public:
     // the type utilized for indexing contained elements
-    typedef key_type index_type;
+    using index_type = key_type;
 
     // the type of value stored in this array
-    typedef T value_type;
+    using value_type = T;
 
     // the atomic view on stored values
-    typedef std::atomic<value_type> atomic_value_type;
+    using atomic_value_type = std::atomic<value_type>;
 
 private:
     struct Node;
@@ -857,7 +857,7 @@ public:
      * The iterator type to be utilized to iterate over the non-default elements of this array.
      */
     class iterator : public std::iterator<std::forward_iterator_tag, std::pair<index_type, value_type>> {
-        typedef std::pair<index_type, value_type> pair_type;
+        using pair_type = std::pair<index_type, value_type>;
 
         // a pointer to the leaf node currently processed or null (end)
         const Node* node;
@@ -1386,7 +1386,7 @@ private:
 template <unsigned BITS = 4>
 class SparseBitMap {
     // the element type stored in the nested sparse array
-    typedef uint64_t value_t;
+    using value_t = uint64_t;
 
     // define the bit-level merge operation
     struct merge_op {
@@ -1396,8 +1396,8 @@ class SparseBitMap {
     };
 
     // the type of the internal data store
-    typedef SparseArray<value_t, BITS, merge_op> data_store_t;
-    typedef typename data_store_t::atomic_value_type atomic_value_t;
+    using data_store_t = SparseArray<value_t, BITS, merge_op>;
+    using atomic_value_t = typename data_store_t::atomic_value_type;
 
     // some constants for manipulating stored values
     static const short BITS_PER_ENTRY = sizeof(value_t) * 8;
@@ -1406,7 +1406,7 @@ class SparseBitMap {
 
 public:
     // the type to address individual entries
-    typedef typename data_store_t::index_type index_type;
+    using index_type = typename data_store_t::index_type;
 
 private:
     // it utilizes a sparse map to store its data
@@ -1434,7 +1434,7 @@ public:
     }
 
     // the type utilized for recording context information for exploiting temporal locality
-    typedef typename data_store_t::op_context op_context;
+    using op_context = typename data_store_t::op_context;
 
     /**
      * Sets the bit addressed by i to 1.
@@ -1551,7 +1551,7 @@ public:
      * An iterator iterating over all indices set to 1.
      */
     class iterator : public std::iterator<std::forward_iterator_tag, index_type> {
-        typedef typename data_store_t::iterator nested_iterator;
+        using nested_iterator = typename data_store_t::iterator;
 
         // the iterator through the underlying sparse data structure
         nested_iterator iter;
@@ -1740,7 +1740,7 @@ public:
     /**
      * The type of the stored entries / tuples.
      */
-    typedef typename ram::Tuple<RamDomain, Dim> entry_type;
+    using entry_type = typename ram::Tuple<RamDomain, Dim>;
 
     // -- operation wrappers --
 
@@ -1780,7 +1780,7 @@ public:
         friend struct fix_first;
 
         // the iterator core of this level
-        typedef IterCore<0> iter_core_t;
+        using iter_core_t = IterCore<0>;
 
         // the wrapped iterator
         iter_core_t iter_core;
@@ -2024,10 +2024,10 @@ class Trie : public detail::TrieBase<Dim, Trie<Dim>> {
     friend class TrieBase;
 
     // a shortcut for the common base class type
-    typedef typename detail::TrieBase<Dim, Trie<Dim>> base;
+    using base = typename detail::TrieBase<Dim, Trie<Dim>>;
 
     // the type of the nested tries (1 dimension less)
-    typedef Trie<Dim - 1> nested_trie_type;
+    using nested_trie_type = Trie<Dim - 1>;
 
     // the merge operation capable of merging two nested tries
     struct nested_trie_merger {
@@ -2057,7 +2057,7 @@ class Trie : public detail::TrieBase<Dim, Trie<Dim>> {
     store_type store;
 
 public:
-    typedef typename ram::Tuple<RamDomain, Dim> entry_type;
+    using entry_type = typename ram::Tuple<RamDomain, Dim>;
 
     // ---------------------------------------------------------------------
     //                           Iterator
@@ -2069,10 +2069,10 @@ public:
     template <unsigned I = 0>
     class iterator_core {
         // the iterator for the current level
-        typedef typename store_type::iterator store_iter_t;
+        using store_iter_t = typename store_type::iterator;
 
         // the type of the nested iterator
-        typedef typename Trie<Dim - 1>::template iterator_core<I + 1> nested_iter_core;
+        using nested_iter_core = typename Trie<Dim - 1>::template iterator_core<I + 1>;
 
         store_iter_t iter;
 
@@ -2139,12 +2139,12 @@ public:
     };
 
     // the type of iterator to be utilized when iterating of instances of this trie
-    typedef typename base::template iterator<iterator_core> iterator;
+    using iterator = typename base::template iterator<iterator_core>;
 
     // the operation context aggregating all operation contexts of nested structures
     struct op_context {
-        typedef typename store_type::op_context local_ctxt;
-        typedef typename nested_trie_type::op_context nested_ctxt;
+        using local_ctxt = typename store_type::op_context;
+        using nested_ctxt = typename nested_trie_type::op_context;
 
         // for insert and contain
         local_ctxt local;
@@ -2432,8 +2432,8 @@ private:
      */
     template <unsigned I, typename Tuple>
     bool insert_internal(const Tuple& tuple, op_context& ctxt) {
-        typedef typename store_type::value_type value_t;
-        typedef typename store_type::atomic_value_type atomic_value_t;
+        using value_t = typename store_type::value_type;
+        using atomic_value_t = typename store_type::atomic_value_type;
 
         // check context
         if (ctxt.lastNested && ctxt.lastQuery == tuple[I]) {
@@ -2522,9 +2522,9 @@ class Trie<0u> : public detail::TrieBase<0u, Trie<0u>> {
     template <unsigned Dim, typename Derived>
     friend class detail::TrieBase;
 
-    typedef typename detail::TrieBase<0u, Trie<0u>> base;
+    using base = typename detail::TrieBase<0u, Trie<0u>>;
 
-    typedef typename ram::Tuple<RamDomain, 0> entry_type;
+    using entry_type = typename ram::Tuple<RamDomain, 0>;
 
     // the singleton instance of the 0-ary tuple
     static const ram::Tuple<RamDomain, 0> instance;
@@ -2660,7 +2660,7 @@ public:
         }
     };
 
-    typedef typename base::template iterator<iterator_core> iterator;
+    using iterator = typename base::template iterator<iterator_core>;
 
     /**
      * Obtains an iterator referencing the first element in this trie or
@@ -2751,16 +2751,16 @@ class Trie<1u> : public detail::TrieBase<1u, Trie<1u>> {
     friend class detail::TrieBase;
 
     // a shortcut for the base type
-    typedef typename detail::TrieBase<1u, Trie<1u>> base;
+    using base = typename detail::TrieBase<1u, Trie<1u>>;
 
     // the map type utilized internally
-    typedef SparseBitMap<> map_type;
+    using map_type = SparseBitMap<>;
 
     // the internal data store
     map_type map;
 
 public:
-    typedef typename map_type::op_context op_context;
+    using op_context = typename map_type::op_context;
 
     using base::contains;
     using base::insert;
@@ -2860,7 +2860,7 @@ public:
     template <unsigned I = 0>
     class iterator_core {
         // the iterator for this level
-        typedef typename map_type::iterator iter_type;
+        using iter_type = typename map_type::iterator;
 
         // the referenced bit-map iterator
         iter_type iter;
@@ -2915,7 +2915,7 @@ public:
     };
 
     // the iterator type utilized by this trie type
-    typedef typename base::template iterator<iterator_core> iterator;
+    using iterator = typename base::template iterator<iterator_core>;
 
     /**
      * Obtains an iterator referencing the first element stored within this trie

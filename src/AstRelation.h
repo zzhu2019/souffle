@@ -383,6 +383,6 @@ struct AstNameComparison {
     }
 };
 
-typedef std::set<const AstRelation*, AstNameComparison> AstRelationSet;
+using AstRelationSet = std::set<const AstRelation*, AstNameComparison>;
 
 }  // end of namespace souffle

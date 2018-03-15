@@ -168,7 +168,7 @@ public:
  * It is the basic entity to conduct sub- and super-type computations.
  */
 struct TypeSet {
-    typedef IterDerefWrapper<typename std::set<const Type*>::const_iterator> const_iterator;
+    using const_iterator = IterDerefWrapper<typename std::set<const Type*>::const_iterator>;
 
 private:
     /** True if it is the all-types set, false otherwise */
@@ -304,7 +304,7 @@ public:
  */
 class TypeEnvironment {
     /** The type utilized for identifying types */
-    typedef AstTypeIdentifier identifier;
+    using identifier = AstTypeIdentifier;
 
 private:
     /** The list of covered types */

@@ -53,7 +53,7 @@
         class ParserDriver;
     }
 
-    typedef void* yyscan_t;
+    using yyscan_t = void*;
 
     #define YY_NULLPTR nullptr
 

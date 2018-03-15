@@ -218,7 +218,7 @@ public:
 static constexpr uint8_t BLOCKBITS = 10u;
 static constexpr size_t BLOCKSIZE = (1u << BLOCKBITS);
 // block_t stores parent in the upper half, rank in the lower half
-typedef uint64_t block_t;
+using block_t = uint64_t;
 
 /**
  * A class that is designed to mimic std::list, but with better destructor speed

@@ -32,7 +32,7 @@ class DebugReport;
 class ErrorReport;
 class SymbolTable;
 
-typedef void* yyscan_t;
+using yyscan_t = void*;
 
 struct scanner_data {
     AstSrcLocation yylloc;

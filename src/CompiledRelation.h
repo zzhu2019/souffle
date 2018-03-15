@@ -222,7 +222,7 @@ namespace detail {
 template <unsigned arity, typename Derived>
 struct RelationBase {
     // the type of tuple maintained by this relation
-    typedef Tuple<RamDomain, arity> tuple_type;
+    using tuple_type = Tuple<RamDomain, arity>;
 
     // -- contains wrapper --
 
@@ -300,17 +300,17 @@ class AutoRelation : public RelationBase<arity, AutoRelation<arity, Indices...>>
     static_assert(index_utils::check<arity, Indices...>::value, "Warning: invalid indices combination!");
 
     // shortcut for the base class
-    typedef RelationBase<arity, AutoRelation<arity, Indices...>> base;
+    using base = RelationBase<arity, AutoRelation<arity, Indices...>>;
 
 public:
     /* The type of tuple stored in this relation. */
-    typedef typename base::tuple_type tuple_type;
+    using tuple_type = typename base::tuple_type;
 
     /* The table storing the master-copies of the relations. */
-    typedef Table<tuple_type> table_t;
+    using table_t = Table<tuple_type>;
 
     /* The iterator type to be utilized for relation scans. */
-    typedef typename table_t::iterator iterator;
+    using iterator = typename table_t::iterator;
 
 private:
     // obtain type of index collection
@@ -344,7 +344,7 @@ private:
 
 public:
     /* The context information to be utilized by operations on this relation. */
-    typedef typename indices_t::operation_context operation_context;
+    using operation_context = typename indices_t::operation_context;
 
     // import generic signatures from the base class
     using base::contains;
@@ -491,11 +491,11 @@ class DirectIndexedRelation
     //            "Warning: invalid indices combination!");
 
     // shortcut for the base class
-    typedef RelationBase<arity, DirectIndexedRelation<IndexFactory, arity, Primary, Indices...>> base;
+    using base = RelationBase<arity, DirectIndexedRelation<IndexFactory, arity, Primary, Indices...>>;
 
 public:
     /* The type of tuple stored in this relation. */
-    typedef typename base::tuple_type tuple_type;
+    using tuple_type = typename base::tuple_type;
 
 private:
     // obtain type of index collection
@@ -505,18 +505,18 @@ private:
             indices_t;
 
     // define the primary index for existence checks
-    typedef typename index_utils::extend_to_full_index<arity, Primary>::type primary_index;
+    using primary_index = typename index_utils::extend_to_full_index<arity, Primary>::type;
 
     // all other indices
     indices_t indices;
 
 public:
     /* iterator type */
-    typedef decltype(indices.getIndex(primary_index()).begin()) iterator;
+    using iterator = decltype(indices.getIndex(primary_index()).begin());
 
 public:
     /* The context information to be utilized by operations on this relation. */
-    typedef typename indices_t::operation_context operation_context;
+    using operation_context = typename indices_t::operation_context;
 
     // import generic signatures from the base class
     using base::contains;
@@ -666,14 +666,14 @@ class AutoRelation<arity> : public AutoRelation<arity, typename index_utils::get
  */
 template <>
 class AutoRelation<0> : public RelationBase<0, AutoRelation<0>> {
-    typedef RelationBase<0, AutoRelation<0>> base;
+    using base = RelationBase<0, AutoRelation<0>>;
 
     /* The flag indicating whether the empty tuple () is present or not. */
     bool present;
 
 public:
     /* The type of tuple stored in this relation. */
-    typedef typename base::tuple_type tuple_type;
+    using tuple_type = typename base::tuple_type;
 
     /* The iterator utilized for iterating over elements of this relation. */
     class iterator : public std::iterator<std::forward_iterator_tag, tuple_type> {
@@ -822,32 +822,32 @@ public:
 template <unsigned arity, typename Index, template <typename T, typename I, bool d> class table_factory>
 class SingleIndexRelation : public RelationBase<arity, SingleIndexRelation<arity, Index, table_factory>> {
     // expand only index to a full index
-    typedef typename index_utils::extend_to_full_index<arity, Index>::type primary_index_t;
+    using primary_index_t = typename index_utils::extend_to_full_index<arity, Index>::type;
     static_assert(primary_index_t::size == arity, "Single index is not a full index!");
 
     // a shortcut for the base class
-    typedef RelationBase<arity, SingleIndexRelation<arity, Index, table_factory>> base;
+    using base = RelationBase<arity, SingleIndexRelation<arity, Index, table_factory>>;
 
 public:
     /* The tuple type handled by this relation. */
-    typedef typename base::tuple_type tuple_type;
+    using tuple_type = typename base::tuple_type;
 
 private:
     // this variant stores all tuples in the one index
-    typedef typename table_factory<tuple_type, primary_index_t, true>::type table_t;
+    using table_t = typename table_factory<tuple_type, primary_index_t, true>::type;
 
     /* The indexed data stored in this relation. */
     table_t data;
 
 public:
     /* The iterator type utilized by this relation. */
-    typedef typename table_t::iterator iterator;
+    using iterator = typename table_t::iterator;
 
     // import generic signatures from the base class
     using base::contains;
     using base::insert;
 
-    typedef typename table_t::operation_hints operation_context;
+    using operation_context = typename table_t::operation_hints;
 
     // --- most general implementation ---
 

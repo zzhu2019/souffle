@@ -40,13 +40,13 @@ namespace souffle {
  */
 class MaxMatching {
 public:
-    typedef std::map<SearchColumns, SearchColumns, std::greater<SearchColumns>> Matchings;
-    typedef std::set<SearchColumns, std::greater<SearchColumns>> Nodes;
+    using Matchings = std::map<SearchColumns, SearchColumns, std::greater<SearchColumns>>;
+    using Nodes = std::set<SearchColumns, std::greater<SearchColumns>>;
 
 private:
-    typedef std::set<SearchColumns> Edges;
-    typedef std::map<SearchColumns, Edges> Graph;
-    typedef std::map<SearchColumns, int> Distance;
+    using Edges = std::set<SearchColumns>;
+    using Graph = std::map<SearchColumns, Edges>;
+    using Distance = std::map<SearchColumns, int>;
 
 public:
     /** Solve */
@@ -92,13 +92,13 @@ private:
 
 class IndexSet {
 public:
-    typedef std::vector<int> LexicographicalOrder;
-    typedef std::vector<LexicographicalOrder> OrderCollection;
+    using LexicographicalOrder = std::vector<int>;
+    using OrderCollection = std::vector<LexicographicalOrder>;
 
 protected:
-    typedef std::set<SearchColumns> Chain;
-    typedef std::vector<Chain> ChainOrderMap;
-    typedef std::set<SearchColumns> SearchSet;
+    using Chain = std::set<SearchColumns>;
+    using ChainOrderMap = std::vector<Chain>;
+    using SearchSet = std::set<SearchColumns>;
 
     SearchSet searches;           // set of search patterns on table
     OrderCollection orders;       // collection of lexicographical orders
@@ -239,8 +239,6 @@ protected:
  */
 class IndexSetAnalysis : public RamAnalysis {
 private:
-    typedef std::map<std::string, IndexSet> data_t;
-    typedef typename data_t::iterator iterator;
     std::map<std::string, IndexSet> data;
 
 public:

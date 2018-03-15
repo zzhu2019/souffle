@@ -86,10 +86,10 @@ template <typename T, typename meet_assign_op,
         typename bottom_factory = typename detail::default_bottom_factory<T>,
         typename meet_op = typename detail::default_meet_op<T, meet_assign_op>>
 struct property_space {
-    typedef T value_type;
-    typedef meet_assign_op meet_assign_op_type;
-    typedef meet_op meet_op_type;
-    typedef bottom_factory bottom_factory_type;
+    using value_type = T;
+    using meet_assign_op_type = meet_assign_op;
+    using meet_op_type = meet_op;
+    using bottom_factory_type = bottom_factory;
 };
 
 namespace detail {
@@ -129,7 +129,7 @@ struct set_property_space : public property_space<std::set<T>, detail::set_meet_
 template <typename Id, typename PropertySpace>
 struct Variable {
     /** exports the property space */
-    typedef PropertySpace property_space;
+    using property_space = PropertySpace;
 
 protected:
     /** the underlying value giving this variable its identity */
@@ -183,7 +183,7 @@ public:
  */
 template <typename Var>
 class Constraint {
-    typedef typename Var::property_space property_space;
+    using property_space = typename Var::property_space;
 
 public:
     /** A virtual destructor */
@@ -284,11 +284,11 @@ std::shared_ptr<Constraint<Var>> sub(const Val& a, const Var& b, const std::stri
 template <typename Var>
 class Assignment {
     // a few type definitions
-    typedef typename Var::property_space property_space;
-    typedef typename property_space::value_type value_type;
-    typedef typename property_space::bottom_factory_type bottom_factory_type;
+    using property_space = typename Var::property_space;
+    using value_type = typename property_space::value_type;
+    using bottom_factory_type = typename property_space::bottom_factory_type;
 
-    typedef typename std::map<Var, value_type> data_type;
+    using data_type = typename std::map<Var, value_type>;
 
     /** a copy of the value assigned to all unmapped variables */
     value_type bottom;
@@ -297,7 +297,7 @@ class Assignment {
     data_type data;
 
 public:
-    typedef typename data_type::const_iterator iterator;
+    using iterator = typename data_type::const_iterator;
 
     /** Creates a new, empty assignment */
     Assignment() : bottom(bottom_factory_type()()) {}
@@ -367,8 +367,8 @@ public:
 template <typename Var>
 class Problem {
     // a few type definitions
-    typedef Constraint<Var> constraint;
-    typedef std::shared_ptr<constraint> constraint_ptr;
+    using constraint = Constraint<Var>;
+    using constraint_ptr = std::shared_ptr<constraint>;
 
     /** The list of covered constraints */
     std::vector<constraint_ptr> constraints;

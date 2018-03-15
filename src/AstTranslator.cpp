@@ -229,26 +229,26 @@ class ValueIndex {
      * The type mapping variables (referenced by their names) to the
      * locations where they are used.
      */
-    typedef std::map<std::string, std::set<Location>> variable_reference_map;
+    using variable_reference_map = std::map<std::string, std::set<Location>>;
 
     /**
      * The type mapping record init expressions to their definition points,
      * hence the point where they get grounded/bound.
      */
-    typedef std::map<const AstRecordInit*, Location> record_definition_map;
+    using record_definition_map = std::map<const AstRecordInit*, Location>;
 
     /**
      * The type mapping record init expressions to the loop level where
      * they get unpacked.
      */
-    typedef std::map<const AstRecordInit*, int> record_unpack_map;
+    using record_unpack_map = std::map<const AstRecordInit*, int>;
 
     /**
      * A map from AstAggregators to storage locations. Note, since in this case
      * AstAggregators are indexed by their values (not their address) no standard
      * map can be utilized.
      */
-    typedef std::vector<std::pair<const AstAggregator*, Location>> aggregator_location_map;
+    using aggregator_location_map = std::vector<std::pair<const AstAggregator*, Location>>;
 
     /** The index of variable accesses */
     variable_reference_map var_references;
@@ -489,7 +489,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
     int level = 0;
     for (AstAtom* atom : clause.getAtoms()) {
         // index nested variables and records
-        typedef std::vector<AstArgument*> arg_list;
+        using arg_list = std::vector<AstArgument*>;
         // std::map<const arg_list*, int> arg_level;
         std::map<const AstNode*, std::unique_ptr<arg_list>> nodeArgs;
 

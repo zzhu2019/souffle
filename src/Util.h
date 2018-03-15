@@ -51,17 +51,17 @@
 namespace std {
 template <class T>
 struct _Unique_if {
-    typedef unique_ptr<T> _Single_object;
+    using _Single_object = unique_ptr<T>;
 };
 
 template <class T>
 struct _Unique_if<T[]> {
-    typedef unique_ptr<T[]> _Unknown_bound;
+    using _Unknown_bound = unique_ptr<T[]>;
 };
 
 template <class T, size_t N>
 struct _Unique_if<T[N]> {
-    typedef void _Known_bound;
+    using _Known_bound = void;
 };
 
 template <class T, class... Args>
@@ -71,7 +71,7 @@ typename _Unique_if<T>::_Single_object make_unique(Args&&... args) {
 
 template <class T>
 typename _Unique_if<T>::_Unknown_bound make_unique(size_t n) {
-    typedef typename remove_extent<T>::type U;
+    using U = typename remove_extent<T>::type;
     return unique_ptr<T>(new U[n]());
 }
 
@@ -792,25 +792,25 @@ struct lambda_traits_helper;
 
 template <typename R>
 struct lambda_traits_helper<R()> {
-    typedef R result_type;
+    using result_type = R;
 };
 
 template <typename R, typename A0>
 struct lambda_traits_helper<R(A0)> {
-    typedef R result_type;
-    typedef A0 arg0_type;
+    using result_type = R;
+    using arg0_type = A0;
 };
 
 template <typename R, typename A0, typename A1>
 struct lambda_traits_helper<R(A0, A1)> {
-    typedef R result_type;
-    typedef A0 arg0_type;
-    typedef A1 arg1_type;
+    using result_type = R;
+    using arg0_type = A0;
+    using arg1_type = A1;
 };
 
 template <typename R, typename... Args>
 struct lambda_traits_helper<R(Args...)> {
-    typedef R result_type;
+    using result_type = R;
 };
 
 template <typename R, typename C, typename... Args>
@@ -839,7 +839,7 @@ struct lambda_traits : public detail::lambda_traits_helper<decltype(&Lambda::ope
  */
 template <typename Class, typename R, typename... Args>
 struct member_fun {
-    typedef R (Class::*fun_type)(Args...);
+    using fun_type = R (Class::*)(Args...);
     Class& obj;
     fun_type fun;
     R operator()(Args... args) const {
@@ -906,7 +906,7 @@ bool none_of(const Container& c, UnaryPredicate p) {
 // -------------------------------------------------------------------------------
 
 // a type def for a time point
-typedef std::chrono::high_resolution_clock::time_point time_point;
+using time_point = std::chrono::high_resolution_clock::time_point;
 
 // a shortcut for taking the current time
 inline time_point now() {

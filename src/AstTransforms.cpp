@@ -74,7 +74,7 @@ namespace {
 class Substitution {
     // the type of map for storing mappings internally
     //   - variables are identified by their name (!)
-    typedef std::map<std::string, std::unique_ptr<AstArgument>> map_t;
+    using map_t = std::map<std::string, std::unique_ptr<AstArgument>>;
 
     /** The mapping of variables to terms (see type def above) */
     map_t map;
@@ -383,8 +383,8 @@ void ResolveAliasesTransformer::removeComplexTermsInAtoms(AstClause& clause) {
     }
 
     // substitute them with variables (a real map would compare pointers)
-    typedef std::vector<std::pair<std::unique_ptr<AstArgument>, std::unique_ptr<AstVariable>>>
-            substitution_map;
+    using substitution_map =
+            std::vector<std::pair<std::unique_ptr<AstArgument>, std::unique_ptr<AstVariable>>>;
     substitution_map map;
 
     int var_counter = 0;
@@ -426,7 +426,7 @@ void ResolveAliasesTransformer::removeComplexTermsInAtoms(AstClause& clause) {
 }
 
 bool RemoveRelationCopiesTransformer::removeRelationCopies(AstProgram& program) {
-    typedef std::map<AstRelationIdentifier, AstRelationIdentifier> alias_map;
+    using alias_map = std::map<AstRelationIdentifier, AstRelationIdentifier>;
 
     // tests whether something is a variable
     auto isVar = [&](const AstArgument& arg) { return dynamic_cast<const AstVariable*>(&arg); };

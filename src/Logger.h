@@ -42,8 +42,8 @@ inline Lock& getOutputLock() {
  */
 class Logger {
     // the type of clock to be utilized by this class
-    typedef std::chrono::steady_clock clock;
-    typedef clock::time_point time;
+    using clock = std::chrono::steady_clock;
+    using time = clock::time_point;
 
     // a label to be printed when reporting the execution time
     const char* label;

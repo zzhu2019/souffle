@@ -172,10 +172,10 @@ protected:
     };
 
     /* btree for storing tuple pointers with a given lexicographical order */
-    typedef btree_multiset<const RamDomain*, comparator, std::allocator<const RamDomain*>, 512> index_set;
+    using index_set = btree_multiset<const RamDomain*, comparator, std::allocator<const RamDomain*>, 512>;
 
 public:
-    typedef index_set::iterator iterator;
+    using iterator = index_set::iterator;
 
 private:
     const InterpreterIndexOrder theOrder;  // retain the index order used to construct an object of this class

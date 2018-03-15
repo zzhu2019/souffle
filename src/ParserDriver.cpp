@@ -21,7 +21,7 @@
 #include "ErrorReport.h"
 #include <memory>
 
-typedef struct yy_buffer_state* YY_BUFFER_STATE;
+using YY_BUFFER_STATE = struct yy_buffer_state*;
 extern YY_BUFFER_STATE yy_scan_string(const char*, yyscan_t scanner);
 extern int yylex_destroy(yyscan_t scanner);
 extern int yylex_init_extra(scanner_data* data, yyscan_t* scanner);

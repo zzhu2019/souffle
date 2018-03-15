@@ -206,7 +206,7 @@ struct binary_search : public search_strategy {
  */
 template <typename S>
 struct strategy_selection {
-    typedef S type;
+    using type = S;
 };
 
 struct linear : public strategy_selection<linear_search> {};
@@ -238,10 +238,10 @@ template <typename Key, typename Comparator,
 class btree {
 public:
     class iterator;
-    typedef iterator const_iterator;
+    using const_iterator = iterator;
 
-    typedef Key key_type;
-    typedef range<iterator> chunk;
+    using key_type = Key;
+    using chunk = range<iterator>;
 
 private:
     /* ------------- static utilities ----------------- */
@@ -262,9 +262,9 @@ private:
 
     /* -------------- the node type ----------------- */
 
-    typedef std::size_t size_type;
-    typedef uint8_t field_index_type;
-    typedef OptimisticReadWriteLock lock_type;
+    using size_type = std::size_t;
+    using field_index_type = uint8_t;
+    using lock_type = OptimisticReadWriteLock;
 
     struct node;
 
@@ -2161,7 +2161,7 @@ template <typename Key, typename Comparator = detail::comparator<Key>,
         typename Allocator = std::allocator<Key>,  // is ignored so far
         unsigned blockSize = 256, typename SearchStrategy = typename detail::default_strategy<Key>::type>
 class btree_set : public detail::btree<Key, Comparator, Allocator, blockSize, SearchStrategy, true> {
-    typedef detail::btree<Key, Comparator, Allocator, blockSize, SearchStrategy, true> super;
+    using super = detail::btree<Key, Comparator, Allocator, blockSize, SearchStrategy, true>;
 
     friend class detail::btree<Key, Comparator, Allocator, blockSize, SearchStrategy, true>;
 
@@ -2217,7 +2217,7 @@ template <typename Key, typename Comparator = detail::comparator<Key>,
         typename Allocator = std::allocator<Key>,  // is ignored so far
         unsigned blockSize = 256, typename SearchStrategy = typename detail::default_strategy<Key>::type>
 class btree_multiset : public detail::btree<Key, Comparator, Allocator, blockSize, SearchStrategy, false> {
-    typedef detail::btree<Key, Comparator, Allocator, blockSize, SearchStrategy, false> super;
+    using super = detail::btree<Key, Comparator, Allocator, blockSize, SearchStrategy, false>;
 
     friend class detail::btree<Key, Comparator, Allocator, blockSize, SearchStrategy, false>;
 
