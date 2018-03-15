@@ -29,6 +29,7 @@
 #include <string>
 
 #include <cstdlib>
+#include <utility>
 
 namespace souffle {
 
@@ -323,8 +324,8 @@ private:
     std::string name;
 
 public:
-    RamElementAccess(size_t l, size_t e, const std::string& n = "")
-            : RamValue(RN_ElementAccess, false), level(l), element(e), name(n) {}
+    RamElementAccess(size_t l, size_t e, std::string n = "")
+            : RamValue(RN_ElementAccess, false), level(l), element(e), name(std::move(n)) {}
 
     /** Print */
     void print(std::ostream& os) const override {

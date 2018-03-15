@@ -20,6 +20,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -49,9 +50,9 @@ public:
     /**
      * Creates a new component type based on the given name and parameters.
      */
-    AstComponentType(const std::string& name = "",
-            const std::vector<AstTypeIdentifier>& params = std::vector<AstTypeIdentifier>())
-            : name(name), typeParams(params) {}
+    AstComponentType(
+            std::string name = "", std::vector<AstTypeIdentifier> params = std::vector<AstTypeIdentifier>())
+            : name(std::move(name)), typeParams(std::move(params)) {}
 
     // -- getters and setters --
 

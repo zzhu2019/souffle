@@ -28,6 +28,7 @@
 #include <map>
 #include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -287,7 +288,7 @@ private:
 public:
     RelationScheduleStep(std::set<const AstRelation*> computedRelations,
             std::set<const AstRelation*> expiredRelations, const bool isRecursive)
-            : computedRelations(computedRelations), expiredRelations(expiredRelations),
+            : computedRelations(std::move(computedRelations)), expiredRelations(std::move(expiredRelations)),
               isRecursive(isRecursive) {}
 
     const std::set<const AstRelation*>& computed() const {

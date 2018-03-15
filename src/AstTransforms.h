@@ -19,6 +19,7 @@
 #include "AstTranslationUnit.h"
 
 #include <functional>
+#include <utility>
 
 namespace souffle {
 
@@ -330,7 +331,7 @@ private:
 
 public:
     ConditionalTransformer(std::function<bool()> cond, std::unique_ptr<AstTransformer> transformer)
-            : condition(cond), transformer(std::move(transformer)) {}
+            : condition(std::move(cond)), transformer(std::move(transformer)) {}
 
     ConditionalTransformer(bool cond, std::unique_ptr<AstTransformer> transformer)
             : condition([=]() { return cond; }), transformer(std::move(transformer)) {}

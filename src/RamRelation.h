@@ -27,6 +27,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -78,15 +79,16 @@ public:
         this->istemp = istemp;
     }
 
-    RamRelation(const std::string& name, unsigned arity, std::vector<std::string> attributeNames = {},
-            std::vector<std::string> attributeTypeQualifiers = {}, const SymbolMask& mask = SymbolMask(0),
+    RamRelation(std::string name, unsigned arity, std::vector<std::string> attributeNames = {},
+            std::vector<std::string> attributeTypeQualifiers = {}, SymbolMask mask = SymbolMask(0),
             const bool input = false, const bool computed = false, const bool output = false,
             const bool btree = false, const bool rbtset = false, const bool hashset = false,
             const bool brie = false, const bool eqrel = false, const bool istemp = false)
-            : RamNode(RN_Relation), name(name), arity(arity), attributeNames(attributeNames),
-              attributeTypeQualifiers(attributeTypeQualifiers), mask(mask), input(input), output(output),
-              computed(computed), btree(btree), rbtset(rbtset), hashset(hashset), brie(brie), eqrel(eqrel),
-              istemp(istemp) {
+            : RamNode(RN_Relation), name(std::move(name)), arity(arity),
+              attributeNames(std::move(attributeNames)),
+              attributeTypeQualifiers(std::move(attributeTypeQualifiers)), mask(std::move(mask)),
+              input(input), output(output), computed(computed), btree(btree), rbtset(rbtset),
+              hashset(hashset), brie(brie), eqrel(eqrel), istemp(istemp) {
         assert(this->attributeNames.size() == arity || this->attributeNames.empty());
         assert(this->attributeTypeQualifiers.size() == arity || this->attributeTypeQualifiers.empty());
     }
@@ -219,7 +221,7 @@ protected:
     std::string name;
 
 public:
-    RamRelationRef(const std::string& n) : RamNode(RN_RelationRef), name(n) {}
+    RamRelationRef(std::string n) : RamNode(RN_RelationRef), name(std::move(n)) {}
 
     /** Get name */
     const std::string& getName() const {

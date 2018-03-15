@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <string>
+#include <utility>
 
 template <typename T>
 class Cell : public CellInterface {
@@ -46,7 +47,7 @@ template <>
 class Cell<std::string> : public CellInterface {
 public:
     std::string val;
-    Cell(std::string value) : val(value){};
+    Cell(std::string value) : val(std::move(value)){};
     double getDoubVal() {
         std::cerr << "getting double on string cell\n";
         throw this;

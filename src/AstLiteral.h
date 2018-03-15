@@ -27,6 +27,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -67,7 +68,7 @@ protected:
     std::vector<std::unique_ptr<AstArgument>> arguments;
 
 public:
-    AstAtom(const AstRelationIdentifier& name = AstRelationIdentifier()) : name(name) {}
+    AstAtom(AstRelationIdentifier name = AstRelationIdentifier()) : name(std::move(name)) {}
 
     ~AstAtom() override = default;
 

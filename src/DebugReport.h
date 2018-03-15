@@ -21,6 +21,7 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -42,7 +43,8 @@ private:
 public:
     DebugReportSection(
             std::string id, std::string title, std::vector<DebugReportSection> subsections, std::string body)
-            : id(generateUniqueID(id)), title(title), subsections(subsections), body(body) {}
+            : id(generateUniqueID(id)), title(std::move(title)), subsections(std::move(subsections)),
+              body(std::move(body)) {}
 
     /**
      * Outputs the HTML code for the index to the given stream,

@@ -31,6 +31,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cassert>
@@ -497,8 +498,8 @@ class joined_sequence {
 
 public:
     /** A constructor setting up all fields of this class */
-    joined_sequence(const Iter& a, const Iter& b, const std::string& sep, const Printer& p)
-            : begin(a), end(b), sep(sep), p(p) {}
+    joined_sequence(const Iter& a, const Iter& b, std::string sep, Printer p)
+            : begin(a), end(b), sep(std::move(sep)), p(std::move(p)) {}
 
     /** The actual print method */
     friend std::ostream& operator<<(std::ostream& out, const joined_sequence& s) {

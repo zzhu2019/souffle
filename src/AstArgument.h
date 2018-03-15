@@ -30,6 +30,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace souffle {
 
@@ -63,7 +64,7 @@ protected:
     std::string name;
 
 public:
-    AstVariable(const std::string& n) : AstArgument(), name(n) {}
+    AstVariable(std::string n) : AstArgument(), name(std::move(n)) {}
 
     /** Updates this variable name */
     void setName(const std::string& name) {
@@ -607,8 +608,8 @@ class AstTypeCast : public AstArgument {
     std::string type;
 
 public:
-    AstTypeCast(std::unique_ptr<AstArgument> value, const std::string& type)
-            : value(std::move(value)), type(type) {}
+    AstTypeCast(std::unique_ptr<AstArgument> value, std::string type)
+            : value(std::move(value)), type(std::move(type)) {}
 
     void print(std::ostream& os) const override {
         os << *value << " as " << type;

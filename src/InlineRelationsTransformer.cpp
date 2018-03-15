@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "AstTransforms.h"
 #include "AstVisitor.h"
 
@@ -11,7 +13,7 @@ private:
 
 public:
     NullableVector() : valid(false) {}
-    NullableVector(std::vector<T> vector) : vector(vector), valid(true) {}
+    NullableVector(std::vector<T> vector) : vector(std::move(vector)), valid(true) {}
 
     bool isValid() const {
         return valid;
@@ -84,7 +86,7 @@ void nameInlinedUnderscores(AstProgram& program) {
         bool replaceUnderscores;
 
         M(std::set<AstRelationIdentifier> inlinedRelations, bool replaceUnderscores)
-                : inlinedRelations(inlinedRelations), replaceUnderscores(replaceUnderscores) {}
+                : inlinedRelations(std::move(inlinedRelations)), replaceUnderscores(replaceUnderscores) {}
 
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
             static int underscoreCount = 0;

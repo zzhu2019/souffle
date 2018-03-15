@@ -20,6 +20,7 @@
 #include "AstTransformer.h"
 
 #include <string>
+#include <utility>
 
 namespace souffle {
 
@@ -41,7 +42,7 @@ public:
 
     AstPragma() {}
 
-    AstPragma(const std::string& k, const std::string& v) : key(k), value(v) {}
+    AstPragma(std::string k, std::string v) : key(std::move(k)), value(std::move(v)) {}
 
     /** Obtains a list of all embedded child nodes */
     virtual std::vector<const AstNode*> getChildNodes() const {

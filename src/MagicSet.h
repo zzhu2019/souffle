@@ -20,6 +20,7 @@
 #include "AstVisitor.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -30,7 +31,7 @@ private:
 
 public:
     AdornedPredicate(AstRelationIdentifier name, std::string adornment)
-            : predicateName(name), adornment(adornment) {}
+            : predicateName(std::move(name)), adornment(std::move(adornment)) {}
 
     ~AdornedPredicate() {}
 
@@ -66,8 +67,8 @@ private:
 public:
     AdornedClause(AstClause* clause, std::string headAdornment, std::vector<std::string> bodyAdornment,
             std::vector<unsigned int> ordering)
-            : clause(clause), headAdornment(headAdornment), bodyAdornment(bodyAdornment), ordering(ordering) {
-    }
+            : clause(clause), headAdornment(std::move(headAdornment)),
+              bodyAdornment(std::move(bodyAdornment)), ordering(std::move(ordering)) {}
 
     AstClause* getClause() const {
         return clause;

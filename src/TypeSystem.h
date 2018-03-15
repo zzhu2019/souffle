@@ -25,6 +25,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -45,8 +46,8 @@ private:
     AstTypeIdentifier name;
 
 public:
-    Type(const TypeEnvironment& environment, const AstTypeIdentifier& name)
-            : environment(environment), name(name) {}
+    Type(const TypeEnvironment& environment, AstTypeIdentifier name)
+            : environment(environment), name(std::move(name)) {}
 
     Type(const Type& other) = delete;
 

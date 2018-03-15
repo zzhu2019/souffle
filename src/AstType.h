@@ -21,6 +21,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -120,7 +121,7 @@ class AstType : public AstNode {
 
 public:
     /** Creates a new type */
-    AstType(const AstTypeIdentifier& name = "") : name(name) {}
+    AstType(AstTypeIdentifier name = "") : name(std::move(name)) {}
 
     /** Obtains the name of this type */
     const AstTypeIdentifier& getName() const {

@@ -23,6 +23,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cassert>
@@ -331,7 +332,7 @@ protected:
      * Constructor adds factory to static singly-linked list
      * for registration.
      */
-    ProgramFactory(const std::string& name) : name(name) {
+    ProgramFactory(std::string name) : name(std::move(name)) {
         registerFactory(this);
     }
 

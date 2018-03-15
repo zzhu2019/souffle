@@ -22,6 +22,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cctype>
@@ -44,8 +45,8 @@ class AstAttribute : public AstNode {
     AstTypeIdentifier typeName;
 
 public:
-    AstAttribute(const std::string& n, const AstTypeIdentifier& t, const Type* /*type*/ = nullptr)
-            : name(n), typeName(t) {}
+    AstAttribute(std::string n, AstTypeIdentifier t, const Type* /*type*/ = nullptr)
+            : name(std::move(n)), typeName(std::move(t)) {}
 
     const std::string& getAttributeName() const {
         return name;

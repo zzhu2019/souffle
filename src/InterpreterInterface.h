@@ -21,6 +21,7 @@
 #include "SouffleInterface.h"
 
 #include <array>
+#include <utility>
 
 namespace souffle {
 
@@ -126,8 +127,8 @@ protected:
 public:
     InterpreterRelInterface(InterpreterRelation& r, SymbolTable& s, std::string n, std::vector<std::string> t,
             std::vector<std::string> an, bool rInput, bool rOutput, uint32_t i)
-            : relation(r), symTable(s), name(n), types(t), attrNames(an), relInput(rInput),
-              relOutput(rOutput), id(i) {}
+            : relation(r), symTable(s), name(std::move(n)), types(std::move(t)), attrNames(std::move(an)),
+              relInput(rInput), relOutput(rOutput), id(i) {}
     virtual ~InterpreterRelInterface() {}
 
     /** Insert tuple */

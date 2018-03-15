@@ -21,6 +21,7 @@
 #include <iostream>
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -225,7 +226,7 @@ std::shared_ptr<Constraint<Var>> sub(const Var& a, const Var& b, const std::stri
         Var a, b;
         std::string symbol;
 
-        Sub(const Var& a, const Var& b, const std::string& symbol) : a(a), b(b), symbol(symbol) {}
+        Sub(Var a, Var b, std::string symbol) : a(std::move(a)), b(std::move(b)), symbol(std::move(symbol)) {}
 
         bool update(Assignment<Var>& ass) const override {
             typename Var::property_space::meet_assign_op_type meet_assign;
@@ -255,7 +256,7 @@ std::shared_ptr<Constraint<Var>> sub(const Val& a, const Var& b, const std::stri
         Var b;
         std::string symbol;
 
-        Sub(const Val& a, const Var& b, const std::string& symbol) : a(a), b(b), symbol(symbol) {}
+        Sub(const Val& a, const Var& b, std::string symbol) : a(a), b(b), symbol(std::move(symbol)) {}
 
         virtual bool update(Assignment<Var>& ass) const {
             typename Var::property_space::meet_assign_op_type meet_assign;

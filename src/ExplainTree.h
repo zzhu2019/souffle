@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -82,7 +83,7 @@ protected:
     int ypos;         // y-position of text
 
 public:
-    TreeNode(const std::string& t = "") : txt(t), width(0), height(0), xpos(0), ypos(0) {}
+    TreeNode(std::string t = "") : txt(std::move(t)), width(0), height(0), xpos(0), ypos(0) {}
     virtual ~TreeNode() {}
 
     // get width
@@ -113,8 +114,8 @@ private:
     std::string label;
 
 public:
-    InnerNode(const std::string& nodeText = "", const std::string& label = "")
-            : TreeNode(nodeText), label(label) {}
+    InnerNode(const std::string& nodeText = "", std::string label = "")
+            : TreeNode(nodeText), label(std::move(label)) {}
 
     // add child to node
     void add_child(std::unique_ptr<TreeNode> child) {

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "BTree.h"
 #include "RamTypes.h"
 #include "Util.h"
@@ -34,8 +36,8 @@ class InterpreterIndexOrder {
 public:
     // -- constructors --
 
-    InterpreterIndexOrder(const std::vector<unsigned char>& order = std::vector<unsigned char>())
-            : columns(order) {}
+    InterpreterIndexOrder(std::vector<unsigned char> order = std::vector<unsigned char>())
+            : columns(std::move(order)) {}
 
     InterpreterIndexOrder(const InterpreterIndexOrder&) = default;
     InterpreterIndexOrder(InterpreterIndexOrder&&) = default;
@@ -180,7 +182,7 @@ private:
     index_set set;                         // set storing tuple pointers of table
 
 public:
-    InterpreterIndex(const InterpreterIndexOrder& order) : theOrder(order), set(comparator(theOrder)) {}
+    InterpreterIndex(InterpreterIndexOrder order) : theOrder(std::move(order)), set(comparator(theOrder)) {}
 
     const InterpreterIndexOrder& order() const {
         return theOrder;

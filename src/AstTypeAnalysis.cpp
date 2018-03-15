@@ -15,12 +15,14 @@
  ***********************************************************************/
 
 #include "AstTypeAnalysis.h"
+
 #include "AstUtils.h"
 #include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
 #include "Constraints.h"
 #include "Global.h"
 #include "Util.h"
+#include <utility>
 
 namespace souffle {
 
@@ -182,7 +184,7 @@ typedef std::shared_ptr<Constraint<BoolDisjunctVar>> BoolDisjunctConstraint;
 BoolDisjunctConstraint isTrue(const BoolDisjunctVar& var) {
     struct C : public Constraint<BoolDisjunctVar> {
         BoolDisjunctVar var;
-        C(const BoolDisjunctVar& var) : var(var) {}
+        C(BoolDisjunctVar var) : var(std::move(var)) {}
         bool update(Assignment<BoolDisjunctVar>& ass) const override {
             auto res = !ass[var];
             ass[var] = true;
@@ -218,7 +220,8 @@ BoolDisjunctConstraint imply(const std::vector<BoolDisjunctVar>& vars, const Boo
         BoolDisjunctVar res;
         std::vector<BoolDisjunctVar> vars;
 
-        C(const BoolDisjunctVar& res, const std::vector<BoolDisjunctVar>& vars) : res(res), vars(vars) {}
+        C(BoolDisjunctVar res, std::vector<BoolDisjunctVar> vars)
+                : res(std::move(res)), vars(std::move(vars)) {}
 
         bool update(Assignment<BoolDisjunctVar>& ass) const override {
             bool r = ass[res];
@@ -487,7 +490,7 @@ TypeConstraint isSubtypeOf(const TypeVar& a, const Type& b) {
         TypeVar a;
         const Type& b;
 
-        C(const TypeVar& a, const Type& b) : a(a), b(b) {}
+        C(TypeVar a, const Type& b) : a(std::move(a)), b(b) {}
 
         bool update(Assignment<TypeVar>& ass) const override {
             // get current value of variable a
@@ -530,7 +533,7 @@ TypeConstraint isSupertypeOf(const TypeVar& a, const Type& b) {
         const Type& b;
         mutable bool repeat;
 
-        C(const TypeVar& a, const Type& b) : a(a), b(b), repeat(true) {}
+        C(TypeVar a, const Type& b) : a(std::move(a)), b(b), repeat(true) {}
 
         bool update(Assignment<TypeVar>& ass) const override {
             // don't continually update super type constraints
@@ -627,7 +630,7 @@ TypeConstraint isSubtypeOfComponent(const TypeVar& a, const TypeVar& b, int inde
         TypeVar b;
         unsigned index;
 
-        C(const TypeVar& a, const TypeVar& b, int index) : a(a), b(b), index(index) {}
+        C(TypeVar a, TypeVar b, int index) : a(std::move(a)), b(std::move(b)), index(index) {}
 
         bool update(Assignment<TypeVar>& ass) const override {
             // get list of types for b

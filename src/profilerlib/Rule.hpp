@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <utility>
 
 /*
  * Class to hold information about souffle Rule profile information
@@ -29,10 +30,10 @@ private:
     int version = 0;
 
 public:
-    Rule(std::string name, std::string id) : name(name), identifier(id) {}
+    Rule(std::string name, std::string id) : name(std::move(name)), identifier(std::move(id)) {}
 
     Rule(std::string name, int version, std::string id)
-            : name(name), identifier(id), recursive(true), version(version) {}
+            : name(std::move(name)), identifier(std::move(id)), recursive(true), version(version) {}
 
     inline std::string getId() {
         return identifier;

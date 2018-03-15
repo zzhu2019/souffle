@@ -27,6 +27,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -737,8 +738,8 @@ protected:
     std::string message;
 
 public:
-    RamLogTimer(std::unique_ptr<RamStatement> stmt, const std::string& msg)
-            : RamStatement(RN_LogTimer), statement(std::move(stmt)), message(msg) {
+    RamLogTimer(std::unique_ptr<RamStatement> stmt, std::string msg)
+            : RamStatement(RN_LogTimer), statement(std::move(stmt)), message(std::move(msg)) {
         ASSERT(statement);
     }
 
@@ -800,8 +801,8 @@ protected:
     std::string message;
 
 public:
-    RamDebugInfo(std::unique_ptr<RamStatement> stmt, const std::string& msg)
-            : RamStatement(RN_DebugInfo), statement(std::move(stmt)), message(msg) {
+    RamDebugInfo(std::unique_ptr<RamStatement> stmt, std::string msg)
+            : RamStatement(RN_DebugInfo), statement(std::move(stmt)), message(std::move(msg)) {
         ASSERT(statement);
     }
 
@@ -860,8 +861,8 @@ protected:
     std::string message;
 
 public:
-    RamLogSize(std::unique_ptr<RamRelation> rel, const std::string& msg)
-            : RamRelationStatement(RN_LogSize, std::move(rel)), message(msg) {}
+    RamLogSize(std::unique_ptr<RamRelation> rel, std::string msg)
+            : RamRelationStatement(RN_LogSize, std::move(rel)), message(std::move(msg)) {}
 
     /** Get logging message */
     const std::string& getMessage() const {
