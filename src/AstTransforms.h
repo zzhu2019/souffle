@@ -298,7 +298,7 @@ public:
 
     void setDebugReport() override {
         for (auto& i : pipeline) {
-            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(i.get())) {
+            if (auto* mt = dynamic_cast<MetaTransformer*>(i.get())) {
                 mt->setDebugReport();
             } else {
                 i = std::make_unique<DebugReporter>(std::move(i));
@@ -309,7 +309,7 @@ public:
     void setVerbosity(bool verbose) override {
         this->verbose = verbose;
         for (auto& cur : pipeline) {
-            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(cur.get())) {
+            if (auto* mt = dynamic_cast<MetaTransformer*>(cur.get())) {
                 mt->setVerbosity(verbose);
             }
         }
@@ -337,7 +337,7 @@ public:
             : condition([=]() { return cond; }), transformer(std::move(transformer)) {}
 
     void setDebugReport() override {
-        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
+        if (auto* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
             mt->setDebugReport();
         } else {
             transformer = std::make_unique<DebugReporter>(std::move(transformer));
@@ -346,7 +346,7 @@ public:
 
     void setVerbosity(bool verbose) override {
         this->verbose = verbose;
-        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
+        if (auto* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
             mt->setVerbosity(verbose);
         }
     }

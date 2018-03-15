@@ -43,9 +43,9 @@ static std::string toBase64(std::string data) {
         tmp.push_back(0);
     }
     for (unsigned int i = 0; i < tmp.size(); i += 3) {
-        unsigned char c1 = static_cast<unsigned char>(tmp[i]);
-        unsigned char c2 = static_cast<unsigned char>(tmp[i + 1]);
-        unsigned char c3 = static_cast<unsigned char>(tmp[i + 2]);
+        auto c1 = static_cast<unsigned char>(tmp[i]);
+        auto c2 = static_cast<unsigned char>(tmp[i + 1]);
+        auto c3 = static_cast<unsigned char>(tmp[i + 2]);
         unsigned char index1 = c1 >> 2;
         unsigned char index2 = ((c1 & 0x03) << 4) | (c2 >> 4);
         unsigned char index3 = ((c2 & 0x0F) << 2) | (c3 >> 6);

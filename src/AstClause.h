@@ -107,7 +107,7 @@ protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
         assert(nullptr != dynamic_cast<const AstExecutionOrder*>(&node));
-        const AstExecutionOrder& other = static_cast<const AstExecutionOrder&>(node);
+        const auto& other = static_cast<const AstExecutionOrder&>(node);
         return order == other.order;
     }
 };
@@ -211,7 +211,7 @@ protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
         assert(nullptr != dynamic_cast<const AstExecutionPlan*>(&node));
-        const AstExecutionPlan& other = static_cast<const AstExecutionPlan&>(node);
+        const auto& other = static_cast<const AstExecutionPlan&>(node);
         if (maxVersion != other.maxVersion) {
             return false;
         }
@@ -321,7 +321,7 @@ public:
     std::vector<AstBinaryConstraint*> getBinaryConstraints() const {
         std::vector<AstBinaryConstraint*> result;
         for (auto& constraint : constraints) {
-            if (AstBinaryConstraint* br = dynamic_cast<AstBinaryConstraint*>(constraint.get())) {
+            if (auto* br = dynamic_cast<AstBinaryConstraint*>(constraint.get())) {
                 result.push_back(br);
             }
         }
@@ -422,7 +422,7 @@ public:
 
     /** clone head generates a new clause with the same head but empty body */
     AstClause* cloneHead() const {
-        AstClause* clone = new AstClause();
+        auto* clone = new AstClause();
         clone->setSrcLoc(getSrcLoc());
         clone->setHead(std::unique_ptr<AstAtom>(getHead()->clone()));
         if (getExecutionPlan()) {
@@ -451,7 +451,7 @@ protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
         assert(nullptr != dynamic_cast<const AstClause*>(&node));
-        const AstClause& other = static_cast<const AstClause&>(node);
+        const auto& other = static_cast<const AstClause&>(node);
         return *head == *other.head && equal_targets(atoms, other.atoms) &&
                equal_targets(negations, other.negations) && equal_targets(constraints, other.constraints);
     }

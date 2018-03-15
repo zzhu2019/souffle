@@ -85,10 +85,10 @@ std::vector<AstClause*> RuleBody::toClauseBodies() const {
             // negate if necessary
             if (lit.negated) {
                 // negate
-                if (AstAtom* atom = dynamic_cast<AstAtom*>(base)) {
+                if (auto* atom = dynamic_cast<AstAtom*>(base)) {
                     base = new AstNegation(std::unique_ptr<AstAtom>(atom));
                     base->setSrcLoc(atom->getSrcLoc());
-                } else if (AstConstraint* cstr = dynamic_cast<AstConstraint*>(base)) {
+                } else if (auto* cstr = dynamic_cast<AstConstraint*>(base)) {
                     cstr->negate();
                 }
             }

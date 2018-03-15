@@ -276,7 +276,7 @@ struct LambdaRamVisitor : public RamVisitor<void> {
     std::function<R(const N&)> lambda;
     LambdaRamVisitor(std::function<R(const N&)> lambda) : lambda(std::move(lambda)) {}
     void visit(const RamNode& node) override {
-        if (const N* n = dynamic_cast<const N*>(&node)) {
+        if (const auto* n = dynamic_cast<const N*>(&node)) {
             lambda(*n);
         }
     }

@@ -381,7 +381,7 @@ private:
             }
 
             // copy child nodes recursively
-            inner_node* ires = (inner_node*)res;
+            auto* ires = (inner_node*)res;
             for (size_type i = 0; i <= this->numElements; ++i) {
                 ires->children[i] = this->getChild(i)->clone();
                 ires->children[i]->parent = res;
@@ -548,7 +548,7 @@ private:
             // move child pointers
             if (this->inner) {
                 // move pointers to sibling
-                inner_node* other = static_cast<inner_node*>(sibling);
+                auto* other = static_cast<inner_node*>(sibling);
                 for (unsigned i = split_point + 1, j = 0; i <= maxKeys; ++i, ++j) {
                     other->children[j] = getChildren()[i];
                     other->children[j]->parent = other;
@@ -630,8 +630,8 @@ private:
 
                     // .. and children if necessary
                     if (this->isInner()) {
-                        inner_node* ileft = static_cast<inner_node*>(left);
-                        inner_node* iright = static_cast<inner_node*>(this);
+                        auto* ileft = static_cast<inner_node*>(left);
+                        auto* iright = static_cast<inner_node*>(this);
 
                         // move children
                         for (size_type i = 0; i < num; ++i) {
@@ -697,7 +697,7 @@ private:
                 assert(*root == this);
 
                 // create a new root node
-                inner_node* new_root = new inner_node();
+                auto* new_root = new inner_node();
                 new_root->numElements = 1;
                 new_root->keys[0] = keys[this->numElements];
 

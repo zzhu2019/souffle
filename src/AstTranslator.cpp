@@ -384,35 +384,35 @@ std::unique_ptr<RamValue> translateValue(const AstArgument* arg, const ValueInde
         return val;
     }
 
-    if (const AstVariable* var = dynamic_cast<const AstVariable*>(arg)) {
+    if (const auto* var = dynamic_cast<const AstVariable*>(arg)) {
         ASSERT(index.isDefined(*var) && "variable not grounded");
         const Location& loc = index.getDefinitionPoint(*var);
         val = std::make_unique<RamElementAccess>(loc.level, loc.component, loc.name);
     } else if (dynamic_cast<const AstUnnamedVariable*>(arg)) {
         return nullptr;  // utilised to identify _ values
-    } else if (const AstConstant* c = dynamic_cast<const AstConstant*>(arg)) {
+    } else if (const auto* c = dynamic_cast<const AstConstant*>(arg)) {
         val = std::make_unique<RamNumber>(c->getIndex());
-    } else if (const AstUnaryFunctor* uf = dynamic_cast<const AstUnaryFunctor*>(arg)) {
+    } else if (const auto* uf = dynamic_cast<const AstUnaryFunctor*>(arg)) {
         val = std::make_unique<RamUnaryOperator>(uf->getFunction(), translateValue(uf->getOperand(), index));
-    } else if (const AstBinaryFunctor* bf = dynamic_cast<const AstBinaryFunctor*>(arg)) {
+    } else if (const auto* bf = dynamic_cast<const AstBinaryFunctor*>(arg)) {
         val = std::make_unique<RamBinaryOperator>(
                 bf->getFunction(), translateValue(bf->getLHS(), index), translateValue(bf->getRHS(), index));
-    } else if (const AstTernaryFunctor* tf = dynamic_cast<const AstTernaryFunctor*>(arg)) {
+    } else if (const auto* tf = dynamic_cast<const AstTernaryFunctor*>(arg)) {
         val = std::make_unique<RamTernaryOperator>(tf->getFunction(), translateValue(tf->getArg(0), index),
                 translateValue(tf->getArg(1), index), translateValue(tf->getArg(2), index));
     } else if (dynamic_cast<const AstCounter*>(arg)) {
         val = std::make_unique<RamAutoIncrement>();
-    } else if (const AstRecordInit* init = dynamic_cast<const AstRecordInit*>(arg)) {
+    } else if (const auto* init = dynamic_cast<const AstRecordInit*>(arg)) {
         std::vector<std::unique_ptr<RamValue>> values;
         for (const auto& cur : init->getArguments()) {
             values.push_back(translateValue(cur, index));
         }
         val = std::make_unique<RamPack>(std::move(values));
-    } else if (const AstAggregator* agg = dynamic_cast<const AstAggregator*>(arg)) {
+    } else if (const auto* agg = dynamic_cast<const AstAggregator*>(arg)) {
         // here we look up the location the aggregation result gets bound
         auto loc = index.getAggregatorLocation(*agg);
         val = std::make_unique<RamElementAccess>(loc.level, loc.component, loc.name);
-    } else if (const AstSubroutineArgument* subArg = dynamic_cast<const AstSubroutineArgument*>(arg)) {
+    } else if (const auto* subArg = dynamic_cast<const AstSubroutineArgument*>(arg)) {
         val = std::make_unique<RamArgument>(subArg->getNumber());
     } else {
         std::cout << "Unsupported node type of " << arg << ": " << typeid(*arg).name() << "\n";
@@ -571,7 +571,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
         assert(nullptr != dynamic_cast<const AstAtom*>(cur.getBodyLiterals()[0]));
         const AstAtom& atom = static_cast<const AstAtom&>(*cur.getBodyLiterals()[0]);
         for (size_t pos = 0; pos < atom.getArguments().size(); ++pos) {
-            if (const AstVariable* var = dynamic_cast<const AstVariable*>(atom.getArgument(pos))) {
+            if (const auto* var = dynamic_cast<const AstVariable*>(atom.getArgument(pos))) {
                 valueIndex.addVarReference(*var, aggLoc, (int)pos, getRelation(&atom)->getArg(pos));
             }
         };
@@ -585,7 +585,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
     // begin with projection
     std::unique_ptr<RamOperation> op;
     if (ret) {
-        RamReturn* returnValue = new RamReturn(level);
+        auto* returnValue = new RamReturn(level);
 
         // get all values in the body
         for (AstLiteral* lit : clause.getBodyLiterals()) {
@@ -678,7 +678,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
 
         // add constant constraints
         for (size_t pos = 0; pos < atom->argSize(); ++pos) {
-            if (AstConstant* c = dynamic_cast<AstConstant*>(atom->getArgument(pos))) {
+            if (auto* c = dynamic_cast<AstConstant*>(atom->getArgument(pos))) {
                 op->addCondition(std::make_unique<RamBinaryRelation>(BinaryConstraintOp::EQ,
                         std::make_unique<RamElementAccess>(level, pos, getRelation(atom)->getArg(pos)),
                         std::make_unique<RamNumber>(c->getIndex())));
@@ -695,7 +695,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
         // get current nesting level
         auto level = op_nesting.size();
 
-        if (const AstAtom* atom = dynamic_cast<const AstAtom*>(cur)) {
+        if (const auto* atom = dynamic_cast<const AstAtom*>(cur)) {
             // find out whether a "search" or "if" should be issued
             bool isExistCheck = !valueIndex.isSomethingDefinedOn(level);
             for (size_t pos = 0; pos < atom->argSize(); ++pos) {
@@ -709,11 +709,11 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
 
             // add constraints
             for (size_t pos = 0; pos < atom->argSize(); ++pos) {
-                if (AstConstant* c = dynamic_cast<AstConstant*>(atom->getArgument(pos))) {
+                if (auto* c = dynamic_cast<AstConstant*>(atom->getArgument(pos))) {
                     op->addCondition(std::make_unique<RamBinaryRelation>(BinaryConstraintOp::EQ,
                             std::make_unique<RamElementAccess>(level, pos, getRelation(atom)->getArg(pos)),
                             std::make_unique<RamNumber>(c->getIndex())));
-                } else if (AstAggregator* agg = dynamic_cast<AstAggregator*>(atom->getArgument(pos))) {
+                } else if (auto* agg = dynamic_cast<AstAggregator*>(atom->getArgument(pos))) {
                     auto loc = valueIndex.getAggregatorLocation(*agg);
                     op->addCondition(std::make_unique<RamBinaryRelation>(BinaryConstraintOp::EQ,
                             std::make_unique<RamElementAccess>(level, pos, getRelation(atom)->getArg(pos)),
@@ -722,7 +722,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             }
 
             // TODO: support constants in nested records!
-        } else if (const AstRecordInit* rec = dynamic_cast<const AstRecordInit*>(cur)) {
+        } else if (const auto* rec = dynamic_cast<const AstRecordInit*>(cur)) {
             // add an unpack level
             const Location& loc = valueIndex.getDefinitionPoint(*rec);
             op = std::make_unique<RamLookup>(
@@ -1236,7 +1236,7 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
     const TypeEnvironment& typeEnv =
             translationUnit.getAnalysis<TypeEnvironmentAnalysis>()->getTypeEnvironment();
 
-    RecursiveClauses* recursiveClauses = translationUnit.getAnalysis<RecursiveClauses>();
+    auto* recursiveClauses = translationUnit.getAnalysis<RecursiveClauses>();
 
     /* start with an empty sequence */
     std::unique_ptr<RamStatement> res = std::make_unique<RamSequence>();

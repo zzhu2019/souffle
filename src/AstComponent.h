@@ -99,7 +99,7 @@ public:
 protected:
     bool equal(const AstNode& node) const override {
         assert(nullptr != dynamic_cast<const AstComponentType*>(&node));
-        const AstComponentType& other = static_cast<const AstComponentType&>(node);
+        const auto& other = static_cast<const AstComponentType&>(node);
         return name == other.name && typeParams == other.typeParams;
     }
 };
@@ -168,7 +168,7 @@ protected:
     /** An internal function to determine equality to another node */
     bool equal(const AstNode& node) const override {
         assert(nullptr != dynamic_cast<const AstComponentInit*>(&node));
-        const AstComponentInit& other = static_cast<const AstComponentInit&>(node);
+        const auto& other = static_cast<const AstComponentInit&>(node);
         return instanceName == other.instanceName && componentType == other.componentType;
     }
 };
@@ -316,7 +316,7 @@ public:
 
     /** Requests an independent, deep copy of this node */
     AstComponent* clone() const override {
-        AstComponent* res = new AstComponent();
+        auto* res = new AstComponent();
         res->setComponentType(std::unique_ptr<AstComponentType>(type->clone()));
 
         for (const auto& cur : baseComponents) {
@@ -444,7 +444,7 @@ protected:
     /** An internal function to determine equality to another node */
     bool equal(const AstNode& node) const override {
         assert(nullptr != dynamic_cast<const AstComponent*>(&node));
-        const AstComponent& other = static_cast<const AstComponent&>(node);
+        const auto& other = static_cast<const AstComponent&>(node);
 
         // compare all fields
         return type == other.type && baseComponents == other.baseComponents &&

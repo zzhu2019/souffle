@@ -401,7 +401,7 @@ bool ComponentInstantiationTransformer::transform(AstTranslationUnit& translatio
 
     AstProgram& program = *translationUnit.getProgram();
 
-    ComponentLookup* componentLookup = translationUnit.getAnalysis<ComponentLookup>();
+    auto* componentLookup = translationUnit.getAnalysis<ComponentLookup>();
 
     for (const auto& cur : program.instantiations) {
         std::vector<std::unique_ptr<AstClause>> orphans;

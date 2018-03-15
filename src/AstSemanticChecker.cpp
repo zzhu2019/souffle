@@ -37,9 +37,9 @@ class AstTranslationUnit;
 bool AstSemanticChecker::transform(AstTranslationUnit& translationUnit) {
     const TypeEnvironment& typeEnv =
             translationUnit.getAnalysis<TypeEnvironmentAnalysis>()->getTypeEnvironment();
-    TypeAnalysis* typeAnalysis = translationUnit.getAnalysis<TypeAnalysis>();
-    PrecedenceGraph* precedenceGraph = translationUnit.getAnalysis<PrecedenceGraph>();
-    RecursiveClauses* recursiveClauses = translationUnit.getAnalysis<RecursiveClauses>();
+    auto* typeAnalysis = translationUnit.getAnalysis<TypeAnalysis>();
+    auto* precedenceGraph = translationUnit.getAnalysis<PrecedenceGraph>();
+    auto* recursiveClauses = translationUnit.getAnalysis<RecursiveClauses>();
     checkProgram(translationUnit.getErrorReport(), *translationUnit.getProgram(), typeEnv, *typeAnalysis,
             *precedenceGraph, *recursiveClauses);
     return false;
@@ -331,17 +331,17 @@ static bool hasUnnamedVariable(const AstArgument* arg) {
     if (dynamic_cast<const AstCounter*>(arg)) {
         return false;
     }
-    if (const AstUnaryFunctor* uf = dynamic_cast<const AstUnaryFunctor*>(arg)) {
+    if (const auto* uf = dynamic_cast<const AstUnaryFunctor*>(arg)) {
         return hasUnnamedVariable(uf->getOperand());
     }
-    if (const AstBinaryFunctor* bf = dynamic_cast<const AstBinaryFunctor*>(arg)) {
+    if (const auto* bf = dynamic_cast<const AstBinaryFunctor*>(arg)) {
         return hasUnnamedVariable(bf->getLHS()) || hasUnnamedVariable(bf->getRHS());
     }
-    if (const AstTernaryFunctor* tf = dynamic_cast<const AstTernaryFunctor*>(arg)) {
+    if (const auto* tf = dynamic_cast<const AstTernaryFunctor*>(arg)) {
         return hasUnnamedVariable(tf->getArg(0)) || hasUnnamedVariable(tf->getArg(1)) ||
                hasUnnamedVariable(tf->getArg(2));
     }
-    if (const AstRecordInit* ri = dynamic_cast<const AstRecordInit*>(arg)) {
+    if (const auto* ri = dynamic_cast<const AstRecordInit*>(arg)) {
         return any_of(ri->getArguments(), (bool (*)(const AstArgument*))hasUnnamedVariable);
     }
     if (dynamic_cast<const AstAggregator*>(arg)) {
@@ -353,17 +353,17 @@ static bool hasUnnamedVariable(const AstArgument* arg) {
 }
 
 static bool hasUnnamedVariable(const AstLiteral* lit) {
-    if (const AstAtom* at = dynamic_cast<const AstAtom*>(lit)) {
+    if (const auto* at = dynamic_cast<const AstAtom*>(lit)) {
         return any_of(at->getArguments(), (bool (*)(const AstArgument*))hasUnnamedVariable);
     }
-    if (const AstNegation* neg = dynamic_cast<const AstNegation*>(lit)) {
+    if (const auto* neg = dynamic_cast<const AstNegation*>(lit)) {
         return hasUnnamedVariable(neg->getAtom());
     }
     if (dynamic_cast<const AstConstraint*>(lit)) {
         if (dynamic_cast<const AstBooleanConstraint*>(lit)) {
             return false;
         }
-        if (const AstBinaryConstraint* br = dynamic_cast<const AstBinaryConstraint*>(lit)) {
+        if (const auto* br = dynamic_cast<const AstBinaryConstraint*>(lit)) {
             return hasUnnamedVariable(br->getLHS()) || hasUnnamedVariable(br->getRHS());
         }
     }
@@ -379,7 +379,7 @@ void AstSemanticChecker::checkLiteral(
         checkAtom(report, program, *atom);
     }
 
-    if (const AstBinaryConstraint* constraint = dynamic_cast<const AstBinaryConstraint*>(&literal)) {
+    if (const auto* constraint = dynamic_cast<const AstBinaryConstraint*>(&literal)) {
         checkArgument(report, program, *constraint->getLHS());
         checkArgument(report, program, *constraint->getRHS());
     }
@@ -408,14 +408,14 @@ void AstSemanticChecker::checkAggregator(
 
 void AstSemanticChecker::checkArgument(
         ErrorReport& report, const AstProgram& program, const AstArgument& arg) {
-    if (const AstAggregator* agg = dynamic_cast<const AstAggregator*>(&arg)) {
+    if (const auto* agg = dynamic_cast<const AstAggregator*>(&arg)) {
         checkAggregator(report, program, *agg);
-    } else if (const AstUnaryFunctor* unaryFunc = dynamic_cast<const AstUnaryFunctor*>(&arg)) {
+    } else if (const auto* unaryFunc = dynamic_cast<const AstUnaryFunctor*>(&arg)) {
         checkArgument(report, program, *unaryFunc->getOperand());
-    } else if (const AstBinaryFunctor* binFunc = dynamic_cast<const AstBinaryFunctor*>(&arg)) {
+    } else if (const auto* binFunc = dynamic_cast<const AstBinaryFunctor*>(&arg)) {
         checkArgument(report, program, *binFunc->getLHS());
         checkArgument(report, program, *binFunc->getRHS());
-    } else if (const AstTernaryFunctor* ternFunc = dynamic_cast<const AstTernaryFunctor*>(&arg)) {
+    } else if (const auto* ternFunc = dynamic_cast<const AstTernaryFunctor*>(&arg)) {
         checkArgument(report, program, *ternFunc->getArg(0));
         checkArgument(report, program, *ternFunc->getArg(1));
         checkArgument(report, program, *ternFunc->getArg(2));
@@ -426,14 +426,14 @@ static bool isConstantArithExpr(const AstArgument& argument) {
     if (dynamic_cast<const AstNumberConstant*>(&argument)) {
         return true;
     }
-    if (const AstUnaryFunctor* unOp = dynamic_cast<const AstUnaryFunctor*>(&argument)) {
+    if (const auto* unOp = dynamic_cast<const AstUnaryFunctor*>(&argument)) {
         return unOp->isNumerical() && isConstantArithExpr(*unOp->getOperand());
     }
-    if (const AstBinaryFunctor* binOp = dynamic_cast<const AstBinaryFunctor*>(&argument)) {
+    if (const auto* binOp = dynamic_cast<const AstBinaryFunctor*>(&argument)) {
         return binOp->isNumerical() && isConstantArithExpr(*binOp->getLHS()) &&
                isConstantArithExpr(*binOp->getRHS());
     }
-    if (const AstTernaryFunctor* ternOp = dynamic_cast<const AstTernaryFunctor*>(&argument)) {
+    if (const auto* ternOp = dynamic_cast<const AstTernaryFunctor*>(&argument)) {
         return ternOp->isNumerical() && isConstantArithExpr(*ternOp->getArg(0)) &&
                isConstantArithExpr(*ternOp->getArg(1)) && isConstantArithExpr(*ternOp->getArg(2));
     }
@@ -441,7 +441,7 @@ static bool isConstantArithExpr(const AstArgument& argument) {
 }
 
 void AstSemanticChecker::checkConstant(ErrorReport& report, const AstArgument& argument) {
-    if (const AstVariable* var = dynamic_cast<const AstVariable*>(&argument)) {
+    if (const auto* var = dynamic_cast<const AstVariable*>(&argument)) {
         report.addError("Variable " + var->getName() + " in fact", var->getSrcLoc());
     } else if (dynamic_cast<const AstUnnamedVariable*>(&argument)) {
         report.addError("Underscore in fact", argument.getSrcLoc());
@@ -680,9 +680,9 @@ void AstSemanticChecker::checkRecordType(
 }
 
 void AstSemanticChecker::checkType(ErrorReport& report, const AstProgram& program, const AstType& type) {
-    if (const AstUnionType* u = dynamic_cast<const AstUnionType*>(&type)) {
+    if (const auto* u = dynamic_cast<const AstUnionType*>(&type)) {
         checkUnionType(report, program, *u);
-    } else if (const AstRecordType* r = dynamic_cast<const AstRecordType*>(&type)) {
+    } else if (const auto* r = dynamic_cast<const AstRecordType*>(&type)) {
         checkRecordType(report, program, *r);
     }
 }
@@ -1171,8 +1171,8 @@ void AstSemanticChecker::checkNamespaces(ErrorReport& report, const AstProgram& 
 }
 
 bool AstExecutionPlanChecker::transform(AstTranslationUnit& translationUnit) {
-    RelationSchedule* relationSchedule = translationUnit.getAnalysis<RelationSchedule>();
-    RecursiveClauses* recursiveClauses = translationUnit.getAnalysis<RecursiveClauses>();
+    auto* relationSchedule = translationUnit.getAnalysis<RelationSchedule>();
+    auto* recursiveClauses = translationUnit.getAnalysis<RecursiveClauses>();
 
     for (const RelationScheduleStep& step : relationSchedule->schedule()) {
         const std::set<const AstRelation*>& scc = step.computed();

@@ -30,7 +30,7 @@ namespace souffle {
  */
 // TODO (#541): Check whether this helper function causes a memory leak
 inline RamDomain* convertTupleToNums(const tuple& t) {
-    RamDomain* newTuple = new RamDomain[t.size()];
+    auto* newTuple = new RamDomain[t.size()];
 
     for (size_t i = 0; i < t.size(); i++) {
         newTuple[i] = t[i];

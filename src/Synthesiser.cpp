@@ -290,7 +290,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
             // check whether loop nest can be parallelized
             bool parallel = false;
-            if (const RamScan* scan = dynamic_cast<const RamScan*>(&insert.getOperation())) {
+            if (const auto* scan = dynamic_cast<const RamScan*>(&insert.getOperation())) {
                 // if it is a full scan
                 if (scan->getRangeQueryColumns() == 0 && !scan->isPureExistenceCheck()) {
                     // yes it can!
@@ -1170,7 +1170,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     // ---------------------------------------------------------------
     const SymbolTable& symTable = unit.getSymbolTable();
     const RamProgram& prog = unit.getP();
-    IndexSetAnalysis* idxAnalysis = unit.getAnalysis<IndexSetAnalysis>();
+    auto* idxAnalysis = unit.getAnalysis<IndexSetAnalysis>();
 
     // ---------------------------------------------------------------
     //                      Code Generation

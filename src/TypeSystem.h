@@ -322,7 +322,7 @@ public:
 
     template <typename T, typename... Args>
     T& createType(const identifier& name, const Args&... args) {
-        T* res = new T(*this, name, args...);
+        auto* res = new T(*this, name, args...);
         addType(*res);
         return *res;
     }

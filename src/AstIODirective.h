@@ -129,7 +129,7 @@ protected:
     /** An internal function to determine equality to another node */
     bool equal(const AstNode& node) const override {
         assert(nullptr != dynamic_cast<const AstIODirective*>(&node));
-        const AstIODirective& other = static_cast<const AstIODirective&>(node);
+        const auto& other = static_cast<const AstIODirective&>(node);
         return other.names == names && other.input == input && other.kvps == kvps;
     }
 

@@ -193,7 +193,7 @@ protected:
 
     /** determine if key a is a strict subset of key b*/
     static bool isStrictSubset(SearchColumns a, SearchColumns b) {
-        SearchColumns tt = static_cast<SearchColumns>(std::numeric_limits<SearchColumns>::max());
+        auto tt = static_cast<SearchColumns>(std::numeric_limits<SearchColumns>::max());
         return (~(a) | (b)) == tt && a != b;
     }
 

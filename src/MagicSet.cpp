@@ -123,7 +123,7 @@ bool isBoundComposite(const AstVariable* compositeVariable, std::set<std::string
 }
 
 bool isBoundArgument(AstArgument* arg, std::set<std::string> boundArgs, BindingStore& compositeBindings) {
-    if (AstVariable* var = dynamic_cast<AstVariable*>(arg)) {
+    if (auto* var = dynamic_cast<AstVariable*>(arg)) {
         std::string variableName = var->getName();
         if (hasPrefix(variableName, "+functor") || hasPrefix(variableName, "+record")) {
             if (isBoundComposite(var, boundArgs, compositeBindings)) {
@@ -224,7 +224,7 @@ void updateQualifier(AstRelation* originalRelation, AstRelation* newRelation) {
 
 // create a new relation with a given name based on a previous relation
 AstRelation* createNewRelation(AstRelation* original, AstRelationIdentifier newName) {
-    AstRelation* newRelation = new AstRelation();
+    auto* newRelation = new AstRelation();
     newRelation->setSrcLoc(nextSrcLoc(original->getSrcLoc()));
     newRelation->setName(newName);
 
@@ -621,7 +621,7 @@ BindingStore bindComposites(const AstProgram* program) {
         }
 
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-            if (AstFunctor* functor = dynamic_cast<AstFunctor*>(node.get())) {
+            if (auto* functor = dynamic_cast<AstFunctor*>(node.get())) {
                 // functor found
                 changeCount++;
 
@@ -640,7 +640,7 @@ BindingStore bindComposites(const AstProgram* program) {
 
                 // update functor to be the variable created
                 return std::move(newVariable);
-            } else if (AstRecordInit* record = dynamic_cast<AstRecordInit*>(node.get())) {
+            } else if (auto* record = dynamic_cast<AstRecordInit*>(node.get())) {
                 // record found
                 changeCount++;
 
@@ -946,7 +946,7 @@ void separateDBs(AstProgram* program) {
             }
 
             // add a rule to the old relation that relates it to the new relation
-            AstClause* newIdbClause = new AstClause();
+            auto* newIdbClause = new AstClause();
             newIdbClause->setSrcLoc(nextSrcLoc(relation->getSrcLoc()));
 
             // oldname(arg1...argn) :- newname(arg1...argn)
@@ -1006,7 +1006,7 @@ AstRelation* createMagicRelation(AstRelation* original, AstRelationIdentifier ma
     std::string adornment = extractAdornment(magicPredName);
 
     // create the relation
-    AstRelation* newMagicRelation = new AstRelation();
+    auto* newMagicRelation = new AstRelation();
     newMagicRelation->setName(magicPredName);
 
     // copy over (bound) attributes from the original relation
@@ -1025,7 +1025,7 @@ AstRelation* createMagicRelation(AstRelation* original, AstRelationIdentifier ma
 void replaceUnderscores(AstProgram* program) {
     struct M : public AstNodeMapper {
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-            if (AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+            if (auto* var = dynamic_cast<AstVariable*>(node.get())) {
                 if (hasPrefix(var->getName(), "+underscore")) {
                     return std::make_unique<AstUnnamedVariable>();
                 }
@@ -1060,7 +1060,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
     separateDBs(program);  // make EDB int IDB = empty
 
-    Adornment* adornment = translationUnit.getAnalysis<Adornment>();  // perform adornment
+    auto* adornment = translationUnit.getAnalysis<Adornment>();  // perform adornment
     const BindingStore& compositeBindings = adornment->getBindings();
 
     // edb/idb handling
@@ -1093,7 +1093,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
         // add a relation for the output query
         // mN_outputname_ff...f()
-        AstRelation* magicOutputRelation = new AstRelation();
+        auto* magicOutputRelation = new AstRelation();
         std::string frepeat = std::string(originalOutputRelation->getArity(), 'f');
         AstRelationIdentifier magicOutputName =
                 createMagicIdentifier(createAdornedIdentifier(outputQuery, frepeat), querynum);
@@ -1105,7 +1105,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
         // add an empty fact to the program
         // i.e. mN_outputname_ff...f().
-        AstClause* outputFact = new AstClause();
+        auto* outputFact = new AstClause();
         outputFact->setSrcLoc(nextSrcLoc(originalOutputRelation->getSrcLoc()));
         outputFact->setHead(std::make_unique<AstAtom>(magicOutputName));
         program->appendClause(std::unique_ptr<AstClause>(outputFact));
@@ -1136,7 +1136,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                 // also - update input directives to correctly use default fact file names
                 if (originalRelation->isInput()) {
                     IODirectives inputDirectives;  // to more easily work with the directive
-                    AstIODirective* newDirective = new AstIODirective();
+                    auto* newDirective = new AstIODirective();
                     inputDirectives.setRelationName(newRelName.getNames()[0]);
                     newDirective->addName(newRelName);
                     newDirective->setAsInput();
@@ -1178,7 +1178,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
             int atomsSeen = 0;
             for (AstLiteral* lit : newClause->getBodyLiterals()) {
                 if (dynamic_cast<AstAtom*>(lit)) {
-                    AstAtom* bodyAtom = dynamic_cast<AstAtom*>(lit);
+                    auto* bodyAtom = dynamic_cast<AstAtom*>(lit);
                     AstRelationIdentifier atomName = bodyAtom->getName();
                     // note that all atoms in the original clause were adorned,
                     // but only the IDB atom adornments should be added here
@@ -1207,7 +1207,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
                 // only care about atoms in the body
                 if (dynamic_cast<AstAtom*>(currentLiteral)) {
-                    AstAtom* atom = dynamic_cast<AstAtom*>(currentLiteral);
+                    auto* atom = dynamic_cast<AstAtom*>(currentLiteral);
                     AstRelationIdentifier atomName = atom->getName();
 
                     // only IDB atoms that are not being ignored matter
@@ -1219,7 +1219,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
 
                         // if the magic version does not exist, create it
                         if (program->getRelation(newAtomName) == nullptr) {
-                            AstRelation* magicRelation = new AstRelation();
+                            auto* magicRelation = new AstRelation();
                             magicRelation->setName(newAtomName);
 
                             // find out the original name of the relation (pre-adornment)
@@ -1246,7 +1246,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
                         }
 
                         // start setting up the magic rule
-                        AstClause* magicClause = new AstClause();
+                        auto* magicClause = new AstClause();
                         magicClause->setSrcLoc(nextSrcLoc(atom->getSrcLoc()));
 
                         // create the head of the magic rule
@@ -1449,7 +1449,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
             outputRelation->setName(oldName);
 
             // set as output relation
-            AstIODirective* newdir = new AstIODirective();
+            auto* newdir = new AstIODirective();
             if (addAsOutput.find(oldName) != addAsOutput.end()) {
                 newdir->setAsOutput();
             } else {
@@ -1476,7 +1476,7 @@ bool MagicSetTransformer::transform(AstTranslationUnit& translationUnit) {
         }
 
         // add the clause to the program
-        AstClause* referringClause = new AstClause();
+        auto* referringClause = new AstClause();
         referringClause->setSrcLoc(nextSrcLoc(outputRelation->getSrcLoc()));
         referringClause->setHead(std::unique_ptr<AstAtom>(headatom));
         referringClause->addToBody(std::unique_ptr<AstAtom>(bodyatom));

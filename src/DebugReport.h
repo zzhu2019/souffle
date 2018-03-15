@@ -124,7 +124,7 @@ public:
 
     void setVerbosity(bool verbose) override {
         this->verbose = verbose;
-        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(wrappedTransformer.get())) {
+        if (auto* mt = dynamic_cast<MetaTransformer*>(wrappedTransformer.get())) {
             mt->setVerbosity(verbose);
         }
     }

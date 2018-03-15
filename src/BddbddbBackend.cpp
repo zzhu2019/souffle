@@ -190,7 +190,7 @@ private:
         if (dynamic_cast<const AstUnaryFunctor*>(&fun)) {
             // binary functors are not supported
             throw UnsupportedConstructException("Unsupported function: " + toString(fun));
-        } else if (const AstBinaryFunctor* binary = dynamic_cast<const AstBinaryFunctor*>(&fun)) {
+        } else if (const auto* binary = dynamic_cast<const AstBinaryFunctor*>(&fun)) {
             visit(*binary->getLHS(), binding);
             binding << getSymbolForBinaryOp(binary->getFunction());
             visit(*binary->getRHS(), binding);

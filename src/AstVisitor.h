@@ -242,7 +242,7 @@ struct LambdaAstVisitor : public AstVisitor<void> {
     std::function<R(const N&)> lambda;
     LambdaAstVisitor(std::function<R(const N&)> lambda) : lambda(std::move(lambda)) {}
     void visit(const AstNode& node) override {
-        if (const N* n = dynamic_cast<const N*>(&node)) {
+        if (const auto* n = dynamic_cast<const N*>(&node)) {
             lambda(*n);
         }
     }

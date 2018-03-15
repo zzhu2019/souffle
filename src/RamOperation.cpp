@@ -55,16 +55,16 @@ namespace {
 
 /** get indexable element */
 std::unique_ptr<RamValue> getIndexElement(RamCondition* c, size_t& element, size_t level) {
-    if (RamBinaryRelation* binRelOp = dynamic_cast<RamBinaryRelation*>(c)) {
+    if (auto* binRelOp = dynamic_cast<RamBinaryRelation*>(c)) {
         if (binRelOp->getOperator() == BinaryConstraintOp::EQ) {
-            if (RamElementAccess* lhs = dynamic_cast<RamElementAccess*>(binRelOp->getLHS())) {
+            if (auto* lhs = dynamic_cast<RamElementAccess*>(binRelOp->getLHS())) {
                 RamValue* rhs = binRelOp->getRHS();
                 if (lhs->getLevel() == level && (rhs->isConstant() || rhs->getLevel() < level)) {
                     element = lhs->getElement();
                     return binRelOp->takeRHS();
                 }
             }
-            if (RamElementAccess* rhs = dynamic_cast<RamElementAccess*>(binRelOp->getRHS())) {
+            if (auto* rhs = dynamic_cast<RamElementAccess*>(binRelOp->getRHS())) {
                 RamValue* lhs = binRelOp->getLHS();
                 if (rhs->getLevel() == level && (lhs->isConstant() || lhs->getLevel() < level)) {
                     element = rhs->getElement();

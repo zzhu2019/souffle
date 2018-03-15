@@ -200,7 +200,7 @@ protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(nullptr != dynamic_cast<const RamRelation*>(&node));
-        const RamRelation& other = static_cast<const RamRelation&>(node);
+        const auto& other = static_cast<const RamRelation&>(node);
         return name == other.name && arity == other.arity && attributeNames == other.attributeNames &&
                attributeTypeQualifiers == other.attributeTypeQualifiers && mask == other.mask &&
                isInput() == other.isInput() && isOutput() == other.isOutput() &&
@@ -251,7 +251,7 @@ protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
         assert(nullptr != dynamic_cast<const RamRelation*>(&node));
-        const RamRelation& other = static_cast<const RamRelation&>(node);
+        const auto& other = static_cast<const RamRelation&>(node);
         return getName() == other.getName();
     }
 };

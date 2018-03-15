@@ -48,7 +48,7 @@ void MaxMatching::addEdge(SearchColumns u, SearchColumns v) {
 
 /** Get match */
 SearchColumns MaxMatching::getMatch(SearchColumns v) {
-    Matchings::iterator it = match.find(v);
+    auto it = match.find(v);
     if (it == match.end()) {
         return NIL;
     }
@@ -57,7 +57,7 @@ SearchColumns MaxMatching::getMatch(SearchColumns v) {
 
 /** Get Distance */
 int MaxMatching::getDistance(int v) {
-    Distance::iterator it = distance.find(v);
+    auto it = distance.find(v);
     if (it == distance.end()) {
         return INF;
     }
@@ -213,7 +213,7 @@ void IndexSet::solve() {
         SearchColumns initDelta = *(chain.begin());
         insertIndex(ids, initDelta);
 
-        for (Chain::iterator iit = chain.begin(); next(iit) != chain.end(); ++iit) {
+        for (auto iit = chain.begin(); next(iit) != chain.end(); ++iit) {
             SearchColumns delta = *(next(iit)) - *iit;
             insertIndex(ids, delta);
         }
@@ -243,7 +243,7 @@ IndexSet::Chain IndexSet::getChain(const SearchColumns umn, const MaxMatching::M
     // Assume : no circular mappings, i.e. a in A -> b in B -> ........ -> a in A is not allowed.
     // Given this, the loop will terminate
     while (true) {
-        MaxMatching::Matchings::const_iterator mit = match.find(toB(start));  // we start from B side
+        auto mit = match.find(toB(start));  // we start from B side
         chain.insert(start);
 
         if (mit == match.end()) {
@@ -295,13 +295,13 @@ const IndexSet::ChainOrderMap IndexSet::getChainsFromMatching(
 void IndexSetAnalysis::run(const RamTranslationUnit& translationUnit) {
     // visit all nodes to collect searches of each relation
     visitDepthFirst(translationUnit.getP(), [&](const RamNode& node) {
-        if (const RamScan* scan = dynamic_cast<const RamScan*>(&node)) {
+        if (const auto* scan = dynamic_cast<const RamScan*>(&node)) {
             IndexSet& indexes = getIndexes(scan->getRelation());
             indexes.addSearch(scan->getRangeQueryColumns());
-        } else if (const RamAggregate* agg = dynamic_cast<const RamAggregate*>(&node)) {
+        } else if (const auto* agg = dynamic_cast<const RamAggregate*>(&node)) {
             IndexSet& indexes = getIndexes(agg->getRelation());
             indexes.addSearch(agg->getRangeQueryColumns());
-        } else if (const RamNotExists* ne = dynamic_cast<const RamNotExists*>(&node)) {
+        } else if (const auto* ne = dynamic_cast<const RamNotExists*>(&node)) {
             IndexSet& indexes = getIndexes(ne->getRelation());
             indexes.addSearch(ne->getKey());
         }

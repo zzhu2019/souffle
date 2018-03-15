@@ -651,7 +651,7 @@ TypeConstraint isSubtypeOfComponent(const TypeVar& a, const TypeVar& b, int inde
                 if (!isRecordType(t)) {
                     continue;
                 }
-                const RecordType& rec = static_cast<const RecordType&>(t);
+                const auto& rec = static_cast<const RecordType&>(t);
 
                 // of proper size
                 if (rec.getFields().size() <= index) {
@@ -742,7 +742,7 @@ void TypeEnvironmentAnalysis::updateTypeEnvironment(const AstProgram& program) {
             // nothing to do here
         } else if (auto* t = dynamic_cast<const AstUnionType*>(cur)) {
             // get type as union type
-            UnionType* ut = dynamic_cast<UnionType*>(type);
+            auto* ut = dynamic_cast<UnionType*>(type);
             if (!ut) {
                 continue;  // support faulty input
             }
@@ -755,7 +755,7 @@ void TypeEnvironmentAnalysis::updateTypeEnvironment(const AstProgram& program) {
             }
         } else if (auto* t = dynamic_cast<const AstRecordType*>(cur)) {
             // get type as record type
-            RecordType* rt = dynamic_cast<RecordType*>(type);
+            auto* rt = dynamic_cast<RecordType*>(type);
             if (!rt) {
                 continue;  // support faulty input
             }
@@ -783,11 +783,11 @@ AstClause* createAnnotatedClause(
         TypeAnnotator(const std::map<const AstArgument*, TypeSet>& types) : types(types) {}
 
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-            if (AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+            if (auto* var = dynamic_cast<AstVariable*>(node.get())) {
                 std::stringstream newVarName;
                 newVarName << var->getName() << "&isin;" << types.find(var)->second;
                 return std::make_unique<AstVariable>(newVarName.str());
-            } else if (AstUnnamedVariable* var = dynamic_cast<AstUnnamedVariable*>(node.get())) {
+            } else if (auto* var = dynamic_cast<AstUnnamedVariable*>(node.get())) {
                 std::stringstream newVarName;
                 newVarName << "_"
                            << "&isin;" << types.find(var)->second;
@@ -838,7 +838,7 @@ AstClause* createAnnotatedClause(
 }
 
 void TypeAnalysis::run(const AstTranslationUnit& translationUnit) {
-    TypeEnvironmentAnalysis* typeEnvAnalysis = translationUnit.getAnalysis<TypeEnvironmentAnalysis>();
+    auto* typeEnvAnalysis = translationUnit.getAnalysis<TypeEnvironmentAnalysis>();
     for (const AstRelation* rel : translationUnit.getProgram()->getRelations()) {
         for (const AstClause* clause : rel->getClauses()) {
             // Perform the type analysis
