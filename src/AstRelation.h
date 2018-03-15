@@ -96,7 +96,7 @@ protected:
     std::vector<std::unique_ptr<AstIODirective>> ioDirectives;
 
 public:
-    AstRelation() {}
+    AstRelation() = default;
 
     ~AstRelation() override = default;
 

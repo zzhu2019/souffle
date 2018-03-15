@@ -49,7 +49,7 @@ protected:
             return id;
         }
         iterator_base(uint32_t arg_id) : id(arg_id) {}
-        virtual ~iterator_base() {}
+        virtual ~iterator_base() = default;
         virtual void operator++() = 0;
         virtual tuple& operator*() = 0;
         bool operator==(const iterator_base& o) const {
@@ -62,7 +62,7 @@ protected:
     };
 
 public:
-    virtual ~Relation() {}
+    virtual ~Relation() = default;
 
     // wrapper class for abstract iterator
     class iterator {
@@ -70,7 +70,7 @@ public:
         iterator_base* iter = nullptr;
 
     public:
-        iterator() {}
+        iterator() = default;
         iterator(iterator_base* arg) : iter(arg) {}
         ~iterator() {
             delete iter;
@@ -257,7 +257,7 @@ protected:
     }
 
 public:
-    virtual ~SouffleProgram() {}
+    virtual ~SouffleProgram() = default;
 
     // execute program, without any loads or stores
     virtual void run() {}
@@ -364,7 +364,7 @@ protected:
     virtual SouffleProgram* newInstance() = 0;
 
 public:
-    virtual ~ProgramFactory() {}
+    virtual ~ProgramFactory() = default;
 
     /**
      * Create instance

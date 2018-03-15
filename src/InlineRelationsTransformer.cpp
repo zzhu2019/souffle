@@ -12,7 +12,7 @@ private:
     bool valid = false;
 
 public:
-    NullableVector() {}
+    NullableVector() = default;
     NullableVector(std::vector<T> vector) : vector(std::move(vector)), valid(true) {}
 
     bool isValid() const {

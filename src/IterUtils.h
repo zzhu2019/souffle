@@ -93,7 +93,7 @@ class SingleValueIterator : public std::iterator<std::forward_iterator_tag, T> {
     bool end = true;
 
 public:
-    SingleValueIterator() {}
+    SingleValueIterator() = default;
 
     SingleValueIterator(const T& value) : value(value), end(false) {}
 

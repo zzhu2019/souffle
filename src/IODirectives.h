@@ -22,7 +22,7 @@ namespace souffle {
 
 class IODirectives {
 public:
-    IODirectives() {}
+    IODirectives() = default;
 
     IODirectives(const std::map<std::string, std::string>& directiveMap) {
         for (const auto& pair : directiveMap) {

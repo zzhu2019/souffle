@@ -82,7 +82,7 @@ protected:
     public:
         iterator_base(uint32_t arg_id, const InterpreterRelInterface* r, InterpreterRelation::iterator i)
                 : Relation::iterator_base(arg_id), ramRelationInterface(r), it(i), tup(r) {}
-        virtual ~iterator_base() {}
+        virtual ~iterator_base() = default;
 
         /** Increment iterator */
         void operator++() override {
@@ -129,7 +129,7 @@ public:
             std::vector<std::string> an, bool rInput, bool rOutput, uint32_t i)
             : relation(r), symTable(s), name(std::move(n)), types(std::move(t)), attrNames(std::move(an)),
               relInput(rInput), relOutput(rOutput), id(i) {}
-    virtual ~InterpreterRelInterface() {}
+    virtual ~InterpreterRelInterface() = default;
 
     /** Insert tuple */
     void insert(const tuple& t) override {

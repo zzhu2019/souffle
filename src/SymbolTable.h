@@ -70,7 +70,7 @@ private:
 
 public:
     /** Empty constructor. */
-    SymbolTable() {}
+    SymbolTable() = default;
 
     /** Copy constructor, performs a deep copy. */
     SymbolTable(const SymbolTable& other) : numToStr(other.numToStr), strToNum(other.strToNum) {}

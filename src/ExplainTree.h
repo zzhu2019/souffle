@@ -84,7 +84,7 @@ protected:
 
 public:
     TreeNode(std::string t = "") : txt(std::move(t)) {}
-    virtual ~TreeNode() {}
+    virtual ~TreeNode() = default;
 
     // get width
     uint32_t getWidth() const {

@@ -546,7 +546,7 @@ class AstRecordInit : public AstArgument {
     std::vector<std::unique_ptr<AstArgument>> args;
 
 public:
-    AstRecordInit() {}
+    AstRecordInit() = default;
 
     ~AstRecordInit() override = default;
 

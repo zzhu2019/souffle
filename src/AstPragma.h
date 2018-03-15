@@ -38,9 +38,9 @@ protected:
     }
 
 public:
-    virtual ~AstPragma() {}
+    virtual ~AstPragma() = default;
 
-    AstPragma() {}
+    AstPragma() = default;
 
     AstPragma(std::string k, std::string v) : key(std::move(k)), value(std::move(v)) {}
 

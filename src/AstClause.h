@@ -128,7 +128,7 @@ private:
     int maxVersion = -1;
 
 public:
-    AstExecutionPlan() {}
+    AstExecutionPlan() = default;
 
     /** Updates the execution order for a special version of a rule */
     void setOrderFor(int version, std::unique_ptr<AstExecutionOrder> plan) {

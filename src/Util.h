@@ -1160,7 +1160,7 @@ class shared_mutex {
     static const unsigned n_readers_ = ~write_entered_;
 
 public:
-    shared_mutex() {}
+    shared_mutex() = default;
 
     // Exclusive ownership
     void lock() {

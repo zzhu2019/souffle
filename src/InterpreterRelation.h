@@ -235,7 +235,7 @@ public:
         RamDomain* tuple = nullptr;
 
     public:
-        iterator() {}
+        iterator() = default;
 
         iterator(const InterpreterRelation* const relation)
                 : relation(relation), tuple(relation->arity == 0 ? reinterpret_cast<RamDomain*>(this)

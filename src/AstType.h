@@ -200,7 +200,7 @@ class AstUnionType : public AstType {
 
 public:
     /** Creates a new union type */
-    AstUnionType() {}
+    AstUnionType() = default;
 
     /** Obtains a reference to the list element types */
     const std::vector<AstTypeIdentifier>& getTypes() const {
@@ -258,7 +258,7 @@ private:
 
 public:
     /** Creates a new record type */
-    AstRecordType() {}
+    AstRecordType() = default;
 
     /** Adds a new field to this record type */
     void add(const std::string& name, const AstTypeIdentifier& type) {

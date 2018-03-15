@@ -88,7 +88,7 @@ public:
 template <>
 class Cell<void> : public CellInterface, std::false_type {
 public:
-    Cell(void){};
+    Cell() = default;
     double getDoubVal() {
         std::cerr << "getting double on void cell";
         throw this;

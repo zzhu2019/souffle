@@ -33,7 +33,7 @@ public:
     AdornedPredicate(AstRelationIdentifier name, std::string adornment)
             : predicateName(std::move(name)), adornment(std::move(adornment)) {}
 
-    ~AdornedPredicate() {}
+    ~AdornedPredicate() = default;
 
     AstRelationIdentifier getName() const {
         return predicateName;
@@ -167,7 +167,7 @@ private:
 public:
     static constexpr const char* name = "adorned-clauses";
 
-    ~Adornment() {}
+    ~Adornment() = default;
 
     virtual void run(const AstTranslationUnit& translationUnit);
 

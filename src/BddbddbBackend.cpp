@@ -35,7 +35,7 @@ class BddbddbConverter : private AstVisitor<void, std::ostream&> {
     int varCounter = 0;
 
 public:
-    BddbddbConverter() {}
+    BddbddbConverter() = default;
 
     void convert(std::ostream& out, const AstProgram& program) {
         visit(program, out);

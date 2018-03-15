@@ -43,7 +43,7 @@ class AstAtom;
  */
 class AstLiteral : public AstNode {
 public:
-    AstLiteral() {}
+    AstLiteral() = default;
 
     ~AstLiteral() override = default;
 

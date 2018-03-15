@@ -82,7 +82,8 @@ class Substitution {
 public:
     // -- Ctors / Dtors --
 
-    Substitution(){};
+    Substitution() = default;
+    ;
 
     Substitution(const std::string& var, const AstArgument* arg) {
         map.insert(std::make_pair(var, std::unique_ptr<AstArgument>(arg->clone())));

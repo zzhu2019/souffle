@@ -29,7 +29,7 @@ extern void yyset_in(FILE* in_str, yyscan_t scanner);
 
 namespace souffle {
 
-ParserDriver::ParserDriver() {}
+ParserDriver::ParserDriver() = default;
 
 ParserDriver::~ParserDriver() = default;
 

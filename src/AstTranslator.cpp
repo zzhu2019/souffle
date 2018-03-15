@@ -907,7 +907,7 @@ void nameUnnamedVariables(AstClause* clause) {
     struct Instantiator : public AstNodeMapper {
         mutable int counter = 0;
 
-        Instantiator() {}
+        Instantiator() = default;
 
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
             // apply recursive
