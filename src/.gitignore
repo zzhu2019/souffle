@@ -11,7 +11,6 @@ stack.hh
 parser.hh
 parser.cc
 scanner.cc
-file*
 libsouffle*
 *.output
 
