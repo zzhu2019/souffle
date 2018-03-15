@@ -311,13 +311,13 @@ bool Interpreter::evalCond(const RamCondition& cond, const InterpreterContext& c
                 }
                 default:
                     assert(false && "unsupported operator");
-                    return 0;
+                    return false;
             }
         }
         bool visitNode(const RamNode& node) override {
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
             assert(false && "Unsupported Node Type!");
-            return 0;
+            return false;
         }
     };
 

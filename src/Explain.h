@@ -147,7 +147,7 @@ private:
         int x = 0;
         int y = 0;
 
-        while (1) {
+        while (true) {
             int ch = wgetch(treePad);
 
             if (ch == KEY_LEFT) {
@@ -200,7 +200,7 @@ public:
         char buf[100];
         std::string line;
 
-        while (1) {
+        while (true) {
             if (ncurses && !output) {
                 // reset command line on each loop
                 werase(queryWindow);
