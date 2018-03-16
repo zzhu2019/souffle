@@ -1863,9 +1863,8 @@ public:
      * Clears this tree.
      */
     void clear() {
-        if (root) {
-            delete root;
-        }
+        delete root;
+
         root = nullptr;
         leftmost = nullptr;
     }

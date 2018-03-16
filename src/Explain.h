@@ -185,9 +185,7 @@ public:
     Explain(ExplainProvenance& p, bool ncurses, int d = 4)
             : prov(p), ncurses(ncurses), depthLimit(d), output(nullptr), json(false) {}
     ~Explain() {
-        if (output) {
-            delete output;
-        }
+        delete output;
     }
 
     void explain() {
