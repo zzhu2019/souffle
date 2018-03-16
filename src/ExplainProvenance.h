@@ -64,7 +64,7 @@ protected:
                 // remove quotation marks
                 if (args[i].size() >= 2 && args[i][0] == '"' && args[i][args[i].size() - 1] == '"') {
                     auto originalStr = args[i].substr(1, args[i].size() - 2);
-                    nums.push_back(prog.getSymbolTable().lookupExisting(originalStr.c_str()));
+                    nums.push_back(prog.getSymbolTable().lookupExisting(originalStr));
                 }
             } else {
                 nums.push_back(std::stoi(args[i]));

@@ -133,10 +133,8 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                     return std::min(lhs, rhs);
                 }
                 case BinaryOp::CAT: {
-                    return interpreter.getSymbolTable().lookup((
-                            std::string(interpreter.getSymbolTable().resolve(lhs)) +
-                            std::string(interpreter.getSymbolTable().resolve(
-                                    rhs))).c_str());
+                    return interpreter.getSymbolTable().lookup(interpreter.getSymbolTable().resolve(lhs) +
+                                                               interpreter.getSymbolTable().resolve(rhs));
                 }
                 default:
                     assert(false && "unsupported operator");
@@ -149,7 +147,7 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
             switch (op.getOperator()) {
                 case TernaryOp::SUBSTR: {
                     auto symbol = visit(op.getArg(0));
-                    std::string str = interpreter.getSymbolTable().resolve(symbol);
+                    const std::string& str = interpreter.getSymbolTable().resolve(symbol);
                     auto idx = visit(op.getArg(1));
                     auto len = visit(op.getArg(2));
                     std::string sub_str;
@@ -159,7 +157,7 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                         std::cerr << "warning: wrong index position provided by substr(\"";
                         std::cerr << str << "\"," << (int32_t)idx << "," << (int32_t)len << ") functor.\n";
                     }
-                    return interpreter.getSymbolTable().lookup(sub_str.c_str());
+                    return interpreter.getSymbolTable().lookup(sub_str);
                 }
                 default:
                     assert(false && "unsupported operator");

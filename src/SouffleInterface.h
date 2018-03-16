@@ -179,7 +179,7 @@ public:
     tuple& operator<<(const std::string& str) {
         assert(pos < size() && "exceeded tuple's size");
         assert(*relation.getAttrType(pos) == 's' && "wrong element type");
-        array[pos++] = relation.getSymbolTable().lookup(str.c_str());
+        array[pos++] = relation.getSymbolTable().lookup(str);
         return *this;
     }
 

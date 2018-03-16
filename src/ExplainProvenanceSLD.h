@@ -50,7 +50,7 @@ private:
                 if (*rel->getAttrType(i) == 's') {
                     std::string s;
                     tuple >> s;
-                    n = prog.getSymbolTable().lookupExisting(s.c_str());
+                    n = prog.getSymbolTable().lookupExisting(s);
                 } else {
                     tuple >> n;
                 }
