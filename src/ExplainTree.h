@@ -125,7 +125,7 @@ public:
     // place node and its sub-trees
     void place(uint32_t x, uint32_t y) override {
         // there must exist at least one kid
-        assert(children.size() > 0 && "no children");
+        assert(!children.empty() && "no children");
 
         // set x/y pos
         xpos = x;

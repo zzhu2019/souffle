@@ -208,7 +208,7 @@ public:
     std::unique_ptr<TreeNode> explain(
             std::string relName, std::vector<std::string> args, size_t depthLimit) override {
         auto tuple = argsToNums(relName, args);
-        if (tuple == std::vector<RamDomain>()) {
+        if (tuple.empty()) {
             return std::make_unique<LeafNode>("Relation not found");
         }
 

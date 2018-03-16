@@ -63,7 +63,7 @@ protected:
         for (column = 0; column < symbolMask.getArity(); column++) {
             std::string element(reinterpret_cast<const char*>(sqlite3_column_text(selectStatement, column)));
 
-            if (element == "") {
+            if (element.empty()) {
                 element = "n/a";
             }
             if (symbolMask.isSymbol(column)) {

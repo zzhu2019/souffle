@@ -1310,7 +1310,7 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
             std::stringstream relName;
             relName << clause.getHead()->getName();
 
-            if (relName.str().find("@info") != std::string::npos || clause.getBodyLiterals().size() == 0) {
+            if (relName.str().find("@info") != std::string::npos || clause.getBodyLiterals().empty()) {
                 return;
             }
 

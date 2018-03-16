@@ -329,7 +329,7 @@ public:
 
     /** Print */
     void print(std::ostream& os) const override {
-        if (name == "") {
+        if (name.empty()) {
             os << "env(t" << level << ", i" << element << ")";
         } else {
             os << "t" << level << "." << name;

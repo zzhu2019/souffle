@@ -82,7 +82,7 @@ protected:
             std::string element;
             if (start <= end && end <= line.length()) {
                 element = line.substr(start, end - start);
-                if (element == "") {
+                if (element.empty()) {
                     element = "n/a";
                 }
             } else {

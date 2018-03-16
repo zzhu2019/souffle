@@ -155,7 +155,7 @@ bool ProvenanceTransformer::transform(AstTranslationUnit& translationUnit) {
 
     // get next level number
     auto getNextLevelNumber = [&](std::vector<AstArgument*> levels) {
-        if (levels.size() == 0) {
+        if (levels.empty()) {
             return static_cast<AstArgument*>(new AstNumberConstant(0));
         }
 

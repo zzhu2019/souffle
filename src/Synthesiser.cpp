@@ -68,7 +68,7 @@ const std::string Synthesiser::convertRamIdent(const std::string& name) {
         // all other characters are replaced by an underscore, except when
         // the previous character was an underscore as double underscores
         // in identifiers are reserved by the standard
-        else if (id.size() == 0 || id.back() != '_') {
+        else if (id.empty() || id.back() != '_') {
             id += '_';
         }
     }
@@ -1238,7 +1238,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         // defining table
         os << "// -- Table: " << raw_name << "\n";
         os << type << "* " << name << ";\n";
-        if (initCons.size() > 0) {
+        if (!initCons.empty()) {
             initCons += ",\n";
         }
         initCons += name + "(new " + type + "())";
@@ -1285,12 +1285,12 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << classname;
     if (Global::config().has("profile")) {
         os << "(std::string pf=\"profile.log\") : profiling_fname(pf)";
-        if (initCons.size() > 0) {
+        if (!initCons.empty()) {
             os << ",\n" << initCons;
         }
     } else {
         os << "()";
-        if (initCons.size() > 0) {
+        if (!initCons.empty()) {
             os << " : " << initCons;
         }
     }

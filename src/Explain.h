@@ -226,7 +226,7 @@ public:
 
             std::vector<std::string> command = split(line, ' ', 1);
 
-            if (command.size() == 0) {
+            if (command.empty()) {
                 continue;
             }
 
