@@ -28,7 +28,7 @@
 namespace souffle {
 
 /** utility function to split a string */
-inline std::vector<std::string> split(std::string s, char delim, int times = -1) {
+inline std::vector<std::string> split(const std::string& s, char delim, int times = -1) {
     std::vector<std::string> v;
     std::stringstream ss(s);
     std::string item;
@@ -51,7 +51,7 @@ class ExplainProvenance {
 protected:
     SouffleProgram& prog;
 
-    std::vector<RamDomain> argsToNums(std::string relName, std::vector<std::string>& args) const {
+    std::vector<RamDomain> argsToNums(const std::string& relName, std::vector<std::string>& args) const {
         std::vector<RamDomain> nums;
 
         auto rel = prog.getRelation(relName);
@@ -74,7 +74,7 @@ protected:
         return nums;
     }
 
-    std::vector<std::string> numsToArgs(const std::string relName, const std::vector<RamDomain>& nums,
+    std::vector<std::string> numsToArgs(const std::string& relName, const std::vector<RamDomain>& nums,
             std::vector<bool>* err = nullptr) const {
         std::vector<std::string> args;
 
@@ -117,7 +117,7 @@ public:
 
     virtual void printRulesJSON(std::ostream& os) = 0;
 
-    virtual std::string getRelationOutput(std::string relName) {
+    virtual std::string getRelationOutput(const std::string& relName) {
         auto rel = prog.getRelation(relName);
         if (rel == nullptr) {
             return "Relation " + relName + " not found\n";

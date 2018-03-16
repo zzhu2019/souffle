@@ -107,7 +107,7 @@ protected:
         }
     }
 
-    void throwError(std::string message) {
+    void throwError(const std::string& message) {
         std::stringstream error;
         error << message << sqlite3_errmsg(db) << "\n";
         throw std::invalid_argument(error.str());

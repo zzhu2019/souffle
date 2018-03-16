@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <utility>
 
 namespace souffle {
 
@@ -58,8 +59,8 @@ class Logger {
     const std::string ext;
 
 public:
-    Logger(const char* label, std::ostream& out = std::cout, const std::string ext = "")
-            : label(label), out(out), ext(ext) {
+    Logger(const char* label, std::ostream& out = std::cout, std::string ext = "")
+            : label(label), out(out), ext(std::move(ext)) {
         start = clock::now();
     }
 

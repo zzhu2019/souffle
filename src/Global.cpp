@@ -2,7 +2,7 @@
 
 namespace souffle {
 
-void MainConfig::processArgs(int argc, char** argv, const std::string header, const std::string footer,
+void MainConfig::processArgs(int argc, char** argv, const std::string& header, const std::string& footer,
         const std::vector<MainOption> mainOptions) {
     // construct the help text using the main options
     {

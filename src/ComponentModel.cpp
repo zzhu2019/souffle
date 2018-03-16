@@ -148,7 +148,7 @@ ComponentContent getInstantiatedContent(const AstComponentInit& componentInit,
  */
 void collectContent(const AstComponent& component, const TypeBinding& binding,
         const AstComponent* enclosingComponent, const ComponentLookup& componentLookup, ComponentContent& res,
-        std::vector<std::unique_ptr<AstClause>>& orphans, std::set<std::string> overridden,
+        std::vector<std::unique_ptr<AstClause>>& orphans, const std::set<std::string>& overridden,
         ErrorReport& report, unsigned int maxInstantiationDepth) {
     // start with relations and clauses of the base components
     for (const auto& base : component.getBaseComponents()) {

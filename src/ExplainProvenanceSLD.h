@@ -33,7 +33,7 @@ private:
     std::map<std::pair<std::string, size_t>, std::string> rules;
     std::vector<std::vector<RamDomain>> subproofs;
 
-    std::pair<int, int> findTuple(std::string relName, std::vector<RamDomain> tup) {
+    std::pair<int, int> findTuple(const std::string& relName, std::vector<RamDomain> tup) {
         auto rel = prog.getRelation(relName);
 
         if (rel == nullptr) {

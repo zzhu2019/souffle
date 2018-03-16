@@ -50,7 +50,7 @@ private:
     bool json;
 
     // parse relation, split into relation name and values
-    std::pair<std::string, std::vector<std::string>> parseTuple(std::string str) {
+    std::pair<std::string, std::vector<std::string>> parseTuple(const std::string& str) {
         std::string relName;
         std::vector<std::string> args;
 
@@ -130,7 +130,7 @@ private:
     }
 
     // print string
-    void printStr(std::string s) {
+    void printStr(const std::string& s) {
         if (ncurses && !output) {
             wprintw(treePad, s.c_str());
         } else {

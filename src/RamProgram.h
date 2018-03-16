@@ -71,7 +71,7 @@ public:
     }
 
     /** Get relation */
-    const RamRelation& getRelation(std::string name) const {
+    const RamRelation& getRelation(const std::string& name) const {
         return *relations.at(name);
     }
 
@@ -90,7 +90,7 @@ public:
     }
 
     /** Get subroutine */
-    const RamStatement& getSubroutine(std::string name) const {
+    const RamStatement& getSubroutine(const std::string& name) const {
         return *subroutines.at(name);
     }
 

@@ -33,6 +33,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <utility>
 
 namespace souffle {
 
@@ -54,8 +55,8 @@ std::string getRelationName(const AstRelationIdentifier& id) {
     return toString(join(id.getNames(), "-"));
 }
 
-IODirectives getInputIODirectives(
-        const AstRelation* rel, std::string filePath = std::string(), std::string fileExt = std::string()) {
+IODirectives getInputIODirectives(const AstRelation* rel, std::string filePath = std::string(),
+        const std::string& fileExt = std::string()) {
     const std::string inputFilePath = (filePath.empty()) ? Global::config().get("fact-dir") : filePath;
     const std::string inputFileExt = (fileExt.empty()) ? ".facts" : fileExt;
 
@@ -91,7 +92,7 @@ IODirectives getInputIODirectives(
 }
 
 std::vector<IODirectives> getOutputIODirectives(const AstRelation* rel, const TypeEnvironment* typeEnv,
-        std::string filePath = std::string(), std::string fileExt = std::string()) {
+        std::string filePath = std::string(), const std::string& fileExt = std::string()) {
     std::vector<IODirectives> outputDirectives;
     // If IO directives have been specified then set them up
     for (const auto& current : rel->getIODirectives()) {
@@ -155,7 +156,7 @@ std::vector<IODirectives> getOutputIODirectives(const AstRelation* rel, const Ty
 
 std::unique_ptr<RamRelation> getRamRelation(const AstRelation* rel, const TypeEnvironment* typeEnv,
         std::string name, size_t arity, const bool istemp = false, const bool hashset = false,
-        std::string filePath = std::string(), std::string fileExt = std::string()) {
+        const std::string& filePath = std::string(), const std::string& fileExt = std::string()) {
     // avoid name conflicts for temporary identifiers
     if (istemp) {
         name.insert(0, "@");
@@ -297,7 +298,7 @@ public:
     }
 
     void setRecordDefinition(const AstRecordInit& init, int level, int pos, std::string name = "") {
-        setRecordDefinition(init, Location({level, pos, name}));
+        setRecordDefinition(init, Location({level, pos, std::move(name)}));
     }
 
     const Location& getDefinitionPoint(const AstRecordInit& init) const {

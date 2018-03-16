@@ -136,7 +136,7 @@ public:
         return varDependencies.at(argName);
     }
 
-    void addBinding(std::string newVariableName, const AstArgument* arg) {
+    void addBinding(const std::string& newVariableName, const AstArgument* arg) {
         originalArguments[newVariableName] = std::unique_ptr<AstArgument>(arg->clone());
 
         // find the variable dependencies
@@ -145,11 +145,11 @@ public:
         varDependencies[newVariableName] = dependencies;
     }
 
-    void addVariableBoundComposite(std::string functorName) {
+    void addVariableBoundComposite(const std::string& functorName) {
         variableBoundComposites.insert(functorName);
     }
 
-    bool isVariableBoundComposite(std::string functorName) const {
+    bool isVariableBoundComposite(const std::string& functorName) const {
         return (variableBoundComposites.find(functorName) != variableBoundComposites.end());
     }
 };
