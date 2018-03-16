@@ -80,7 +80,7 @@ public:
     }
 
     void apply(const AstNodeMapper& /*mapper*/) override {
-        return;  // nothing to do
+        // nothing to do
     }
 
     AstComponentType* clone() const override {
@@ -372,8 +372,6 @@ public:
         for (auto& cur : ioDirectives) {
             cur = mapper(std::move(cur));
         }
-
-        return;
     }
 
     /** Obtains a list of all embedded child nodes */
