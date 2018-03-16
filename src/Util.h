@@ -227,7 +227,7 @@ struct range {
     Iter a, b;
 
     // a constructor accepting a lower and upper boundary
-    range(const Iter& a, const Iter& b) : a(a), b(b) {}
+    range(Iter a, Iter b) : a(std::move(a)), b(std::move(b)) {}
 
     // default copy / move and assignment support
     range(const range&) = default;

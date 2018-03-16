@@ -248,7 +248,7 @@ struct RelationBase {
     bool insert(const RamDomain* ramDomain) {
         RamDomain data[arity];
         std::copy(ramDomain, ramDomain + arity, data);
-        const tuple_type& tuple = reinterpret_cast<const tuple_type&>(data);
+        const auto& tuple = reinterpret_cast<const tuple_type&>(data);
         typename Derived::operation_context ctxt;
 
         return static_cast<Derived*>(this)->insert(tuple, ctxt);
@@ -314,18 +314,18 @@ public:
 
 private:
     // obtain type of index collection
-    typedef typename std::conditional<
+    using indices_t = typename std::conditional<
             // check whether there is at least one index covering all columns
             index_utils::contains_full_index<arity, Indices...>::value,
             // if so: just create those indices
             index_utils::Indices<tuple_type, index_utils::index_factory, Indices...>,
             // otherwise: add an additional full index
             index_utils::Indices<tuple_type, index_utils::index_factory,
-                    typename index_utils::get_full_index<arity>::type, Indices...>>::type indices_t;
+                    typename index_utils::get_full_index<arity>::type, Indices...>>::type;
 
     // define the primary index for existence checks
-    typedef typename index_utils::get_first_full_index<arity, Indices...,
-            typename index_utils::get_full_index<arity>::type>::type primary_index;
+    using primary_index = typename index_utils::get_first_full_index<arity, Indices...,
+            typename index_utils::get_full_index<arity>::type>::type;
 
     // the data stored in this relation (main copy, referenced by indices)
     table_t data;
@@ -499,10 +499,9 @@ public:
 
 private:
     // obtain type of index collection
-    typedef typename index_utils::Indices<tuple_type, IndexFactory,
+    using indices_t = typename index_utils::Indices<tuple_type, IndexFactory,
             typename index_utils::extend_to_full_index<arity, Primary>::type,
-            typename index_utils::extend_to_full_index<arity, Indices>::type...>
-            indices_t;
+            typename index_utils::extend_to_full_index<arity, Indices>::type...>;
 
     // define the primary index for existence checks
     using primary_index = typename index_utils::extend_to_full_index<arity, Primary>::type;
@@ -669,7 +668,7 @@ class AutoRelation<0> : public RelationBase<0, AutoRelation<0>> {
     using base = RelationBase<0, AutoRelation<0>>;
 
     /* The flag indicating whether the empty tuple () is present or not. */
-    bool present;
+    bool present = false;
 
 public:
     /* The type of tuple stored in this relation. */
@@ -726,7 +725,7 @@ public:
     struct operation_context {};
 
     /* A constructor for this relation. */
-    AutoRelation() : present(false){};
+    AutoRelation() = default;
 
     // --- specialized implementation ---
 

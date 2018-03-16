@@ -75,7 +75,7 @@ class concurrent_list {
 
 public:
     concurrent_list() {
-        cv_data* curr = new cv_data;
+        auto* curr = new cv_data;
         curr->m_size = 0;
         curr->m_data = new T[chunk_size];
         curr->next = nullptr;
@@ -389,7 +389,8 @@ public:
 
     public:
         // default ctor, to silence
-        iterator(){};
+        iterator() = default;
+        ;
 
         /* begin iterator for iterating over all elements */
         iterator(BlockList* bl) : bl(bl){};

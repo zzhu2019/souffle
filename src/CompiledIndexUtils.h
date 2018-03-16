@@ -341,9 +341,9 @@ namespace detail {
 // an auxiliary type required to implement index extension
 template <unsigned i, unsigned arity, typename Index>
 struct extend_to_full_index_aux {
-    typedef typename extend_to_full_index_aux<i + 1, arity,
+    using type = typename extend_to_full_index_aux<i + 1, arity,
             typename std::conditional<(Index::template covers<i>::value), Index,
-                    typename extend<Index, i>::type>::type>::type type;
+                    typename extend<Index, i>::type>::type>::type;
 };
 
 template <unsigned arity, typename Index>
@@ -496,8 +496,8 @@ struct get_first_full_index;
 
 template <unsigned arity, typename First, typename... Rest>
 struct get_first_full_index<arity, First, Rest...> {
-    typedef typename std::conditional<First::size == arity, First,
-            typename get_first_full_index<arity, Rest...>::type>::type type;
+    using type = typename std::conditional<First::size == arity, First,
+            typename get_first_full_index<arity, Rest...>::type>::type;
 };
 
 template <unsigned arity, typename Index>
@@ -686,13 +686,12 @@ public:
  */
 template <typename Tuple, typename Index>
 struct IndirectIndex {
-    typedef typename std::conditional<(int)(Tuple::arity) == (int)(Index::size),
+    using data_structure = typename std::conditional<(int)(Tuple::arity) == (int)(Index::size),
             btree_set<const Tuple*, index_utils::deref_compare<typename Index::comparator>>,
-            btree_multiset<const Tuple*, index_utils::deref_compare<typename Index::comparator>>>::type
-            data_structure;
+            btree_multiset<const Tuple*, index_utils::deref_compare<typename Index::comparator>>>::type;
 
-    typedef typename std::remove_cv<
-            typename std::remove_pointer<typename data_structure::key_type>::type>::type key_type;
+    using key_type = typename std::remove_cv<
+            typename std::remove_pointer<typename data_structure::key_type>::type>::type;
 
     using iterator = IterDerefWrapper<typename data_structure::const_iterator>;
 
@@ -901,7 +900,7 @@ public:
 
     public:
         // default constructor -- creating an end-iterator
-        iterator() {}
+        iterator() = default;
 
         iterator(const nested_iterator& iter) : nested(iter), value(orderOut(*iter)) {}
 
@@ -1084,7 +1083,8 @@ public:
 
     public:
         // default constructor -- creating an end-iterator
-        iterator(){};
+        iterator() = default;
+        ;
 
         iterator(const nested_iterator& iter) : nested(iter), value(orderOut(*iter)){};
 
@@ -1201,11 +1201,10 @@ struct direct_index_factory;
 template <typename T, typename Index>
 struct direct_index_factory<T, Index, true> {
     // the arity of the tuple type determines the type of index
-    typedef typename std::conditional<T::arity <= 2,  // if the arity is <= 2
-            TrieIndex<Index>,                         // .. we use the faster Trie index
-            DirectIndex<T, Index>                     // .. otherwise we fall back to the B-Tree index
-            >::type type;
-    //        using type = DirectIndex<T,Index>;
+    using type = typename std::conditional<T::arity <= 2,  // if the arity is <= 2
+            TrieIndex<Index>,                              // .. we use the faster Trie index
+            DirectIndex<T, Index>                          // .. otherwise we fall back to the B-Tree index
+            >::type;
 };
 
 // -------------------------------------------------------------
@@ -1226,12 +1225,10 @@ struct index_factory;
 template <typename T, typename Index>
 struct index_factory<T, Index, true> {
     // pick direct or indirect indexing based on size of tuple
-    typedef typename std::conditional<sizeof(T) <= 2 * sizeof(void*),  // if tuple is not bigger than a bound
-            typename direct_index_factory<T, Index,
-                    true>::type,  // use a direct index
-            IndirectIndex<T,
-                    Index>  // otherwise use an indirect, pointer based index
-            >::type type;
+    using type = typename std::conditional<sizeof(T) <= 2 * sizeof(void*),  // if tuple smaller than a bound
+            typename direct_index_factory<T, Index, true>::type,            // use a direct index
+            IndirectIndex<T, Index>  // otherwise use an indirect, pointer based index
+            >::type;
 };
 
 /* The index structure selection for partial indices. */
@@ -1283,8 +1280,8 @@ public:
     // a type trait to determine the iterator type for this or a nested index
     template <typename Index>
     struct iter_type {
-        typedef typename std::conditional<is_compatible_with<Index, First>::value, iterator,
-                typename nested_indices::template iter_type<Index>::type>::type type;
+        using type = typename std::conditional<is_compatible_with<Index, First>::value, iterator,
+                typename nested_indices::template iter_type<Index>::type>::type;
     };
 
     // an operation context for operations on this index
@@ -1499,7 +1496,7 @@ class filter_iterator : public std::iterator<std::forward_iterator_tag, typename
     tuple_type value;
 
 public:
-    filter_iterator() {}
+    filter_iterator() = default;
 
     filter_iterator(Iter&& begin, Iter&& end, const tuple_type& value)
             : iter(std::move(begin)), end(std::move(end)), value(value) {

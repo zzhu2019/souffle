@@ -389,7 +389,7 @@ public:
         mapStale.store(true);
 
         // its parent is itself (size indicates the position in the listData structure)
-        parent_t xpar = (parent_t)a_blocks.size();
+        auto xpar = (parent_t)a_blocks.size();
         rank_t xrank = 0;
 
         block_t x = pr2b(xpar, xrank);
@@ -516,7 +516,7 @@ private:
         size_t j = denseToSparseMap.size();
         // check if we create a dense value outside of the bounds that can be stored
         if (j > std::numeric_limits<parent_t>::max()) throw std::runtime_error("out of bounds dense value");
-        parent_t jClipped = static_cast<parent_t>(j);
+        auto jClipped = static_cast<parent_t>(j);
 
         // we create the node
         ds.makeNode();

@@ -346,9 +346,9 @@ public:
      * to speed up the execution of various operations (optional parameter).
      */
     struct op_context {
-        index_type lastIndex;
+        index_type lastIndex = 0;
         Node* lastNode;
-        op_context() : lastIndex(0), lastNode(nullptr) {}
+        op_context() : lastNode(nullptr) {}
     };
 
 private:
@@ -1199,7 +1199,7 @@ private:
      * Creates new nodes and initializes them with 0.
      */
     static Node* newNode() {
-        Node* res = (Node*)(malloc(sizeof(Node)));
+        auto* res = (Node*)(malloc(sizeof(Node)));
         std::memset(res->cell, 0, sizeof(Cell) * NUM_CELLS);
         return res;
     }
@@ -1234,7 +1234,7 @@ private:
         if (!node) return nullptr;
 
         // create a clone
-        Node* res = (Node*)(malloc(sizeof(Node)));
+        auto* res = (Node*)(malloc(sizeof(Node)));
 
         // handle leaf level
         if (level == 0) {
@@ -1414,7 +1414,7 @@ private:
 
 public:
     // a simple default constructor
-    SparseBitMap() {}
+    SparseBitMap() = default;
 
     // a default copy constructor
     SparseBitMap(const SparseBitMap&) = default;
@@ -1557,14 +1557,14 @@ public:
         nested_iterator iter;
 
         // the currently consumed mask
-        uint64_t mask;
+        uint64_t mask = 0;
 
         // the value currently pointed to
         index_type value;
 
     public:
         // default constructor -- creating an end-iterator
-        iterator() : mask(0) {}
+        iterator() = default;
 
         iterator(const nested_iterator& iter)
                 : iter(iter), mask(toMask(iter->second)), value(iter->first << LEAF_INDEX_WIDTH) {
@@ -1790,7 +1790,7 @@ public:
 
     public:
         // default constructor -- creating an end-iterator
-        iterator() {}
+        iterator() = default;
 
         // a copy constructor
         iterator(const iterator& other) = default;
@@ -2048,10 +2048,9 @@ class Trie : public detail::TrieBase<Dim, Trie<Dim>> {
     };
 
     // the data structure utilized for indexing nested tries
-    typedef SparseArray<nested_trie_type*,
+    using store_type = SparseArray<nested_trie_type*,
             6,  // = 2^6 entries per block
-            nested_trie_merger, nested_trie_cloner>
-            store_type;
+            nested_trie_merger, nested_trie_cloner>;
 
     // the actual data store
     store_type store;
@@ -2080,7 +2079,7 @@ public:
 
     public:
         /** default end-iterator constructor */
-        iterator_core() {}
+        iterator_core() = default;
 
         template <typename Tuple>
         iterator_core(const store_iter_t& iter, Tuple& entry) : iter(iter) {
@@ -2530,7 +2529,7 @@ class Trie<0u> : public detail::TrieBase<0u, Trie<0u>> {
     static const ram::Tuple<RamDomain, 0> instance;
 
     // a flag determining whether this trie is empty or contains the singleton instance
-    bool present;
+    bool present = false;
 
 public:
     struct op_context {};
@@ -2539,7 +2538,7 @@ public:
     using base::insert;
 
     // a simple default constructor
-    Trie() : present(false) {}
+    Trie() = default;
 
     /**
      * Clears the content of this trie.
@@ -2867,7 +2866,7 @@ public:
 
     public:
         /** default end-iterator constructor */
-        iterator_core() {}
+        iterator_core() = default;
 
         template <typename Tuple>
         iterator_core(const iter_type& iter, Tuple& entry) : iter(iter) {
