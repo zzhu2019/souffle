@@ -68,7 +68,7 @@ const std::string Synthesiser::convertRamIdent(const std::string& name) {
         // all other characters are replaced by an underscore, except when
         // the previous character was an underscore as double underscores
         // in identifiers are reserved by the standard
-        else if (id.size() == 0 || id.back() != '_') {
+        else if (id.empty() || id.back() != '_') {
             id += '_';
         }
     }
@@ -231,9 +231,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             out << "try {";
             out << "std::map<std::string, std::string> directiveMap(";
             out << load.getIODirectives() << ");\n";
-            out << "if (!inputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
+            out << R"(if (!inputDirectory.empty() && directiveMap["IO"] == "file" && )";
             out << "directiveMap[\"filename\"].front() != '/') {";
-            out << "directiveMap[\"filename\"] = inputDirectory + \"/\" + directiveMap[\"filename\"];";
+            out << R"(directiveMap["filename"] = inputDirectory + "/" + directiveMap["filename"];)";
             out << "}\n";
             out << "IODirectives ioDirectives(directiveMap);\n";
             out << "IOSystem::getInstance().getReader(";
@@ -253,9 +253,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             for (IODirectives ioDirectives : store.getIODirectives()) {
                 out << "try {";
                 out << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
-                out << "if (!outputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
+                out << R"(if (!outputDirectory.empty() && directiveMap["IO"] == "file" && )";
                 out << "directiveMap[\"filename\"].front() != '/') {";
-                out << "directiveMap[\"filename\"] = outputDirectory + \"/\" + directiveMap[\"filename\"];";
+                out << R"(directiveMap["filename"] = outputDirectory + "/" + directiveMap["filename"];)";
                 out << "}\n";
                 out << "IODirectives ioDirectives(directiveMap);\n";
                 out << "IOSystem::getInstance().getWriter(";
@@ -290,7 +290,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
             // check whether loop nest can be parallelized
             bool parallel = false;
-            if (const RamScan* scan = dynamic_cast<const RamScan*>(&insert.getOperation())) {
+            if (const auto* scan = dynamic_cast<const RamScan*>(&insert.getOperation())) {
                 // if it is a full scan
                 if (scan->getRangeQueryColumns() == 0 && !scan->isPureExistenceCheck()) {
                     // yes it can!
@@ -877,7 +877,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     break;
                 }
                 default:
-                    assert(0 && "Unsupported Operation!");
+                    assert(false && "Unsupported Operation!");
                     break;
             }
             PRINT_END_COMMENT(out);
@@ -969,7 +969,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     out << "))";
                     break;
                 default:
-                    assert(0 && "Unsupported Operation!");
+                    assert(false && "Unsupported Operation!");
                     break;
             }
             PRINT_END_COMMENT(out);
@@ -1095,7 +1095,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     break;
                 }
                 default:
-                    assert(0 && "Unsupported Operation!");
+                    assert(false && "Unsupported Operation!");
             }
             PRINT_END_COMMENT(out);
         }
@@ -1114,7 +1114,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     out << ")))";
                     break;
                 default:
-                    assert(0 && "Unsupported Operation!");
+                    assert(false && "Unsupported Operation!");
             }
             PRINT_END_COMMENT(out);
         }
@@ -1170,7 +1170,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     // ---------------------------------------------------------------
     const SymbolTable& symTable = unit.getSymbolTable();
     const RamProgram& prog = unit.getP();
-    IndexSetAnalysis* idxAnalysis = unit.getAnalysis<IndexSetAnalysis>();
+    auto* idxAnalysis = unit.getAnalysis<IndexSetAnalysis>();
 
     // ---------------------------------------------------------------
     //                      Code Generation
@@ -1238,7 +1238,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         // defining table
         os << "// -- Table: " << raw_name << "\n";
         os << type << "* " << name << ";\n";
-        if (initCons.size() > 0) {
+        if (!initCons.empty()) {
             initCons += ",\n";
         }
         initCons += name + "(new " + type + "())";
@@ -1285,12 +1285,12 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << classname;
     if (Global::config().has("profile")) {
         os << "(std::string pf=\"profile.log\") : profiling_fname(pf)";
-        if (initCons.size() > 0) {
+        if (!initCons.empty()) {
             os << ",\n" << initCons;
         }
     } else {
         os << "()";
-        if (initCons.size() > 0) {
+        if (!initCons.empty()) {
             os << " : " << initCons;
         }
     }
@@ -1373,9 +1373,9 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
             for (IODirectives ioDirectives : store->getIODirectives()) {
                 os << "try {";
                 os << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
-                os << "if (!outputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
+                os << R"(if (!outputDirectory.empty() && directiveMap["IO"] == "file" && )";
                 os << "directiveMap[\"filename\"].front() != '/') {";
-                os << "directiveMap[\"filename\"] = outputDirectory + \"/\" + directiveMap[\"filename\"];";
+                os << R"(directiveMap["filename"] = outputDirectory + "/" + directiveMap["filename"];)";
                 os << "}\n";
                 os << "IODirectives ioDirectives(directiveMap);\n";
                 os << "IOSystem::getInstance().getWriter(";
@@ -1404,9 +1404,9 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "try {";
         os << "std::map<std::string, std::string> directiveMap(";
         os << load.getIODirectives() << ");\n";
-        os << "if (!inputDirectory.empty() && directiveMap[\"IO\"] == \"file\" && ";
+        os << R"(if (!inputDirectory.empty() && directiveMap["IO"] == "file" && )";
         os << "directiveMap[\"filename\"].front() != '/') {";
-        os << "directiveMap[\"filename\"] = inputDirectory + \"/\" + directiveMap[\"filename\"];";
+        os << R"(directiveMap["filename"] = inputDirectory + "/" + directiveMap["filename"];)";
         os << "}\n";
         os << "IODirectives ioDirectives(directiveMap);\n";
         os << "IOSystem::getInstance().getReader(";

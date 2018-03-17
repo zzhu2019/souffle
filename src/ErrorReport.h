@@ -22,6 +22,7 @@
 #include <ostream>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -167,17 +168,18 @@ public:
 
     /** Adds an error with the given message and location */
     void addError(const std::string& message, AstSrcLocation location) {
-        diagnostics.insert(Diagnostic(Diagnostic::ERROR, DiagnosticMessage(message, location)));
+        diagnostics.insert(Diagnostic(Diagnostic::ERROR, DiagnosticMessage(message, std::move(location))));
     }
 
     /** Adds a warning with the given message and location */
     void addWarning(const std::string& message, AstSrcLocation location) {
         if (!nowarn) {
-            diagnostics.insert(Diagnostic(Diagnostic::WARNING, DiagnosticMessage(message, location)));
+            diagnostics.insert(
+                    Diagnostic(Diagnostic::WARNING, DiagnosticMessage(message, std::move(location))));
         }
     }
 
-    void addDiagnostic(Diagnostic diagnostic) {
+    void addDiagnostic(const Diagnostic& diagnostic) {
         diagnostics.insert(diagnostic);
     }
 

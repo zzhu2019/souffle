@@ -25,6 +25,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -45,8 +46,8 @@ private:
     AstTypeIdentifier name;
 
 public:
-    Type(const TypeEnvironment& environment, const AstTypeIdentifier& name)
-            : environment(environment), name(name) {}
+    Type(const TypeEnvironment& environment, AstTypeIdentifier name)
+            : environment(environment), name(std::move(name)) {}
 
     Type(const Type& other) = delete;
 
@@ -167,7 +168,7 @@ public:
  * It is the basic entity to conduct sub- and super-type computations.
  */
 struct TypeSet {
-    typedef IterDerefWrapper<typename std::set<const Type*>::const_iterator> const_iterator;
+    using const_iterator = IterDerefWrapper<typename std::set<const Type*>::const_iterator>;
 
 private:
     /** True if it is the all-types set, false otherwise */
@@ -303,7 +304,7 @@ public:
  */
 class TypeEnvironment {
     /** The type utilized for identifying types */
-    typedef AstTypeIdentifier identifier;
+    using identifier = AstTypeIdentifier;
 
 private:
     /** The list of covered types */
@@ -321,7 +322,7 @@ public:
 
     template <typename T, typename... Args>
     T& createType(const identifier& name, const Args&... args) {
-        T* res = new T(*this, name, args...);
+        auto* res = new T(*this, name, args...);
         addType(*res);
         return *res;
     }

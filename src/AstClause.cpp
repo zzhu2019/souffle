@@ -25,8 +25,8 @@
 #include <sstream>
 #include <string>
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 namespace souffle {
 

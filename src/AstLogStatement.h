@@ -33,9 +33,9 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -49,9 +49,9 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"tuples\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -65,10 +65,10 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";" << datalogText << ";";
@@ -82,10 +82,10 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"tuples\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";" << datalogText << ";";
@@ -99,11 +99,11 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"version\": \"" << version << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("version": ")" << version << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << version << ";" << srcLocation << ";"
@@ -118,11 +118,11 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"version\": \"" << version << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("version": ")" << version << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"tuples\": ";
         } else {
             line << messageType << ";" << relationName << ";" << version << ";" << srcLocation << ";"
@@ -137,9 +137,9 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -153,9 +153,9 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"tuples\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -169,9 +169,9 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -187,10 +187,10 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"failed-proofs\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";" << datalogText << ";";
@@ -206,7 +206,7 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";";

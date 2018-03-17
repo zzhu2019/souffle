@@ -99,7 +99,7 @@ class RecordMap {
     Lock pack_lock;
 
 public:
-    RecordMap() {}
+    RecordMap() = default;
 
     /**
      * Packs the given tuple -- and may create a new reference if necessary.

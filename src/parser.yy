@@ -24,30 +24,28 @@
 
 %code requires {
     #include <config.h>
-    #include <stdlib.h>
-    #include <stdio.h>
-    #include <assert.h>
-    #include <unistd.h>
-    #include <stdarg.h>
-    #include <string>
+    #include <cassert>
+    #include <cstdarg>
+    #include <cstdio>
+    #include <cstdlib>
     #include <stack>
+    #include <string>
     #include <unistd.h>
 
-    #include "Util.h"
-    #include "AstProgram.h"
+    #include "AstArgument.h"
     #include "AstClause.h"
     #include "AstComponent.h"
-    #include "AstRelation.h"
     #include "AstIODirective.h"
-    #include "AstArgument.h"
     #include "AstNode.h"
-    #include "UnaryFunctorOps.h"
-    #include "BinaryFunctorOps.h"
-    #include "BinaryConstraintOps.h"
     #include "AstParserUtils.h"
-
+    #include "AstProgram.h"
+    #include "AstRelation.h"
     #include "AstSrcLocation.h"
     #include "AstTypes.h"
+    #include "BinaryConstraintOps.h"
+    #include "BinaryFunctorOps.h"
+    #include "UnaryFunctorOps.h"
+    #include "Util.h"
 
     using namespace souffle;
 
@@ -55,7 +53,7 @@
         class ParserDriver;
     }
 
-    typedef void* yyscan_t;
+    using yyscan_t = void*;
 
     #define YY_NULLPTR nullptr
 

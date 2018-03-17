@@ -47,17 +47,18 @@
 #include <fstream>
 #include <iostream>
 #include <list>
+#include <memory>
 #include <string>
 
 #include "config.h"
-#include <ctype.h>
-#include <errno.h>
+#include <cctype>
+#include <cerrno>
+#include <climits>
+#include <cstdarg>
+#include <cstdlib>
+#include <cstring>
 #include <getopt.h>
 #include <libgen.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -398,7 +399,7 @@ int main(int argc, char** argv) {
             AstTranslator().translateUnit(*astTranslationUnit);
 
     std::vector<std::unique_ptr<RamTransformer>> ramTransforms;
-    ramTransforms.push_back(std::unique_ptr<RamTransformer>(new RamSemanticChecker()));
+    ramTransforms.push_back(std::make_unique<RamSemanticChecker>());
 
     for (const auto& transform : ramTransforms) {
         transform->apply(*ramTranslationUnit);

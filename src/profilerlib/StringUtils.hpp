@@ -21,7 +21,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>  // required for stat.h
 
-#include <stdio.h> /* defines FILENAME_MAX */
+#include <cstdio> /* defines FILENAME_MAX */
 
 #if defined(_WIN32) || defined(_WIN64) || defined(WINDOWS)
 #include <direct.h>

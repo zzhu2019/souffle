@@ -22,12 +22,12 @@
 class ProgramRun {
 private:
     std::unordered_map<std::string, std::shared_ptr<Relation>> relation_map;
-    double runtime;
+    double runtime = -1.0;
     double tot_rec_tup = 0.0;
     double tot_copy_time = 0.0;
 
 public:
-    ProgramRun() : relation_map(), runtime(-1.0) {}
+    ProgramRun() : relation_map() {}
 
     inline void SetRuntime(double runtime) {
         this->runtime = runtime;

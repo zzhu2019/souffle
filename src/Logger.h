@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <utility>
 
 namespace souffle {
 
@@ -42,8 +43,8 @@ inline Lock& getOutputLock() {
  */
 class Logger {
     // the type of clock to be utilized by this class
-    typedef std::chrono::steady_clock clock;
-    typedef clock::time_point time;
+    using clock = std::chrono::steady_clock;
+    using time = clock::time_point;
 
     // a label to be printed when reporting the execution time
     const char* label;
@@ -58,8 +59,8 @@ class Logger {
     const std::string ext;
 
 public:
-    Logger(const char* label, std::ostream& out = std::cout, const std::string ext = "")
-            : label(label), out(out), ext(ext) {
+    Logger(const char* label, std::ostream& out = std::cout, std::string ext = "")
+            : label(label), out(out), ext(std::move(ext)) {
         start = clock::now();
     }
 

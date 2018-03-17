@@ -42,7 +42,7 @@ private:
     RamTranslationUnit& translationUnit;
 
     /** relation environment type */
-    typedef std::map<std::string, InterpreterRelation*> relation_map;
+    using relation_map = std::map<std::string, InterpreterRelation*>;
 
     /** relation environment */
     relation_map environment;

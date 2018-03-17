@@ -20,6 +20,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -49,9 +50,9 @@ public:
     /**
      * Creates a new component type based on the given name and parameters.
      */
-    AstComponentType(const std::string& name = "",
-            const std::vector<AstTypeIdentifier>& params = std::vector<AstTypeIdentifier>())
-            : name(name), typeParams(params) {}
+    AstComponentType(
+            std::string name = "", std::vector<AstTypeIdentifier> params = std::vector<AstTypeIdentifier>())
+            : name(std::move(name)), typeParams(std::move(params)) {}
 
     // -- getters and setters --
 
@@ -79,7 +80,7 @@ public:
     }
 
     void apply(const AstNodeMapper& /*mapper*/) override {
-        return;  // nothing to do
+        // nothing to do
     }
 
     AstComponentType* clone() const override {
@@ -97,8 +98,8 @@ public:
 
 protected:
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstComponentType*>(&node));
-        const AstComponentType& other = static_cast<const AstComponentType&>(node);
+        assert(nullptr != dynamic_cast<const AstComponentType*>(&node));
+        const auto& other = static_cast<const AstComponentType&>(node);
         return name == other.name && typeParams == other.typeParams;
     }
 };
@@ -166,8 +167,8 @@ public:
 protected:
     /** An internal function to determine equality to another node */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstComponentInit*>(&node));
-        const AstComponentInit& other = static_cast<const AstComponentInit&>(node);
+        assert(nullptr != dynamic_cast<const AstComponentInit*>(&node));
+        const auto& other = static_cast<const AstComponentInit&>(node);
         return instanceName == other.instanceName && componentType == other.componentType;
     }
 };
@@ -315,7 +316,7 @@ public:
 
     /** Requests an independent, deep copy of this node */
     AstComponent* clone() const override {
-        AstComponent* res = new AstComponent();
+        auto* res = new AstComponent();
         res->setComponentType(std::unique_ptr<AstComponentType>(type->clone()));
 
         for (const auto& cur : baseComponents) {
@@ -371,8 +372,6 @@ public:
         for (auto& cur : ioDirectives) {
             cur = mapper(std::move(cur));
         }
-
-        return;
     }
 
     /** Obtains a list of all embedded child nodes */
@@ -442,8 +441,8 @@ public:
 protected:
     /** An internal function to determine equality to another node */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstComponent*>(&node));
-        const AstComponent& other = static_cast<const AstComponent&>(node);
+        assert(nullptr != dynamic_cast<const AstComponent*>(&node));
+        const auto& other = static_cast<const AstComponent&>(node);
 
         // compare all fields
         return type == other.type && baseComponents == other.baseComponents &&

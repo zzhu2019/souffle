@@ -37,9 +37,9 @@ private:
     ExplainProvenance& prov;
 
     bool ncurses;
-    WINDOW* treePad;
-    WINDOW* queryWindow;
-    int maxx, maxy;
+    WINDOW* treePad = nullptr;
+    WINDOW* queryWindow = nullptr;
+    int maxx = 0, maxy = 0;
 
     int depthLimit;
 
@@ -50,7 +50,7 @@ private:
     bool json;
 
     // parse relation, split into relation name and values
-    std::pair<std::string, std::vector<std::string>> parseTuple(std::string str) {
+    std::pair<std::string, std::vector<std::string>> parseTuple(const std::string& str) {
         std::string relName;
         std::vector<std::string> args;
 
@@ -74,7 +74,7 @@ private:
         // extract each argument
         std::string argsList = relMatch[2];
         std::smatch argsMatcher;
-        std::regex argRegex("[0-9]+|\"[^\"]*\"", std::regex_constants::extended);
+        std::regex argRegex(R"([0-9]+|"[^"]*")", std::regex_constants::extended);
 
         while (std::regex_search(argsList, argsMatcher, argRegex)) {
             // match the start of the arguments
@@ -130,7 +130,7 @@ private:
     }
 
     // print string
-    void printStr(std::string s) {
+    void printStr(const std::string& s) {
         if (ncurses && !output) {
             wprintw(treePad, s.c_str());
         } else {
@@ -147,7 +147,7 @@ private:
         int x = 0;
         int y = 0;
 
-        while (1) {
+        while (true) {
             int ch = wgetch(treePad);
 
             if (ch == KEY_LEFT) {
@@ -185,22 +185,20 @@ public:
     Explain(ExplainProvenance& p, bool ncurses, int d = 4)
             : prov(p), ncurses(ncurses), depthLimit(d), output(nullptr), json(false) {}
     ~Explain() {
-        if (output) {
-            delete output;
-        }
+        delete output;
     }
 
     void explain() {
         if (ncurses && !output) {
             initialiseWindow();
-            std::signal(SIGWINCH, NULL);
+            std::signal(SIGWINCH, nullptr);
         }
 
         // process commands
         char buf[100];
         std::string line;
 
-        while (1) {
+        while (true) {
             if (ncurses && !output) {
                 // reset command line on each loop
                 werase(queryWindow);
@@ -228,7 +226,7 @@ public:
 
             std::vector<std::string> command = split(line, ' ', 1);
 
-            if (command.size() == 0) {
+            if (command.empty()) {
                 continue;
             }
 

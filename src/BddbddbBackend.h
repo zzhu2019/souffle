@@ -18,6 +18,7 @@
 #include <exception>
 #include <ostream>
 #include <string>
+#include <utility>
 
 namespace souffle {
 
@@ -42,7 +43,7 @@ class UnsupportedConstructException : public std::exception {
     std::string msg;
 
 public:
-    UnsupportedConstructException(const std::string& msg) : msg(msg) {}
+    UnsupportedConstructException(std::string msg) : msg(std::move(msg)) {}
 
     const char* what() const noexcept override {
         return msg.c_str();
