@@ -95,8 +95,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamOperation*>(&node));
-        const RamOperation& other = static_cast<const RamOperation&>(node);
+        assert(nullptr != dynamic_cast<const RamOperation*>(&node));
+        const auto& other = static_cast<const RamOperation&>(node);
         if (getCondition() != nullptr && other.getCondition() != nullptr) {
             return *getCondition() == *other.getCondition();
         } else if (getCondition() == nullptr && other.getCondition() == nullptr) {
@@ -152,8 +152,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamSearch*>(&node));
-        const RamSearch& other = static_cast<const RamSearch&>(node);
+        assert(nullptr != dynamic_cast<const RamSearch*>(&node));
+        const auto& other = static_cast<const RamSearch&>(node);
         return RamOperation::equal(other) && getOperation() == other.getOperation();
     }
 };
@@ -253,8 +253,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamScan*>(&node));
-        const RamScan& other = static_cast<const RamScan&>(node);
+        assert(nullptr != dynamic_cast<const RamScan*>(&node));
+        const auto& other = static_cast<const RamScan&>(node);
         return RamSearch::equal(other) && getRelation() == other.getRelation() &&
                equal_targets(queryPattern, other.queryPattern) && keys == other.keys &&
                pureExistenceCheck == other.pureExistenceCheck;
@@ -313,8 +313,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamLookup*>(&node));
-        const RamLookup& other = static_cast<const RamLookup&>(node);
+        assert(nullptr != dynamic_cast<const RamLookup*>(&node));
+        const auto& other = static_cast<const RamLookup&>(node);
         return RamSearch::equal(other) && getReferencePosition() == other.getReferencePosition() &&
                getReferenceLevel() == other.getReferenceLevel() && getArity() == other.getArity();
     }
@@ -413,8 +413,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamAggregate*>(&node));
-        const RamAggregate& other = static_cast<const RamAggregate&>(node);
+        assert(nullptr != dynamic_cast<const RamAggregate*>(&node));
+        const auto& other = static_cast<const RamAggregate&>(node);
         return RamSearch::equal(other) && getRelation() == other.getRelation() &&
                equal_targets(pattern, other.pattern) && keys == other.keys && fun == other.fun &&
                getTargetExpression() == other.getTargetExpression();
@@ -513,8 +513,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamProject*>(&node));
-        const RamProject& other = static_cast<const RamProject&>(node);
+        assert(nullptr != dynamic_cast<const RamProject*>(&node));
+        const auto& other = static_cast<const RamProject&>(node);
         bool isFilterEqual = false;
         if (filter == nullptr && other.filter == nullptr) {
             isFilterEqual = true;
@@ -556,7 +556,7 @@ public:
 
     /** Create clone */
     RamReturn* clone() const override {
-        RamReturn* res = new RamReturn(level);
+        auto* res = new RamReturn(level);
         for (auto& cur : values) {
             res->values.push_back(std::unique_ptr<RamValue>(cur->clone()));
         }
@@ -574,8 +574,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamReturn*>(&node));
-        const RamReturn& other = static_cast<const RamReturn&>(node);
+        assert(nullptr != dynamic_cast<const RamReturn*>(&node));
+        const auto& other = static_cast<const RamReturn&>(node);
         return RamOperation::equal(other) && equal_targets(values, other.values);
     }
 };

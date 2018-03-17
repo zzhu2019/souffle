@@ -24,10 +24,10 @@ namespace ram {
 using namespace std;
 
 TEST(IndicesTools, AllIndex) {
-    typedef index<> i;
-    typedef index<0> i0;
-    typedef index<1> i1;
-    typedef index<0, 1> i01;
+    using i = index<>;
+    using i0 = index<0>;
+    using i1 = index<1>;
+    using i01 = index<0, 1>;
 
     EXPECT_TRUE(index_utils::all_indices<>::value);
     EXPECT_TRUE(index_utils::all_indices<i>::value);
@@ -78,10 +78,10 @@ TEST(IndicesTools, Arity) {
 }
 
 TEST(IndicesTools, Unique) {
-    typedef index<> i;
-    typedef index<0> i0;
-    typedef index<1> i1;
-    typedef index<0, 1> i01;
+    using i = index<>;
+    using i0 = index<0>;
+    using i1 = index<1>;
+    using i01 = index<0, 1>;
 
     EXPECT_TRUE((index_utils::unique<>::value));
     EXPECT_TRUE((index_utils::unique<i>::value));

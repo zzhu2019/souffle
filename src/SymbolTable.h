@@ -70,7 +70,7 @@ private:
 
 public:
     /** Empty constructor. */
-    SymbolTable() {}
+    SymbolTable() = default;
 
     /** Copy constructor, performs a deep copy. */
     SymbolTable(const SymbolTable& other) : numToStr(other.numToStr), strToNum(other.strToNum) {}
@@ -130,7 +130,7 @@ public:
     const std::string& resolve(const RamDomain index) const {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
-        size_t pos = static_cast<size_t>(index);
+        auto pos = static_cast<size_t>(index);
         if (pos >= size()) {
             // TODO: use different error reporting here!!
             std::cerr << "Error index out of bounds in call to SymbolTable::resolve.\n";

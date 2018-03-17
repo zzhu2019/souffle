@@ -28,6 +28,7 @@
 #include <map>
 #include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -59,7 +60,7 @@ public:
  */
 class RedundantRelations : public AstAnalysis {
 private:
-    PrecedenceGraph* precedenceGraph;
+    PrecedenceGraph* precedenceGraph = nullptr;
 
     std::set<const AstRelation*> redundantRelations;
 
@@ -102,7 +103,7 @@ public:
  */
 class SCCGraph : public AstAnalysis {
 private:
-    PrecedenceGraph* precedenceGraph;
+    PrecedenceGraph* precedenceGraph = nullptr;
 
     /** Map from node number to SCC number */
     std::map<const AstRelation*, int> relationToScc;
@@ -249,7 +250,7 @@ public:
 class TopologicallySortedSCCGraph : public AstAnalysis {
 private:
     /** The strongly connected component (SCC) graph. */
-    SCCGraph* sccGraph;
+    SCCGraph* sccGraph = nullptr;
 
     /** The final topological ordering of the SCCs. */
     std::vector<unsigned> sccOrder;
@@ -287,7 +288,7 @@ private:
 public:
     RelationScheduleStep(std::set<const AstRelation*> computedRelations,
             std::set<const AstRelation*> expiredRelations, const bool isRecursive)
-            : computedRelations(computedRelations), expiredRelations(expiredRelations),
+            : computedRelations(std::move(computedRelations)), expiredRelations(std::move(expiredRelations)),
               isRecursive(isRecursive) {}
 
     const std::set<const AstRelation*>& computed() const {
@@ -316,8 +317,8 @@ public:
  */
 class RelationSchedule : public AstAnalysis {
 private:
-    TopologicallySortedSCCGraph* topsortSCCGraph;
-    PrecedenceGraph* precedenceGraph;
+    TopologicallySortedSCCGraph* topsortSCCGraph = nullptr;
+    PrecedenceGraph* precedenceGraph = nullptr;
 
     /** Relations computed and expired relations at each step */
     std::vector<RelationScheduleStep> relationSchedule;

@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include <ctype.h>
+#include <cctype>
 
 /** Types of relation qualifiers defined as bits in a word */
 
@@ -84,7 +84,7 @@ protected:
 
     /** Qualifier of relation (i.e., output or not an output relation) */
     // TODO: Change to a set of qualifiers
-    int qualifier;
+    int qualifier = 0;
 
     /** Clauses associated with this relation. Clauses could be
      * either facts or rules.
@@ -96,7 +96,7 @@ protected:
     std::vector<std::unique_ptr<AstIODirective>> ioDirectives;
 
 public:
-    AstRelation() : qualifier(0) {}
+    AstRelation() = default;
 
     ~AstRelation() override = default;
 
@@ -367,8 +367,8 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstRelation*>(&node));
-        const AstRelation& other = static_cast<const AstRelation&>(node);
+        assert(nullptr != dynamic_cast<const AstRelation*>(&node));
+        const auto& other = static_cast<const AstRelation&>(node);
         return name == other.name && equal_targets(attributes, other.attributes) &&
                equal_targets(clauses, other.clauses);
     }
@@ -383,6 +383,6 @@ struct AstNameComparison {
     }
 };
 
-typedef std::set<const AstRelation*, AstNameComparison> AstRelationSet;
+using AstRelationSet = std::set<const AstRelation*, AstNameComparison>;
 
 }  // end of namespace souffle

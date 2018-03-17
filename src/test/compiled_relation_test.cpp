@@ -23,10 +23,10 @@ namespace ram {
 using namespace std;
 
 TEST(IndicesTools, AllIndex) {
-    typedef index<> i;
-    typedef index<0> i0;
-    typedef index<1> i1;
-    typedef index<0, 1> i01;
+    using i = index<>;
+    using i0 = index<0>;
+    using i1 = index<1>;
+    using i01 = index<0, 1>;
 
     EXPECT_TRUE(index_utils::all_indices<>::value);
     EXPECT_TRUE(index_utils::all_indices<i>::value);
@@ -77,10 +77,10 @@ TEST(IndicesTools, Arity) {
 }
 
 TEST(IndicesTools, Unique) {
-    typedef index<> i;
-    typedef index<0> i0;
-    typedef index<1> i1;
-    typedef index<0, 1> i01;
+    using i = index<>;
+    using i0 = index<0>;
+    using i1 = index<1>;
+    using i01 = index<0, 1>;
 
     EXPECT_TRUE((index_utils::unique<>::value));
     EXPECT_TRUE((index_utils::unique<i>::value));
@@ -174,7 +174,7 @@ TEST(IndicesTools, GetPrefix) {
 }
 
 TEST(Relation, Basic) {
-    typedef Relation<Auto, 2> relation_t;
+    using relation_t = Relation<Auto, 2>;
 
     relation_t data;
 
@@ -356,7 +356,7 @@ TEST(Relation, Structure_Brie) {
 }
 
 TEST(Relation, BigTuple) {
-    typedef Relation<Auto, 5> relation_t;
+    using relation_t = Relation<Auto, 5>;
 
     relation_t data;
 
@@ -392,7 +392,7 @@ TEST(Relation, Indices) {
     int count = 0;
 
     Relation<Auto, 2, index<0>, index<1>> data;
-    typedef decltype(data)::tuple_type tuple_t;
+    using tuple_t = decltype(data)::tuple_type;
 
     EXPECT_EQ(2 * sizeof(RamDomain), sizeof(tuple_t));
 
@@ -488,7 +488,7 @@ TEST(Relation, Indices) {
 
 TEST(Relation, EqualRange) {
     Relation<Auto, 2, index<0, 1>, index<1, 0>> rel;
-    typedef decltype(rel)::tuple_type tuple_t;
+    using tuple_t = decltype(rel)::tuple_type;
 
     for (int i = 0; i < 5; i++) {
         for (int j = 3; j < 8; j++) {
@@ -618,8 +618,8 @@ template <typename T>
 void consume(T t) {}
 
 TEST(Relation, SingleIndexEqualRange) {
-    typedef Relation<Auto, 3, index<0>> rel_type;
-    typedef typename rel_type::tuple_type tuple_type;
+    using rel_type = Relation<Auto, 3, index<0>>;
+    using tuple_type = typename rel_type::tuple_type;
 
     rel_type rel;
 
@@ -665,8 +665,8 @@ TEST(Relation, SingleIndexEqualRange) {
 }
 
 TEST(Relation, SingleIndexLowerUpperBound) {
-    typedef Relation<Auto, 3, index<0>> rel_type;
-    typedef typename rel_type::tuple_type tuple_type;
+    using rel_type = Relation<Auto, 3, index<0>>;
+    using tuple_type = typename rel_type::tuple_type;
 
     rel_type rel;
 
@@ -735,8 +735,8 @@ TEST(Relation, SingleIndexLowerUpperBound) {
 }
 
 TEST(Relation, Partition_0D) {
-    typedef Relation<Auto, 0> rel_type;
-    typedef typename rel_type::tuple_type tuple_type;
+    using rel_type = Relation<Auto, 0>;
+    using tuple_type = typename rel_type::tuple_type;
 
     rel_type rel;
 
@@ -768,8 +768,8 @@ TEST(Relation, Partition_0D) {
 TEST(Relation, Partition_1D) {
     const int N = 1000;
 
-    typedef Relation<Auto, 1, index<0>> rel_type;
-    typedef typename rel_type::tuple_type tuple_type;
+    using rel_type = Relation<Auto, 1, index<0>>;
+    using tuple_type = typename rel_type::tuple_type;
 
     rel_type rel;
 
@@ -803,8 +803,8 @@ TEST(Relation, Partition_1D) {
 TEST(Relation, Partition_2D) {
     const int N = 1000;
 
-    typedef Relation<Auto, 2, index<0, 1>> rel_type;
-    typedef typename rel_type::tuple_type tuple_type;
+    using rel_type = Relation<Auto, 2, index<0, 1>>;
+    using tuple_type = typename rel_type::tuple_type;
 
     rel_type rel;
 
@@ -838,8 +838,8 @@ TEST(Relation, Partition_2D) {
 }
 
 TEST(Relation, PartitionBug_InsertAll) {
-    typedef Relation<Auto, 2> rel_type;
-    typedef typename rel_type::tuple_type tuple_type;
+    using rel_type = Relation<Auto, 2>;
+    using tuple_type = typename rel_type::tuple_type;
 
     // a bug encountered during development:
     Relation<Auto, 2, ram::index<0, 1>> relA;

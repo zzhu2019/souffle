@@ -20,6 +20,7 @@
 #include "AstVisitor.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -30,9 +31,9 @@ private:
 
 public:
     AdornedPredicate(AstRelationIdentifier name, std::string adornment)
-            : predicateName(name), adornment(adornment) {}
+            : predicateName(std::move(name)), adornment(std::move(adornment)) {}
 
-    ~AdornedPredicate() {}
+    ~AdornedPredicate() = default;
 
     AstRelationIdentifier getName() const {
         return predicateName;
@@ -66,8 +67,8 @@ private:
 public:
     AdornedClause(AstClause* clause, std::string headAdornment, std::vector<std::string> bodyAdornment,
             std::vector<unsigned int> ordering)
-            : clause(clause), headAdornment(headAdornment), bodyAdornment(bodyAdornment), ordering(ordering) {
-    }
+            : clause(clause), headAdornment(std::move(headAdornment)),
+              bodyAdornment(std::move(bodyAdornment)), ordering(std::move(ordering)) {}
 
     AstClause* getClause() const {
         return clause;
@@ -92,7 +93,7 @@ public:
 
         std::vector<AstLiteral*> bodyLiterals = arg.clause->getBodyLiterals();
         for (AstLiteral* lit : bodyLiterals) {
-            if (dynamic_cast<AstAtom*>(lit) == 0) {
+            if (dynamic_cast<AstAtom*>(lit) == nullptr) {
                 const AstAtom* corresAtom = lit->getAtom();
                 if (corresAtom != nullptr) {
                     if (firstadded) {
@@ -135,7 +136,7 @@ public:
         return varDependencies.at(argName);
     }
 
-    void addBinding(std::string newVariableName, const AstArgument* arg) {
+    void addBinding(const std::string& newVariableName, const AstArgument* arg) {
         originalArguments[newVariableName] = std::unique_ptr<AstArgument>(arg->clone());
 
         // find the variable dependencies
@@ -144,11 +145,11 @@ public:
         varDependencies[newVariableName] = dependencies;
     }
 
-    void addVariableBoundComposite(std::string functorName) {
+    void addVariableBoundComposite(const std::string& functorName) {
         variableBoundComposites.insert(functorName);
     }
 
-    bool isVariableBoundComposite(std::string functorName) const {
+    bool isVariableBoundComposite(const std::string& functorName) const {
         return (variableBoundComposites.find(functorName) != variableBoundComposites.end());
     }
 };
@@ -166,11 +167,11 @@ private:
 public:
     static constexpr const char* name = "adorned-clauses";
 
-    ~Adornment() {}
+    ~Adornment() override = default;
 
-    virtual void run(const AstTranslationUnit& translationUnit);
+    void run(const AstTranslationUnit& translationUnit) override;
 
-    void print(std::ostream& os) const;
+    void print(std::ostream& os) const override;
 
     const std::vector<std::vector<AdornedClause>>& getAdornedClauses() const {
         return adornmentClauses;

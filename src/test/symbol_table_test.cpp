@@ -39,10 +39,10 @@ TEST(SymbolTable, Basics) {
 }
 
 TEST(SymbolTable, Copy) {
-    SymbolTable* a = new SymbolTable();
+    auto* a = new SymbolTable();
     a->insert("Hello");
 
-    SymbolTable* b = new SymbolTable(*a);
+    auto* b = new SymbolTable(*a);
 
     size_t a_idx = a->lookup("Hello");
     size_t b_idx = b->lookup("Hello");
@@ -64,7 +64,7 @@ TEST(SymbolTable, Copy) {
 }
 
 TEST(SymbolTable, Assign) {
-    SymbolTable* a = new SymbolTable();
+    auto* a = new SymbolTable();
     a->insert("Hello");
 
     SymbolTable b = *a;
@@ -96,7 +96,7 @@ TEST(SymbolTable, Inserts) {
     const bool ECHO_TIME = false;
 
     // type for very big number
-    typedef unsigned long long T;
+    using T = unsigned long long;
     time_point start, end;
 
     T n = 0;         // counter

@@ -18,7 +18,7 @@
 
 #include <limits>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace souffle {
 
@@ -34,9 +34,9 @@ namespace souffle {
 #endif
 
 #if RAM_DOMAIN_SIZE == 64
-typedef int64_t RamDomain;
+using RamDomain = int64_t;
 #else
-typedef int32_t RamDomain;
+using RamDomain = int32_t;
 #endif
 
 /** lower and upper boundaries for the ram domain **/
@@ -44,6 +44,6 @@ typedef int32_t RamDomain;
 #define MAX_RAM_DOMAIN (std::numeric_limits<RamDomain>::max())
 
 /** type of an index key; each bit represents a column of a table */
-typedef uint64_t SearchColumns;
+using SearchColumns = uint64_t;
 
 }  // end of namespace souffle

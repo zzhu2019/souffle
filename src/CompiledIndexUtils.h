@@ -181,7 +181,7 @@ struct index {
     static_assert(column_utils::unique<Columns...>::value, "Invalid duplication of columns!");
 
     // the comparator associated to this index
-    typedef index_utils::comparator<Columns...> comparator;
+    using comparator = index_utils::comparator<Columns...>;
 
     // enables to check whether the given column is covered by this index or not
     template <unsigned Col>
@@ -309,7 +309,7 @@ struct extend;
 
 template <unsigned... Columns, unsigned Col>
 struct extend<index<Columns...>, Col> {
-    typedef index<Columns..., Col> type;
+    using type = index<Columns..., Col>;
 };
 
 // -- a utility concatenating indices --
@@ -319,19 +319,19 @@ struct concat;
 
 template <unsigned... C1, unsigned... C2>
 struct concat<index<C1...>, index<C2...>> {
-    typedef index<C1..., C2...> type;
+    using type = index<C1..., C2...>;
 };
 
 // -- obtains a full index for a given arity --
 
 template <unsigned arity>
 struct get_full_index {
-    typedef typename extend<typename get_full_index<arity - 1>::type, arity - 1>::type type;
+    using type = typename extend<typename get_full_index<arity - 1>::type, arity - 1>::type;
 };
 
 template <>
 struct get_full_index<0> {
-    typedef index<> type;
+    using type = index<>;
 };
 
 // -- extends a given index to a full index --
@@ -341,14 +341,14 @@ namespace detail {
 // an auxiliary type required to implement index extension
 template <unsigned i, unsigned arity, typename Index>
 struct extend_to_full_index_aux {
-    typedef typename extend_to_full_index_aux<i + 1, arity,
+    using type = typename extend_to_full_index_aux<i + 1, arity,
             typename std::conditional<(Index::template covers<i>::value), Index,
-                    typename extend<Index, i>::type>::type>::type type;
+                    typename extend<Index, i>::type>::type>::type;
 };
 
 template <unsigned arity, typename Index>
 struct extend_to_full_index_aux<arity, arity, Index> {
-    typedef Index type;
+    using type = Index;
 };
 }  // namespace detail
 
@@ -381,17 +381,17 @@ struct get_prefix_aux;
 
 template <unsigned L, unsigned First, unsigned... Rest>
 struct get_prefix_aux<L, First, Rest...> {
-    typedef typename concat<index<First>, typename get_prefix_aux<L - 1, Rest...>::type>::type type;
+    using type = typename concat<index<First>, typename get_prefix_aux<L - 1, Rest...>::type>::type;
 };
 
 template <unsigned First, unsigned... Rest>
 struct get_prefix_aux<0, First, Rest...> {
-    typedef index<> type;
+    using type = index<>;
 };
 
 template <>
 struct get_prefix_aux<0> {
-    typedef index<> type;
+    using type = index<>;
 };
 }  // namespace detail
 
@@ -400,7 +400,7 @@ struct get_prefix;
 
 template <unsigned L, unsigned... Rest>
 struct get_prefix<L, index<Rest...>> {
-    typedef typename detail::get_prefix_aux<L, Rest...>::type type;
+    using type = typename detail::get_prefix_aux<L, Rest...>::type;
 };
 
 // -- determines whether the columns of one index is a subset of the columns of another index --
@@ -496,13 +496,13 @@ struct get_first_full_index;
 
 template <unsigned arity, typename First, typename... Rest>
 struct get_first_full_index<arity, First, Rest...> {
-    typedef typename std::conditional<First::size == arity, First,
-            typename get_first_full_index<arity, Rest...>::type>::type type;
+    using type = typename std::conditional<First::size == arity, First,
+            typename get_first_full_index<arity, Rest...>::type>::type;
 };
 
 template <unsigned arity, typename Index>
 struct get_first_full_index<arity, Index> {
-    typedef Index type;
+    using type = Index;
 };
 
 // -------------------------------------------------------------
@@ -583,13 +583,13 @@ T raise(T tuple) {
  */
 template <typename Tuple, typename Index>
 struct DirectIndex {
-    typedef btree_set<Tuple, typename Index::comparator> data_structure;
+    using data_structure = btree_set<Tuple, typename Index::comparator>;
 
-    typedef typename data_structure::key_type key_type;
+    using key_type = typename data_structure::key_type;
 
-    typedef typename data_structure::const_iterator iterator;
+    using iterator = typename data_structure::const_iterator;
 
-    typedef typename data_structure::operation_hints operation_hints;
+    using operation_hints = typename data_structure::operation_hints;
 
 private:
     data_structure index;
@@ -686,17 +686,16 @@ public:
  */
 template <typename Tuple, typename Index>
 struct IndirectIndex {
-    typedef typename std::conditional<(int)(Tuple::arity) == (int)(Index::size),
+    using data_structure = typename std::conditional<(int)(Tuple::arity) == (int)(Index::size),
             btree_set<const Tuple*, index_utils::deref_compare<typename Index::comparator>>,
-            btree_multiset<const Tuple*, index_utils::deref_compare<typename Index::comparator>>>::type
-            data_structure;
+            btree_multiset<const Tuple*, index_utils::deref_compare<typename Index::comparator>>>::type;
 
-    typedef typename std::remove_cv<
-            typename std::remove_pointer<typename data_structure::key_type>::type>::type key_type;
+    using key_type = typename std::remove_cv<
+            typename std::remove_pointer<typename data_structure::key_type>::type>::type;
 
-    typedef IterDerefWrapper<typename data_structure::const_iterator> iterator;
+    using iterator = IterDerefWrapper<typename data_structure::const_iterator>;
 
-    typedef typename data_structure::operation_hints operation_hints;
+    using operation_hints = typename data_structure::operation_hints;
 
 private:
     // the enclosed index
@@ -851,14 +850,14 @@ struct order<index<Columns...>> {
  */
 template <typename Index>
 class TrieIndex {
-    typedef Trie<Index::size> tree_type;
+    using tree_type = Trie<Index::size>;
 
-    typedef typename tree_type::entry_type tuple_type;
+    using tuple_type = typename tree_type::entry_type;
 
     tree_type data;
 
 public:
-    typedef typename tree_type::op_context operation_hints;
+    using operation_hints = typename tree_type::op_context;
 
     bool empty() const {
         return data.empty();
@@ -891,7 +890,7 @@ public:
     // ---------------------------------------------
 
     class iterator : public std::iterator<std::forward_iterator_tag, tuple_type> {
-        typedef typename tree_type::iterator nested_iterator;
+        using nested_iterator = typename tree_type::iterator;
 
         // the wrapped iterator
         nested_iterator nested;
@@ -901,7 +900,7 @@ public:
 
     public:
         // default constructor -- creating an end-iterator
-        iterator() {}
+        iterator() = default;
 
         iterator(const nested_iterator& iter) : nested(iter), value(orderOut(*iter)) {}
 
@@ -1007,14 +1006,14 @@ private:
  */
 template <typename Index>
 class DisjointSetIndex {
-    typedef typename ram::Tuple<RamDomain, 2> tuple_type;
+    using tuple_type = typename ram::Tuple<RamDomain, 2>;
 
-    typedef BinaryRelation<tuple_type> data_type;
+    using data_type = BinaryRelation<tuple_type>;
 
     data_type data;
 
 public:
-    typedef typename data_type::operation_hints operation_hints;
+    using operation_hints = typename data_type::operation_hints;
 
     bool empty() const {
         return data.size() == 0;
@@ -1074,7 +1073,7 @@ public:
     // ---------------------------------------------
 
     class iterator : public std::iterator<std::forward_iterator_tag, tuple_type> {
-        typedef typename data_type::iterator nested_iterator;
+        using nested_iterator = typename data_type::iterator;
 
         // the wrapped iterator
         nested_iterator nested;
@@ -1084,7 +1083,8 @@ public:
 
     public:
         // default constructor -- creating an end-iterator
-        iterator(){};
+        iterator() = default;
+        ;
 
         iterator(const nested_iterator& iter) : nested(iter), value(orderOut(*iter)){};
 
@@ -1201,11 +1201,10 @@ struct direct_index_factory;
 template <typename T, typename Index>
 struct direct_index_factory<T, Index, true> {
     // the arity of the tuple type determines the type of index
-    typedef typename std::conditional<T::arity <= 2,  // if the arity is <= 2
-            TrieIndex<Index>,                         // .. we use the faster Trie index
-            DirectIndex<T, Index>                     // .. otherwise we fall back to the B-Tree index
-            >::type type;
-    //        typedef DirectIndex<T,Index> type;
+    using type = typename std::conditional<T::arity <= 2,  // if the arity is <= 2
+            TrieIndex<Index>,                              // .. we use the faster Trie index
+            DirectIndex<T, Index>                          // .. otherwise we fall back to the B-Tree index
+            >::type;
 };
 
 // -------------------------------------------------------------
@@ -1226,19 +1225,17 @@ struct index_factory;
 template <typename T, typename Index>
 struct index_factory<T, Index, true> {
     // pick direct or indirect indexing based on size of tuple
-    typedef typename std::conditional<sizeof(T) <= 2 * sizeof(void*),  // if tuple is not bigger than a bound
-            typename direct_index_factory<T, Index,
-                    true>::type,  // use a direct index
-            IndirectIndex<T,
-                    Index>  // otherwise use an indirect, pointer based index
-            >::type type;
+    using type = typename std::conditional<sizeof(T) <= 2 * sizeof(void*),  // if tuple smaller than a bound
+            typename direct_index_factory<T, Index, true>::type,            // use a direct index
+            IndirectIndex<T, Index>  // otherwise use an indirect, pointer based index
+            >::type;
 };
 
 /* The index structure selection for partial indices. */
 template <typename T, typename Index>
 struct index_factory<T, Index, false> {
     // if the index is not complete => use indirect multi-set index
-    typedef IndirectIndex<T, Index> type;
+    using type = IndirectIndex<T, Index>;
 };
 
 // -------------------------------------------------------------
@@ -1264,10 +1261,10 @@ class Indices<T, IndexFactory, First, Rest...> {
     enum { arity = T::arity };
 
     // determines the type of the index of this level
-    typedef typename IndexFactory<T, First, (int)First::size == (int)arity>::type index_t;
+    using index_t = typename IndexFactory<T, First, (int)First::size == (int)arity>::type;
 
     // fixes the type of the nested structure
-    typedef Indices<T, IndexFactory, Rest...> nested_indices;
+    using nested_indices = Indices<T, IndexFactory, Rest...>;
 
     // -------------------------------------------------------------
     // nested containers
@@ -1278,13 +1275,13 @@ class Indices<T, IndexFactory, First, Rest...> {
 
 public:
     // the iterator type for indices on this level
-    typedef typename index_t::iterator iterator;
+    using iterator = typename index_t::iterator;
 
     // a type trait to determine the iterator type for this or a nested index
     template <typename Index>
     struct iter_type {
-        typedef typename std::conditional<is_compatible_with<Index, First>::value, iterator,
-                typename nested_indices::template iter_type<Index>::type>::type type;
+        using type = typename std::conditional<is_compatible_with<Index, First>::value, iterator,
+                typename nested_indices::template iter_type<Index>::type>::type;
     };
 
     // an operation context for operations on this index
@@ -1408,12 +1405,12 @@ public:
 template <typename T, template <typename V, typename I, bool> class IndexFactory>
 class Indices<T, IndexFactory> {
 public:
-    typedef int iterator;
+    using iterator = int;
 
     // a type trait to determine the iterator type for this or a nested index
     template <typename Index>
     struct iter_type {
-        typedef iterator type;
+        using type = iterator;
     };
 
     struct operation_context {
@@ -1499,7 +1496,7 @@ class filter_iterator : public std::iterator<std::forward_iterator_tag, typename
     tuple_type value;
 
 public:
-    filter_iterator() {}
+    filter_iterator() = default;
 
     filter_iterator(Iter&& begin, Iter&& end, const tuple_type& value)
             : iter(std::move(begin)), end(std::move(end)), value(value) {

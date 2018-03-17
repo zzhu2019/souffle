@@ -55,7 +55,7 @@ using namespace std::chrono;
 TEST(BTreeMultiSet, Basic) {
     const bool DEBUG = false;
 
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -154,7 +154,7 @@ TEST(BTreeMultiSet, Basic) {
 }
 
 TEST(BTreeMultiSet, Duplicates) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
     test_set t;
     for (int i = 0; i < 10; i++) {
         t.insert(0);
@@ -168,7 +168,7 @@ TEST(BTreeMultiSet, Duplicates) {
 }
 
 TEST(BTreeMultiSet, Incremental) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
     test_set t;
     int N = 1000;
     for (int i = 0; i < N; i++) {
@@ -180,7 +180,7 @@ TEST(BTreeMultiSet, Incremental) {
 }
 
 TEST(BTreeMultiSet, Decremental) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
     test_set t;
     int N = 1000;
     for (int i = N; i >= 0; i--) {
@@ -192,7 +192,7 @@ TEST(BTreeMultiSet, Decremental) {
 }
 
 TEST(BTreeMultiSet, Shuffled) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -214,14 +214,14 @@ TEST(BTreeMultiSet, Shuffled) {
 }
 
 TEST(BTreeMultiSet, IteratorEmpty) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
     test_set t;
 
     EXPECT_EQ(t.begin(), t.end());
 }
 
 TEST(BTreeMultiSet, IteratorBasic) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
     test_set t;
 
     for (int i = 0; i < 10; i++) {
@@ -244,7 +244,7 @@ TEST(BTreeMultiSet, IteratorBasic) {
 }
 
 TEST(BTreeMultiSet, IteratorStress) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -270,7 +270,7 @@ TEST(BTreeMultiSet, IteratorStress) {
 }
 
 TEST(BTreeMultiSet, BoundaryTest) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -314,7 +314,7 @@ TEST(BTreeMultiSet, BoundaryTest) {
 }
 
 TEST(BTreeMultiSet, BoundaryEmpty) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -337,7 +337,7 @@ TEST(BTreeMultiSet, BoundaryEmpty) {
 }
 
 TEST(BTreeMultiSet, Load) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     for (int N = 0; N < 100; N++) {
         // generate some ordered data
@@ -359,7 +359,7 @@ TEST(BTreeMultiSet, Load) {
 }
 
 TEST(BTreeMultiSet, Clear) {
-    typedef btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_multiset<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -375,7 +375,7 @@ TEST(BTreeMultiSet, Clear) {
     EXPECT_TRUE(t.empty());
 }
 
-typedef tuple<int, int> Entry;
+using Entry = tuple<int, int>;
 
 vector<Entry> getData(unsigned numEntries) {
     vector<Entry> res(numEntries);
@@ -387,7 +387,7 @@ vector<Entry> getData(unsigned numEntries) {
     return res;
 }
 
-typedef high_resolution_clock::time_point time_point;
+using time_point = high_resolution_clock::time_point;
 
 time_point now() {
     return high_resolution_clock::now();
@@ -496,15 +496,13 @@ TEST(Performance, Basic) {
         }
     });
 
-    typedef std::set<Entry> t1;
+    using t1 = std::set<Entry>;
     checkPerformance(t1, " -- warm up -- ", in, out);
-    typedef btree_multiset<Entry, detail::comparator<Entry>, std::allocator<Entry>, 256,
-            detail::linear_search>
-            t2;
+    using t2 = btree_multiset<Entry, detail::comparator<Entry>, std::allocator<Entry>, 256,
+            detail::linear_search>;
     checkPerformance(t2, "souffle btree_multiset - 256 - linear", in, out);
-    typedef btree_multiset<Entry, detail::comparator<Entry>, std::allocator<Entry>, 256,
-            detail::binary_search>
-            t3;
+    using t3 = btree_multiset<Entry, detail::comparator<Entry>, std::allocator<Entry>, 256,
+            detail::binary_search>;
     checkPerformance(t3, "souffle btree_multiset - 256 - binary", in, out);
 }
 

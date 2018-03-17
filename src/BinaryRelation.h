@@ -47,7 +47,7 @@
 namespace souffle {
 template <typename TupleType>
 class BinaryRelation {
-    typedef typename TupleType::value_type DomainInt;
+    using DomainInt = typename TupleType::value_type;
     enum { arity = TupleType::arity };
 
     // Although breaking styleguide - this is marked mutable in order to ensure const-ness fits the other data

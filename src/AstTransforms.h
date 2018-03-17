@@ -19,6 +19,7 @@
 #include "AstTranslationUnit.h"
 
 #include <functional>
+#include <utility>
 
 namespace souffle {
 
@@ -296,11 +297,11 @@ public:
     }
 
     void setDebugReport() override {
-        for (unsigned int i = 0; i < pipeline.size(); i++) {
-            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(pipeline[i].get())) {
+        for (auto& i : pipeline) {
+            if (auto* mt = dynamic_cast<MetaTransformer*>(i.get())) {
                 mt->setDebugReport();
             } else {
-                pipeline[i] = std::make_unique<DebugReporter>(std::move(pipeline[i]));
+                i = std::make_unique<DebugReporter>(std::move(i));
             }
         }
     }
@@ -308,7 +309,7 @@ public:
     void setVerbosity(bool verbose) override {
         this->verbose = verbose;
         for (auto& cur : pipeline) {
-            if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(cur.get())) {
+            if (auto* mt = dynamic_cast<MetaTransformer*>(cur.get())) {
                 mt->setVerbosity(verbose);
             }
         }
@@ -330,13 +331,13 @@ private:
 
 public:
     ConditionalTransformer(std::function<bool()> cond, std::unique_ptr<AstTransformer> transformer)
-            : condition(cond), transformer(std::move(transformer)) {}
+            : condition(std::move(cond)), transformer(std::move(transformer)) {}
 
     ConditionalTransformer(bool cond, std::unique_ptr<AstTransformer> transformer)
             : condition([=]() { return cond; }), transformer(std::move(transformer)) {}
 
     void setDebugReport() override {
-        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
+        if (auto* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
             mt->setDebugReport();
         } else {
             transformer = std::make_unique<DebugReporter>(std::move(transformer));
@@ -345,7 +346,7 @@ public:
 
     void setVerbosity(bool verbose) override {
         this->verbose = verbose;
-        if (MetaTransformer* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
+        if (auto* mt = dynamic_cast<MetaTransformer*>(transformer.get())) {
             mt->setVerbosity(verbose);
         }
     }

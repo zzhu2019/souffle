@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "Iteration.hpp"
@@ -37,7 +38,7 @@ private:
     bool ready = true;
 
 public:
-    Relation(std::string name, std::string id) : name(name), id(id) {
+    Relation(std::string name, std::string id) : name(std::move(name)), id(std::move(id)) {
         ruleMap = std::unordered_map<std::string, std::shared_ptr<Rule>>();
         iterations = std::vector<std::shared_ptr<Iteration>>();
     }

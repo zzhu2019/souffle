@@ -26,6 +26,7 @@
 
 #include <functional>
 #include <typeinfo>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -273,9 +274,9 @@ namespace detail {
 template <typename R, typename N>
 struct LambdaRamVisitor : public RamVisitor<void> {
     std::function<R(const N&)> lambda;
-    LambdaRamVisitor(const std::function<R(const N&)>& lambda) : lambda(lambda) {}
+    LambdaRamVisitor(std::function<R(const N&)> lambda) : lambda(std::move(lambda)) {}
     void visit(const RamNode& node) override {
-        if (const N* n = dynamic_cast<const N*>(&node)) {
+        if (const auto* n = dynamic_cast<const N*>(&node)) {
             lambda(*n);
         }
     }

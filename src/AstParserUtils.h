@@ -42,7 +42,7 @@ class RuleBody {
     std::vector<clause> dnf;
 
 public:
-    RuleBody() {}
+    RuleBody() = default;
 
     void negate();
 
