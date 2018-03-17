@@ -70,7 +70,7 @@ struct linear_search : public search_strategy {
     /**
      * Required user-defined default constructor.
      */
-    linear_search() = default;
+    linear_search() {}
 
     /**
      * Obtains an iterator referencing an element equivalent to the
@@ -124,7 +124,7 @@ struct binary_search : public search_strategy {
     /**
      * Required user-defined default constructor.
      */
-    binary_search() = default;
+    binary_search() {}
 
     /**
      * Obtains an iterator pointing to some element within the given
