@@ -33,6 +33,7 @@
 #include <bitset>
 #include <cstring>
 #include <iterator>
+#include <utility>
 
 namespace souffle {
 
@@ -869,7 +870,7 @@ public:
         // default constructor -- creating an end-iterator
         iterator() : node(nullptr) {}
 
-        iterator(const Node* node, const pair_type& value) : node(node), value(value) {}
+        iterator(const Node* node, pair_type value) : node(node), value(std::move(value)) {}
 
         iterator(const Node* first, index_type firstOffset) : node(first), value(firstOffset, 0) {
             // if the start is the end => we are done

@@ -20,6 +20,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <utility>
 
 /* singly linked list for linking test caes */
 
@@ -38,11 +39,11 @@ protected:
 
 public:
     TestCase(std::string g, std::string t)
-            : group(g), test(t), num_checks(0), num_failed(0), logstream(std::cerr) {
+            : group(std::move(g)), test(std::move(t)), num_checks(0), num_failed(0), logstream(std::cerr) {
         next = base;
         base = this;
     }
-    virtual ~TestCase() {}
+    virtual ~TestCase() = default;
 
     /**
      * Checks condition

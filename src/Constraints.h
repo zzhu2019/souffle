@@ -136,7 +136,7 @@ protected:
     Id id;
 
 public:
-    Variable(const Id& id) : id(id) {}
+    Variable(Id id) : id(std::move(id)) {}
     virtual ~Variable() = default;
 
     Variable(const Variable&) = default;
@@ -256,14 +256,14 @@ std::shared_ptr<Constraint<Var>> sub(const Val& a, const Var& b, const std::stri
         Var b;
         std::string symbol;
 
-        Sub(const Val& a, const Var& b, std::string symbol) : a(a), b(b), symbol(std::move(symbol)) {}
+        Sub(Val a, Var b, std::string symbol) : a(std::move(a)), b(std::move(b)), symbol(std::move(symbol)) {}
 
-        virtual bool update(Assignment<Var>& ass) const {
+        bool update(Assignment<Var>& ass) const override {
             typename Var::property_space::meet_assign_op_type meet_assign;
             return meet_assign(ass[b], a);
         }
 
-        virtual void print(std::ostream& out) const {
+        void print(std::ostream& out) const override {
             out << a << " " << symbol << " " << b;
         }
     };

@@ -55,7 +55,7 @@ using namespace std::chrono;
 TEST(BTreeSet, Basic) {
     const bool DEBUG = false;
 
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -163,7 +163,7 @@ TEST(BTreeSet, Basic) {
 }
 
 TEST(BTreeSet, Duplicates) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -179,7 +179,7 @@ TEST(BTreeSet, Duplicates) {
 }
 
 TEST(BTreeSet, Incremental) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -205,7 +205,7 @@ TEST(BTreeSet, Incremental) {
 }
 
 TEST(BTreeSet, Decremental) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -228,7 +228,7 @@ TEST(BTreeSet, Decremental) {
 }
 
 TEST(BTreeSet, Shuffled) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -252,7 +252,7 @@ TEST(BTreeSet, Shuffled) {
 }
 
 TEST(BTreeSet, Copy) {
-    typedef btree_set<int> test_set;
+    using test_set = btree_set<int>;
 
     test_set t;
 
@@ -302,7 +302,7 @@ TEST(BTreeSet, Copy) {
 }
 
 TEST(BTreeSet, Merge) {
-    typedef btree_set<int> test_set;
+    using test_set = btree_set<int>;
 
     test_set a;
     test_set b;
@@ -334,14 +334,14 @@ TEST(BTreeSet, Merge) {
 }
 
 TEST(BTreeSet, IteratorEmpty) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
     test_set t;
 
     EXPECT_EQ(t.begin(), t.end());
 }
 
 TEST(BTreeSet, IteratorBasic) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
     test_set t;
 
     int N = 10;
@@ -366,7 +366,7 @@ TEST(BTreeSet, IteratorBasic) {
 }
 
 TEST(BTreeSet, IteratorStress) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -395,7 +395,7 @@ TEST(BTreeSet, IteratorStress) {
 }
 
 TEST(BTreeSet, BoundaryTest) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -431,7 +431,7 @@ TEST(BTreeSet, BoundaryTest) {
 }
 
 TEST(BTreeSet, BoundaryEmpty) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -454,7 +454,7 @@ TEST(BTreeSet, BoundaryEmpty) {
 }
 
 TEST(BTreeSet, Load) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     for (int N = 0; N < 100; N++) {
         // generate some ordered data
@@ -480,7 +480,7 @@ TEST(BTreeSet, Load) {
 }
 
 TEST(BTreeSet, Clear) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -497,7 +497,7 @@ TEST(BTreeSet, Clear) {
 }
 
 TEST(BTreeSet, ChunkSplit) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     test_set t;
 
@@ -529,7 +529,7 @@ TEST(BTreeSet, ChunkSplit) {
 }
 
 TEST(BTreeSet, ChunkSplitStress) {
-    typedef btree_set<int, detail::comparator<int>, std::allocator<int>, 16> test_set;
+    using test_set = btree_set<int, detail::comparator<int>, std::allocator<int>, 16>;
 
     for (int i = 0; i < 1000; i++) {
         // generate random sequence
@@ -566,7 +566,7 @@ TEST(BTreeSet, ChunkSplitStress) {
     }
 }
 
-typedef tuple<int, int> Entry;
+using Entry = tuple<int, int>;
 
 vector<Entry> getData(unsigned numEntries) {
     vector<Entry> res(numEntries);
@@ -578,7 +578,7 @@ vector<Entry> getData(unsigned numEntries) {
     return res;
 }
 
-typedef high_resolution_clock::time_point time_point;
+using time_point = high_resolution_clock::time_point;
 
 time_point now() {
     return high_resolution_clock::now();
@@ -689,13 +689,13 @@ TEST(Performance, Basic) {
         }
     });
 
-    typedef std::set<Entry> t1;
+    using t1 = std::set<Entry>;
     checkPerformance(t1, " -- warm up -- ", in, out);
 
-    typedef btree_set<Entry, detail::comparator<Entry>, std::allocator<Entry>, 256, detail::linear_search> t2;
+    using t2 = btree_set<Entry, detail::comparator<Entry>, std::allocator<Entry>, 256, detail::linear_search>;
     checkPerformance(t2, "souffle btree_set - 256 - linear", in, out);
 
-    typedef btree_set<Entry, detail::comparator<Entry>, std::allocator<Entry>, 256, detail::binary_search> t3;
+    using t3 = btree_set<Entry, detail::comparator<Entry>, std::allocator<Entry>, 256, detail::binary_search>;
     checkPerformance(t3, "souffle btree_set - 256 - binary", in, out);
 }
 
@@ -724,7 +724,7 @@ TEST(BTreeSet, Parallel) {
     //        const int N = 100;
 
     // get a unordered list of test data
-    typedef int entry_t;
+    using entry_t = int;
     std::vector<entry_t> list;
     btree_set<entry_t> filter;
 
@@ -748,7 +748,7 @@ TEST(BTreeSet, Parallel) {
         // now insert all those values into a new set - in parallel
         btree_set<entry_t> res;
 #pragma omp parallel for  //  schedule(static,1)
-        for (std::vector<entry_t>::iterator it = full.begin(); it < full.end(); ++it) {
+        for (auto it = full.begin(); it < full.end(); ++it) {
             res.insert(*it);
         }
 
@@ -791,8 +791,8 @@ TEST(BTreeSet, Parallel) {
 #ifdef _OPENMP
 
 TEST(BTreeSet, ParallelScaling) {
-    typedef btree_set<int> test_set;
-    typedef test_set::operation_hints op_context_type;
+    using test_set = btree_set<int>;
+    using op_context_type = test_set::operation_hints;
 
     //        const int N = 60000000;     // real benchmark
     //        const int N = 1000000;     // to not run to long for unit testing
