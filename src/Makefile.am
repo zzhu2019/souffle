@@ -37,7 +37,8 @@ souffle_profile_SOURCES = souffle_prof.cpp profilerlib/Cell.hpp \
                           profilerlib/Tui.hpp                   \
                           profilerlib/html_string.hpp           \
                           profilerlib/UserInputReader.cpp       \
-                          profilerlib/UserInputReader.hpp
+                          profilerlib/UserInputReader.hpp       \
+                          FileFormatConverter.h
 
 DIR := ${CURDIR}
 
@@ -316,6 +317,12 @@ check_PROGRAMS += test/parallel_utils_test
 test_parallel_utils_test_CXXFLAGS = $(souffle_bin_CPPFLAGS) -I @abs_top_srcdir@/src/test -DBUILDDIR='"@abs_top_builddir@/src/"'
 test_parallel_utils_test_SOURCES = test/parallel_utils_test.cpp
 test_parallel_utils_test_LDADD = libsouffle.la
+
+# file format converter
+check_PROGRAMS += test/file_format_converter_test
+test_file_format_converter_test_CXXFLAGS = $(souffle_bin_CPPFLAGS) -I @abs_top_srcdir@/src/test -DBUILDDIR='"@abs_top_builddir@/src/"'
+test_file_format_converter_test_SOURCES = test/file_format_converter_test.cpp
+test_file_format_converter_LDADD = libsouffle.la
 
 # make all check-programs tests
 TESTS = $(check_PROGRAMS)
