@@ -7,9 +7,13 @@
  */
 
 #include "Cli.hpp"
+#include "../FileFormatConverter.h"
+
+// TODO: should move everything in the profiler library to namespace souffle
+using namespace souffle;
 
 void Cli::error() {
-    std::cout << "souffle-profile -v | -h | <log-file> [ -c <command> | -j | -l ]\n";
+    std::cout << "souffle-profile -v | -h | <log-file> [ -c <command> | -o <file> | -j | -l ]\n";
     exit(1);
 }
 
@@ -44,16 +48,28 @@ void Cli::parse() {
                 alive = true;
             } else if (arg.compare("-j") == 0) {
                 gui = true;
+            } else if (arg.compare("-o") == 0) {
+                // TODO (lyndonhenry): should support more extensions, e.g. '.json'
+                auto stringEndsWith = [](const std::string& str, const std::string& suffix) -> bool {
+                    return (str.length() >= suffix.length() &&
+                            str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0);
+                };
+                const auto& outputFilePath = args.at(2);
+                if (stringEndsWith(outputFilePath, ".csv")) {
+                    FileFormatConverter::fromLogToCsv(filename, outputFilePath);
+                }
             }
         }
     } else if (arg.compare("-h") == 0) {
         std::cout << "Souffle Profiler v3.0.1\n";
-        std::cout << "usage: souffle-profile -v | -h | <log-file> [ -c <command> | -j | -l ]\n"
+        std::cout << "usage: souffle-profile -v | -h | <log-file> [ -c <command> | -o <file> | -j | -l ]\n"
                   << "<log-file>     the selected log file to profile\n"
                   << "-c <command>   run the given command on the log file (run -c \"help\" for a list of "
                      "profiler commands)\n"
                   << "-j             generate a GUI(html/js) version of the profiler\n"
                   << "-l             run in live mode\n"
+                  << "-o <file>      output log file in format determined by file extension, so far the only "
+                     "supported format is '.csv'\n"
                   << "-v             print the profiler version\n"
                   << "-h             print this message" << std::endl;
         error();
