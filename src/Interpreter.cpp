@@ -26,11 +26,11 @@
 #include "InterpreterRecords.h"
 #include "Logger.h"
 #include "Macro.h"
+#include "ProfileEvent.h"
 #include "RamVisitor.h"
 #include "SignalHandler.h"
 #include "TypeSystem.h"
 #include "UnaryFunctorOps.h"
-#include "ProfileEvent.h"
 
 #include <algorithm>
 #include <chrono>
@@ -581,8 +581,7 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
         Interpreter& interpreter;
 
     public:
-        StatementEvaluator(Interpreter& interp)
-                : interpreter(interp) {}
+        StatementEvaluator(Interpreter& interp) : interpreter(interp) {}
 
         // -- Statements -----------------------------
 

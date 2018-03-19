@@ -43,13 +43,13 @@ inline Lock& getOutputLock() {
  */
 class Logger {
 private:
-    ProfileTimingEvent *event;
+    ProfileTimingEvent* event;
+
 public:
-    Logger(const std::string &label)
-            : event(ProfileEventSingleton::instance().makeTimingEvent(label)) { }
+    Logger(const std::string& label) : event(ProfileEventSingleton::instance().makeTimingEvent(label)) {}
 
     ~Logger() {
-        event->stop(); 
+        event->stop();
     }
 };
 
