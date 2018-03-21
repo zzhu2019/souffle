@@ -155,7 +155,7 @@ public:
     /** Print event */
     void print(std::ostream& os) override {
         auto duration = end - getStart();
-        os << ProfileKeySingleton::instance().getText(getKey()) << ";";
+        os << ProfileKeySingleton::instance().getText(getKey());
         os << getStartString() << ",";
         os << getEndString() << ",";
         os << std::chrono::duration_cast<std::chrono::duration<double>>(duration).count();
@@ -179,7 +179,7 @@ public:
 
     /** Print event */
     void print(std::ostream& os) override {
-        os << ProfileKeySingleton::instance().getText(getKey()) << ";";
+        os << ProfileKeySingleton::instance().getText(getKey());
         os << getStartString() << ",";
         os << number;
         os << std::endl;
@@ -201,7 +201,7 @@ public:
 
     /** Print event */
     void print(std::ostream& os) override {
-        os << ProfileKeySingleton::instance().getText(getKey()) << ";";
+        os << ProfileKeySingleton::instance().getText(getKey());
         /* system CPU time used */
         double t = (double)ru.ru_stime.tv_sec * 1000000.0 + (double)ru.ru_stime.tv_usec;
         os << getStartString() << ",";
@@ -226,7 +226,7 @@ public:
 
     /** Print event */
     void print(std::ostream& os) override {
-        os << ProfileKeySingleton::instance().getText(getKey()) << ";";
+        os << ProfileKeySingleton::instance().getText(getKey());
         os << getStartString() << ",";
         os << std::to_string(ru.ru_maxrss); /* maximum resident set size */
         os << std::endl;
@@ -340,6 +340,9 @@ public:
     /** Dump all events */
     void dump(std::ostream& os) {
         for (auto const& cur : events) {
+            if (ProfileKeySingleton::instance().getText(cur->getKey()) == "memory" || ProfileKeySingleton::instance().getText(cur->getKey()) == "utilisation") {
+                continue;
+            }
             cur->print(os);
         }
     }
