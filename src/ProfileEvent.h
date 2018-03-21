@@ -340,7 +340,7 @@ public:
     /** Dump all events */
     void dump(std::ostream& os) {
         for (auto const& cur : events) {
-            if (ProfileKeySingleton::instance().getText(cur->getKey()) == "memory" || ProfileKeySingleton::instance().getText(cur->getKey()) == "utilisation") {
+            if (ProfileKeySingleton::instance().getText(cur->getKey()).compare("memory") == 0 || ProfileKeySingleton::instance().getText(cur->getKey()).compare("utilisation") == 0) {
                 continue;
             }
             cur->print(os);
