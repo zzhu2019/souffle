@@ -22,6 +22,7 @@
 #include "CompiledRelation.h"
 #include "Logger.h"
 #include "ParallelUtils.h"
+#include "ProfileEvent.h"
 #include "SignalHandler.h"
 #include "SouffleInterface.h"
 #include "SymbolTable.h"
