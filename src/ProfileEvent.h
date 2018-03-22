@@ -15,30 +15,29 @@
  ***********************************************************************/
 
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include <ctime>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <list>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <assert.h>
 #include <sys/resource.h>
 #include <sys/time.h>
-//#include "stdlib.h"
-//#include "stdio.h"
-//#include "string.h"
 
 #pragma once
 
 namespace souffle {
 
-typedef uint32_t ProfileKey;
-typedef uint32_t Interval;
-typedef std::chrono::system_clock::time_point ProfileTimePoint;
+using ProfileKey = uint32_t;
+using Interval = uint32_t;
+using ProfileTimePoint = std::chrono::system_clock::time_point;
 
 /**
  * ProfileKey Class
@@ -50,10 +49,10 @@ class ProfileKeySingleton {
     std::unordered_map<std::string, ProfileKey> map;
     std::vector<std::string> text;
     std::mutex keyMutex;
-    ProfileKey last;
+    ProfileKey last = 0;
 
 private:
-    ProfileKeySingleton() : last(0){};
+    ProfileKeySingleton() = default;
 
 public:
     /** Get instance */
@@ -64,11 +63,11 @@ public:
 
     /** Lookup text */
     ProfileKey lookup(const std::string& txt) {
+        std::lock_guard<std::mutex> guard(keyMutex);
         auto it = map.find(txt);
         if (it != map.end()) {
             return it->second;
         } else {
-            std::lock_guard<std::mutex> guard(keyMutex);
             map[txt] = last;
             text.push_back(txt);
             return last++;
@@ -102,13 +101,17 @@ protected:
         std::time_t t = s.count();
         std::size_t fractional_seconds = ms.count() % 1000;
 
-        char buffer[80];
-        struct tm* timeinfo = localtime(&t);
-        strftime(buffer, sizeof(buffer), "%d-%m-%Y %I:%M:%S", timeinfo);
-        std::string timeString(buffer);
-        timeString += ":" + std::to_string(fractional_seconds);
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&t), "%F %T") << ":" << fractional_seconds;
 
-        return timeString;
+        return ss.str();
+        /*    char buffer[80];
+            struct tm* timeinfo = localtime(&t);
+            strftime(buffer, sizeof(buffer), "%d-%m-%Y %I:%M:%S", timeinfo);
+            std::string timeString(buffer);
+            timeString += ":" + std::to_string(fractional_seconds);
+
+            return timeString;*/
     }
 
 public:
@@ -190,9 +193,8 @@ public:
  */
 class ProfileUtilisationEvent : public ProfileEvent {
 private:
-    /** resouce statistics */
+    /** resource statistics */
     struct rusage ru;
-    // static unsigned long long lastTotalUser, lastTotalUserLow, lastTotalSys, lastTotalIdle;
 
 public:
     ProfileUtilisationEvent(const std::string& txt) : ProfileEvent(txt) {
@@ -206,7 +208,6 @@ public:
         double t = (double)ru.ru_stime.tv_sec * 1000000.0 + (double)ru.ru_stime.tv_usec;
         os << getStartString() << ",";
         os << std::to_string(t);
-        // os << "," << getCurrentValue();
         os << std::endl;
     }
 };
@@ -245,7 +246,7 @@ private:
         Interval t;
 
         /** timer is running */
-        bool running;
+        bool running = false;
 
         /** thread timer runs on */
         std::thread th;
@@ -265,7 +266,7 @@ private:
         }
 
     public:
-        ProfileTimer(Interval in = 1) : t(in), running(false) {}
+        ProfileTimer(Interval in = 1) : t(in) {}
 
         /** start timer on the thread th */
         void start() {
@@ -307,7 +308,7 @@ public:
 
     /** Make new time event */
     ProfileTimingEvent* makeTimingEvent(const std::string& txt) {
-        ProfileTimingEvent* e = new ProfileTimingEvent(txt);
+        auto e = new ProfileTimingEvent(txt);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
         return e;
@@ -315,7 +316,7 @@ public:
 
     /** Make new quantity event */
     ProfileQuantityEvent* makeQuantityEvent(const std::string& txt, size_t n) {
-        ProfileQuantityEvent* e = new ProfileQuantityEvent(txt, n);
+        auto e = new ProfileQuantityEvent(txt, n);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
         return e;
@@ -323,7 +324,7 @@ public:
 
     /** Make new utilisation event */
     ProfileUtilisationEvent* makeUtilisationEvent(const std::string& txt) {
-        ProfileUtilisationEvent* e = new ProfileUtilisationEvent(txt);
+        auto e = new ProfileUtilisationEvent(txt);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
         return e;
@@ -331,7 +332,7 @@ public:
 
     /** Make new memory event */
     ProfileMemoryEvent* makeMemoryEvent(const std::string& txt) {
-        ProfileMemoryEvent* e = new ProfileMemoryEvent(txt);
+        auto e = new ProfileMemoryEvent(txt);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
         return e;
