@@ -101,17 +101,13 @@ protected:
         std::time_t t = s.count();
         std::size_t fractional_seconds = ms.count() % 1000;
 
-        std::stringstream ss;
-        ss << std::put_time(std::localtime(&t), "%F %T") << ":" << fractional_seconds;
+        char buffer[80];
+        struct tm* timeinfo = localtime(&t);
+        strftime(buffer, sizeof(buffer), "%d-%m-%Y %I:%M:%S", timeinfo);
+        std::string timeString(buffer);
+        timeString += ":" + std::to_string(fractional_seconds);
 
-        return ss.str();
-        /*    char buffer[80];
-            struct tm* timeinfo = localtime(&t);
-            strftime(buffer, sizeof(buffer), "%d-%m-%Y %I:%M:%S", timeinfo);
-            std::string timeString(buffer);
-            timeString += ":" + std::to_string(fractional_seconds);
-
-            return timeString;*/
+        return timeString;
     }
 
 public:
