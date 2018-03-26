@@ -232,9 +232,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             out << "try {";
             out << "std::map<std::string, std::string> directiveMap(";
             out << load.getIODirectives() << ");\n";
-            out << R"(if (!inputDirectory.empty() && directiveMap["IO"] == "file" && )";
+            out << R"_(if (!inputDirectory.empty() && directiveMap["IO"] == "file" && )_";
             out << "directiveMap[\"filename\"].front() != '/') {";
-            out << R"(directiveMap["filename"] = inputDirectory + "/" + directiveMap["filename"];)";
+            out << R"_(directiveMap["filename"] = inputDirectory + "/" + directiveMap["filename"];)_";
             out << "}\n";
             out << "IODirectives ioDirectives(directiveMap);\n";
             out << "IOSystem::getInstance().getReader(";
@@ -254,9 +254,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             for (IODirectives ioDirectives : store.getIODirectives()) {
                 out << "try {";
                 out << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
-                out << R"(if (!outputDirectory.empty() && directiveMap["IO"] == "file" && )";
+                out << R"_(if (!outputDirectory.empty() && directiveMap["IO"] == "file" && )_";
                 out << "directiveMap[\"filename\"].front() != '/') {";
-                out << R"(directiveMap["filename"] = outputDirectory + "/" + directiveMap["filename"];)";
+                out << R"_(directiveMap["filename"] = outputDirectory + "/" + directiveMap["filename"];)_";
                 out << "}\n";
                 out << "IODirectives ioDirectives(directiveMap);\n";
                 out << "IOSystem::getInstance().getWriter(";
@@ -458,7 +458,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             const std::string ext = fileExtension(Global::config().get("profile"));
 
             // create local timer
-            out << "\tLogger logger(R\"(" << timer.getMessage() << ")\");\n";
+            out << "\tLogger logger(R\"_(" << timer.getMessage() << ")\"sf);\n";
 
             // insert statement to be measured
             visit(timer.getStatement(), out);
@@ -1295,7 +1295,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "// -- initialize symbol table --\n";
         os << "static const std::vector<std::string> symbols = {\n";
         for (size_t i = 0; i < symTable.size(); i++) {
-            os << "\tR\"(" << symTable.resolve(i) << ")\",\n";
+            os << "\tR\"_(" << symTable.resolve(i) << ")_\",\n";
         }
         os << "};\n";
         os << "symTable.insert(symbols);\n";
@@ -1370,9 +1370,9 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
             for (IODirectives ioDirectives : store->getIODirectives()) {
                 os << "try {";
                 os << "std::map<std::string, std::string> directiveMap(" << ioDirectives << ");\n";
-                os << R"(if (!outputDirectory.empty() && directiveMap["IO"] == "file" && )";
+                os << R"_(if (!outputDirectory.empty() && directiveMap["IO"] == "file" && )_";
                 os << "directiveMap[\"filename\"].front() != '/') {";
-                os << R"(directiveMap["filename"] = outputDirectory + "/" + directiveMap["filename"];)";
+                os << R"_(directiveMap["filename"] = outputDirectory + "/" + directiveMap["filename"];)_";
                 os << "}\n";
                 os << "IODirectives ioDirectives(directiveMap);\n";
                 os << "IOSystem::getInstance().getWriter(";
@@ -1401,9 +1401,9 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "try {";
         os << "std::map<std::string, std::string> directiveMap(";
         os << load.getIODirectives() << ");\n";
-        os << R"(if (!inputDirectory.empty() && directiveMap["IO"] == "file" && )";
+        os << R"_(if (!inputDirectory.empty() && directiveMap["IO"] == "file" && )_";
         os << "directiveMap[\"filename\"].front() != '/') {";
-        os << R"(directiveMap["filename"] = inputDirectory + "/" + directiveMap["filename"];)";
+        os << R"_(directiveMap["filename"] = inputDirectory + "/" + directiveMap["filename"];)_";
         os << "}\n";
         os << "IODirectives ioDirectives(directiveMap);\n";
         os << "IOSystem::getInstance().getReader(";
