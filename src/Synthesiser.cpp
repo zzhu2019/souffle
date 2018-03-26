@@ -1204,9 +1204,19 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "std::string profiling_fname;\n";
     }
 
-    // declare symbol table
     os << "public:\n";
-    os << "SymbolTable symTable;\n";
+
+    // declare symbol table
+    os << "// -- initialize symbol table --\n";
+    os << "SymbolTable symTable\n";
+    if (symTable.size() > 0) {
+        os << "{\n";
+        for (size_t i = 0; i < symTable.size(); i++) {
+            os << "\tR\"_(" << symTable.resolve(i) << ")_\",\n";
+        }
+        os << "}";
+    }
+    os << ";";
 
     // print relation definitions
     std::string initCons;      // initialization of constructor
@@ -1215,7 +1225,6 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     int relCtr = 0;
     std::string tempType;  // string to hold the type of the temporary relations
     visitDepthFirst(*(prog.getMain()), [&](const RamCreate& create) {
-
         // get some table details
         const auto& rel = create.getRelation();
         int arity = rel.getArity();
@@ -1290,20 +1299,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     }
     os << "{\n";
     os << registerRel;
-
-    if (symTable.size() > 0) {
-        os << "// -- initialize symbol table --\n";
-        os << "static const std::vector<std::string> symbols = {\n";
-        for (size_t i = 0; i < symTable.size(); i++) {
-            os << "\tR\"_(" << symTable.resolve(i) << ")_\",\n";
-        }
-        os << "};\n";
-        os << "symTable.insert(symbols);\n";
-        os << "\n";
-    }
-
     os << "}\n";
-
     // -- destructor --
 
     os << "~" << classname << "() {\n";

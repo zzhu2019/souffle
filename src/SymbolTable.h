@@ -21,6 +21,7 @@
 #include "Util.h"
 
 #include <deque>
+#include <initializer_list>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -79,6 +80,13 @@ public:
     SymbolTable(SymbolTable&& other) noexcept {
         numToStr.swap(other.numToStr);
         strToNum.swap(other.strToNum);
+    }
+
+    SymbolTable(std::initializer_list<std::string> symbols) {
+        strToNum.reserve(symbols.size());
+        for (auto& symbol : symbols) {
+            newSymbol(symbol);
+        }
     }
 
     /** Destructor, frees memory allocated for all strings. */
