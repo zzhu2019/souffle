@@ -72,7 +72,7 @@ souffle_sources = \
               AstProgram.cpp        AstProgram.h        \
               AstRelation.h                             \
               AstRelationIdentifier.h                   \
-              AstSrcLocation.cpp    AstSrcLocation.h    \
+              SrcLocation.cpp    SrcLocation.h    \
               AstTypeAnalysis.cpp   AstTypeAnalysis.h   \
               AstType.h                                 \
               AstUtils.cpp          AstUtils.h          \

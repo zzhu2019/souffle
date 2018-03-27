@@ -8,9 +8,9 @@
 
 /************************************************************************
  *
- * @file AstSrcLocation.h
+ * @file SrcLocation.h
  *
- * Structures to describe the location of AST nodes within input code.
+ * Structures to describe a location within input code.
  *
  ***********************************************************************/
 
@@ -22,7 +22,7 @@
 namespace souffle {
 
 /** A class describing a range in an input file */
-class AstSrcLocation {
+class SrcLocation {
 public:
     /** A class locating a single point in an input file */
     struct Point {
@@ -62,7 +62,7 @@ public:
     Point end = {};
 
     /** A comparison for source locations */
-    bool operator<(const AstSrcLocation& other) const {
+    bool operator<(const SrcLocation& other) const {
         if (filename < other.filename) {
             return true;
         }
@@ -89,7 +89,7 @@ public:
     }
 
     /** Enables ranges to be printed */
-    friend std::ostream& operator<<(std::ostream& out, const AstSrcLocation& range) {
+    friend std::ostream& operator<<(std::ostream& out, const SrcLocation& range) {
         range.print(out);
         return out;
     }

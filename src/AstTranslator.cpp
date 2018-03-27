@@ -849,7 +849,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
         // add logging
         if (Global::config().has("profile")) {
             const std::string& relationName = toString(rel.getName());
-            const AstSrcLocation& srcLocation = clause->getSrcLoc();
+            const SrcLocation& srcLocation = clause->getSrcLoc();
             const std::string clauseText = stringify(toString(*clause));
             const std::string logTimerStatement =
                     AstLogStatement::tNonrecursiveRule(relationName, srcLocation, clauseText);
@@ -879,7 +879,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
     // add logging for entire relation
     if (Global::config().has("profile")) {
         const std::string& relationName = toString(rel.getName());
-        const AstSrcLocation& srcLocation = rel.getSrcLoc();
+        const SrcLocation& srcLocation = rel.getSrcLoc();
         const std::string logTimerStatement =
                 AstLogStatement::tNonrecursiveRelation(relationName, srcLocation);
         const std::string logSizeStatement =
@@ -1052,7 +1052,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                 /* add logging */
                 if (Global::config().has("profile")) {
                     const std::string& relationName = toString(rel->getName());
-                    const AstSrcLocation& srcLocation = cl->getSrcLoc();
+                    const SrcLocation& srcLocation = cl->getSrcLoc();
                     const std::string clauseText = stringify(toString(*cl));
                     const std::string logTimerStatement =
                             AstLogStatement::tRecursiveRule(relationName, version, srcLocation, clauseText);
@@ -1087,7 +1087,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
         // label all versions
         if (Global::config().has("profile")) {
             const std::string& relationName = toString(rel->getName());
-            const AstSrcLocation& srcLocation = rel->getSrcLoc();
+            const SrcLocation& srcLocation = rel->getSrcLoc();
             const std::string logTimerStatement =
                     AstLogStatement::tRecursiveRelation(relationName, srcLocation);
             const std::string logSizeStatement =

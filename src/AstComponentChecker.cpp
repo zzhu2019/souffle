@@ -37,7 +37,7 @@ bool AstComponentChecker::transform(AstTranslationUnit& translationUnit) {
 
 const AstComponent* AstComponentChecker::checkComponentNameReference(ErrorReport& report,
         const AstComponent* enclosingComponent, const ComponentLookup& componentLookup,
-        const std::string& name, const AstSrcLocation& loc, const TypeBinding& binding) {
+        const std::string& name, const SrcLocation& loc, const TypeBinding& binding) {
     const AstTypeIdentifier& forwarded = binding.find(name);
     if (!forwarded.empty()) {
         // for forwarded types we do not check anything, because we do not know
@@ -55,7 +55,7 @@ const AstComponent* AstComponentChecker::checkComponentNameReference(ErrorReport
 }
 
 void AstComponentChecker::checkComponentReference(ErrorReport& report, const AstComponent* enclosingComponent,
-        const ComponentLookup& componentLookup, const AstComponentType& type, const AstSrcLocation& loc,
+        const ComponentLookup& componentLookup, const AstComponentType& type, const SrcLocation& loc,
         const TypeBinding& binding) {
     // check whether targeted component exists
     const AstComponent* c = checkComponentNameReference(
@@ -182,7 +182,7 @@ void AstComponentChecker::checkComponents(
 
 // Check that component names are disjoint from type and relation names.
 void AstComponentChecker::checkComponentNamespaces(ErrorReport& report, const AstProgram& program) {
-    std::map<std::string, AstSrcLocation> names;
+    std::map<std::string, SrcLocation> names;
 
     // Type and relation name error reporting performed by the AstSemanticChecker instead
 
