@@ -1235,7 +1235,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "private:\n";
         size_t numFreq = 0;
         visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) { numFreq++; });
-        os << "  size_t freqs[" << numFreq << "];\n";
+        os << "  size_t freqs[" << numFreq << "]{};\n";
     }
 
     // print relation definitions
