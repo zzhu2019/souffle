@@ -48,13 +48,13 @@
 namespace souffle {
 
 /** Lookup frequency counter */
-unsigned Synthesiser::lookupFreqIdx(const std::string &txt) {
-   static unsigned ctr;
-   auto pos = idxMap.find(txt);
+unsigned Synthesiser::lookupFreqIdx(const std::string& txt) {
+    static unsigned ctr;
+    auto pos = idxMap.find(txt);
     if (pos == idxMap.end()) {
-       return idxMap[txt] = ctr++;
+        return idxMap[txt] = ctr++;
     } else {
-       return idxMap[txt];
+        return idxMap[txt];
     }
 }
 
@@ -501,7 +501,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 out << ") {\n";
                 visit(search.getNestedOperation(), out);
                 if (Global::config().has("profile")) {
-                   out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
+                    out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
                 }
                 out << "}\n";
             } else {
@@ -1232,12 +1232,10 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     }
     os << ";";
     if (Global::config().has("profile")) {
-       os << "private:\n";
-       size_t numFreq=0;
-       visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) {
-           numFreq++;
-       });
-       os << "  size_t freqs[" << numFreq << "];\n";
+        os << "private:\n";
+        size_t numFreq = 0;
+        visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) { numFreq++; });
+        os << "  size_t freqs[" << numFreq << "];\n";
     }
 
     // print relation definitions
@@ -1400,8 +1398,6 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
                 os << ")->writeAll(*" << getRelationName(store->getRelation()) << ");\n";
 
                 os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
-
-
             }
         } else if (auto print = dynamic_cast<const RamPrintSize*>(&node)) {
             os << "{ auto lease = getOutputLock().acquire(); \n";
@@ -1413,16 +1409,17 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         }
     });
     os << "}\n";  // end of printAll() method
-                // dumpFreqs method
-                if (Global::config().has("profile")) {
 
-                os << "private:\n";
-                os << "void dumpFreqs() {\n";
-                for(auto const &cur: idxMap) {
-                 os << "\tProfileEventSingleton::instance().makeQuantityEvent(\"" << cur.first << "\",freqs[" << cur.second << "]);\n";
-                }
-                os << "}\n";  // end of dumpFreqs() method
-                }
+    // dumpFreqs method
+    if (Global::config().has("profile")) {
+        os << "private:\n";
+        os << "void dumpFreqs() {\n";
+        for (auto const& cur : idxMap) {
+            os << "\tProfileEventSingleton::instance().makeQuantityEvent(\"" << cur.first << "\",freqs["
+               << cur.second << "]);\n";
+        }
+        os << "}\n";  // end of dumpFreqs() method
+    }
 
     // issue loadAll method
     os << "public:\n";

@@ -118,7 +118,8 @@ class RamSearch : public RamOperation {
 
 public:
     RamSearch(RamNodeType type, std::unique_ptr<RamOperation> nested)
-            : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)), profileText("blbal") {}
+            : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)),
+              profileText("blbal") {}
 
     /** get nested operation */
     RamOperation* getNestedOperation() const {
@@ -131,7 +132,7 @@ public:
     }
 
     /** get profile text */
-    const std::string &getProfileText() const { 
+    const std::string& getProfileText() const {
         return profileText;
     }
 

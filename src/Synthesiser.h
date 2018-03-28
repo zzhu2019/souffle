@@ -66,8 +66,8 @@ protected:
     /** Generate code */
     void emitCode(std::ostream& out, const RamStatement& stmt);
 
-    /** Lookup frequency counter */ 
-    unsigned lookupFreqIdx(const std::string &txt);
+    /** Lookup frequency counter */
+    unsigned lookupFreqIdx(const std::string& txt);
 
 public:
     Synthesiser() = default;
