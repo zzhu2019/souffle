@@ -47,6 +47,17 @@
 
 namespace souffle {
 
+/** Lookup frequency counter */
+unsigned Synthesiser::lookupFreqIdx(const std::string &txt) {
+   static unsigned ctr;
+   auto pos = idxMap.find(txt);
+    if (pos == idxMap.end()) {
+       return idxMap[txt] = ctr++;
+    } else {
+       return idxMap[txt];
+    }
+}
+
 /** Convert RAM identifier */
 const std::string Synthesiser::convertRamIdent(const std::string& name) {
     auto it = identifiers.find(name);
@@ -489,6 +500,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 visit(condition, out);
                 out << ") {\n";
                 visit(search.getNestedOperation(), out);
+                if (Global::config().has("profile")) {
+                   out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
+                }
                 out << "}\n";
             } else {
                 visit(search.getNestedOperation(), out);
@@ -1217,6 +1231,16 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "}";
     }
     os << ";";
+    if (Global::config().has("profile")) {
+       os << "private:\n";
+       os << "  size_t freqs[10000];\n";
+       os << "public:\n";
+       os << "void dumpFreqs(std::ostream& out = std::cerr) {\n";
+       for(auto const &cur: idxMap) {
+          os << "\tProfileEventSingleton::instance().makeQuantityEvent(\"" << cur.first << "\",freqs[" << cur.second << "]);\n";
+       }
+       os << "}\n";  // end of dumpInputs() method
+    }
 
     // print relation definitions
     std::string initCons;      // initialization of constructor
@@ -1332,6 +1356,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "ProfileEventSingleton::instance().startTimer();\n";
         emitCode(os, *(prog.getMain()));
         os << "ProfileEventSingleton::instance().stopTimer();\n";
+        os << "dumpFreqs();\n";
         os << "ProfileEventSingleton::instance().dump(profile);\n";
     } else {
         emitCode(os, *(prog.getMain()));
@@ -1377,6 +1402,9 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
                 os << ")->writeAll(*" << getRelationName(store->getRelation()) << ");\n";
 
                 os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
+
+                // dump freqs
+
             }
         } else if (auto print = dynamic_cast<const RamPrintSize*>(&node)) {
             os << "{ auto lease = getOutputLock().acquire(); \n";
