@@ -47,6 +47,7 @@ aliases:
     stage: Packaging
     os: linux
     sudo: false
+    services: docker
     addons:
       apt:
         sources:
@@ -57,8 +58,10 @@ aliases:
         - devscripts
         - debhelper
         - fakeroot
-    before_script: ".travis/init_make_package.sh"
-    script: ".travis/linux/make_package.sh"
+    before_script:
+    - docker build -t ubuntu1604dist .travis/docker/ubuntu1604
+    script:
+    - docker run -v `pwd`:/souffle ubuntu1604dist /bin/sh -c "cd /souffle && .travis/init_make_package.sh && .travis/linux/make_package.sh"
   - &osxgcc
     stage: Testing
     os: osx
