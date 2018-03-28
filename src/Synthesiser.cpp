@@ -458,7 +458,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             const std::string ext = fileExtension(Global::config().get("profile"));
 
             // create local timer
-            out << "\tLogger logger(R\"_(" << timer.getMessage() << ")\"sf);\n";
+            out << "\tLogger logger(R\"_(" << timer.getMessage() << ")_\");\n";
 
             // insert statement to be measured
             visit(timer.getStatement(), out);
