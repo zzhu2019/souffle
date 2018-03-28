@@ -1233,13 +1233,11 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << ";";
     if (Global::config().has("profile")) {
        os << "private:\n";
-       os << "  size_t freqs[10000];\n";
-       os << "public:\n";
-       os << "void dumpFreqs(std::ostream& out = std::cerr) {\n";
-       for(auto const &cur: idxMap) {
-          os << "\tProfileEventSingleton::instance().makeQuantityEvent(\"" << cur.first << "\",freqs[" << cur.second << "]);\n";
-       }
-       os << "}\n";  // end of dumpInputs() method
+       size_t numFreq=0;
+       visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) {
+           numFreq++;
+       });
+       os << "  size_t freqs[" << numFreq << "];\n";
     }
 
     // print relation definitions
@@ -1403,7 +1401,6 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
 
                 os << "} catch (std::exception& e) {std::cerr << e.what();exit(1);}\n";
 
-                // dump freqs
 
             }
         } else if (auto print = dynamic_cast<const RamPrintSize*>(&node)) {
@@ -1416,6 +1413,16 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         }
     });
     os << "}\n";  // end of printAll() method
+                // dumpFreqs method
+                if (Global::config().has("profile")) {
+
+                os << "private:\n";
+                os << "void dumpFreqs() {\n";
+                for(auto const &cur: idxMap) {
+                 os << "\tProfileEventSingleton::instance().makeQuantityEvent(\"" << cur.first << "\",freqs[" << cur.second << "]);\n";
+                }
+                os << "}\n";  // end of dumpFreqs() method
+                }
 
     // issue loadAll method
     os << "public:\n";
