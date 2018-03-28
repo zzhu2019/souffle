@@ -706,7 +706,16 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             }
 
             // add a scan level
-            op = std::make_unique<RamScan>(getRelation(atom), std::move(op), isExistCheck);
+            if (Global::config().has("profile")) {
+                std::stringstream ss;
+                ss << "@frequency" << ';';
+                ss << *atom << ';';
+                ss << version << ';';
+                ss << level << ';';
+                op = std::make_unique<RamScan>(getRelation(atom), std::move(op), isExistCheck, ss.str());
+            } else {
+                op = std::make_unique<RamScan>(getRelation(atom), std::move(op), isExistCheck);
+            }
 
             // add constraints
             for (size_t pos = 0; pos < atom->argSize(); ++pos) {
