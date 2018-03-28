@@ -37,8 +37,8 @@
     #include "AstProgram.h"
     #include "StringPool.h"
 
-    #include "AstSrcLocation.h"
-    #define YYLTYPE AstSrcLocation
+    #include "SrcLocation.h"
+    #define YYLTYPE SrcLocation
 
     #include "ParserDriver.h"
     #include "RamTypes.h"
@@ -55,9 +55,9 @@
 
     /* Execute when matching */
 #define YY_USER_ACTION  { \
-    yylloc.start = AstSrcLocation::Point({ yylineno, yycolumn }); \
+    yylloc.start = SrcLocation::Point({ yylineno, yycolumn }); \
     yycolumn += yyleng;             \
-    yylloc.end   = AstSrcLocation::Point({ yylineno, yycolumn }); \
+    yylloc.end   = SrcLocation::Point({ yylineno, yycolumn }); \
     yylloc.filename = yyfilename;   \
 }
 

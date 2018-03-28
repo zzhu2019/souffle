@@ -8,13 +8,13 @@
 
 /************************************************************************
  *
- * @file AstSrcLocation.cpp
+ * @file SrcLocation.cpp
  *
  * Structures to describe the location of AST nodes within input code.
  *
  ***********************************************************************/
 
-#include "AstSrcLocation.h"
+#include "SrcLocation.h"
 #include "Util.h"
 
 #include <cstring>
@@ -28,7 +28,7 @@
 
 namespace souffle {
 
-std::string AstSrcLocation::extloc() const {
+std::string SrcLocation::extloc() const {
     std::ifstream in(filename);
     std::stringstream s;
     if (in.is_open()) {
