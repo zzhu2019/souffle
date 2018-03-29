@@ -1418,7 +1418,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "private:\n";
         os << "void dumpFreqs() {\n";
         for (auto const& cur : idxMap) {
-            os << "\tProfileEventSingleton::instance().makeQuantityEvent(\"" << cur.first << "\",freqs["
+            os << "\tProfileEventSingleton::instance().makeQuantityEvent(R\"_(" << cur.first << ")_\", freqs["
                << cur.second << "]);\n";
         }
         os << "}\n";  // end of dumpFreqs() method
