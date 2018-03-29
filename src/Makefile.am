@@ -322,7 +322,7 @@ test_parallel_utils_test_LDADD = libsouffle.la
 check_PROGRAMS += test/file_format_converter_test
 test_file_format_converter_test_CXXFLAGS = $(souffle_bin_CPPFLAGS) -I @abs_top_srcdir@/src/test -DBUILDDIR='"@abs_top_builddir@/src/"'
 test_file_format_converter_test_SOURCES = test/file_format_converter_test.cpp
-test_file_format_converter_LDADD = libsouffle.la
+test_file_format_converter_test_LDADD = libsouffle.la
 
 # make all check-programs tests
 TESTS = $(check_PROGRAMS)

@@ -263,7 +263,7 @@ class FileFormatConverter {
 private:
     static const std::vector<std::vector<std::string>> transformBySchema(
             const std::map<std::string, std::vector<std::string>>& schema,
-            const std::vector<std::vector<std::string>>& oldData) {
+            const std::vector<std::vector<std::string>>& oldData, const bool hasHeaders = false) {
         auto headers = std::set<std::string>();
         for (const auto& pair : schema) {
             headers.insert(pair.second.begin(), pair.second.end());
@@ -274,16 +274,20 @@ private:
             headerToIndex.insert({{header, i}});
             ++i;
         }
-        auto firstRow = std::vector<std::string>(headers.size() + 1);
-        firstRow[0] = "@";
-        for (const auto& pair : headerToIndex) {
-            firstRow[pair.second] = pair.first;
-        }
         auto newData = std::vector<std::vector<std::string>>(oldData.size() + 1);
-        newData[0] = firstRow;
-        i = 1;
+        i = 0;
+        // check if the whether the given config says to print headers or not
+        if (hasHeaders) {
+            auto firstRow = std::vector<std::string>(headers.size() + 1);
+            firstRow[0] = "@";
+            for (const auto& pair : headerToIndex) {
+                firstRow[pair.second] = pair.first;
+            }
+            newData[0] = firstRow;
+            ++i;
+        }
         for (const auto& oldRow : oldData) {
-            auto newRow = std::vector<std::string>(firstRow.size());
+            auto newRow = std::vector<std::string>(headers.size() + 1);
             newRow[0] = oldRow.at(0);
             const auto& rowSchema = schema.at(oldRow.at(0));
             for (size_t oldIndex = 1; oldIndex < oldRow.size(); ++oldIndex) {
@@ -296,7 +300,8 @@ private:
     }
 
 public:
-    static void fromLogToCsv(const std::string& inputPath, const std::string& outputPath) {
+    static void fromLogToCsv(const std::string& inputPath, const std::string& outputPath,
+            const std::map<std::string, std::string>& config = std::map<std::string, std::string>()) {
         const std::map<std::string, std::vector<std::string>> schema = {{"@start-debug", {}},
                 {"@t-nonrecursive-relation", {"relation", "src-locator", "time"}},
                 {"@n-nonrecursive-relation", {"relation", "src-locator", "tuples"}},
@@ -310,10 +315,16 @@ public:
                 {"@runtime", {"total-time"}}};
         auto logData = read<std::vector<std::vector<std::string>>,
                 read<std::vector<std::string>, readRow<';', '\'', '\"', '\\', ' '>, '\n'>>(inputPath);
-        auto csvData = transformBySchema(schema, logData);
-        write<std::vector<std::vector<std::string>>,
-                write<std::vector<std::string>, write<std::string, writeColumn<'\'', '\\'>, ','>, '\n'>>(
-                outputPath, csvData);
+        auto csvData = transformBySchema(schema, logData, config.find("headers") != config.end());
+        if (config.find("quotes") != config.end()) {
+            write<std::vector<std::vector<std::string>>,
+                    write<std::vector<std::string>, write<std::string, writeColumn<'\'', '\\'>, ','>, '\n'>>(
+                    outputPath, csvData);
+        } else {
+            write<std::vector<std::vector<std::string>>,
+                    write<std::vector<std::string>, write<std::string, writeColumn<>, ','>, '\n'>>(
+                    outputPath, csvData);
+        }
     }
 
     // TODO (lyndonhenry): should do a 'fromLogToJson' member function
