@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "StringUtils.hpp"
+#include "StringUtils.h"
 
 /*
  * Convert a number into a shorthand notation

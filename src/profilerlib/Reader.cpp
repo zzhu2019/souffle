@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Reader.hpp"
+#include "Reader.h"
 
 void Reader::readFile() {
     if (isLive()) {
