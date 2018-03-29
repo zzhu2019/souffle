@@ -708,10 +708,11 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             // add a scan level
             if (Global::config().has("profile")) {
                 std::stringstream ss;
-                ss << "@frequency" << ';';
+                ss << "@frequency-rule" << ';';
                 ss << getRelationName(atom->getName()) << ';';
-                ss << atom->getSrcLoc() << ';';
+                ss << clause.getSrcLoc() << ';';
                 ss << version << ';';
+                ss << atom->getSrcLoc() << ';';
                 ss << level << ';';
                 op = std::make_unique<RamScan>(getRelation(atom), std::move(op), isExistCheck, ss.str());
             } else {
