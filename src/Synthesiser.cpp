@@ -506,6 +506,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 out << "}\n";
             } else {
                 visit(search.getNestedOperation(), out);
+                if (Global::config().has("profile")) {
+                    out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
+                }
             }
             PRINT_END_COMMENT(out);
         }
