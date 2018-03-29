@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "CellInterface.hpp"
+#include "CellInterface.h"
 
 #include <iostream>
 #include <memory>

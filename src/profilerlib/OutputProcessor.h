@@ -12,11 +12,11 @@
 #include <string>
 #include <vector>
 
-#include "Cell.hpp"
-#include "ProgramRun.hpp"
-#include "Row.hpp"
-#include "StringUtils.hpp"
-#include "Table.hpp"
+#include "Cell.h"
+#include "ProgramRun.h"
+#include "Row.h"
+#include "StringUtils.h"
+#include "Table.h"
 
 /*
  * Class to format profiler data structures into tables

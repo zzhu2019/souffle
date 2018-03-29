@@ -12,7 +12,7 @@
 #include <iostream>
 #include <string>
 
-#include "StringUtils.hpp"
+#include "StringUtils.h"
 
 /*
  * Class containing a copy of the gui_src directory (apart from testtabledata) packaged into one html file

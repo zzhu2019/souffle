@@ -19,11 +19,11 @@
 
 #include <dirent.h>
 
-#include "Iteration.hpp"
-#include "ProgramRun.hpp"
-#include "Relation.hpp"
-#include "Rule.hpp"
-#include "StringUtils.hpp"
+#include "Iteration.h"
+#include "ProgramRun.h"
+#include "Relation.h"
+#include "Rule.h"
+#include "StringUtils.h"
 
 /*
  * Input reader and processor for log files
