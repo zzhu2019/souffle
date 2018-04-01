@@ -58,10 +58,8 @@ aliases:
         - devscripts
         - debhelper
         - fakeroot
-    before_script:
-    - docker build -t ubuntu1604dist .travis/docker/ubuntu1604
     script:
-    - docker run -v `pwd`:/souffle ubuntu1604dist /bin/sh -c "cd /souffle && .travis/init_make_package.sh && .travis/linux/make_package.sh"
+            - docker run -v `pwd`:/souffle ubuntu:xenial /bin/sh -c "cd /souffle && .travis/linux/install_debian_deps.sh && .travis/init_make_package.sh && .travis/linux/make_package.sh"
   - &osxgcc
     stage: Testing
     os: osx
