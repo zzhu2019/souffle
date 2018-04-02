@@ -6,8 +6,26 @@ DIST=xenial,yakkety,zesty,artful,bionic
 #$1 = Repository
 #$2 = Version
 #$3 = Output filename
+#$4 = Repository type (deb/rpm)
 print_json () {
 DATE=`date --iso-8601`
+
+if [ "$4" = rpm ];
+then
+ RELEASE=`grep "^VERSION_ID=" /etc/os-release|sed 's/VERSION_ID=//'|tr -d '"'`
+ DIST=`grep "^ID=" /etc/os-release|sed 's/ID=//'|tr -d '"'`
+ ARCH=$(uname -i)
+ FILES="[{\"includePattern\": \"deploy/(.*\.rpm)\", \"uploadPattern\": \"$DIST/$RELEASE/$ARCH/\$1\"
+    }],"
+else
+  FILES="[{\"includePattern\": \"deploy/(.*\.deb)\", \"uploadPattern\": \"pool/main/s/souffle/\$1\",
+    \"matrixParams\": {
+        \"deb_distribution\": \"$DIST\",
+        \"deb_component\": \"main\",
+        \"deb_architecture\": \"amd64\",
+        \"override\": 1 }
+    }],"
+fi
 
 cat > ${3} <<EOF
 {
@@ -31,17 +49,12 @@ cat > ${3} <<EOF
     },
 
     "files":
-    [{"includePattern": "deploy/(.*\.deb)", "uploadPattern": "pool/main/s/souffle/\$1",
-    "matrixParams": {
-        "deb_distribution": "$DIST",
-        "deb_component": "main",
-        "deb_architecture": "amd64",
-        "override": 1 }
-    }],
+    $FILES
     "publish": true
 }
 EOF
 }
 
-print_json "deb"  "`git describe --tags --always`" "bintray-stable.json"
-print_json "deb-unstable" "`git describe --tags --always`" "bintray-unstable.json"
+print_json "deb"  "`git describe --tags --always`" "bintray-deb-stable.json"
+print_json "deb-unstable" "`git describe --tags --always`" "bintray-deb-unstable.json"
+print_json "rpm"  "`git describe --tags --always`" "bintray-rpm-unstable.json" "rpm"

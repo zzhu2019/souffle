@@ -138,7 +138,7 @@ jobs:
     deploy:
       - provider: bintray
         skip-cleanup: true
-        file: bintray-unstable.json
+        file: bintray-deb-unstable.json
         user: souffle-lang
         key: $BINTRAY_KEY
         on:
@@ -146,7 +146,7 @@ jobs:
           repo: souffle-lang/souffle
       - provider: bintray
         skip-cleanup: true
-        file: bintray-stable.json
+        file: bintray-deb-stable.json
         user: souffle-lang
         key: $BINTRAY_KEY
         on:

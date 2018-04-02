@@ -6,7 +6,7 @@ set -e
 set -x
 
 ./bootstrap
-./configure --prefix=usr/local
+./configure --prefix=`pwd`/usr/local
 
 make -j2 install
 
