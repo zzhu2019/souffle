@@ -48,18 +48,6 @@ aliases:
     os: linux
     sudo: false
     services: docker
-    addons:
-      apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - *linux_deps
-        - g++-7
-        - devscripts
-        - debhelper
-        - fakeroot
-    script:
-            - docker run -v `pwd`:/souffle ubuntu:xenial /bin/sh -c "cd /souffle && .travis/linux/install_debian_deps.sh && .travis/init_make_package.sh && .travis/linux/make_package.sh"
   - &osxgcc
     stage: Testing
     os: osx
@@ -142,8 +130,7 @@ jobs:
 # Packaging stage
   # Make the linux deb packages.
   - <<: *linuxpackage
-    env:
-    - *gcc_environment
+    script: docker run -v `pwd`:/souffle ubuntu:xenial /bin/sh -c "cd /souffle && .travis/linux/install_debian_deps.sh && .travis/init_make_package.sh && .travis/linux/make_package.sh"
     before_deploy:
       - .travis/bintray_json.sh
     # deploy to bintray if we're in the souffle-lang repo
@@ -166,6 +153,22 @@ jobs:
           branch: master
           repo: souffle-lang/souffle
           tags: true
+  # Make the fedora rpm packages.
+  - <<: *linuxpackage
+    script: docker run -v `pwd`:/souffle fedora:27 /bin/sh -c "cd /souffle && .travis/linux/install_fedora_deps.sh && .travis/linux/make_rpm_package.sh"
+    before_deploy:
+      - .travis/bintray_json.sh rpm
+    # deploy to bintray if we're in the souffle-lang repo
+    # https://docs.travis-ci.com/user/deployment/bintray
+    deploy:
+      - provider: bintray
+        skip-cleanup: true
+        file: bintray-rpm-unstable.json
+        user: souffle-lang
+        key: $BINTRAY_KEY
+        on:
+          branch: master
+          repo: souffle-lang/souffle
   # Make the OSX packages.
   - <<: *osxpackage
   # Generate doxygen html
