@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Set the distribution name
-DIST=xenial,yakkety,zesty,artful,bionic
 
 #$1 = Repository
 #$2 = Version
@@ -12,12 +10,21 @@ DATE=`date --iso-8601`
 
 if [ "$4" = rpm ];
 then
- RELEASE=`grep "^VERSION_ID=" /etc/os-release|sed 's/VERSION_ID=//'|tr -d '"'`
- DIST=`grep "^ID=" /etc/os-release|sed 's/ID=//'|tr -d '"'`
- ARCH=$(uname -i)
- FILES="[{\"includePattern\": \"deploy/(.*\.rpm)\", \"uploadPattern\": \"$DIST/$RELEASE/$ARCH/\$1\"
+  #For distro dependent settings
+  #RELEASE=`grep "^VERSION_ID=" /etc/os-release|sed 's/VERSION_ID=//'|tr -d '"'`
+  #DIST=`grep "^ID=" /etc/os-release|sed 's/ID=//'|tr -d '"'`
+  #ARCH=$(uname -i)
+
+  #Fedora 27 x86_64
+  DIST='fedora'
+  RELEASE='27'
+  ARCH='x86_64'
+
+  FILES="[{\"includePattern\": \"deploy/(.*\.rpm)\", \"uploadPattern\": \"$DIST/$RELEASE/$ARCH/\$1\"
     }],"
 else
+  DIST=xenial,yakkety,zesty,artful,bionic
+
   FILES="[{\"includePattern\": \"deploy/(.*\.deb)\", \"uploadPattern\": \"pool/main/s/souffle/\$1\",
     \"matrixParams\": {
         \"deb_distribution\": \"$DIST\",
@@ -57,4 +64,5 @@ EOF
 
 print_json "deb"  "`git describe --tags --always`" "bintray-deb-stable.json"
 print_json "deb-unstable" "`git describe --tags --always`" "bintray-deb-unstable.json"
-print_json "rpm"  "`git describe --tags --always`" "bintray-rpm-unstable.json" "rpm"
+print_json "rpm"  "`git describe --tags --always`" "bintray-rpm-stable.json" "rpm"
+print_json "rpm-unstable"  "`git describe --tags --always`" "bintray-rpm-unstable.json" "rpm"
