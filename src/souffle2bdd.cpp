@@ -71,14 +71,14 @@ public:
 };
 
 /** Bddbddb converter class */ 
-class BddbddbConverter : private AstVisitor<void, std::ostream&> {
+class BddBddBTranslator : private AstVisitor<void, std::ostream&> {
     // literals aggregated to be added to the end of a rule while converting
     std::vector<std::string> extra_literals;
 
     int varCounter = 0;
 
 public:
-    BddbddbConverter() = default;
+    BddBddBTranslator() = default;
 
     void convert(std::ostream& out, const AstProgram& program) {
         visit(program, out);
@@ -261,10 +261,9 @@ private:
     }
 };
 
-/** Convert Souffle program to bddbddb program */
+/** Convert a Souffle program to a bddbddb program */
 void toBddbddb(std::ostream& out, const AstTranslationUnit& translationUnit) {
-    // simply run the converter
-    BddbddbConverter().convert(out, *translationUnit.getProgram());
+    BddBddBTranslator().convert(out, *translationUnit.getProgram());
 }
 
 int main(int argc, char** argv) {
