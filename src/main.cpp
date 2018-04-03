@@ -323,13 +323,11 @@ int main(int argc, char** argv) {
 
     // Magic-Set pipeline
     auto magicPipeline = std::make_unique<ConditionalTransformer>(Global::config().has("magic-transform"),
-            std::make_unique<PipelineTransformer>(
-                std::make_unique<NormaliseConstraintsTransformer>(),
-                std::make_unique<MagicSetTransformer>(),
-                std::make_unique<ResolveAliasesTransformer>(),
-                std::make_unique<RemoveRelationCopiesTransformer>(),
-                std::make_unique<RemoveEmptyRelationsTransformer>(),
-                std::make_unique<RemoveRedundantRelationsTransformer>()));
+            std::make_unique<PipelineTransformer>(std::make_unique<NormaliseConstraintsTransformer>(),
+                    std::make_unique<MagicSetTransformer>(), std::make_unique<ResolveAliasesTransformer>(),
+                    std::make_unique<RemoveRelationCopiesTransformer>(),
+                    std::make_unique<RemoveEmptyRelationsTransformer>(),
+                    std::make_unique<RemoveRedundantRelationsTransformer>()));
 
 #ifdef USE_PROVENANCE
     // Provenance pipeline

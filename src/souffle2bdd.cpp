@@ -10,9 +10,9 @@
  *
  * @file souffle2bdd.cpp
  *
- * Main driver for conversion tool from translating Souffle programs to 
- * bddbddb programs. 
- * 
+ * Main driver for conversion tool from translating Souffle programs to
+ * bddbddb programs.
+ *
  * bddbddb is a Datalog engine written by Jon Whaley and can be downloaded
  * from there: http://bddbddb.sourceforge.net
  *
@@ -70,7 +70,7 @@ public:
     }
 };
 
-/** Bddbddb converter class */ 
+/** Bddbddb converter class */
 class BddBddBTranslator : private AstVisitor<void, std::ostream&> {
     // literals aggregated to be added to the end of a rule while converting
     std::vector<std::string> extra_literals;
@@ -348,99 +348,101 @@ int main(int argc, char** argv) {
             Global::config().set("include-dir", allIncludes);
         }
 
-    // ------ start souffle -------------
+        // ------ start souffle -------------
 
-    /* Create the pipe to establish a communication between cpp and souffle */
-    std::string cmd = ::which("mcpp");
+        /* Create the pipe to establish a communication between cpp and souffle */
+        std::string cmd = ::which("mcpp");
 
-    if (!isExecutable(cmd)) {
-        ERROR("failed to locate mcpp pre-processor");
-    }
+        if (!isExecutable(cmd)) {
+            ERROR("failed to locate mcpp pre-processor");
+        }
 
-    cmd += " -W0 " + Global::config().get("include-dir") + " " + Global::config().get("");
-    FILE* in = popen(cmd.c_str(), "r");
+        cmd += " -W0 " + Global::config().get("include-dir") + " " + Global::config().get("");
+        FILE* in = popen(cmd.c_str(), "r");
 
-    /* Time taking for parsing */
-    auto parser_start = std::chrono::high_resolution_clock::now();
+        /* Time taking for parsing */
+        auto parser_start = std::chrono::high_resolution_clock::now();
 
-    // ------- parse program -------------
+        // ------- parse program -------------
 
-    // parse file
-    SymbolTable symTab;
-    ErrorReport errReport(Global::config().has("no-warn"));
-    DebugReport debugReport;
-    std::unique_ptr<AstTranslationUnit> astTranslationUnit =
-            ParserDriver::parseTranslationUnit("<stdin>", in, symTab, errReport, debugReport);
+        // parse file
+        SymbolTable symTab;
+        ErrorReport errReport(Global::config().has("no-warn"));
+        DebugReport debugReport;
+        std::unique_ptr<AstTranslationUnit> astTranslationUnit =
+                ParserDriver::parseTranslationUnit("<stdin>", in, symTab, errReport, debugReport);
 
-    // close input pipe
-    int preprocessor_status = pclose(in);
-    if (preprocessor_status == -1) {
-        perror(nullptr);
-        ERROR("failed to close pre-processor pipe");
-    }
+        // close input pipe
+        int preprocessor_status = pclose(in);
+        if (preprocessor_status == -1) {
+            perror(nullptr);
+            ERROR("failed to close pre-processor pipe");
+        }
 
-    /* Report run-time of the parser if verbose flag is set */
-    if (Global::config().has("verbose")) {
-        auto parser_end = std::chrono::high_resolution_clock::now();
-        std::cout << "Parse Time: " << std::chrono::duration<double>(parser_end - parser_start).count()
-                  << "sec\n";
-    }
+        /* Report run-time of the parser if verbose flag is set */
+        if (Global::config().has("verbose")) {
+            auto parser_end = std::chrono::high_resolution_clock::now();
+            std::cout << "Parse Time: " << std::chrono::duration<double>(parser_end - parser_start).count()
+                      << "sec\n";
+        }
 
-    // ------- check for parse errors -------------
-    if (astTranslationUnit->getErrorReport().getNumErrors() != 0) {
-        std::cerr << astTranslationUnit->getErrorReport();
-        std::cerr << std::to_string(astTranslationUnit->getErrorReport().getNumErrors()) +
-                             " errors generated, evaluation aborted"
-                  << std::endl;
-        exit(1);
-    }
+        // ------- check for parse errors -------------
+        if (astTranslationUnit->getErrorReport().getNumErrors() != 0) {
+            std::cerr << astTranslationUnit->getErrorReport();
+            std::cerr << std::to_string(astTranslationUnit->getErrorReport().getNumErrors()) +
+                                 " errors generated, evaluation aborted"
+                      << std::endl;
+            exit(1);
+        }
 
-    // ------- rewriting / optimizations -------------
+        // ------- rewriting / optimizations -------------
 
-    /* set up additional global options based on pragma declaratives */
-    (std::make_unique<AstPragmaChecker>())->apply(*astTranslationUnit);
+        /* set up additional global options based on pragma declaratives */
+        (std::make_unique<AstPragmaChecker>())->apply(*astTranslationUnit);
 
-    /* construct the transformation pipeline */
+        /* construct the transformation pipeline */
 
-    // Magic-Set pipeline
-    auto magicPipeline = std::make_unique<ConditionalTransformer>(Global::config().has("magic-transform"),
-            std::make_unique<PipelineTransformer>(std::make_unique<NormaliseConstraintsTransformer>(),
-                    std::make_unique<MagicSetTransformer>(),
-                    std::make_unique<RemoveRelationCopiesTransformer>(),
-                    std::make_unique<RemoveEmptyRelationsTransformer>(),
-                    std::make_unique<RemoveRedundantRelationsTransformer>()));
+        // Magic-Set pipeline
+        auto magicPipeline = std::make_unique<ConditionalTransformer>(Global::config().has("magic-transform"),
+                std::make_unique<PipelineTransformer>(std::make_unique<NormaliseConstraintsTransformer>(),
+                        std::make_unique<MagicSetTransformer>(),
+                        std::make_unique<RemoveRelationCopiesTransformer>(),
+                        std::make_unique<RemoveEmptyRelationsTransformer>(),
+                        std::make_unique<RemoveRedundantRelationsTransformer>()));
 
+        // Main pipeline
+        auto pipeline = std::make_unique<PipelineTransformer>(std::make_unique<AstComponentChecker>(),
+                std::make_unique<ComponentInstantiationTransformer>(),
+                std::make_unique<UniqueAggregationVariablesTransformer>(),
+                std::make_unique<AstSemanticChecker>(),
+                std::make_unique<RemoveBooleanConstraintsTransformer>(),
+                std::make_unique<InlineRelationsTransformer>(),
+                std::make_unique<ReduceExistentialsTransformer>(),
+                std::make_unique<ExtractDisconnectedLiteralsTransformer>(),
+                std::make_unique<RemoveRelationCopiesTransformer>(),
+                std::make_unique<MaterializeAggregationQueriesTransformer>(),
+                std::make_unique<RemoveEmptyRelationsTransformer>(),
+                std::make_unique<RemoveRedundantRelationsTransformer>(), std::move(magicPipeline),
+                std::make_unique<AstExecutionPlanChecker>());
 
-    // Main pipeline
-    auto pipeline = std::make_unique<PipelineTransformer>(std::make_unique<AstComponentChecker>(),
-            std::make_unique<ComponentInstantiationTransformer>(),
-            std::make_unique<UniqueAggregationVariablesTransformer>(), std::make_unique<AstSemanticChecker>(),
-            std::make_unique<RemoveBooleanConstraintsTransformer>(),
-            std::make_unique<InlineRelationsTransformer>(), std::make_unique<ReduceExistentialsTransformer>(),
-            std::make_unique<ExtractDisconnectedLiteralsTransformer>(),
-            std::make_unique<RemoveRelationCopiesTransformer>(),
-            std::make_unique<MaterializeAggregationQueriesTransformer>(),
-            std::make_unique<RemoveEmptyRelationsTransformer>(),
-            std::make_unique<RemoveRedundantRelationsTransformer>(), std::move(magicPipeline),
-            std::make_unique<AstExecutionPlanChecker>());
+        // Set up the debug report if necessary
+        if (!Global::config().get("debug-report").empty()) {
+            auto parser_end = std::chrono::high_resolution_clock::now();
+            std::string runtimeStr =
+                    "(" + std::to_string(std::chrono::duration<double>(parser_end - parser_start).count()) +
+                    "s)";
+            DebugReporter::generateDebugReport(*astTranslationUnit, "Parsing", "After Parsing " + runtimeStr);
 
-    // Set up the debug report if necessary
-    if (!Global::config().get("debug-report").empty()) {
-        auto parser_end = std::chrono::high_resolution_clock::now();
-        std::string runtimeStr =
-                "(" + std::to_string(std::chrono::duration<double>(parser_end - parser_start).count()) + "s)";
-        DebugReporter::generateDebugReport(*astTranslationUnit, "Parsing", "After Parsing " + runtimeStr);
+            pipeline->setDebugReport();
+        }
 
-        pipeline->setDebugReport();
-    }
+        // Toggle pipeline verbosity
+        pipeline->setVerbosity(Global::config().has("verbose"));
 
-    // Toggle pipeline verbosity
-    pipeline->setVerbosity(Global::config().has("verbose"));
+        // Apply all the transformations
+        pipeline->apply(*astTranslationUnit);
 
-    // Apply all the transformations
-    pipeline->apply(*astTranslationUnit);
-
-    try {
+        try {
             if (Global::config().get("output") == "") {
                 // use STD-OUT
                 toBddbddb(std::cout, *astTranslationUnit);
@@ -467,11 +469,10 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
 }
 // end of namespace souffle
 
-/** main program */ 
+/** main program */
 int main(int argc, char** argv) {
     return souffle::main(argc, argv);
 }
