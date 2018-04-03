@@ -35,7 +35,7 @@ class SymbolTable;
 using yyscan_t = void*;
 
 struct scanner_data {
-    AstSrcLocation yylloc;
+    SrcLocation yylloc;
 
     /* Stack of parsed files */
     const char* yyfilename = nullptr;
@@ -72,7 +72,7 @@ public:
 
     bool trace_parsing = false;
 
-    void error(const AstSrcLocation& loc, const std::string& msg);
+    void error(const SrcLocation& loc, const std::string& msg);
     void error(const std::string& msg);
 };
 

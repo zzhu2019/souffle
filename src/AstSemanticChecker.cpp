@@ -703,7 +703,7 @@ void AstSemanticChecker::checkIODirectives(ErrorReport& report, const AstProgram
     }
 }
 
-static const std::vector<AstSrcLocation> usesInvalidWitness(const std::vector<AstLiteral*>& literals,
+static const std::vector<SrcLocation> usesInvalidWitness(const std::vector<AstLiteral*>& literals,
         const std::set<std::unique_ptr<AstArgument>>& groundedArguments) {
     // Node-mapper that replaces aggregators with new (unique) variables
     struct M : public AstNodeMapper {
@@ -731,7 +731,7 @@ static const std::vector<AstSrcLocation> usesInvalidWitness(const std::vector<As
         }
     };
 
-    std::vector<AstSrcLocation> result;
+    std::vector<SrcLocation> result;
 
     // Create two versions of the original clause
 
@@ -817,9 +817,8 @@ static const std::vector<AstSrcLocation> usesInvalidWitness(const std::vector<As
         visitDepthFirst(*lit, [&](const AstAggregator& aggr) {
             // Check recursively if an invalid witness is used
             std::vector<AstLiteral*> aggrBodyLiterals = aggr.getBodyLiterals();
-            std::vector<AstSrcLocation> subresult =
-                    usesInvalidWitness(aggrBodyLiterals, newlyGroundedArguments);
-            for (AstSrcLocation argloc : subresult) {
+            std::vector<SrcLocation> subresult = usesInvalidWitness(aggrBodyLiterals, newlyGroundedArguments);
+            for (SrcLocation argloc : subresult) {
                 result.push_back(argloc);
             }
         });
@@ -844,8 +843,8 @@ void AstSemanticChecker::checkWitnessProblem(ErrorReport& report, const AstProgr
 
         // Perform the check
         std::set<std::unique_ptr<AstArgument>> groundedArguments;
-        std::vector<AstSrcLocation> invalidArguments = usesInvalidWitness(bodyLiterals, groundedArguments);
-        for (AstSrcLocation invalidArgument : invalidArguments) {
+        std::vector<SrcLocation> invalidArguments = usesInvalidWitness(bodyLiterals, groundedArguments);
+        for (SrcLocation invalidArgument : invalidArguments) {
             report.addError(
                     "Witness problem: argument grounded by an aggregator's inner scope is used ungrounded in "
                     "outer scope",
@@ -1108,7 +1107,7 @@ void AstSemanticChecker::checkInlining(
     // Returns the pair (isValid, lastSrcLoc) where:
     //  - isValid is true if and only if the node contains an invalid underscore, and
     //  - lastSrcLoc is the source location of the last visited node
-    std::function<std::pair<bool, AstSrcLocation>(const AstNode*)> checkInvalidUnderscore = [&](
+    std::function<std::pair<bool, SrcLocation>(const AstNode*)> checkInvalidUnderscore = [&](
             const AstNode* node) {
         if (dynamic_cast<const AstUnnamedVariable*>(node)) {
             // Found an invalid underscore
@@ -1120,7 +1119,7 @@ void AstSemanticChecker::checkInlining(
 
         // Check if any children nodes use invalid underscores
         for (const AstNode* child : node->getChildNodes()) {
-            std::pair<bool, AstSrcLocation> childStatus = checkInvalidUnderscore(child);
+            std::pair<bool, SrcLocation> childStatus = checkInvalidUnderscore(child);
             if (childStatus.first) {
                 // Found an invalid underscore
                 return childStatus;
@@ -1135,7 +1134,7 @@ void AstSemanticChecker::checkInlining(
         const AstAtom* associatedAtom = negation.getAtom();
         const AstRelation* associatedRelation = program.getRelation(associatedAtom->getName());
         if (associatedRelation != nullptr && associatedRelation->isInline()) {
-            std::pair<bool, AstSrcLocation> atomStatus = checkInvalidUnderscore(associatedAtom);
+            std::pair<bool, SrcLocation> atomStatus = checkInvalidUnderscore(associatedAtom);
             if (atomStatus.first) {
                 report.addError(
                         "Cannot inline negated atom containing an unnamed variable unless the variable is "
@@ -1148,7 +1147,7 @@ void AstSemanticChecker::checkInlining(
 
 // Check that type and relation names are disjoint sets.
 void AstSemanticChecker::checkNamespaces(ErrorReport& report, const AstProgram& program) {
-    std::map<std::string, AstSrcLocation> names;
+    std::map<std::string, SrcLocation> names;
 
     // Find all names and report redeclarations as we go.
     for (const auto& type : program.getTypes()) {

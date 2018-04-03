@@ -20,7 +20,7 @@
 %define api.token.constructor
 %define api.value.type variant
 %define parse.assert
-%define api.location.type {AstSrcLocation}
+%define api.location.type {SrcLocation}
 
 %code requires {
     #include <config.h>
@@ -40,7 +40,7 @@
     #include "AstParserUtils.h"
     #include "AstProgram.h"
     #include "AstRelation.h"
-    #include "AstSrcLocation.h"
+    #include "SrcLocation.h"
     #include "AstTypes.h"
     #include "BinaryConstraintOps.h"
     #include "BinaryFunctorOps.h"

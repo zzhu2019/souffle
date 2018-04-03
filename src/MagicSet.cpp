@@ -185,11 +185,11 @@ bool containsAggregators(AstClause* clause) {
 /* program-adding related functions */
 
 // returns the new source location of a newly-created node
-AstSrcLocation nextSrcLoc(AstSrcLocation orig) {
+SrcLocation nextSrcLoc(SrcLocation orig) {
     static int pos = 0;
     pos += 1;
 
-    AstSrcLocation newLoc;
+    SrcLocation newLoc;
     newLoc.filename = orig.filename + " [MAGIC_FILE]";
     newLoc.start.line = pos;
     newLoc.end.line = pos;

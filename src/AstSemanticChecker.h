@@ -28,7 +28,7 @@ class AstAggregator;
 class AstArgument;
 class AstClause;
 class AstRelation;
-class AstSrcLocation;
+class SrcLocation;
 class TypeBinding;
 class AstUnionType;
 class AstRecordType;

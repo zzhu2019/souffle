@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include "AstSrcLocation.h"
 #include "AstTypes.h"
+#include "SrcLocation.h"
 #include "Util.h"
 
 #include <limits>
@@ -38,18 +38,18 @@ class AstNodeMapper;
  */
 class AstNode {
     /** Source location of a syntactic element */
-    AstSrcLocation location;
+    SrcLocation location;
 
 public:
     virtual ~AstNode() = default;
 
     /** Return source location of the AstNode */
-    AstSrcLocation getSrcLoc() const {
+    SrcLocation getSrcLoc() const {
         return location;
     }
 
     /** Set source location for the AstNode */
-    void setSrcLoc(const AstSrcLocation& l) {
+    void setSrcLoc(const SrcLocation& l) {
         location = l;
     }
 
