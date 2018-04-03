@@ -7,7 +7,7 @@
 
 SUFFIXES = .cpp .h .yy .ll .cc .hh .hpp
 
-bin_PROGRAMS = souffle souffle-profile
+bin_PROGRAMS = souffle souffle-profile souffle2bdd
 
 nodist_souffle_profile_SOURCES = $(BUILT_SOURCES)
 
@@ -80,7 +80,6 @@ souffle_sources = \
               AstAnalysis.h                             \
               AstTransformer.cpp    AstTransformer.h    \
               AstTranslationUnit.h  ErrorReport.h       \
-              BddbddbBackend.h      BddbddbBackend.cpp  \
               DebugReport.cpp       DebugReport.h       \
               ComponentModel.cpp    ComponentModel.h    \
               AstSemanticChecker.cpp                    \
@@ -140,6 +139,9 @@ libsouffle_la_LDFLAGS = --static --dlopen --pic
 
 souffle_SOURCES = main.cpp
 souffle_LDADD = libsouffle.la
+
+souffle2bdd_SOURCES = souffle2bdd.cpp
+souffle2bdd_LDADD = libsouffle.la
 
 dist_bin_SCRIPTS = souffle-compile souffle-config
 
