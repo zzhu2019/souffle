@@ -1212,7 +1212,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     if (symTable.size() > 0) {
         os << "{\n";
         for (size_t i = 0; i < symTable.size(); i++) {
-            os << "\tR\"_(" << symTable.resolve(i) << ")_\",\n";
+            os << "\t\"" << stringify(symTable.resolve(i)) << "\",\n";
         }
         os << "}";
     }
