@@ -17,42 +17,34 @@
  *
  ***********************************************************************/
 
-#include "AstAnalysis.h"
-#include "AstComponentChecker.h"
-#include "AstPragma.h"
-#include "AstProgram.h"
-#include "AstSemanticChecker.h"
-#include "AstTransformer.h"
-#include "AstTransforms.h"
-#include "AstTranslationUnit.h"
-#include "AstTranslator.h"
-#include "AstUtils.h"
-#include "AstVisitor.h"
-#include "ComponentModel.h"
-#include "Global.h"
-#include "ParserDriver.h"
-#include "PrecedenceGraph.h"
-#include "SymbolTable.h"
-#include "Util.h"
-
 #include <chrono>
+#include <exception>
 #include <fstream>
 #include <iostream>
-#include <list>
-#include <memory>
-#include <string>
+#include <sstream>
+#include <vector>
+#include <assert.h>
 
-#include "config.h"
-#include <cctype>
-#include <cerrno>
-#include <climits>
-#include <cstdarg>
-#include <cstdlib>
-#include <cstring>
-#include <getopt.h>
-#include <libgen.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include "AstArgument.h"
+#include "AstComponentChecker.h"
+#include "AstLiteral.h"
+#include "AstPragma.h"
+#include "AstProgram.h"
+#include "AstRelation.h"
+#include "AstRelationIdentifier.h"
+#include "AstSemanticChecker.h"
+#include "AstTransforms.h"
+#include "AstTranslationUnit.h"
+#include "AstType.h"
+#include "AstVisitor.h"
+#include "ComponentModel.h"
+#include "DebugReport.h"
+#include "ErrorReport.h"
+#include "Global.h"
+#include "Macro.h"
+#include "ParserDriver.h"
+#include "SymbolTable.h"
+#include "Util.h"
 
 namespace souffle {
 
@@ -77,8 +69,8 @@ class LogicbloxConverter : private AstVisitor<void, std::ostream&> {
     std::ostream& dout;
 
 public:
-   // LogicbloxConverter() :  iout(std::cout), eout(std::cout) {}
-    LogicbloxConverter(std::ostream& imOut, std::ostream& exOut, std::ostream& decOut) : iout(imOut), eout(exOut), dout(decOut) {
+    LogicbloxConverter(std::ostream& imOut, std::ostream& exOut, std::ostream& decOut)
+            : iout(imOut), eout(exOut), dout(decOut) {
         iout << "option,delimiter,\"\\t\"\n";
         iout << "option,hasColumnNames,false\n";
         iout << "\n";
@@ -95,15 +87,13 @@ public:
     }
 
 private:
-
     AstTypeIdentifier convertTypeName(const AstTypeIdentifier& name) {
-      if (name == "number") {
-        return AstTypeIdentifier("int[32]");
-      }
-      else if (name == "String") {
-        return AstTypeIdentifier("string");
-      }
-      else return AstTypeIdentifier("string");
+        if (name == "number") {
+            return AstTypeIdentifier("int[32]");
+        } else if (name == "String") {
+            return AstTypeIdentifier("string");
+        } else
+            return AstTypeIdentifier("string");
     }
 
     /**
@@ -129,18 +119,17 @@ private:
     /**
      * Converting a relation by creating its declaration.
      */
-    void visitRelation(const AstRelation& rel, std::ostream& out) override {
+    void visitRelation(const AstRelation& rel, std::ostream& /* out */) override {
         visitRelationIdentifier(rel.getName(), dout);
 
         // make nullary relations single-element relations
         dout << "(";
-        dout << join(rel.getAttributes(), ",", [&](std::ostream& out, AstAttribute* cur) {
-            dout << cur->getAttributeName();
-        });
+        dout << join(rel.getAttributes(), ",",
+                [&](std::ostream& os, AstAttribute* cur) { os << cur->getAttributeName(); });
         dout << ") -> ";
 
-        dout << join(rel.getAttributes(), ",", [&](std::ostream& out, AstAttribute* cur) {
-            dout << convertTypeName(cur->getTypeName()) << "(" << cur->getAttributeName() << ")";
+        dout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+            os << convertTypeName(cur->getTypeName()) << "(" << cur->getAttributeName() << ")";
         });
 
         dout << ".";
@@ -148,16 +137,17 @@ private:
 
         if (rel.isInput()) {
             int i = 0;
-            iout << "fromFile," << "\"" << rel.getName() << ".facts\",";
-            iout << join(rel.getAttributes(), ",", [&](std::ostream& out, AstAttribute* cur) {
-                iout << "column:" << (i) << "," << rel.getName() << ":" << (i);
+            iout << "fromFile,"
+                 << "\"" << rel.getName() << ".facts\",";
+            iout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+                os << "column:" << (i) << "," << rel.getName() << ":" << (i);
                 i++;
             });
             iout << "\n";
             iout << "toPredicate," << rel.getName() << ",";
             i = 0;
-            iout << join(rel.getAttributes(), ",", [&](std::ostream& out, AstAttribute* cur) {
-                iout << rel.getName() << ":" << (i);
+            iout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+                os << rel.getName() << ":" << (i);
                 i++;
             });
             iout << "\n";
@@ -165,15 +155,16 @@ private:
         if (rel.isOutput() || rel.isPrintSize()) {
             int i = 0;
             eout << "fromPredicate," << rel.getName() << ",";
-            eout << join(rel.getAttributes(), ",", [&](std::ostream& out, AstAttribute* cur) {
-                eout << rel.getName() << ":" << (i);
+            eout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+                os << rel.getName() << ":" << (i);
                 i++;
             });
             eout << "\n";
             i = 0;
-            eout << "toFile," << "\"" << rel.getName() << ".csv\",";
-            eout << join(rel.getAttributes(), ",", [&](std::ostream& out, AstAttribute* cur) {
-                eout << "column:" << (i) << "," << rel.getName() << ":" << (i);
+            eout << "toFile,"
+                 << "\"" << rel.getName() << ".csv\",";
+            eout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+                os << "column:" << (i) << "," << rel.getName() << ":" << (i);
                 i++;
             });
             eout << "\n";
@@ -199,7 +190,7 @@ private:
         // convert the body
         out << " <- ";
         out << join(
-                clause.getBodyLiterals(), ",", [&](std::ostream& out, AstLiteral* cur) { visit(*cur, out); });
+                clause.getBodyLiterals(), ",", [&](std::ostream& os, AstLiteral* cur) { visit(*cur, os); });
 
         // add extra_literals
         for (const auto& cur : extra_literals) {
@@ -221,7 +212,7 @@ private:
         }
 
         out << "(";
-        out << join(atom.getArguments(), ",", [&](std::ostream& out, AstArgument* cur) { visit(*cur, out); });
+        out << join(atom.getArguments(), ",", [&](std::ostream& os, AstArgument* cur) { visit(*cur, os); });
         out << ")";
     }
 
@@ -254,28 +245,11 @@ private:
             throw UnsupportedConstructException("Unsupported function: " + toString(fun));
         } else if (const AstBinaryFunctor* binary = dynamic_cast<const AstBinaryFunctor*>(&fun)) {
             std::string sym = getSymbolForBinaryOp(binary->getFunction());
-            if(sym == "band") {
-                // TODO: hack
-                //out << " int:bitand[";
-                //visit(*binary->getLHS(), out);
-                //out << ", ";
-                //visit(*binary->getRHS(), out);
-                //out << "] ";
-                out << "65536";
-            } else if(sym == "xxx") {
-                out << "(";
-                visit(*binary->getLHS(), out);
-                out << "&";
-                visit(*binary->getRHS(), out);
-                out << ")";
-            }
-            else {
-                out << "(";
-                visit(*binary->getLHS(), out);
-                out << sym;
-                visit(*binary->getRHS(), out);
-                out << ")";
-            }
+            out << "(";
+            visit(*binary->getLHS(), out);
+            out << sym;
+            visit(*binary->getRHS(), out);
+            out << ")";
         } else {
             assert(false && "Unsupported functor!");
         }
@@ -299,7 +273,8 @@ private:
     }
 };
 
-void toLogicblox(std::ostream& out, std::ostream& impOut, std::ostream& expOut, std::ostream& decOut, const AstTranslationUnit& translationUnit) {
+void toLogicblox(std::ostream& out, std::ostream& impOut, std::ostream& expOut, std::ostream& decOut,
+        const AstTranslationUnit& translationUnit) {
     // simply run the converter
     LogicbloxConverter(impOut, expOut, decOut).convert(out, *translationUnit.getProgram());
 }
@@ -316,7 +291,8 @@ int main(int argc, char** argv) {
                     std::stringstream header;
                     header << "============================================================================"
                            << std::endl;
-                    header << "souffle2lb -- translating souffle programs to Logicblox programs." << std::endl;
+                    header << "souffle2lb -- translating souffle programs to Logicblox programs."
+                           << std::endl;
                     header << "Usage: souffle2lb [OPTION] FILE." << std::endl;
                     header << "----------------------------------------------------------------------------"
                            << std::endl;
@@ -340,9 +316,8 @@ int main(int argc, char** argv) {
                 // command line options, the environment will be filled with the arguments passed to them, or
                 // the empty string if they take none
                 []() {
-                    MainOption opts[] = {
-                            {"", 0, "", "", false,
-                                    ""},  // main option, the datalog program itself, key is always empty
+                    MainOption opts[] = {// main option, the datalog program itself, key is always empty
+                            {"", 0, "", "", false, ""},
                             {"include-dir", 'I', "DIR", ".", true, "Specify directory for include files."},
                             {"output", 'o', "FILE", "", false, "Generate bddbddb Datalog program"},
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
@@ -483,7 +458,7 @@ int main(int argc, char** argv) {
         try {
             if (Global::config().get("output") == "") {
                 // use STD-OUT
-                toLogicblox(std::cout,std::cout, std::cout, std::cout, *astTranslationUnit);
+                toLogicblox(std::cout, std::cout, std::cout, std::cout, *astTranslationUnit);
             } else {
                 // create an output file
                 std::ofstream out((Global::config().get("output") + "_rules.logic").c_str());
@@ -510,7 +485,7 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-}
+}  // namespace souffle
 // end of namespace souffle
 
 /** main program */

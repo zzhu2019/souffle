@@ -17,42 +17,33 @@
  *
  ***********************************************************************/
 
-#include "AstAnalysis.h"
+#include "AstArgument.h"
 #include "AstComponentChecker.h"
+#include "AstLiteral.h"
 #include "AstPragma.h"
 #include "AstProgram.h"
+#include "AstRelation.h"
+#include "AstRelationIdentifier.h"
 #include "AstSemanticChecker.h"
-#include "AstTransformer.h"
 #include "AstTransforms.h"
 #include "AstTranslationUnit.h"
-#include "AstTranslator.h"
-#include "AstUtils.h"
+#include "AstType.h"
 #include "AstVisitor.h"
 #include "ComponentModel.h"
+#include "DebugReport.h"
+#include "ErrorReport.h"
 #include "Global.h"
+#include "Macro.h"
 #include "ParserDriver.h"
-#include "PrecedenceGraph.h"
 #include "SymbolTable.h"
 #include "Util.h"
-
 #include <chrono>
+#include <exception>
 #include <fstream>
 #include <iostream>
-#include <list>
-#include <memory>
-#include <string>
-
-#include "config.h"
-#include <cctype>
-#include <cerrno>
-#include <climits>
-#include <cstdarg>
-#include <cstdlib>
-#include <cstring>
-#include <getopt.h>
-#include <libgen.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <sstream>
+#include <vector>
+#include <assert.h>
 
 namespace souffle {
 
@@ -301,9 +292,8 @@ int main(int argc, char** argv) {
                 // command line options, the environment will be filled with the arguments passed to them, or
                 // the empty string if they take none
                 []() {
-                    MainOption opts[] = {
-                            {"", 0, "", "", false,
-                                    ""},  // main option, the datalog program itself, key is always empty
+                    MainOption opts[] = {// main option, the datalog program itself, key is always empty
+                            {"", 0, "", "", false, ""},
                             {"include-dir", 'I', "DIR", ".", true, "Specify directory for include files."},
                             {"output", 'o', "FILE", "", false, "Generate bddbddb Datalog program"},
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
@@ -468,8 +458,7 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-}
-// end of namespace souffle
+}  // namespace souffle
 
 /** main program */
 int main(int argc, char** argv) {
