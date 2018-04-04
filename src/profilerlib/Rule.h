@@ -10,6 +10,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -24,6 +25,7 @@ protected:
     long num_tuples = 0;
     std::string identifier;
     std::string locator = "";
+    std::map<std::string, size_t> atoms{};
 
 private:
     bool recursive = false;
@@ -53,6 +55,14 @@ public:
 
     inline void setNum_tuples(long num_tuples) {
         this->num_tuples = num_tuples;
+    }
+
+    inline void addAtomFrequency(const std::string& atomName, uint32_t frequency) {
+        atoms[atomName] = frequency;
+    }
+
+    inline uint32_t getAtomFrequency(const std::string& atomName) {
+        return atoms.at(atomName);
     }
 
     inline std::string getName() {

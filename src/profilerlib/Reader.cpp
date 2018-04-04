@@ -122,6 +122,8 @@ void Reader::process(const std::vector<std::string>& data) {
             }
             std::shared_ptr<Relation> _rel = relation_map[data[1]];
             addIteration(_rel, data);
+        } else if (data[0].find("frequency") != std::string::npos) {
+           addFrequency(_rel, data);
         }
     }
 
@@ -154,6 +156,22 @@ void Reader::addIteration(std::shared_ptr<Relation> rel, std::vector<std::string
     } else if (data[0].at(0) == 'c' && data[0].find("relation") != std::string::npos) {
         iter->setCopy_time(std::stod(data[3]));
         rel->setReady(true);
+    }
+}
+
+void Reader::addFrequency(std::shared_ptr<Relation> rel, std::vector<std::string> data) {
+    std::unordered_map<std::string, std::shared_ptr<Rule>>& ruleMap = rel->getRuleMap();
+
+    if (std::stoi(data[2]) == 0) {
+        if (ruleMap.find(data[3]) == ruleMap.end()) {
+            ruleMap.emplace(data[3], std::make_shared<Rule>(Rule(data[3], rel->createID())));
+        }
+
+        std::shared_ptr<Rule> _rul = ruleMap[data[3]];
+        // @frequency-rule;relationName;version;srcloc;stringify(clause);stringify(atom);level;count
+        _rul->addAtomFrequency(data[4], std::stoi(data[7]));
+    } else {
+
     }
 }
 
