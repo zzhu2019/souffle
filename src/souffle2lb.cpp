@@ -8,14 +8,22 @@
 
 /************************************************************************
  *
- * @file souffle2bdd.cpp
+ * @file souffle2lb.cpp
  *
- * Main driver for translating Souffle programs to bddbddb programs.
+ * Main driver for translating Souffle programs to Logicblox programs.
  *
- * bddbddb is a Datalog engine written by Jon Whaley and can be downloaded
- * from there: http://bddbddb.sourceforge.net
+ * Logicblox V3/PA-Datalog is a Datalog engine that can be obtained here:
+ *  http://snf-705535.vm.okeanos.grnet.gr/agreement.html
  *
  ***********************************************************************/
+
+#include <chrono>
+#include <exception>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <assert.h>
 
 #include "AstArgument.h"
 #include "AstComponentChecker.h"
@@ -37,13 +45,6 @@
 #include "ParserDriver.h"
 #include "SymbolTable.h"
 #include "Util.h"
-#include <chrono>
-#include <exception>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <assert.h>
 
 namespace souffle {
 
@@ -60,42 +61,45 @@ public:
     }
 };
 
-/** Bddbddb converter class */
-class BddBddBTranslator : private AstVisitor<void, std::ostream&> {
+class LogicbloxConverter : private AstVisitor<void, std::ostream&> {
     // literals aggregated to be added to the end of a rule while converting
     std::vector<std::string> extra_literals;
-
-    int varCounter = 0;
+    std::ostream& iout;
+    std::ostream& eout;
+    std::ostream& dout;
 
 public:
-    BddBddBTranslator() = default;
+    LogicbloxConverter(std::ostream& imOut, std::ostream& exOut, std::ostream& decOut)
+            : iout(imOut), eout(exOut), dout(decOut) {
+        iout << "option,delimiter,\"\\t\"\n";
+        iout << "option,hasColumnNames,false\n";
+        iout << "\n";
+        iout << "\n";
+
+        eout << "option,delimiter,\"\\t\"\n";
+        eout << "option,hasColumnNames,false\n";
+        eout << "\n";
+        eout << "\n";
+    }
 
     void convert(std::ostream& out, const AstProgram& program) {
         visit(program, out);
     }
 
 private:
+    AstTypeIdentifier convertTypeName(const AstTypeIdentifier& name) {
+        if (name == "number") {
+            return AstTypeIdentifier("int[32]");
+        } else if (name == "String") {
+            return AstTypeIdentifier("string");
+        } else
+            return AstTypeIdentifier("string");
+    }
+
     /**
      * The entry point for the conversion of a program, converting the basic top-level structure.
      */
     void visitProgram(const AstProgram& program, std::ostream& out) override {
-        // type definition
-        out << "N " << std::numeric_limits<RamDomain>::max() << "\n\n";
-
-        // variable order
-        int max_attributes = 0;
-        for (const auto& rel : program.getRelations()) {
-            max_attributes = std::max<int>(max_attributes, rel->getAttributes().size());
-        }
-        out << ".bddvarorder ";
-        for (int i = 0; i < max_attributes; i++) {
-            out << "N" << i;
-            if (i + 1 != max_attributes) {
-                out << "_";
-            }
-        }
-        out << "\n\n";
-
         // declarations
         for (const auto& rel : program.getRelations()) {
             // process the relation declaration
@@ -115,28 +119,56 @@ private:
     /**
      * Converting a relation by creating its declaration.
      */
-    void visitRelation(const AstRelation& rel, std::ostream& out) override {
-        visitRelationIdentifier(rel.getName(), out);
+    void visitRelation(const AstRelation& rel, std::ostream& /* out */) override {
+        visitRelationIdentifier(rel.getName(), dout);
 
         // make nullary relations single-element relations
-        out << "(";
-        if (rel.getAttributes().empty()) {
-            out << "dummy:N0";
-        }
-        int i = 0;
-        out << join(rel.getAttributes(), ",", [&](std::ostream& out, AstAttribute* cur) {
-            out << cur->getAttributeName() << ":N" << (i++);
+        dout << "(";
+        dout << join(rel.getAttributes(), ",",
+                [&](std::ostream& os, AstAttribute* cur) { os << cur->getAttributeName(); });
+        dout << ") -> ";
+
+        dout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+            os << convertTypeName(cur->getTypeName()) << "(" << cur->getAttributeName() << ")";
         });
-        out << ")";
+
+        dout << ".";
+        dout << "\n";
 
         if (rel.isInput()) {
-            out << " inputtuples";
+            int i = 0;
+            iout << "fromFile,"
+                 << "\"" << rel.getName() << ".facts\",";
+            iout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+                os << "column:" << (i) << "," << rel.getName() << ":" << (i);
+                i++;
+            });
+            iout << "\n";
+            iout << "toPredicate," << rel.getName() << ",";
+            i = 0;
+            iout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+                os << rel.getName() << ":" << (i);
+                i++;
+            });
+            iout << "\n";
         }
-        if (rel.isOutput()) {
-            out << " outputtuples";
+        if (rel.isOutput() || rel.isPrintSize()) {
+            int i = 0;
+            eout << "fromPredicate," << rel.getName() << ",";
+            eout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+                os << rel.getName() << ":" << (i);
+                i++;
+            });
+            eout << "\n";
+            i = 0;
+            eout << "toFile,"
+                 << "\"" << rel.getName() << ".csv\",";
+            eout << join(rel.getAttributes(), ",", [&](std::ostream& os, AstAttribute* cur) {
+                os << "column:" << (i) << "," << rel.getName() << ":" << (i);
+                i++;
+            });
+            eout << "\n";
         }
-
-        out << "\n";
     }
 
     /**
@@ -156,9 +188,9 @@ private:
         }
 
         // convert the body
-        out << " :- ";
+        out << " <- ";
         out << join(
-                clause.getBodyLiterals(), ",", [&](std::ostream& out, AstLiteral* cur) { visit(*cur, out); });
+                clause.getBodyLiterals(), ",", [&](std::ostream& os, AstLiteral* cur) { visit(*cur, os); });
 
         // add extra_literals
         for (const auto& cur : extra_literals) {
@@ -180,7 +212,7 @@ private:
         }
 
         out << "(";
-        out << join(atom.getArguments(), ",", [&](std::ostream& out, AstArgument* cur) { visit(*cur, out); });
+        out << join(atom.getArguments(), ",", [&](std::ostream& os, AstArgument* cur) { visit(*cur, os); });
         out << ")";
     }
 
@@ -196,8 +228,7 @@ private:
     }
 
     void visitStringConstant(const AstStringConstant& str, std::ostream& out) override {
-        // we dump the index to the output, not the string itself
-        out << str.getIndex();
+        out << str;
     }
 
     void visitNumberConstant(const AstNumberConstant& num, std::ostream& out) override {
@@ -209,28 +240,19 @@ private:
     }
 
     void visitFunctor(const AstFunctor& fun, std::ostream& out) override {
-        // create a new variable
-        std::string var = "aux_var_" + toString(varCounter++);
-
-        // write variable
-        out << var;
-
-        // assign variable in extra clause
-        std::stringstream binding;
-        binding << var << "=";
-
         // process unary operators
         if (dynamic_cast<const AstUnaryFunctor*>(&fun)) {
-            // binary functors are not supported
             throw UnsupportedConstructException("Unsupported function: " + toString(fun));
-        } else if (const auto* binary = dynamic_cast<const AstBinaryFunctor*>(&fun)) {
-            visit(*binary->getLHS(), binding);
-            binding << getSymbolForBinaryOp(binary->getFunction());
-            visit(*binary->getRHS(), binding);
+        } else if (const AstBinaryFunctor* binary = dynamic_cast<const AstBinaryFunctor*>(&fun)) {
+            std::string sym = getSymbolForBinaryOp(binary->getFunction());
+            out << "(";
+            visit(*binary->getLHS(), out);
+            out << sym;
+            visit(*binary->getRHS(), out);
+            out << ")";
         } else {
             assert(false && "Unsupported functor!");
         }
-        extra_literals.push_back(binding.str());
     }
 
     void visitVariable(const AstVariable& var, std::ostream& out) override {
@@ -251,9 +273,10 @@ private:
     }
 };
 
-/** Convert a Souffle program to a bddbddb program */
-void toBddbddb(std::ostream& out, const AstTranslationUnit& translationUnit) {
-    BddBddBTranslator().convert(out, *translationUnit.getProgram());
+void toLogicblox(std::ostream& out, std::ostream& impOut, std::ostream& expOut, std::ostream& decOut,
+        const AstTranslationUnit& translationUnit) {
+    // simply run the converter
+    LogicbloxConverter(impOut, expOut, decOut).convert(out, *translationUnit.getProgram());
 }
 
 int main(int argc, char** argv) {
@@ -268,8 +291,9 @@ int main(int argc, char** argv) {
                     std::stringstream header;
                     header << "============================================================================"
                            << std::endl;
-                    header << "souffle2bdd -- translating souffle to bddbddb programs." << std::endl;
-                    header << "Usage: souffle2bdd [OPTION] FILE." << std::endl;
+                    header << "souffle2lb -- translating souffle programs to Logicblox programs."
+                           << std::endl;
+                    header << "Usage: souffle2lb [OPTION] FILE." << std::endl;
                     header << "----------------------------------------------------------------------------"
                            << std::endl;
                     header << "Options:" << std::endl;
@@ -434,11 +458,14 @@ int main(int argc, char** argv) {
         try {
             if (Global::config().get("output") == "") {
                 // use STD-OUT
-                toBddbddb(std::cout, *astTranslationUnit);
+                toLogicblox(std::cout, std::cout, std::cout, std::cout, *astTranslationUnit);
             } else {
                 // create an output file
-                std::ofstream out(Global::config().get("output").c_str());
-                toBddbddb(out, *astTranslationUnit);
+                std::ofstream out((Global::config().get("output") + "_rules.logic").c_str());
+                std::ofstream impOut((Global::config().get("output") + "_facts.import").c_str());
+                std::ofstream expOut((Global::config().get("output") + "_rels.import").c_str());
+                std::ofstream decOut((Global::config().get("output") + "_declarations.logic").c_str());
+                toLogicblox(out, impOut, expOut, decOut, *astTranslationUnit);
             }
         } catch (const UnsupportedConstructException& uce) {
             ERROR("failed to convert input specification into bddbddb syntax because " +
@@ -459,6 +486,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 }  // namespace souffle
+// end of namespace souffle
 
 /** main program */
 int main(int argc, char** argv) {
