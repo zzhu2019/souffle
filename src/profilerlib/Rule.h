@@ -65,6 +65,9 @@ public:
         return atoms.at(atomName);
     }
 
+    const std::map<std::string, size_t>& getAtoms() {
+        return atoms;
+    }
     inline std::string getName() {
         return name;
     }
