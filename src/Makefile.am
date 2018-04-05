@@ -7,7 +7,7 @@
 
 SUFFIXES = .cpp .h .yy .ll .cc .hh .hpp
 
-bin_PROGRAMS = souffle souffle-profile souffle2bdd
+bin_PROGRAMS = souffle souffle-profile souffle2bdd souffle2lb
 
 nodist_souffle_profile_SOURCES = $(BUILT_SOURCES)
 
@@ -142,6 +142,10 @@ souffle_LDADD = libsouffle.la
 
 souffle2bdd_SOURCES = souffle2bdd.cpp
 souffle2bdd_LDADD = libsouffle.la
+
+souffle2lb_SOURCES = souffle2lb.cpp
+souffle2lb_LDADD = libsouffle.la
+
 
 dist_bin_SCRIPTS = souffle-compile souffle-config
 
