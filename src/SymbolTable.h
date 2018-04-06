@@ -21,6 +21,7 @@
 #include "Util.h"
 
 #include <deque>
+#include <initializer_list>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -47,7 +48,7 @@ private:
 
     /** Convenience method to place a new symbol in the table, if it does not exist, and return the index of
      * it. */
-    inline const size_t newSymbolOfIndex(const std::string& symbol) {
+    inline size_t newSymbolOfIndex(const std::string& symbol) {
         size_t index;
         auto it = strToNum.find(symbol);
         if (it == strToNum.end()) {
@@ -81,6 +82,13 @@ public:
         strToNum.swap(other.strToNum);
     }
 
+    SymbolTable(std::initializer_list<std::string> symbols) {
+        strToNum.reserve(symbols.size());
+        for (const auto& symbol : symbols) {
+            newSymbol(symbol);
+        }
+    }
+
     /** Destructor, frees memory allocated for all strings. */
     virtual ~SymbolTable() = default;
 
@@ -102,14 +110,14 @@ public:
     }
 
     /** Find the index of a symbol in the table, inserting a new symbol if it does not exist there already. */
-    const RamDomain lookup(const std::string& symbol) {
+    RamDomain lookup(const std::string& symbol) {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
         return static_cast<RamDomain>(newSymbolOfIndex(symbol));
     }
 
     /** Finds the index of a symbol in the table, giving an error if it's not found */
-    const RamDomain lookupExisting(const std::string& symbol) const {
+    RamDomain lookupExisting(const std::string& symbol) const {
         auto lease = access.acquire();
         (void)lease;  // avoid warning;
         auto result = strToNum.find(symbol);
@@ -121,7 +129,7 @@ public:
     }
 
     /** Find the index of a symbol in the table, inserting a new symbol if it does not exist there already. */
-    const RamDomain unsafeLookup(const std::string& symbol) {
+    RamDomain unsafeLookup(const std::string& symbol) {
         return newSymbolOfIndex(symbol);
     }
 
@@ -144,7 +152,7 @@ public:
     }
 
     /* Return the size of the symbol table, being the number of symbols it currently holds. */
-    const size_t size() const {
+    size_t size() const {
         return numToStr.size();
     }
 
