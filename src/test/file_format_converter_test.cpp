@@ -209,13 +209,10 @@ TEST(FileFormatConverter, fromLogToCsv) {
     struct {
         const std::string FILE_PATH = "/tmp/souffle_file_format_converter_test.csv";
         struct {
-            const std::map<std::string, std::string> DEFAULTS = std::map<std::string, std::string>();
-            const std::map<std::string, std::string> HEADERS =
-                    std::map<std::string, std::string>({{"headers", ""}});
-            const std::map<std::string, std::string> QUOTES =
-                    std::map<std::string, std::string>({{"quotes", ""}});
-            const std::map<std::string, std::string> HEADERS_AND_QUOTES =
-                    std::map<std::string, std::string>({{"headers", ""}, {"quotes", ""}});
+            const std::map<std::string, std::string> DEFAULTS{};
+            const std::map<std::string, std::string> HEADERS{{"headers", ""}};
+            const std::map<std::string, std::string> QUOTES{{"quotes", ""}};
+            const std::map<std::string, std::string> HEADERS_AND_QUOTES{{"headers", ""}, {"quotes", ""}};
         } CONFIG_WITH;
         struct {
             const std::string DEFAULTS =
