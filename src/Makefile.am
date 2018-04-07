@@ -129,7 +129,8 @@ souffle_sources = \
               IndexSetAnalysis.cpp   IndexSetAnalysis.h \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h            \
-              AstLogStatement.h
+              AstLogStatement.h                         \
+              ProfileEvent.h
 
 # -- build souffle as a library so it can be reused in testing
 noinst_LTLIBRARIES = libsouffle.la
@@ -188,7 +189,8 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         Explain.h               \
                         ExplainTree.h           \
                         ExplainProvenance.h     \
-                        ExplainProvenanceSLD.h 
+                        ExplainProvenanceSLD.h  \
+                        ProfileEvent.h
 
 souffle_CPPFLAGS = -DPACKAGE_VERSION="\"${PACKAGE_VERSION}\""
 
