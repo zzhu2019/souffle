@@ -114,9 +114,12 @@ class RamSearch : public RamOperation {
     /** Nested operation */
     std::unique_ptr<RamOperation> nestedOperation;
 
+    std::string profileText;
+
 public:
-    RamSearch(RamNodeType type, std::unique_ptr<RamOperation> nested)
-            : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)) {}
+    RamSearch(RamNodeType type, std::unique_ptr<RamOperation> nested, std::string profileText = "")
+            : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)),
+              profileText(std::move(profileText)) {}
 
     /** get nested operation */
     RamOperation* getNestedOperation() const {
@@ -126,6 +129,11 @@ public:
     const RamOperation& getOperation() const {
         ASSERT(nestedOperation);
         return *nestedOperation;
+    }
+
+    /** get profile text */
+    const std::string& getProfileText() const {
+        return profileText;
     }
 
     /** Add condition */
@@ -184,8 +192,9 @@ protected:
     bool pureExistenceCheck;
 
 public:
-    RamScan(std::unique_ptr<RamRelation> r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck)
-            : RamSearch(RN_Scan, std::move(nested)), relation(std::move(r)),
+    RamScan(std::unique_ptr<RamRelation> r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck,
+            std::string profileText = "")
+            : RamSearch(RN_Scan, std::move(nested), std::move(profileText)), relation(std::move(r)),
               queryPattern(relation->getArity()), keys(0), pureExistenceCheck(pureExistenceCheck) {}
 
     /** Get search relation */

@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Cli.hpp"
+#include "Cli.h"
 #include "../FileFormatConverter.h"
 
 // TODO: should move everything in the profiler library to namespace souffle

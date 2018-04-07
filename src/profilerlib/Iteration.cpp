@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Iteration.hpp"
+#include "Iteration.h"
 
 #include <iostream>
 

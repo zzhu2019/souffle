@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "ProgramRun.hpp"
+#include "ProgramRun.h"
 
 std::string ProgramRun::toString() {
     std::ostringstream output;

@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "OutputProcessor.hpp"
+#include "OutputProcessor.h"
 
 /*
  * rel table :
