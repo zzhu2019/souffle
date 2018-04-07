@@ -128,6 +128,9 @@ jobs:
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
 
 # Packaging stage
+  # Test make install installs a working souffle.
+  - <<: *linuxpackage
+    script: docker run -v `pwd`:/souffle ubuntu:xenial /bin/sh -c "cd /souffle && .travis/linux/install_debian_deps.sh && .travis/init_make_package.sh && .travis/test_make_install.sh"
   # Make the linux deb packages.
   - <<: *linuxpackage
     script: docker run -v `pwd`:/souffle ubuntu:xenial /bin/sh -c "cd /souffle && .travis/linux/install_debian_deps.sh && .travis/init_make_package.sh && .travis/linux/make_package.sh"
