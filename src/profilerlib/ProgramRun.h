@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "Relation.hpp"
-#include "StringUtils.hpp"
+#include "Relation.h"
+#include "StringUtils.h"
 
 #include <memory>
 #include <string>

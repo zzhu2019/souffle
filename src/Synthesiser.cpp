@@ -47,6 +47,17 @@
 
 namespace souffle {
 
+/** Lookup frequency counter */
+unsigned Synthesiser::lookupFreqIdx(const std::string& txt) {
+    static unsigned ctr;
+    auto pos = idxMap.find(txt);
+    if (pos == idxMap.end()) {
+        return idxMap[txt] = ctr++;
+    } else {
+        return idxMap[txt];
+    }
+}
+
 /** Convert RAM identifier */
 const std::string Synthesiser::convertRamIdent(const std::string& name) {
     auto it = identifiers.find(name);
@@ -489,9 +500,15 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 visit(condition, out);
                 out << ") {\n";
                 visit(search.getNestedOperation(), out);
+                if (Global::config().has("profile")) {
+                    out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
+                }
                 out << "}\n";
             } else {
                 visit(search.getNestedOperation(), out);
+                if (Global::config().has("profile")) {
+                    out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
+                }
             }
             PRINT_END_COMMENT(out);
         }
@@ -1217,6 +1234,12 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "}";
     }
     os << ";";
+    if (Global::config().has("profile")) {
+        os << "private:\n";
+        size_t numFreq = 0;
+        visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) { numFreq++; });
+        os << "  size_t freqs[" << numFreq << "]{};\n";
+    }
 
     // print relation definitions
     std::string initCons;      // initialization of constructor
@@ -1332,6 +1355,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "ProfileEventSingleton::instance().startTimer();\n";
         emitCode(os, *(prog.getMain()));
         os << "ProfileEventSingleton::instance().stopTimer();\n";
+        os << "dumpFreqs();\n";
         os << "ProfileEventSingleton::instance().dump(profile);\n";
     } else {
         emitCode(os, *(prog.getMain()));
@@ -1388,6 +1412,17 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         }
     });
     os << "}\n";  // end of printAll() method
+
+    // dumpFreqs method
+    if (Global::config().has("profile")) {
+        os << "private:\n";
+        os << "void dumpFreqs() {\n";
+        for (auto const& cur : idxMap) {
+            os << "\tProfileEventSingleton::instance().makeQuantityEvent(R\"_(" << cur.first << ")_\", freqs["
+               << cur.second << "]);\n";
+        }
+        os << "}\n";  // end of dumpFreqs() method
+    }
 
     // issue loadAll method
     os << "public:\n";

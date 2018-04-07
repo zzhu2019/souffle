@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Rule.hpp"
+#include "Rule.h"
 
 std::string Rule::toString() {
     std::ostringstream output;

@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Relation.hpp"
+#include "Relation.h"
 
 std::vector<std::shared_ptr<Rule>> Relation::getRuleRecList() {
     std::vector<std::shared_ptr<Rule>> temp = std::vector<std::shared_ptr<Rule>>();

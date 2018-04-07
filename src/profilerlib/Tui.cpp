@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Tui.hpp"
+#include "Tui.h"
 
 Tui::Tui(std::string filename, bool live, bool gui) : out() {
     this->f_name = filename;

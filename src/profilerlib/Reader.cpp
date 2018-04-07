@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Reader.hpp"
+#include "Reader.h"
 
 void Reader::readFile() {
     if (isLive()) {
@@ -100,14 +100,13 @@ void Reader::process(const std::vector<std::string>& data) {
     if (data[0].compare("runtime") == 0) {
         runtime = std::stod(data[1]);
     } else {
-        // insert into the map if it does not exist already
-        if (relation_map.find(data[1]) == relation_map.end()) {
-            relation_map.emplace(data[1], std::make_shared<Relation>(Relation(data[1], createId())));
-        }
-
-        std::shared_ptr<Relation> _rel = relation_map[data[1]];
         // find non-recursive first, since they both share text recursive
         if (data[0].find("nonrecursive") != std::string::npos) {
+            // insert into the map if it does not exist already
+            if (relation_map.find(data[1]) == relation_map.end()) {
+                relation_map.emplace(data[1], std::make_shared<Relation>(Relation(data[1], createId())));
+            }
+            std::shared_ptr<Relation> _rel = relation_map[data[1]];
             if (data[0].at(0) == 't' && data[0].find("relation") != std::string::npos) {
                 _rel->setRuntime(std::stod(data[3]));
                 _rel->setLocator(data[2]);
@@ -117,6 +116,11 @@ void Reader::process(const std::vector<std::string>& data) {
                 addRule(_rel, data);
             }
         } else if (data[0].find("recursive") != std::string::npos) {
+            // insert into the map if it does not exist already
+            if (relation_map.find(data[1]) == relation_map.end()) {
+                relation_map.emplace(data[1], std::make_shared<Relation>(Relation(data[1], createId())));
+            }
+            std::shared_ptr<Relation> _rel = relation_map[data[1]];
             addIteration(_rel, data);
         }
     }
