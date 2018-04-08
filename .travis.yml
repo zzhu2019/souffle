@@ -180,8 +180,7 @@ jobs:
         user: souffle-lang
         key: $BINTRAY_KEY
         on:
-          branch: master
-          repo: souffle-lang/souffle
+          all_branches: true
       - provider: bintray
         skip-cleanup: true
         file: bintray-rpm-stable.json
