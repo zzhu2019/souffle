@@ -87,17 +87,21 @@ jobs:
 # Testing stage (-j8,-c -j8)
   - <<: *linuxgcc
     env:
+    - "gcc-setup"
     - *gcc_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
   - <<: *linuxclang
     env:
+    - "clang-setup"
     - *clang_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
   - <<: *osxclang
     env:
+    - "clang-setup"
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
   - <<: *osxgcc
     env:
+    - "gcc-setup"
     - *gcc_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
 
@@ -105,35 +109,42 @@ jobs:
   - <<: *linuxgcc
     before_script: ".travis/init_test_64bit.sh"
     env:
+    - "gcc-64bit-setup"
     - *gcc_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
 
 # Testing stage with engine option (-c -j8 -efile, FastEvaluation and select others)
   - <<: *linuxgcc
     env:
+    - "gcc-efile"
     - *gcc_environment
     - SOUFFLE_CATEGORY=FastEvaluation,Interface,Profile,Provenance SOUFFLE_CONFS="-c -j8 -efile"
 
 # Testing stage (-j8,-c -j8)
   - <<: *linuxgcc
     env:
+    - "gcc-evaluation"
     - *gcc_environment
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
   - <<: *linuxclang
     env:
+    - "clang-evaluation"
     - *clang_environment
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
   - <<: *osxclang
     env:
+    - "clang-evaluation"
     - SOUFFLE_CATEGORY=Evaluation SOUFFLE_CONFS="-j8,-c -j8"
 
 # Packaging stage
   # Test make install installs a working souffle.
   - <<: *linuxpackage
     script: docker run -v `pwd`:/souffle ubuntu:xenial /bin/sh -c "cd /souffle && .travis/linux/install_debian_deps.sh && .travis/init_make_package.sh && .travis/test_make_install.sh"
+    env: "debian-make-install"
   # Make the linux deb packages.
   - <<: *linuxpackage
     script: docker run -v `pwd`:/souffle ubuntu:xenial /bin/sh -c "cd /souffle && .travis/linux/install_debian_deps.sh && .travis/init_make_package.sh && .travis/linux/make_package.sh"
+    env: "debian-package"
     before_deploy:
       - .travis/bintray_json.sh
     # deploy to bintray if we're in the souffle-lang repo
@@ -169,6 +180,7 @@ jobs:
   # Make the centos rpm packages.
   - <<: *linuxpackage
     script: docker run -v `pwd`:/souffle centos:7 /bin/sh -c "cd /souffle && .travis/linux/install_fedora_deps.sh && .travis/linux/make_centos_package.sh"
+    env: "centos-package"
     before_deploy:
       - .travis/bintray_json.sh rpm
     # deploy to bintray if we're in the souffle-lang repo
@@ -194,6 +206,7 @@ jobs:
   # Make the fedora rpm packages.
   - <<: *linuxpackage
     script: docker run -v `pwd`:/souffle fedora:27 /bin/sh -c "cd /souffle && .travis/linux/install_fedora_deps.sh && .travis/linux/make_fedora_package.sh"
+    env: "fedora-package"
     before_deploy:
       - .travis/bintray_json.sh rpm
     # deploy to bintray if we're in the souffle-lang repo
@@ -217,8 +230,10 @@ jobs:
           tags: true
   # Make the OSX packages.
   - <<: *osxpackage
+    env: "osx-package"
   # Generate doxygen html
   - stage: Packaging
+    env: "documenting"
     os: linux
     sudo: false
     addons:
