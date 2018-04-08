@@ -179,7 +179,7 @@ jobs:
           tags: true
   # Make the centos rpm packages.
   - <<: *linuxpackage
-    script: docker run -v `pwd`:/souffle centos:7 /bin/sh -c "cd /souffle && .travis/linux/install_fedora_deps.sh && .travis/linux/make_centos_package.sh"
+    script: docker run -v `pwd`:/souffle centos:7 /bin/sh -c "cd /souffle && .travis/linux/install_centos_deps.sh && .travis/linux/make_centos_package.sh"
     env: "centos-package"
     before_deploy:
       - .travis/bintray_json.sh rpm
