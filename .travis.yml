@@ -163,6 +163,8 @@ jobs:
         file_glob: true
         file: deploy/*
         on:
+          branch: master
+          repo: souffle-lang/souffle
           tags: true
   # Make the fedora rpm packages.
   - <<: *linuxpackage
