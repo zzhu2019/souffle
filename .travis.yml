@@ -25,6 +25,7 @@ aliases:
         - g++-7
     before_script: ".travis/init_test.sh"
     script: ".travis/run_test.sh"
+    after_failure: ".travis/after_failure.sh"
   - &linuxclang
     stage: Testing
     os: linux
@@ -43,6 +44,7 @@ aliases:
     #install: ".travis/linux/clang_install.sh"
     before_script: ".travis/init_test.sh"
     script: ".travis/run_test.sh"
+    after_failure: ".travis/after_failure.sh"
   - &linuxpackage
     stage: Packaging
     os: linux
@@ -55,6 +57,7 @@ aliases:
     install: ".travis/osx/install_withgcc.sh"
     before_script: ".travis/init_test.sh"
     script: ".travis/run_test.sh"
+    after_failure: ".travis/after_failure.sh"
     cache:
       directories: $HOME/Library/Caches/Homebrew
   - &osxclang
@@ -255,5 +258,3 @@ jobs:
         branch: master
         condition: -v $GHPAGES_TOKEN
 
-after_failure:
-  - ".travis/after_failure.sh"
