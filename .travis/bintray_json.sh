@@ -4,24 +4,39 @@
 #$1 = Repository
 #$2 = Version
 #$3 = Output filename
-#$4 = Repository type (deb/rpm)
+#$4 = Repository type (debian/centos/fedora)
 print_json () {
 DATE=`date --iso-8601`
 
-if [ "$4" = rpm ];
+if [ "$4" = fedora ];
 then
   #For distro dependent settings
-  RELEASE=`grep "^VERSION_ID=" /etc/os-release|sed 's/VERSION_ID=//'|tr -d '"'`
-  DIST=`grep "^ID=" /etc/os-release|sed 's/ID=//'|tr -d '"'`
-  ARCH=$(uname -i)
+  #RELEASE=`grep "^VERSION_ID=" /etc/os-release|sed 's/VERSION_ID=//'|tr -d '"'`
+  #DIST=`grep "^ID=" /etc/os-release|sed 's/ID=//'|tr -d '"'`
+  #ARCH=$(uname -i)
 
   #Fedora 27 x86_64
-  #DIST='fedora'
-  #RELEASE='27'
-  #ARCH='x86_64'
+  DIST='fedora'
+  RELEASE='27'
+  ARCH='x86_64'
 
   FILES="[{\"includePattern\": \"deploy/(.*\.rpm)\", \"uploadPattern\": \"$DIST/$RELEASE/$ARCH/\$1\"
     }],"
+elif [ "$4" = centos ];
+then
+  #For distro dependent settings
+  #RELEASE=`grep "^VERSION_ID=" /etc/os-release|sed 's/VERSION_ID=//'|tr -d '"'`
+  #DIST=`grep "^ID=" /etc/os-release|sed 's/ID=//'|tr -d '"'`
+  #ARCH=$(uname -i)
+
+  #Fedora 27 x86_64
+  DIST='centos'
+  RELEASE='7'
+  ARCH='x86_64'
+
+  FILES="[{\"includePattern\": \"deploy/(.*\.rpm)\", \"uploadPattern\": \"$DIST/$RELEASE/$ARCH/\$1\"
+    }],"
+
 else
   DIST=xenial,yakkety,zesty,artful,bionic
 
@@ -62,7 +77,17 @@ cat > ${3} <<EOF
 EOF
 }
 
-print_json "deb"  "`git describe --tags --always`" "bintray-deb-stable.json"
-print_json "deb-unstable" "`git describe --tags --always`" "bintray-deb-unstable.json"
-print_json "rpm"  "`git describe --tags --always`" "bintray-rpm-stable.json" "rpm"
-print_json "rpm-unstable"  "`git describe --tags --always`" "bintray-rpm-unstable.json" "rpm"
+if [ "$1" = debian ];
+then
+  print_json "deb"  "`git describe --tags --always`" "bintray-deb-stable.json"
+  print_json "deb-unstable" "`git describe --tags --always`" "bintray-deb-unstable.json"
+elif [ "$1" = fedora ];
+then
+  print_json "rpm"  "`git describe --tags --always`" "bintray-rpm-stable.json" "fedora"
+  print_json "rpm-unstable"  "`git describe --tags --always`" "bintray-rpm-unstable.json" "fedora"
+elif [ "$1" = centos ];
+then
+  print_json "rpm"  "`git describe --tags --always`" "bintray-rpm-stable.json" "centos"
+  print_json "rpm-unstable"  "`git describe --tags --always`" "bintray-rpm-unstable.json" "centos"
+fi
+
