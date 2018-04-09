@@ -1353,10 +1353,10 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "std::ofstream profile(profiling_fname);\n";
         os << "profile << \"" << AstLogStatement::startDebug() << "\" << std::endl;\n";
         os << "ProfileEventSingleton::instance().startTimer();\n";
+        os << "ProfileEventSingleton::instance().setLog(&profile);\n";
         emitCode(os, *(prog.getMain()));
         os << "ProfileEventSingleton::instance().stopTimer();\n";
         os << "dumpFreqs();\n";
-        os << "ProfileEventSingleton::instance().dump(profile);\n";
     } else {
         emitCode(os, *(prog.getMain()));
     }

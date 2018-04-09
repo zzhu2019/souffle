@@ -234,63 +234,6 @@ public:
  * Profile Event Singleton
  */
 class ProfileEventSingleton {
-private:
-    /**  Profile Timer */
-    class ProfileTimer {
-    private:
-        /** time interval between per utilisation read */
-        Interval t;
-
-        /** timer is running */
-        bool running = false;
-
-        /** thread timer runs on */
-        std::thread th;
-
-        /** run method for thread th */
-        void run() {
-            ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
-            ProfileEventSingleton::instance().makeMemoryEvent("memory");
-        }
-
-        Interval getInterval() {
-            return t;
-        }
-
-        bool getRunning() {
-            return running;
-        }
-
-    public:
-        ProfileTimer(Interval in = 1) : t(in) {}
-
-        /** start timer on the thread th */
-        void start() {
-            running = true;
-
-            th = std::thread([this]() {
-                while (this->getRunning()) {
-                    this->run();
-                    auto x =
-                            std::chrono::steady_clock::now() + std::chrono::milliseconds(this->getInterval());
-                    std::this_thread::sleep_until(x);
-                }
-            });
-        }
-
-        /** stop timer on the thread th */
-        void stop() {
-            running = false;
-            th.join();
-        }
-    };
-
-private:
-    ProfileEventSingleton() = default;
-    std::list<ProfileEvent*> events;
-    std::mutex eventMutex;
-    ProfileTimer timer;
-
 public:
     ~ProfileEventSingleton() {
         for (auto const& cur : events) {
@@ -353,6 +296,97 @@ public:
     /** Stop timer */
     void stopTimer() {
         timer.stop();
+        printCurrentLog();
     }
+
+    /** Print all events since the previous print event. */
+    void printCurrentLog() {
+        if (out == nullptr || events.empty()) {
+            return;
+        }
+        // Printing the first event
+        if (lastPrinted == events.end()) {
+            lastPrinted = events.begin();
+            if (ProfileKeySingleton::instance().getText((*lastPrinted)->getKey()).compare("memory") != 0 &&
+                    ProfileKeySingleton::instance()
+                                    .getText((*lastPrinted)->getKey())
+                                    .compare("utilisation") != 0) {
+                (*lastPrinted)->print(*out);
+            }
+        }
+        while (next(lastPrinted) != events.end()) {
+            ++lastPrinted;
+            if (ProfileKeySingleton::instance().getText((*lastPrinted)->getKey()).compare("memory") != 0 &&
+                    ProfileKeySingleton::instance()
+                                    .getText((*lastPrinted)->getKey())
+                                    .compare("utilisation") != 0) {
+                (*lastPrinted)->print(*out);
+            }
+        }
+    }
+
+    void setLog(std::ostream* out) {
+        this->out = out;
+    }
+
+private:
+    /**  Profile Timer */
+    class ProfileTimer {
+    private:
+        /** time interval between per utilisation read */
+        Interval t;
+
+        /** timer is running */
+        bool running = false;
+
+        /** thread timer runs on */
+        std::thread th;
+
+        /** run method for thread th */
+        void run() {
+            ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
+            ProfileEventSingleton::instance().makeMemoryEvent("memory");
+            ProfileEventSingleton::instance().printCurrentLog();
+        }
+
+        Interval getInterval() {
+            return t;
+        }
+
+        bool getRunning() {
+            return running;
+        }
+
+    public:
+        ProfileTimer(Interval in = 1) : t(in) {}
+
+        /** start timer on the thread th */
+        void start() {
+            running = true;
+
+            th = std::thread([this]() {
+                while (this->getRunning()) {
+                    this->run();
+                    auto x =
+                            std::chrono::steady_clock::now() + std::chrono::milliseconds(this->getInterval());
+                    std::this_thread::sleep_until(x);
+                }
+            });
+        }
+
+        /** stop timer on the thread th */
+        void stop() {
+            running = false;
+            th.join();
+        }
+    };
+
+    ProfileEventSingleton() = default;
+
+    std::list<ProfileEvent*> events;
+    std::list<ProfileEvent*>::iterator lastPrinted{events.begin()};
+    std::mutex eventMutex;
+    ProfileTimer timer;
+    std::ostream* out = nullptr;
 };
 }
