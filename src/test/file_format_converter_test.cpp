@@ -16,7 +16,7 @@
 
 #include "FileFormatConverter.h"
 #include "test.h"
-
+#include <cstdio>
 #include <sstream>
 
 namespace souffle {
@@ -1103,6 +1103,9 @@ TEST(FileFormatConverter, fromLogToCsv) {
         // test for config with headers as first row and quotes around columns
         runTestCase(LOG.FILE_PATH, CSV.FILE_PATH, CSV.CONFIG_WITH.HEADERS_AND_QUOTES,
                 CSV.DATA_WITH.HEADERS_AND_QUOTES);
+
+        remove(LOG.FILE_PATH.c_str());
+        remove(CSV.FILE_PATH.c_str());
     }
 }
 

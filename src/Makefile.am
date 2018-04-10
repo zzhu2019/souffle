@@ -198,7 +198,7 @@ souffle_CPPFLAGS = -DPACKAGE_VERSION="\"${PACKAGE_VERSION}\""
 CLEANFILES = $(BUILT_SOURCES)  parser.cc scanner.cc parser.hh stack.hh
 
 # run Bison
-$(builddir)/parser.hh $(builddir)/stack.hh: $(srcdir)/parser.yy
+$(builddir)/parser.hh: $(srcdir)/parser.yy
 	$(BISON) -Wall -Werror -v -d -o parser.cc $(srcdir)/parser.yy
 
 # and FLEX
@@ -206,8 +206,8 @@ $(builddir)/scanner.cc: $(srcdir)/scanner.ll
 	$(FLEX) -o scanner.cc $(srcdir)/scanner.ll
 
 # driver depends on the generated header
-$(builddir)/parser.cc $(builddir)/scanner.cc $(builddir)/main.cpp $(builddir)/ParserDriver.cpp: \
-	$(builddir)/parser.hh
+$(builddir)/parser.cc $(builddir)/stack.hh $(builddir)/scanner.cc \
+        $(builddir)/main.cpp $(builddir)/ParserDriver.cpp: $(builddir)/parser.hh
 
 ########## Unit Tests
 
