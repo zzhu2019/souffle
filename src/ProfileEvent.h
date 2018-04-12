@@ -14,6 +14,8 @@
  *
  ***********************************************************************/
 
+#pragma once
+
 #include <atomic>
 #include <cassert>
 #include <chrono>
@@ -30,8 +32,6 @@
 #include <vector>
 #include <sys/resource.h>
 #include <sys/time.h>
-
-#pragma once
 
 namespace souffle {
 
@@ -139,8 +139,11 @@ private:
     /** end point */
     ProfileTimePoint end;
 
+    /** output stream for live timing */
+    std::ostream* out;
+
 public:
-    ProfileTimingEvent(const std::string& txt) : ProfileEvent(txt) {}
+    ProfileTimingEvent(const std::string& txt, std::ostream* out = nullptr) : ProfileEvent(txt), out(out) {}
 
     /** Stop timing event */
     void stop() {
@@ -239,7 +242,7 @@ public:
 
     /** Make new time event */
     ProfileTimingEvent* makeTimingEvent(const std::string& txt) {
-        auto e = new ProfileTimingEvent(txt);
+        auto e = new ProfileTimingEvent(txt, out);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
         return e;
@@ -250,6 +253,9 @@ public:
         auto e = new ProfileQuantityEvent(txt, n);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
+        if (out != nullptr) {
+            print(e);
+        }
         return e;
     }
 
@@ -263,12 +269,20 @@ public:
 
     /** Dump all events */
     void dump(std::ostream& os) {
+        std::lock_guard<std::mutex> guard(eventMutex);
         for (auto const& cur : events) {
             if (ProfileKeySingleton::instance().getText(cur->getKey()) == "utilisation") {
                 continue;
             }
             cur->print(os);
         }
+    }
+
+    /** Print a single event to the profile log. */
+    void print(ProfileEvent* event) {
+        static std::mutex logMutex;
+        std::lock_guard<std::mutex> guard(logMutex);
+        event->print(*out);
     }
 
     /** Start timer */
@@ -279,27 +293,6 @@ public:
     /** Stop timer */
     void stopTimer() {
         timer.stop();
-        printCurrentLog();
-    }
-
-    /** Print all events since the previous print event. */
-    void printCurrentLog() {
-        if (out == nullptr || events.empty()) {
-            return;
-        }
-        // Printing the first event
-        if (lastPrinted == events.end()) {
-            lastPrinted = events.begin();
-            if (ProfileKeySingleton::instance().getText((*lastPrinted)->getKey()) != "utilisation") {
-                (*lastPrinted)->print(*out);
-            }
-        }
-        while (next(lastPrinted) != events.end()) {
-            ++lastPrinted;
-            if (ProfileKeySingleton::instance().getText((*lastPrinted)->getKey()) != "utilisation") {
-                (*lastPrinted)->print(*out);
-            }
-        }
     }
 
     void setLog(std::ostream* out) {
@@ -322,7 +315,6 @@ private:
         /** run method for thread th */
         void run() {
             ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
-            ProfileEventSingleton::instance().printCurrentLog();
         }
 
         Interval getInterval() {
@@ -360,7 +352,6 @@ private:
     ProfileEventSingleton() = default;
 
     std::list<ProfileEvent*> events;
-    std::list<ProfileEvent*>::iterator lastPrinted{events.begin()};
     std::mutex eventMutex;
     ProfileTimer timer;
     std::ostream* out = nullptr;

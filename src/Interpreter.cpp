@@ -769,11 +769,11 @@ void Interpreter::executeMain() {
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
         // Enable profiling for execution of main
-        ProfileEventSingleton::instance().startTimer();
+        os << AstLogStatement::startDebug() << std::endl;
         ProfileEventSingleton::instance().setLog(&os);
+        ProfileEventSingleton::instance().startTimer();
         evalStmt(main);
         ProfileEventSingleton::instance().stopTimer();
-        os << AstLogStatement::startDebug() << std::endl;
     }
     SignalHandler::instance()->reset();
 }
