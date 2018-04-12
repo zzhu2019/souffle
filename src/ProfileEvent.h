@@ -199,33 +199,25 @@ public:
 
     /** Print event */
     void print(std::ostream& os) override {
-        os << ProfileKeySingleton::instance().getText(getKey());
+        os << "@" << ProfileKeySingleton::instance().getText(getKey()) << ";";
         /* system CPU time used */
         double t = (double)ru.ru_stime.tv_sec * 1000000.0 + (double)ru.ru_stime.tv_usec;
-        os << getStartString() << ",";
-        os << std::to_string(t);
-        os << std::endl;
-    }
-};
-
-/**
- * Profile Memory Event
- */
-class ProfileMemoryEvent : public ProfileEvent {
-private:
-    /** resource statistics */
-    struct rusage ru;
-
-public:
-    ProfileMemoryEvent(const std::string& txt) : ProfileEvent(txt) {
-        getrusage(RUSAGE_SELF, &ru);
-    }
-
-    /** Print event */
-    void print(std::ostream& os) override {
-        os << ProfileKeySingleton::instance().getText(getKey());
-        os << getStartString() << ",";
-        os << std::to_string(ru.ru_maxrss); /* maximum resident set size */
+        os << getStartString() << ";";
+        os << std::to_string(t) << ";";
+        os << ru.ru_maxrss << ";";
+        os << ru.ru_ixrss << ";";
+        os << ru.ru_idrss << ";";
+        os << ru.ru_isrss << ";";
+        os << ru.ru_minflt << ";";
+        os << ru.ru_majflt << ";";
+        os << ru.ru_nswap << ";";
+        os << ru.ru_inblock << ";";
+        os << ru.ru_oublock << ";";
+        os << ru.ru_msgsnd << ";";
+        os << ru.ru_msgrcv << ";";
+        os << ru.ru_nsignals << ";";
+        os << ru.ru_nvcsw << ";";
+        os << ru.ru_nivcsw;
         os << std::endl;
     }
 };
@@ -269,19 +261,10 @@ public:
         return e;
     }
 
-    /** Make new memory event */
-    ProfileMemoryEvent* makeMemoryEvent(const std::string& txt) {
-        auto e = new ProfileMemoryEvent(txt);
-        std::lock_guard<std::mutex> guard(eventMutex);
-        events.push_back(e);
-        return e;
-    }
-
     /** Dump all events */
     void dump(std::ostream& os) {
         for (auto const& cur : events) {
-            if (ProfileKeySingleton::instance().getText(cur->getKey()).compare("memory") == 0 ||
-                    ProfileKeySingleton::instance().getText(cur->getKey()).compare("utilisation") == 0) {
+            if (ProfileKeySingleton::instance().getText(cur->getKey()) == "utilisation") {
                 continue;
             }
             cur->print(os);
@@ -307,19 +290,13 @@ public:
         // Printing the first event
         if (lastPrinted == events.end()) {
             lastPrinted = events.begin();
-            if (ProfileKeySingleton::instance().getText((*lastPrinted)->getKey()).compare("memory") != 0 &&
-                    ProfileKeySingleton::instance()
-                                    .getText((*lastPrinted)->getKey())
-                                    .compare("utilisation") != 0) {
+            if (ProfileKeySingleton::instance().getText((*lastPrinted)->getKey()) != "utilisation") {
                 (*lastPrinted)->print(*out);
             }
         }
         while (next(lastPrinted) != events.end()) {
             ++lastPrinted;
-            if (ProfileKeySingleton::instance().getText((*lastPrinted)->getKey()).compare("memory") != 0 &&
-                    ProfileKeySingleton::instance()
-                                    .getText((*lastPrinted)->getKey())
-                                    .compare("utilisation") != 0) {
+            if (ProfileKeySingleton::instance().getText((*lastPrinted)->getKey()) != "utilisation") {
                 (*lastPrinted)->print(*out);
             }
         }
@@ -345,7 +322,6 @@ private:
         /** run method for thread th */
         void run() {
             ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
-            ProfileEventSingleton::instance().makeMemoryEvent("memory");
             ProfileEventSingleton::instance().printCurrentLog();
         }
 
