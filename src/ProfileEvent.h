@@ -139,11 +139,8 @@ private:
     /** end point */
     ProfileTimePoint end;
 
-    /** output stream for live timing */
-    std::ostream* out;
-
 public:
-    ProfileTimingEvent(const std::string& txt, std::ostream* out = nullptr) : ProfileEvent(txt), out(out) {}
+    ProfileTimingEvent(const std::string& txt) : ProfileEvent(txt) {}
 
     /** Stop timing event */
     void stop() {
@@ -242,7 +239,7 @@ public:
 
     /** Make new time event */
     ProfileTimingEvent* makeTimingEvent(const std::string& txt) {
-        auto e = new ProfileTimingEvent(txt, out);
+        auto e = new ProfileTimingEvent(txt);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
         return e;
