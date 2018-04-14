@@ -182,7 +182,7 @@ public:
 
     // -- Manipulation ---------------------------------------------------------
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstProgram* clone() const override;
 
     /** Mutates this node */

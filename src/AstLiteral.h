@@ -50,7 +50,7 @@ public:
     /** Obtains the atom referenced by this literal - if any */
     virtual const AstAtom* getAtom() const = 0;
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstLiteral* clone() const override = 0;
 };
 
@@ -134,7 +134,7 @@ public:
         os << ")";
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstAtom* clone() const override {
         auto res = new AstAtom(name);
         res->setSrcLoc(getSrcLoc());
@@ -199,7 +199,7 @@ public:
         atom->print(os);
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstNegation* clone() const override {
         AstNegation* res = new AstNegation(std::unique_ptr<AstAtom>(atom->clone()));
         res->setSrcLoc(getSrcLoc());
@@ -358,7 +358,7 @@ public:
         rhs->print(os);
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstBinaryConstraint* clone() const override {
         AstBinaryConstraint* res = new AstBinaryConstraint(operation,
                 std::unique_ptr<AstArgument>(lhs->clone()), std::unique_ptr<AstArgument>(rhs->clone()));

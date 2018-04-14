@@ -384,7 +384,7 @@ public:
     /** Print this clause to a given stream */
     void print(std::ostream& os) const override;
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstClause* clone() const override {
         auto res = new AstClause();
         res->setSrcLoc(getSrcLoc());

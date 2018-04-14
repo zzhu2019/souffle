@@ -81,7 +81,7 @@ public:
         os << name;
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstVariable* clone() const override {
         AstVariable* res = new AstVariable(name);
         res->setSrcLoc(getSrcLoc());
@@ -115,7 +115,7 @@ public:
         os << "_";
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstUnnamedVariable* clone() const override {
         auto* res = new AstUnnamedVariable();
         res->setSrcLoc(getSrcLoc());
@@ -219,7 +219,7 @@ public:
         os << "\"" << getConstant() << "\"";
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstStringConstant* clone() const override {
         auto* res = new AstStringConstant(symTable, getIndex());
         res->setSrcLoc(getSrcLoc());
@@ -239,7 +239,7 @@ public:
         os << idx;
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstNumberConstant* clone() const override {
         auto* res = new AstNumberConstant(getIndex());
         res->setSrcLoc(getSrcLoc());
@@ -259,7 +259,7 @@ public:
         os << '-';
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstNullConstant* clone() const override {
         auto* res = new AstNullConstant();
         res->setSrcLoc(getSrcLoc());
@@ -562,7 +562,7 @@ public:
         os << "[" << join(args, ",", print_deref<std::unique_ptr<AstArgument>>()) << "]";
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstRecordInit* clone() const override {
         auto res = new AstRecordInit();
         for (auto& cur : args) {
@@ -630,7 +630,7 @@ public:
         return res;
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstTypeCast* clone() const override {
         auto res = new AstTypeCast(std::unique_ptr<AstArgument>(value->clone()), type);
         res->setSrcLoc(getSrcLoc());
@@ -714,7 +714,7 @@ public:
     /** Obtains a list of all embedded child nodes */
     std::vector<const AstNode*> getChildNodes() const override;
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstAggregator* clone() const override;
 
     /** Mutates this node */
@@ -757,7 +757,7 @@ public:
         os << "arg_" << number;
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstSubroutineArgument* clone() const override {
         auto* res = new AstSubroutineArgument(number);
         res->setSrcLoc(getSrcLoc());

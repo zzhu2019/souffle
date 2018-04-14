@@ -64,7 +64,7 @@ public:
         os << name << ":" << typeName;
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstAttribute* clone() const override {
         AstAttribute* res = new AstAttribute(name, typeName);
         res->setSrcLoc(getSrcLoc());
