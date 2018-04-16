@@ -140,6 +140,41 @@ Table OutputProcessor::getRulTable() {
 }
 
 /*
+ * atom table :
+ * ROW[0] = atom
+ * ROW[1] = version
+ * ROW[2] = frequency
+ */
+Table OutputProcessor::getAtomTable(std::string strRel, std::string strRul) {
+    std::unordered_map<std::string, std::shared_ptr<Relation>>& relation_map = programRun->getRelation_map();
+
+    Table table;
+    for (auto& _rel : relation_map) {
+        std::shared_ptr<Relation> rel = _rel.second;
+
+        if (rel->getId() != strRel) {
+            continue;
+        }
+
+        for (auto& _rul : rel->getRuleMap()) {
+            std::shared_ptr<Rule> rul = _rul.second;
+            if (rul->getId() != strRul) {
+                continue;
+            }
+            for (auto& atom : rul->getAtoms()) {
+                Row row(3);
+                row[0] = std::shared_ptr<CellInterface>(new Cell<std::string>(atom.first));
+                row[1] = std::shared_ptr<CellInterface>(new Cell<long>(atom.second.first));
+                row[2] = std::shared_ptr<CellInterface>(new Cell<long>(atom.second.second));
+
+                table.addRow(std::make_shared<Row>(row));
+            }
+        }
+    }
+    return table;
+}
+
+/*
  * ver table :
  * ROW[0] = TOT_T
  * ROW[1] = NREC_T

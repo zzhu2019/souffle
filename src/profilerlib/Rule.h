@@ -25,7 +25,7 @@ protected:
     long num_tuples = 0;
     std::string identifier;
     std::string locator = "";
-    std::map<std::string, size_t> atoms{};
+    std::map<std::string, std::pair<long, long>> atoms{};
 
 private:
     bool recursive = false;
@@ -57,15 +57,11 @@ public:
         this->num_tuples = num_tuples;
     }
 
-    inline void addAtomFrequency(const std::string& atomName, uint32_t frequency) {
-        atoms[atomName] = frequency;
+    inline void addAtomFrequency(const std::string& atomName, long version, long frequency) {
+        atoms[atomName] = std::pair<long, long>(version, frequency);
     }
 
-    inline uint32_t getAtomFrequency(const std::string& atomName) {
-        return atoms.at(atomName);
-    }
-
-    const std::map<std::string, size_t>& getAtoms() {
+    const std::map<std::string, std::pair<long, long>>& getAtoms() {
         return atoms;
     }
     inline std::string getName() {

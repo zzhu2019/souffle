@@ -604,6 +604,17 @@ void Tui::verRul(std::string str) {
             std::printf("%7s%2s%-25s\n", row[6].c_str(), "", row[5].c_str());
         }
     }
+
+    Table atom_table = out.getAtomTable(strRel, str);
+    if (!atom_table.rows.empty()) {
+        std::cout << "  ----- Atom Versions Table -----\n";
+        std::printf("  %-42s%4s%20s\n\n", "ATOM", "VER", "FREQ");
+        for (auto& _row : atom_table.rows) {
+            Row& row = *_row;
+            std::printf("  %-42s%4s%20s\n", row[0]->getStringVal().c_str(),
+                    row[1]->toString(precision).c_str(), row[2]->toString(precision).c_str());
+        }
+    }
 }
 
 void Tui::iterRel(std::string c, std::string col) {
