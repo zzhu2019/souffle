@@ -50,6 +50,7 @@ public:
 
     ~Logger() {
         event->stop();
+        ProfileEventSingleton::instance().print(event);
     }
 };
 
