@@ -15,9 +15,6 @@
  ***********************************************************************/
 
 #include "Interpreter.h"
-#include "AstRelation.h"
-#include "AstTranslator.h"
-#include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
