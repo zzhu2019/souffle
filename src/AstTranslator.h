@@ -74,6 +74,10 @@ public:
 
     /** translates AST to translation unit  */
     std::unique_ptr<RamTranslationUnit> translateUnit(AstTranslationUnit& tu);
+
+private:
+    /** Map modified relation identifiers to original relation identifiers */
+    std::map<std::string, std::string> modifiedIdMap;
 };
 
 }  // end of namespace souffle

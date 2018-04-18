@@ -29,6 +29,7 @@
 #include "RamRelation.h"
 #include "RamStatement.h"
 #include "RamVisitor.h"
+#include "Util.h"
 
 #include <fstream>
 #include <iostream>
@@ -708,10 +709,18 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             // add a scan level
             if (Global::config().has("profile")) {
                 std::stringstream ss;
+                ss << clause.getHead()->getName();
+                std::string relName = ss.str();
+                ss.str("");
+
+                if (modifiedIdMap.find(relName) != modifiedIdMap.end()) {
+                    relName = modifiedIdMap[relName];
+                }
+
                 ss << "@frequency-atom" << ';';
-                ss << getRelation(clause.getHead())->getName() << ';';
+                ss << relName << ';';
                 ss << version << ';';
-                ss << atom->getSrcLoc() << ';';
+                ss << clause.getSrcLoc() << ';';
                 ss << stringify(toString(clause)) << ';';
                 ss << stringify(toString(*atom)) << ';';
                 ss << level << ';';
@@ -971,6 +980,11 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                 getRamRelation(rel, &typeEnv, "delta_" + relName, rel->getArity(), true, rel->isHashset());
         relNew[rel] =
                 getRamRelation(rel, &typeEnv, "new_" + relName, rel->getArity(), true, rel->isHashset());
+
+        modifiedIdMap[relName] = relName;
+        modifiedIdMap[relDelta[rel]->getName()] = relName;
+        modifiedIdMap[relNew[rel]->getName()] = relName;
+
         /* create update statements for fixpoint (even iteration) */
         appendStmt(updateRelTable,
                 std::make_unique<RamSequence>(
@@ -1171,7 +1185,6 @@ void createAndLoad(std::unique_ptr<RamStatement>& current, const AstRelation* re
     }
     delete mrel;
 }
-
 void printSizeStore(std::unique_ptr<RamStatement>& current, const AstRelation* rel,
         const TypeEnvironment& typeEnv, const bool storeOutputOnly) {
     const auto dir = Global::config().get("output-dir");
