@@ -15,7 +15,6 @@
  ***********************************************************************/
 
 #include "Synthesiser.h"
-#include "AstLogStatement.h"
 #include "AstRelation.h"
 #include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
@@ -23,6 +22,7 @@
 #include "Global.h"
 #include "IOSystem.h"
 #include "IndexSetAnalysis.h"
+#include "LogStatement.h"
 #include "Logger.h"
 #include "Macro.h"
 #include "ProfileEvent.h"
@@ -1351,7 +1351,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "// -- query evaluation --\n";
     if (Global::config().has("profile")) {
         os << "std::ofstream profile(profiling_fname);\n";
-        os << "profile << \"" << AstLogStatement::startDebug() << "\" << std::endl;\n";
+        os << "profile << \"" << LogStatement::startDebug() << "\" << std::endl;\n";
         os << "ProfileEventSingleton::instance().startTimer();\n";
         os << "ProfileEventSingleton::instance().setLog(&profile);\n";
         emitCode(os, *(prog.getMain()));

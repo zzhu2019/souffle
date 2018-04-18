@@ -15,7 +15,6 @@
  ***********************************************************************/
 
 #include "Interpreter.h"
-#include "AstLogStatement.h"
 #include "AstRelation.h"
 #include "AstTranslator.h"
 #include "AstVisitor.h"
@@ -24,6 +23,7 @@
 #include "Global.h"
 #include "IOSystem.h"
 #include "InterpreterRecords.h"
+#include "LogStatement.h"
 #include "Logger.h"
 #include "Macro.h"
 #include "ProfileEvent.h"
@@ -769,7 +769,7 @@ void Interpreter::executeMain() {
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
         // Enable profiling for execution of main
-        os << AstLogStatement::startDebug() << std::endl;
+        os << LogStatement::startDebug() << std::endl;
         ProfileEventSingleton::instance().setLog(&os);
         ProfileEventSingleton::instance().startTimer();
         evalStmt(main);
