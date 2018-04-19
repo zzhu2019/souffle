@@ -8,10 +8,9 @@
 
 #include "Tui.h"
 
-Tui::Tui(std::string filename, bool live, bool gui) : out() {
+Tui::Tui(std::string filename, bool live, bool gui) {
     this->f_name = filename;
 
-    // out = OutputProcessor();
     std::shared_ptr<ProgramRun>& run = out.getProgramRun();
 
     this->reader = std::make_shared<Reader>(filename, run, false, live);
