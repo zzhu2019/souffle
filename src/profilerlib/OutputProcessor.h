@@ -38,9 +38,13 @@ public:
 
     Table getRulTable();
 
+    Table getSubrulTable(std::string strRel, std::string strRul);
+
     Table getAtomTable(std::string strRel, std::string strRul);
 
     Table getVersions(std::string strRel, std::string strRul);
+
+    Table getVersionAtoms(std::string strRel, std::string strRul, int version);
 
     std::string formatTime(double number) {
         return Tools::formatTime(number);

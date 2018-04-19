@@ -107,10 +107,10 @@ void Reader::process(const std::vector<std::string>& data) {
                 relation_map.emplace(data[1], std::make_shared<Relation>(Relation(data[1], createId())));
             }
             std::shared_ptr<Relation> _rel = relation_map[data[1]];
-            if (data[0].at(0) == 't' && data[0].find("relation") != std::string::npos) {
+            if (data[0] == "t-nonrecursive-relation") {
                 _rel->setRuntime(std::stod(data[3]));
                 _rel->setLocator(data[2]);
-            } else if (data[0].at(0) == 'n' && data[0].find("relation") != std::string::npos) {
+            } else if (data[0] == "n-nonrecursive-relation") {
                 _rel->setNum_tuples(std::stol(data[3]));
             } else if (data[0].find("rule") != std::string::npos) {
                 addRule(_rel, data);
@@ -166,32 +166,41 @@ void Reader::addIteration(std::shared_ptr<Relation> rel, std::vector<std::string
 void Reader::addFrequency(std::shared_ptr<Relation> rel, std::vector<std::string> data) {
     std::unordered_map<std::string, std::shared_ptr<Rule>>& ruleMap = rel->getRuleMap();
 
-    if (ruleMap.find(data[4]) == ruleMap.end()) {
-        ruleMap.emplace(data[4], std::make_shared<Rule>(Rule(data[4], rel->createID())));
+    // If we can't find the rule then it must be an Iteration
+    if (ruleMap.find(data[3]) == ruleMap.end()) {
+        for (auto& iter : rel->getIterations()) {
+            for (auto& rule : iter->getRul_rec()) {
+                if (rule.second->getVersion() == std::stoi(data[2])) {
+                    rule.second->addAtomFrequency(data[4], data[5], std::stoi(data[2]), std::stoi(data[7]));
+                    return;
+                }
+            }
+        }
+    } else {
+        std::shared_ptr<Rule> _rul = ruleMap[data[3]];
+        // @frequency-rule;relationName;version;srcloc;stringify(clause);stringify(atom);level;count
+        // Generate name from atom + version
+        _rul->addAtomFrequency(data[4], data[5], std::stoi(data[2]), std::stoi(data[7]));
     }
-
-    std::shared_ptr<Rule> _rul = ruleMap[data[4]];
-    // @frequency-rule;relationName;version;srcloc;stringify(clause);stringify(atom);level;count
-    // Generate name from atom + version
-    _rul->addAtomFrequency(data[5], std::stoi(data[2]), std::stoi(data[7]));
 }
 
 void Reader::addRule(std::shared_ptr<Relation> rel, std::vector<std::string> data) {
     std::unordered_map<std::string, std::shared_ptr<Rule>>& ruleMap = rel->getRuleMap();
 
     long prev_num_tuples = rel->getPrev_num_tuples();
-    if (ruleMap.find(data[3]) == ruleMap.end()) {
-        ruleMap.emplace(data[3], std::make_shared<Rule>(Rule(data[3], rel->createID())));
+    if (ruleMap.find(data[2]) == ruleMap.end()) {
+        ruleMap.emplace(data[2], std::make_shared<Rule>(Rule(data[3], rel->createID())));
     }
 
-    std::shared_ptr<Rule> _rul = ruleMap[data[3]];
+    std::shared_ptr<Rule> _rul = ruleMap[data[2]];
+    assert(_rul != nullptr);
 
     if (data[0].at(0) == 't') {
-        _rul->setRuntime(std::stod(data[4]));
+        _rul->setRuntime(std::stod(data[6]));
         _rul->setLocator(data[2]);
     } else if (data[0].at(0) == 'n') {
-        assert(_rul != nullptr);
         _rul->setNum_tuples(std::stol(data[4]) - prev_num_tuples);
+        _rul->setLocator(data[2]);
         rel->setPrev_num_tuples(std::stol(data[4]));
     }
 }
