@@ -707,7 +707,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
             }
 
             // add a scan level
-            if (Global::config().has("profile")) {
+            if (Global::config().has("profile") && Global::config().has("verbose")) {
                 std::stringstream ss;
                 ss << clause.getHead()->getName();
                 std::string relName = ss.str();
