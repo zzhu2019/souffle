@@ -14,7 +14,8 @@ void Reader::readFile() {
         // std::thread([this]{liveread();}).detach();
     } else {
         if (!file.is_open()) {
-            throw std::exception();
+            std::cerr << "Log file could not be opened." << std::endl;
+            exit(1);
         }
 
         std::string str;
