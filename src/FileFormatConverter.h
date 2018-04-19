@@ -303,16 +303,18 @@ public:
     static void fromLogToCsv(const std::string& inputPath, const std::string& outputPath,
             const std::map<std::string, std::string>& config = std::map<std::string, std::string>()) {
         const std::map<std::string, std::vector<std::string>> schema = {{"@start-debug", {}},
-                {"@t-nonrecursive-relation", {"relation", "src-locator", "time"}},
+                {"@t-nonrecursive-relation", {"relation", "src-locator", "start-time", "end-time", "time"}},
                 {"@n-nonrecursive-relation", {"relation", "src-locator", "tuples"}},
-                {"@t-nonrecursive-rule", {"relation", "src-locator", "rule", "time"}},
+                {"@t-nonrecursive-rule",
+                        {"relation", "src-locator", "rule", "start-time", "end-time", "time"}},
                 {"@n-nonrecursive-rule", {"relation", "src-locator", "rule", "tuples"}},
-                {"@t-recursive-rule", {"relation", "version", "src-locator", "rule", "time"}},
+                {"@t-recursive-rule",
+                        {"relation", "version", "src-locator", "rule", "start-time", "end-time", "time"}},
                 {"@n-recursive-rule", {"relation", "version", "src-locator", "rule", "tuples"}},
-                {"@t-recursive-relation", {"relation", "src-locator", "time"}},
+                {"@t-recursive-relation", {"relation", "src-locator", "start-time", "end-time", "time"}},
                 {"@n-recursive-relation", {"relation", "src-locator", "tuples"}},
-                {"@c-recursive-relation", {"relation", "src-locator", "copy-time"}},
-                {"@runtime", {"total-time"}}};
+                {"@c-recursive-relation", {"relation", "src-locator", "start-time", "end-time", "copy-time"}},
+                {"@runtime", {"start-time", "end-time", "total-time"}}};
         auto logData = read<std::vector<std::vector<std::string>>,
                 read<std::vector<std::string>, readRow<';', '\'', '\"', '\\', ' '>, '\n'>>(inputPath);
         auto csvData = transformBySchema(schema, logData, config.find("headers") != config.end());
