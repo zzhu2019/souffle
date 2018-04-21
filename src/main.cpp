@@ -24,7 +24,6 @@
 #include "AstTranslationUnit.h"
 #include "AstTranslator.h"
 #include "AstUtils.h"
-#include "BddbddbBackend.h"
 #include "ComponentModel.h"
 #include "Global.h"
 #include "Interpreter.h"
@@ -47,17 +46,18 @@
 #include <fstream>
 #include <iostream>
 #include <list>
+#include <memory>
 #include <string>
 
 #include "config.h"
-#include <ctype.h>
-#include <errno.h>
+#include <cctype>
+#include <cerrno>
+#include <climits>
+#include <cstdarg>
+#include <cstdlib>
+#include <cstring>
 #include <getopt.h>
 #include <libgen.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -176,7 +176,6 @@ int main(int argc, char** argv) {
                                     "binary executable (without executing it)."},
                             {"profile", 'p', "FILE", "", false,
                                     "Enable profiling, and write profile data to <FILE>."},
-                            {"bddbddb", 'b', "FILE", "", false, "Convert input into bddbddb file format."},
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
 #ifdef USE_PROVENANCE
                             {"provenance", 't', "EXPLAIN", "", false,
@@ -325,9 +324,7 @@ int main(int argc, char** argv) {
     // Magic-Set pipeline
     auto magicPipeline = std::make_unique<ConditionalTransformer>(Global::config().has("magic-transform"),
             std::make_unique<PipelineTransformer>(std::make_unique<NormaliseConstraintsTransformer>(),
-                    std::make_unique<MagicSetTransformer>(),
-                    std::make_unique<ConditionalTransformer>(Global::config().get("bddbddb").empty(),
-                            std::make_unique<ResolveAliasesTransformer>()),
+                    std::make_unique<MagicSetTransformer>(), std::make_unique<ResolveAliasesTransformer>(),
                     std::make_unique<RemoveRelationCopiesTransformer>(),
                     std::make_unique<RemoveEmptyRelationsTransformer>(),
                     std::make_unique<RemoveRedundantRelationsTransformer>()));
@@ -347,8 +344,7 @@ int main(int argc, char** argv) {
             std::make_unique<RemoveBooleanConstraintsTransformer>(),
             std::make_unique<InlineRelationsTransformer>(), std::make_unique<ReduceExistentialsTransformer>(),
             std::make_unique<ExtractDisconnectedLiteralsTransformer>(),
-            std::make_unique<ConditionalTransformer>(
-                    Global::config().get("bddbddb").empty(), std::make_unique<ResolveAliasesTransformer>()),
+            std::make_unique<ResolveAliasesTransformer>(),
             std::make_unique<RemoveRelationCopiesTransformer>(),
             std::make_unique<MaterializeAggregationQueriesTransformer>(),
             std::make_unique<RemoveEmptyRelationsTransformer>(),
@@ -371,26 +367,6 @@ int main(int argc, char** argv) {
     // Apply all the transformations
     pipeline->apply(*astTranslationUnit);
 
-    // ------- (optional) conversions -------------
-
-    // conduct the bddbddb file export
-    if (!Global::config().get("bddbddb").empty()) {
-        try {
-            if (Global::config().get("bddbddb") == "-") {
-                // use STD-OUT
-                toBddbddb(std::cout, *astTranslationUnit);
-            } else {
-                // create an output file
-                std::ofstream out(Global::config().get("bddbddb").c_str());
-                toBddbddb(out, *astTranslationUnit);
-            }
-        } catch (const UnsupportedConstructException& uce) {
-            ERROR("failed to convert input specification into bddbddb syntax because " +
-                    std::string(uce.what()));
-        }
-        return 0;
-    }
-
     // ------- execution -------------
 
     /* translate AST to RAM */
@@ -398,7 +374,7 @@ int main(int argc, char** argv) {
             AstTranslator().translateUnit(*astTranslationUnit);
 
     std::vector<std::unique_ptr<RamTransformer>> ramTransforms;
-    ramTransforms.push_back(std::unique_ptr<RamTransformer>(new RamSemanticChecker()));
+    ramTransforms.push_back(std::make_unique<RamSemanticChecker>());
 
     for (const auto& transform : ramTransforms) {
         transform->apply(*ramTranslationUnit);

@@ -5,39 +5,40 @@
 # - <souffle root>/licenses/SOUFFLE-UPL.txt
 
 
-SUFFIXES = .cpp .h .yy .ll .cc .hh .hpp
+SUFFIXES = .cpp .h .yy .ll .cc .hh .h
 
-bin_PROGRAMS = souffle souffle-profile
+bin_PROGRAMS = souffle souffle-profile souffle2bdd souffle2lb
 
 nodist_souffle_profile_SOURCES = $(BUILT_SOURCES)
 
-souffle_profile_SOURCES = souffle_prof.cpp profilerlib/Cell.hpp \
-                          profilerlib/CellInterface.hpp         \
+souffle_profile_SOURCES = souffle_prof.cpp profilerlib/Cell.h   \
+                          profilerlib/CellInterface.h           \
                           profilerlib/Cli.cpp                   \
-                          profilerlib/Cli.hpp                   \
-                          profilerlib/DataComparator.hpp        \
+                          profilerlib/Cli.h                     \
+                          profilerlib/DataComparator.h          \
                           profilerlib/Iteration.cpp             \
-                          profilerlib/Iteration.hpp             \
+                          profilerlib/Iteration.h               \
                           profilerlib/OutputProcessor.cpp       \
-                          profilerlib/OutputProcessor.hpp       \
+                          profilerlib/OutputProcessor.h         \
                           profilerlib/ProgramRun.cpp            \
-                          profilerlib/ProgramRun.hpp            \
+                          profilerlib/ProgramRun.h              \
                           profilerlib/Reader.cpp                \
-                          profilerlib/Reader.hpp                \
+                          profilerlib/Reader.h                  \
                           profilerlib/Relation.cpp              \
-                          profilerlib/Relation.hpp              \
-                          profilerlib/Row.hpp                   \
+                          profilerlib/Relation.h                \
+                          profilerlib/Row.h                     \
                           profilerlib/Rule.cpp                  \
-                          profilerlib/Rule.hpp                  \
+                          profilerlib/Rule.h                    \
                           profilerlib/StringUtils.cpp           \
-                          profilerlib/StringUtils.hpp           \
+                          profilerlib/StringUtils.h             \
                           profilerlib/Table.cpp                 \
-                          profilerlib/Table.hpp                 \
+                          profilerlib/Table.h                   \
                           profilerlib/Tui.cpp                   \
-                          profilerlib/Tui.hpp                   \
-                          profilerlib/html_string.hpp           \
+                          profilerlib/Tui.h                     \
+                          profilerlib/html_string.h             \
                           profilerlib/UserInputReader.cpp       \
-                          profilerlib/UserInputReader.hpp
+                          profilerlib/UserInputReader.h         \
+                          FileFormatConverter.h  
 
 DIR := ${CURDIR}
 
@@ -71,7 +72,7 @@ souffle_sources = \
               AstProgram.cpp        AstProgram.h        \
               AstRelation.h                             \
               AstRelationIdentifier.h                   \
-              AstSrcLocation.cpp    AstSrcLocation.h    \
+              SrcLocation.cpp    SrcLocation.h    \
               AstTypeAnalysis.cpp   AstTypeAnalysis.h   \
               AstType.h                                 \
               AstUtils.cpp          AstUtils.h          \
@@ -79,7 +80,6 @@ souffle_sources = \
               AstAnalysis.h                             \
               AstTransformer.cpp    AstTransformer.h    \
               AstTranslationUnit.h  ErrorReport.h       \
-              BddbddbBackend.h      BddbddbBackend.cpp  \
               DebugReport.cpp       DebugReport.h       \
               ComponentModel.cpp    ComponentModel.h    \
               AstSemanticChecker.cpp                    \
@@ -129,7 +129,8 @@ souffle_sources = \
               IndexSetAnalysis.cpp   IndexSetAnalysis.h \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h            \
-              AstLogStatement.h
+              AstLogStatement.h                         \
+              ProfileEvent.h
 
 # -- build souffle as a library so it can be reused in testing
 noinst_LTLIBRARIES = libsouffle.la
@@ -139,6 +140,13 @@ libsouffle_la_LDFLAGS = --static --dlopen --pic
 
 souffle_SOURCES = main.cpp
 souffle_LDADD = libsouffle.la
+
+souffle2bdd_SOURCES = souffle2bdd.cpp
+souffle2bdd_LDADD = libsouffle.la
+
+souffle2lb_SOURCES = souffle2lb.cpp
+souffle2lb_LDADD = libsouffle.la
+
 
 dist_bin_SCRIPTS = souffle-compile souffle-config
 
@@ -181,7 +189,8 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         Explain.h               \
                         ExplainTree.h           \
                         ExplainProvenance.h     \
-                        ExplainProvenanceSLD.h 
+                        ExplainProvenanceSLD.h  \
+                        ProfileEvent.h
 
 souffle_CPPFLAGS = -DPACKAGE_VERSION="\"${PACKAGE_VERSION}\""
 
@@ -189,7 +198,7 @@ souffle_CPPFLAGS = -DPACKAGE_VERSION="\"${PACKAGE_VERSION}\""
 CLEANFILES = $(BUILT_SOURCES)  parser.cc scanner.cc parser.hh stack.hh
 
 # run Bison
-$(builddir)/parser.hh $(builddir)/stack.hh: $(srcdir)/parser.yy
+$(builddir)/parser.hh: $(srcdir)/parser.yy
 	$(BISON) -Wall -Werror -v -d -o parser.cc $(srcdir)/parser.yy
 
 # and FLEX
@@ -197,8 +206,8 @@ $(builddir)/scanner.cc: $(srcdir)/scanner.ll
 	$(FLEX) -o scanner.cc $(srcdir)/scanner.ll
 
 # driver depends on the generated header
-$(builddir)/parser.cc $(builddir)/scanner.cc $(builddir)/main.cpp $(builddir)/ParserDriver.cpp: \
-	$(builddir)/parser.hh
+$(builddir)/parser.cc $(builddir)/stack.hh $(builddir)/scanner.cc \
+        $(builddir)/main.cpp $(builddir)/ParserDriver.cpp: $(builddir)/parser.hh
 
 ########## Unit Tests
 
@@ -316,6 +325,12 @@ check_PROGRAMS += test/parallel_utils_test
 test_parallel_utils_test_CXXFLAGS = $(souffle_bin_CPPFLAGS) -I @abs_top_srcdir@/src/test -DBUILDDIR='"@abs_top_builddir@/src/"'
 test_parallel_utils_test_SOURCES = test/parallel_utils_test.cpp
 test_parallel_utils_test_LDADD = libsouffle.la
+
+# file format converter
+check_PROGRAMS += test/file_format_converter_test
+test_file_format_converter_test_CXXFLAGS = $(souffle_bin_CPPFLAGS) -I @abs_top_srcdir@/src/test -DBUILDDIR='"@abs_top_builddir@/src/"'
+test_file_format_converter_test_SOURCES = test/file_format_converter_test.cpp
+test_file_format_converter_test_LDADD = libsouffle.la
 
 # make all check-programs tests
 TESTS = $(check_PROGRAMS)

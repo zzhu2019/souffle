@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Table.hpp"
+#include "Table.h"
 
 void Table::sort(int col_num) {
     switch (col_num) {

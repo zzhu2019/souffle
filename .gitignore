@@ -45,6 +45,8 @@ doc
 prof
 
 .idea/
+cmake-build-*
+CMakeLists.txt
 
 *.swp
 *.tgz

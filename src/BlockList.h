@@ -75,7 +75,7 @@ class concurrent_list {
 
 public:
     concurrent_list() {
-        cv_data* curr = new cv_data;
+        auto* curr = new cv_data;
         curr->m_size = 0;
         curr->m_data = new T[chunk_size];
         curr->next = nullptr;
@@ -218,7 +218,7 @@ public:
 static constexpr uint8_t BLOCKBITS = 10u;
 static constexpr size_t BLOCKSIZE = (1u << BLOCKBITS);
 // block_t stores parent in the upper half, rank in the lower half
-typedef uint64_t block_t;
+using block_t = uint64_t;
 
 /**
  * A class that is designed to mimic std::list, but with better destructor speed
@@ -389,7 +389,8 @@ public:
 
     public:
         // default ctor, to silence
-        iterator(){};
+        iterator() = default;
+        ;
 
         /* begin iterator for iterating over all elements */
         iterator(BlockList* bl) : bl(bl){};

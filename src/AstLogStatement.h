@@ -14,8 +14,8 @@
  *
  ***********************************************************************/
 
-#include "AstSrcLocation.h"
 #include "Global.h"
+#include "SrcLocation.h"
 
 namespace souffle {
 
@@ -28,14 +28,14 @@ private:
 
 public:
     static const std::string tNonrecursiveRelation(
-            const std::string& relationName, const AstSrcLocation& srcLocation) {
+            const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@t-nonrecursive-relation";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -44,14 +44,14 @@ public:
     }
 
     static const std::string nNonrecursiveRelation(
-            const std::string& relationName, const AstSrcLocation& srcLocation) {
+            const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@n-nonrecursive-relation";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"tuples\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -59,16 +59,16 @@ public:
         return line.str();
     }
 
-    static const std::string tNonrecursiveRule(const std::string& relationName,
-            const AstSrcLocation& srcLocation, const std::string& datalogText) {
+    static const std::string tNonrecursiveRule(
+            const std::string& relationName, const SrcLocation& srcLocation, const std::string& datalogText) {
         const char* messageType = "@t-nonrecursive-rule";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";" << datalogText << ";";
@@ -76,16 +76,16 @@ public:
         return line.str();
     }
 
-    static const std::string nNonrecursiveRule(const std::string& relationName,
-            const AstSrcLocation& srcLocation, const std::string& datalogText) {
+    static const std::string nNonrecursiveRule(
+            const std::string& relationName, const SrcLocation& srcLocation, const std::string& datalogText) {
         const char* messageType = "@n-nonrecursive-rule";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"tuples\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";" << datalogText << ";";
@@ -94,16 +94,16 @@ public:
     }
 
     static const std::string tRecursiveRule(const std::string& relationName, const int version,
-            const AstSrcLocation& srcLocation, const std::string& datalogText) {
+            const SrcLocation& srcLocation, const std::string& datalogText) {
         const char* messageType = "@t-recursive-rule";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"version\": \"" << version << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("version": ")" << version << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << version << ";" << srcLocation << ";"
@@ -113,16 +113,16 @@ public:
     }
 
     static const std::string nRecursiveRule(const std::string& relationName, const int version,
-            const AstSrcLocation& srcLocation, const std::string& datalogText) {
+            const SrcLocation& srcLocation, const std::string& datalogText) {
         const char* messageType = "@n-recursive-rule";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"version\": \"" << version << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("version": ")" << version << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"tuples\": ";
         } else {
             line << messageType << ";" << relationName << ";" << version << ";" << srcLocation << ";"
@@ -132,14 +132,14 @@ public:
     }
 
     static const std::string tRecursiveRelation(
-            const std::string& relationName, const AstSrcLocation& srcLocation) {
+            const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@t-recursive-relation";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -148,14 +148,14 @@ public:
     }
 
     static const std::string nRecursiveRelation(
-            const std::string& relationName, const AstSrcLocation& srcLocation) {
+            const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@n-recursive-relation";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"tuples\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -164,14 +164,14 @@ public:
     }
 
     static const std::string cRecursiveRelation(
-            const std::string& relationName, const AstSrcLocation& srcLocation) {
+            const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@c-recursive-relation";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";";
@@ -179,18 +179,18 @@ public:
         return line.str();
     }
 
-    static const std::string pProofCounter(const std::string& relationName, const AstSrcLocation& srcLocation,
-            const std::string& datalogText) {
+    static const std::string pProofCounter(
+            const std::string& relationName, const SrcLocation& srcLocation, const std::string& datalogText) {
         // TODO (#590): the profiler should be modified to use this type of log message, as currently these
         // messages are ignored
         const char* messageType = "#p-proof-counter";
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
-            line << "\"relation\": \"" << relationName << "\", ";
-            line << "\"src-locator\": \"" << srcLocation << "\", ";
-            line << "\"rule\": \"" << datalogText << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << R"("rule": ")" << datalogText << "\", ";
             line << "\"failed-proofs\": ";
         } else {
             line << messageType << ";" << relationName << ";" << srcLocation << ";" << datalogText << ";";
@@ -206,7 +206,7 @@ public:
         std::stringstream line;
         if (AstLogStatement::getLogFileType() == "json") {
             line << "{";
-            line << "\"msg-type\": \"" << messageType << "\", ";
+            line << R"("msg-type": ")" << messageType << "\", ";
             line << "\"time\": ";
         } else {
             line << messageType << ";";

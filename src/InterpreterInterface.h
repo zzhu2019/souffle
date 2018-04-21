@@ -21,6 +21,7 @@
 #include "SouffleInterface.h"
 
 #include <array>
+#include <utility>
 
 namespace souffle {
 
@@ -29,7 +30,7 @@ namespace souffle {
  */
 // TODO (#541): Check whether this helper function causes a memory leak
 inline RamDomain* convertTupleToNums(const tuple& t) {
-    RamDomain* newTuple = new RamDomain[t.size()];
+    auto* newTuple = new RamDomain[t.size()];
 
     for (size_t i = 0; i < t.size(); i++) {
         newTuple[i] = t[i];
@@ -81,7 +82,7 @@ protected:
     public:
         iterator_base(uint32_t arg_id, const InterpreterRelInterface* r, InterpreterRelation::iterator i)
                 : Relation::iterator_base(arg_id), ramRelationInterface(r), it(i), tup(r) {}
-        virtual ~iterator_base() {}
+        ~iterator_base() override = default;
 
         /** Increment iterator */
         void operator++() override {
@@ -126,9 +127,9 @@ protected:
 public:
     InterpreterRelInterface(InterpreterRelation& r, SymbolTable& s, std::string n, std::vector<std::string> t,
             std::vector<std::string> an, bool rInput, bool rOutput, uint32_t i)
-            : relation(r), symTable(s), name(n), types(t), attrNames(an), relInput(rInput),
-              relOutput(rOutput), id(i) {}
-    virtual ~InterpreterRelInterface() {}
+            : relation(r), symTable(s), name(std::move(n)), types(std::move(t)), attrNames(std::move(an)),
+              relInput(rInput), relOutput(rOutput), id(i) {}
+    ~InterpreterRelInterface() override = default;
 
     /** Insert tuple */
     void insert(const tuple& t) override {
@@ -239,7 +240,7 @@ public:
             id++;
         }
     }
-    virtual ~InterpreterProgInterface() {
+    ~InterpreterProgInterface() override {
         for (auto* interface : interfaces) {
             delete interface;
         }

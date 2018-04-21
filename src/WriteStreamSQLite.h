@@ -97,14 +97,14 @@ private:
         }
     }
 
-    void throwError(std::string message) {
+    void throwError(const std::string& message) {
         std::stringstream error;
         error << message << sqlite3_errmsg(db) << "\n";
         throw std::invalid_argument(error.str());
     }
 
     uint64_t getSymbolTableIDFromDB(int index) {
-        if (sqlite3_bind_text(symbolSelectStatement, 1, symbolTable.unsafeResolve(index), -1,
+        if (sqlite3_bind_text(symbolSelectStatement, 1, symbolTable.unsafeResolve(index).c_str(), -1,
                     SQLITE_TRANSIENT) != SQLITE_OK) {
             throwError("SQLite error in sqlite3_bind_text: ");
         }
@@ -121,7 +121,7 @@ private:
             return dbSymbolTable[index];
         }
 
-        if (sqlite3_bind_text(symbolInsertStatement, 1, symbolTable.unsafeResolve(index), -1,
+        if (sqlite3_bind_text(symbolInsertStatement, 1, symbolTable.unsafeResolve(index).c_str(), -1,
                     SQLITE_TRANSIENT) != SQLITE_OK) {
             throwError("SQLite error in sqlite3_bind_text: ");
         }
@@ -257,10 +257,10 @@ private:
     size_t arity;
 
     std::unordered_map<uint64_t, uint64_t> dbSymbolTable;
-    sqlite3_stmt* insertStatement;
-    sqlite3_stmt* symbolInsertStatement;
-    sqlite3_stmt* symbolSelectStatement;
-    sqlite3* db;
+    sqlite3_stmt* insertStatement = nullptr;
+    sqlite3_stmt* symbolInsertStatement = nullptr;
+    sqlite3_stmt* symbolSelectStatement = nullptr;
+    sqlite3* db = nullptr;
 };
 
 class WriteSQLiteFactory : public WriteStreamFactory {

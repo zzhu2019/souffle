@@ -1,9 +1,9 @@
 Warning: No rules/facts defined for relation B in file rule_grounded.dl at line 4
 .decl B (a:T, b:T)
-^------------------
+------^------------
 Warning: No rules/facts defined for relation C in file rule_grounded.dl at line 5
 .decl C (a:T, b:T)
-^------------------
+------^------------
 Error: Ungrounded variable z in file rule_grounded.dl at line 11
 A(x,z) :- B(x,y), !C(y,z).
 ----^----------------------

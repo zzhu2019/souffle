@@ -20,34 +20,32 @@
 %define api.token.constructor
 %define api.value.type variant
 %define parse.assert
-%define api.location.type {AstSrcLocation}
+%define api.location.type {SrcLocation}
 
 %code requires {
     #include <config.h>
-    #include <stdlib.h>
-    #include <stdio.h>
-    #include <assert.h>
-    #include <unistd.h>
-    #include <stdarg.h>
-    #include <string>
+    #include <cassert>
+    #include <cstdarg>
+    #include <cstdio>
+    #include <cstdlib>
     #include <stack>
+    #include <string>
     #include <unistd.h>
 
-    #include "Util.h"
-    #include "AstProgram.h"
+    #include "AstArgument.h"
     #include "AstClause.h"
     #include "AstComponent.h"
-    #include "AstRelation.h"
     #include "AstIODirective.h"
-    #include "AstArgument.h"
     #include "AstNode.h"
-    #include "UnaryFunctorOps.h"
-    #include "BinaryFunctorOps.h"
-    #include "BinaryConstraintOps.h"
     #include "AstParserUtils.h"
-
-    #include "AstSrcLocation.h"
+    #include "AstProgram.h"
+    #include "AstRelation.h"
+    #include "SrcLocation.h"
     #include "AstTypes.h"
+    #include "BinaryConstraintOps.h"
+    #include "BinaryFunctorOps.h"
+    #include "UnaryFunctorOps.h"
+    #include "Util.h"
 
     using namespace souffle;
 
@@ -55,7 +53,7 @@
         class ParserDriver;
     }
 
-    typedef void* yyscan_t;
+    using yyscan_t = void*;
 
     #define YY_NULLPTR nullptr
 
@@ -94,7 +92,6 @@
 %token PRAGMA                    "pragma directive"
 %token OUTPUT_QUALIFIER          "relation qualifier output"
 %token INPUT_QUALIFIER           "relation qualifier input"
-%token DATA_QUALIFIER            "relation qualifier data"
 %token PRINTSIZE_QUALIFIER       "relation qualifier printsize"
 %token BRIE_QUALIFIER            "BRIE datastructure qualifier"
 %token BTREE_QUALIFIER           "BTREE datastructure qualifier"
@@ -168,7 +165,8 @@
 %type <AstComponent *>                   component component_head component_body
 %type <AstComponentType *>               comp_type
 %type <AstComponentInit *>               comp_init
-%type <AstRelation *>                    attributes non_empty_attributes relation
+%type <AstRelation *>                    attributes non_empty_attributes relation_body
+%type <std::vector<AstRelation *>>       relation_list relation_head
 %type <AstArgument *>                    arg
 %type <AstAtom *>                        arg_list non_empty_arg_list atom
 %type <std::vector<AstAtom*>>            head
@@ -210,8 +208,8 @@ unit
   : unit type {
         driver.addType(std::unique_ptr<AstType>($2));
     }
-  | unit relation {
-        driver.addRelation(std::unique_ptr<AstRelation>($2));
+  | unit relation_head {
+        for(const auto& cur : $2) driver.addRelation(std::unique_ptr<AstRelation>(cur));
     }
   | unit iodirective {
         driver.addIODirectiveChain(std::unique_ptr<AstIODirective>($2));
@@ -355,10 +353,6 @@ qualifiers
         if($1 & INPUT_RELATION) driver.error(@2, "input qualifier already set");
         $$ = $1 | INPUT_RELATION;
     }
-  | qualifiers DATA_QUALIFIER {
-        if($1 & DATA_RELATION) driver.error(@2, "input qualifier already set");
-        $$ = $1 | DATA_RELATION;
-    }
   | qualifiers PRINTSIZE_QUALIFIER {
         if($1 & PRINTSIZE_RELATION) driver.error(@2, "printsize qualifier already set");
         $$ = $1 | PRINTSIZE_RELATION;
@@ -395,11 +389,28 @@ qualifiers
         $$ = 0;
     }
 
-relation
-  : DECL IDENT LPAREN attributes RPAREN qualifiers {
-        $$ = $4;
-        $4->setName($2);
-        $4->setQualifier($6);
+relation_head
+  : DECL relation_list {
+      $$.swap($2);
+    }
+
+relation_list
+  : relation_body {
+      $$.push_back($1);
+    }
+  | IDENT COMMA relation_list {
+      $$.swap($3);
+      auto tmp = $$.back()->clone();
+      tmp->setName($1);
+      tmp->setSrcLoc(@$);
+      $$.push_back(tmp);
+    }
+
+relation_body
+  : IDENT LPAREN attributes RPAREN qualifiers {
+        $$ = $3;
+        $$->setName($1);
+        $$->setQualifier($5);
         $$->setSrcLoc(@$);
     }
 
@@ -486,7 +497,7 @@ iodirective
 /* Atom */
 arg
   : STRING {
-        $$ = new AstStringConstant(driver.getSymbolTable(), $1.c_str());
+        $$ = new AstStringConstant(driver.getSymbolTable(), $1);
         $$->setSrcLoc(@$);
     }
   | UNDERSCORE {
@@ -969,9 +980,9 @@ component_body
         $$ = $1;
         $$->addType(std::unique_ptr<AstType>($2));
     }
-  | component_body relation {
+  | component_body relation_head {
         $$ = $1;
-        $$->addRelation(std::unique_ptr<AstRelation>($2));
+        for(const auto& cur : $2) $$->addRelation(std::unique_ptr<AstRelation>(cur));
     }
   | component_body iodirective {
         $$ = $1;

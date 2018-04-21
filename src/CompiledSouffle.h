@@ -22,6 +22,7 @@
 #include "CompiledRelation.h"
 #include "Logger.h"
 #include "ParallelUtils.h"
+#include "ProfileEvent.h"
 #include "SignalHandler.h"
 #include "SouffleInterface.h"
 #include "SymbolTable.h"
@@ -31,6 +32,7 @@
 #include <iostream>
 #include <map>
 #include <regex>
+#include <utility>
 
 #if defined(_OPENMP)
 #include <omp.h>
@@ -64,23 +66,23 @@ private:
     public:
         iterator_wrapper(uint32_t arg_id, const Relation* rel, const typename RelType::iterator& arg_it)
                 : iterator_base(arg_id), it(arg_it), relation(rel), t(rel) {}
-        void operator++() {
+        void operator++() override {
             ++it;
         }
-        tuple& operator*() {
+        tuple& operator*() override {
             t.rewind();
             for (size_t i = 0; i < Arity; i++) {
                 t[i] = (*it)[i];
             }
             return t;
         }
-        iterator_base* clone() const {
+        iterator_base* clone() const override {
             return new iterator_wrapper(*this);
         }
 
     protected:
-        bool equal(const iterator_base& o) const {
-            const iterator_wrapper& casted = static_cast<const iterator_wrapper&>(o);
+        bool equal(const iterator_base& o) const override {
+            const auto& casted = static_cast<const iterator_wrapper&>(o);
             return it == casted.it;
         }
     };
@@ -88,7 +90,7 @@ private:
 public:
     RelationWrapper(RelType& r, SymbolTable& s, std::string name, const std::array<const char*, Arity>& t,
             const std::array<const char*, Arity>& n)
-            : relation(r), symTable(s), name(name), tupleType(t), tupleName(n) {}
+            : relation(r), symTable(s), name(std::move(name)), tupleType(t), tupleName(n) {}
     iterator begin() const override {
         return iterator(new iterator_wrapper(id, this, relation.begin()));
     }
@@ -124,17 +126,17 @@ public:
         return name;
     }
     const char* getAttrType(size_t arg) const override {
-        assert(0 <= arg && arg < Arity && "attribute out of bound");
+        assert(false <= arg && arg < Arity && "attribute out of bound");
         return tupleType[arg];
     }
     const char* getAttrName(size_t arg) const override {
-        assert(0 <= arg && arg < Arity && "attribute out of bound");
+        assert(false <= arg && arg < Arity && "attribute out of bound");
         return tupleName[arg];
     }
-    size_t getArity() const {
+    size_t getArity() const override {
         return Arity;
     }
-    SymbolTable& getSymbolTable() const {
+    SymbolTable& getSymbolTable() const override {
         return symTable;
     }
 };

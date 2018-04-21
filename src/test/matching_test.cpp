@@ -39,7 +39,7 @@ public:
     }
 };
 
-typedef set<SearchColumns> Nodes;
+using Nodes = set<SearchColumns>;
 
 TEST(Matching, StaticTest_1) {
     TestAutoIndex order;

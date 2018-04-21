@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include <ctype.h>
+#include <cctype>
 
 /** Types of relation qualifiers defined as bits in a word */
 
@@ -45,8 +45,6 @@
 
 /* Rules of a relation defined in a component can be overwritten by sub-component */
 #define OVERRIDABLE_RELATION (0x8)
-
-#define DATA_RELATION (0x10)
 
 /* Relation is inlined */
 #define INLINE_RELATION (0x20)
@@ -86,7 +84,7 @@ protected:
 
     /** Qualifier of relation (i.e., output or not an output relation) */
     // TODO: Change to a set of qualifiers
-    int qualifier;
+    int qualifier = 0;
 
     /** Clauses associated with this relation. Clauses could be
      * either facts or rules.
@@ -98,7 +96,7 @@ protected:
     std::vector<std::unique_ptr<AstIODirective>> ioDirectives;
 
 public:
-    AstRelation() : qualifier(0) {}
+    AstRelation() = default;
 
     ~AstRelation() override = default;
 
@@ -151,11 +149,6 @@ public:
     /** Check whether relation is an input relation */
     bool isInput() const {
         return (qualifier & INPUT_RELATION) != 0;
-    }
-
-    /** Check whether relation is to/from memory */
-    bool isData() const {
-        return (qualifier & DATA_RELATION) != 0;
     }
 
     /** Check whether relation is a brie relation */
@@ -242,9 +235,6 @@ public:
             os << "input ";
         }
         if (isOutput()) {
-            os << "output ";
-        }
-        if (isData()) {
             os << "output ";
         }
         if (isPrintSize()) {
@@ -377,8 +367,8 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstRelation*>(&node));
-        const AstRelation& other = static_cast<const AstRelation&>(node);
+        assert(nullptr != dynamic_cast<const AstRelation*>(&node));
+        const auto& other = static_cast<const AstRelation&>(node);
         return name == other.name && equal_targets(attributes, other.attributes) &&
                equal_targets(clauses, other.clauses);
     }
@@ -393,6 +383,6 @@ struct AstNameComparison {
     }
 };
 
-typedef std::set<const AstRelation*, AstNameComparison> AstRelationSet;
+using AstRelationSet = std::set<const AstRelation*, AstNameComparison>;
 
 }  // end of namespace souffle

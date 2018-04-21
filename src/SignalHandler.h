@@ -16,10 +16,10 @@
 
 #pragma once
 #include <atomic>
+#include <cassert>
+#include <csignal>
 #include <iostream>
 #include <string>
-#include <assert.h>
-#include <signal.h>
 
 namespace souffle {
 
@@ -34,12 +34,12 @@ private:
     std::atomic<const char*> msg;
 
     // state of signal handler
-    bool isSet;
+    bool isSet = false;
 
     // previous signal handler routines
-    void (*prevFpeHandler)(int);
-    void (*prevIntHandler)(int);
-    void (*prevSegVHandler)(int);
+    void (*prevFpeHandler)(int) = nullptr;
+    void (*prevIntHandler)(int) = nullptr;
+    void (*prevSegVHandler)(int) = nullptr;
 
     /**
      * Signal handler for various types of signals.
@@ -69,7 +69,7 @@ private:
         exit(1);
     }
 
-    SignalHandler() : msg(nullptr), isSet(false) {}
+    SignalHandler() : msg(nullptr) {}
 
 public:
     // get singleton

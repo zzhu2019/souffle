@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Rule.hpp"
+#include "Rule.h"
 /*
  * Represents recursive profile data
  */

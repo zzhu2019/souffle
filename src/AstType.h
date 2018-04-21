@@ -21,6 +21,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace souffle {
@@ -120,7 +121,7 @@ class AstType : public AstNode {
 
 public:
     /** Creates a new type */
-    AstType(const AstTypeIdentifier& name = "") : name(name) {}
+    AstType(AstTypeIdentifier name = "") : name(std::move(name)) {}
 
     /** Obtains the name of this type */
     const AstTypeIdentifier& getName() const {
@@ -182,8 +183,8 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstPrimitiveType*>(&node));
-        const AstPrimitiveType& other = static_cast<const AstPrimitiveType&>(node);
+        assert(nullptr != dynamic_cast<const AstPrimitiveType*>(&node));
+        const auto& other = static_cast<const AstPrimitiveType&>(node);
         return getName() == other.getName() && num == other.num;
     }
 };
@@ -199,7 +200,7 @@ class AstUnionType : public AstType {
 
 public:
     /** Creates a new union type */
-    AstUnionType() {}
+    AstUnionType() = default;
 
     /** Obtains a reference to the list element types */
     const std::vector<AstTypeIdentifier>& getTypes() const {
@@ -227,8 +228,8 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstUnionType*>(&node));
-        const AstUnionType& other = static_cast<const AstUnionType&>(node);
+        assert(nullptr != dynamic_cast<const AstUnionType*>(&node));
+        const auto& other = static_cast<const AstUnionType&>(node);
         return getName() == other.getName() && types == other.types;
     }
 };
@@ -257,7 +258,7 @@ private:
 
 public:
     /** Creates a new record type */
-    AstRecordType() {}
+    AstRecordType() = default;
 
     /** Adds a new field to this record type */
     void add(const std::string& name, const AstTypeIdentifier& type) {
@@ -295,8 +296,8 @@ public:
 protected:
     /** Implements the node comparison for this node type */
     bool equal(const AstNode& node) const override {
-        assert(dynamic_cast<const AstRecordType*>(&node));
-        const AstRecordType& other = static_cast<const AstRecordType&>(node);
+        assert(nullptr != dynamic_cast<const AstRecordType*>(&node));
+        const auto& other = static_cast<const AstRecordType&>(node);
         return getName() == other.getName() && fields == other.fields;
     }
 };

@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "RamTypes.h"
 
@@ -24,9 +24,9 @@ namespace souffle {
 
 /** ast domain that contains ram domain */
 #ifdef AST_DOMAIN_TYPE
-typedef AST_DOMAIN_TYPE AstDomain;
+using AstDomain = AST_DOMAIN_TYPE;
 #else
-typedef int64_t AstDomain;
+using AstDomain = int64_t;
 #endif
 
 /** Lower and upper boundaries for the AST domain. The range must be able to be

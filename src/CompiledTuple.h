@@ -35,7 +35,7 @@ namespace ram {
 template <typename Domain, std::size_t _arity>
 struct Tuple {
     // some features for template meta programming
-    typedef Domain value_type;
+    using value_type = Domain;
     enum { arity = _arity };
 
     // the stored data

@@ -82,7 +82,7 @@ protected:
             std::string element;
             if (start <= end && end <= line.length()) {
                 element = line.substr(start, end - start);
-                if (element == "") {
+                if (element.empty()) {
                     element = "n/a";
                 }
             } else {
@@ -100,13 +100,13 @@ protected:
             }
             ++columnsFilled;
             if (symbolMask.isSymbol(column)) {
-                tuple[inputMap[column]] = symbolTable.unsafeLookup(element.c_str());
+                tuple[inputMap[column]] = symbolTable.unsafeLookup(element);
             } else {
                 try {
 #if RAM_DOMAIN_SIZE == 64
-                    tuple[inputMap[column]] = std::stoll(element.c_str());
+                    tuple[inputMap[column]] = std::stoll(element);
 #else
-                    tuple[inputMap[column]] = std::stoi(element.c_str());
+                    tuple[inputMap[column]] = std::stoi(element);
 #endif
                 } catch (...) {
                     if (!error) {
@@ -239,8 +239,7 @@ class ReadCinCSVFactory : public ReadStreamFactory {
 public:
     std::unique_ptr<ReadStream> getReader(const SymbolMask& symbolMask, SymbolTable& symbolTable,
             const IODirectives& ioDirectives, const bool provenance) override {
-        return std::unique_ptr<ReadStreamCSV>(
-                new ReadStreamCSV(std::cin, symbolMask, symbolTable, ioDirectives, provenance));
+        return std::make_unique<ReadStreamCSV>(std::cin, symbolMask, symbolTable, ioDirectives, provenance);
     }
     const std::string& getName() const override {
         static const std::string name = "stdin";
@@ -253,8 +252,7 @@ class ReadFileCSVFactory : public ReadStreamFactory {
 public:
     std::unique_ptr<ReadStream> getReader(const SymbolMask& symbolMask, SymbolTable& symbolTable,
             const IODirectives& ioDirectives, const bool provenance) override {
-        return std::unique_ptr<ReadFileCSV>(
-                new ReadFileCSV(symbolMask, symbolTable, ioDirectives, provenance));
+        return std::make_unique<ReadFileCSV>(symbolMask, symbolTable, ioDirectives, provenance);
     }
     const std::string& getName() const override {
         static const std::string name = "file";

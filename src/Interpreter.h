@@ -42,7 +42,7 @@ private:
     RamTranslationUnit& translationUnit;
 
     /** relation environment type */
-    typedef std::map<std::string, InterpreterRelation*> relation_map;
+    using relation_map = std::map<std::string, InterpreterRelation*>;
 
     /** relation environment */
     relation_map environment;
@@ -61,7 +61,7 @@ protected:
     bool evalCond(const RamCondition& cond, const InterpreterContext& ctxt = InterpreterContext());
 
     /** Evaluate statement */
-    void evalStmt(const RamStatement& stmt, std::ostream* profile = nullptr);
+    void evalStmt(const RamStatement& stmt);
 
     /** Get symbol table */
     SymbolTable& getSymbolTable() {

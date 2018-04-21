@@ -13,17 +13,17 @@
 #include <vector>
 #include <dirent.h>
 
-#include "DataComparator.hpp"
-#include "OutputProcessor.hpp"
-#include "Reader.hpp"
-#include "StringUtils.hpp"
-#include "UserInputReader.hpp"
-#include "html_string.hpp"
+#include "DataComparator.h"
+#include "OutputProcessor.h"
+#include "Reader.h"
+#include "StringUtils.h"
+#include "UserInputReader.h"
+#include "html_string.h"
 
 /*
  * Text User interface for SouffleProf
  * OutputProcessor creates a ProgramRun object
- * ProgramRun -> Reader.hpp ProgramRun stores all the data
+ * ProgramRun -> Reader.h ProgramRun stores all the data
  * OutputProcessor grabs the data and makes tables
  * Tui displays the data
  * TODO: move parts of the code into other classes, especially the outputJson function

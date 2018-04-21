@@ -95,8 +95,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamOperation*>(&node));
-        const RamOperation& other = static_cast<const RamOperation&>(node);
+        assert(nullptr != dynamic_cast<const RamOperation*>(&node));
+        const auto& other = static_cast<const RamOperation&>(node);
         if (getCondition() != nullptr && other.getCondition() != nullptr) {
             return *getCondition() == *other.getCondition();
         } else if (getCondition() == nullptr && other.getCondition() == nullptr) {
@@ -114,9 +114,12 @@ class RamSearch : public RamOperation {
     /** Nested operation */
     std::unique_ptr<RamOperation> nestedOperation;
 
+    std::string profileText;
+
 public:
-    RamSearch(RamNodeType type, std::unique_ptr<RamOperation> nested)
-            : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)) {}
+    RamSearch(RamNodeType type, std::unique_ptr<RamOperation> nested, std::string profileText = "")
+            : RamOperation(type, nested->getLevel() - 1), nestedOperation(std::move(nested)),
+              profileText(std::move(profileText)) {}
 
     /** get nested operation */
     RamOperation* getNestedOperation() const {
@@ -126,6 +129,11 @@ public:
     const RamOperation& getOperation() const {
         ASSERT(nestedOperation);
         return *nestedOperation;
+    }
+
+    /** get profile text */
+    const std::string& getProfileText() const {
+        return profileText;
     }
 
     /** Add condition */
@@ -152,8 +160,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamSearch*>(&node));
-        const RamSearch& other = static_cast<const RamSearch&>(node);
+        assert(nullptr != dynamic_cast<const RamSearch*>(&node));
+        const auto& other = static_cast<const RamSearch&>(node);
         return RamOperation::equal(other) && getOperation() == other.getOperation();
     }
 };
@@ -184,8 +192,9 @@ protected:
     bool pureExistenceCheck;
 
 public:
-    RamScan(std::unique_ptr<RamRelation> r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck)
-            : RamSearch(RN_Scan, std::move(nested)), relation(std::move(r)),
+    RamScan(std::unique_ptr<RamRelation> r, std::unique_ptr<RamOperation> nested, bool pureExistenceCheck,
+            std::string profileText = "")
+            : RamSearch(RN_Scan, std::move(nested), std::move(profileText)), relation(std::move(r)),
               queryPattern(relation->getArity()), keys(0), pureExistenceCheck(pureExistenceCheck) {}
 
     /** Get search relation */
@@ -253,8 +262,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamScan*>(&node));
-        const RamScan& other = static_cast<const RamScan&>(node);
+        assert(nullptr != dynamic_cast<const RamScan*>(&node));
+        const auto& other = static_cast<const RamScan&>(node);
         return RamSearch::equal(other) && getRelation() == other.getRelation() &&
                equal_targets(queryPattern, other.queryPattern) && keys == other.keys &&
                pureExistenceCheck == other.pureExistenceCheck;
@@ -313,8 +322,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamLookup*>(&node));
-        const RamLookup& other = static_cast<const RamLookup&>(node);
+        assert(nullptr != dynamic_cast<const RamLookup*>(&node));
+        const auto& other = static_cast<const RamLookup&>(node);
         return RamSearch::equal(other) && getReferencePosition() == other.getReferencePosition() &&
                getReferenceLevel() == other.getReferenceLevel() && getArity() == other.getArity();
     }
@@ -413,8 +422,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamAggregate*>(&node));
-        const RamAggregate& other = static_cast<const RamAggregate&>(node);
+        assert(nullptr != dynamic_cast<const RamAggregate*>(&node));
+        const auto& other = static_cast<const RamAggregate&>(node);
         return RamSearch::equal(other) && getRelation() == other.getRelation() &&
                equal_targets(pattern, other.pattern) && keys == other.keys && fun == other.fun &&
                getTargetExpression() == other.getTargetExpression();
@@ -513,8 +522,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamProject*>(&node));
-        const RamProject& other = static_cast<const RamProject&>(node);
+        assert(nullptr != dynamic_cast<const RamProject*>(&node));
+        const auto& other = static_cast<const RamProject&>(node);
         bool isFilterEqual = false;
         if (filter == nullptr && other.filter == nullptr) {
             isFilterEqual = true;
@@ -556,7 +565,7 @@ public:
 
     /** Create clone */
     RamReturn* clone() const override {
-        RamReturn* res = new RamReturn(level);
+        auto* res = new RamReturn(level);
         for (auto& cur : values) {
             res->values.push_back(std::unique_ptr<RamValue>(cur->clone()));
         }
@@ -574,8 +583,8 @@ public:
 protected:
     /** Check equality */
     bool equal(const RamNode& node) const override {
-        assert(dynamic_cast<const RamReturn*>(&node));
-        const RamReturn& other = static_cast<const RamReturn&>(node);
+        assert(nullptr != dynamic_cast<const RamReturn*>(&node));
+        const auto& other = static_cast<const RamReturn&>(node);
         return RamOperation::equal(other) && equal_targets(values, other.values);
     }
 };

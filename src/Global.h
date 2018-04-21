@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include <ctype.h>
+#include <cctype>
 #include <getopt.h>
 
 namespace souffle {
@@ -106,7 +106,7 @@ public:
     /* The argument processing method, this takes the arguments provided to main, a header, a footer, and a
        list of options.
        From these, we construct the help text and the global configuration. See Global.cpp for details. */
-    void processArgs(int argc, char** argv, const std::string header, const std::string footer,
+    void processArgs(int argc, char** argv, const std::string& header, const std::string& footer,
             const std::vector<MainOption> mainOptions);
     /* Obtain the help text as a string. Note that 'processArgs' must be called before this is used. */
     const std::string& help() const {

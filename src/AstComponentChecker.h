@@ -25,7 +25,7 @@ class AstComponentScope;
 class AstComponentType;
 class AstComponentInit;
 class AstProgram;
-class AstSrcLocation;
+class SrcLocation;
 class AstTranslationUnit;
 class ComponentLookup;
 class ErrorReport;
@@ -37,9 +37,9 @@ private:
 
     static const AstComponent* checkComponentNameReference(ErrorReport& report,
             const AstComponent* enclosingComponent, const ComponentLookup& componentLookup,
-            const std::string& name, const AstSrcLocation& loc, const TypeBinding& binding);
+            const std::string& name, const SrcLocation& loc, const TypeBinding& binding);
     static void checkComponentReference(ErrorReport& report, const AstComponent* enclosingComponent,
-            const ComponentLookup& componentLookup, const AstComponentType& type, const AstSrcLocation& loc,
+            const ComponentLookup& componentLookup, const AstComponentType& type, const SrcLocation& loc,
             const TypeBinding& binding);
     static void checkComponentInit(ErrorReport& report, const AstComponent* enclosingComponent,
             const ComponentLookup& componentLookup, const AstComponentInit& init, const TypeBinding& binding);

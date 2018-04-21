@@ -26,6 +26,7 @@
 #include "InterpreterRecords.h"
 #include "Logger.h"
 #include "Macro.h"
+#include "ProfileEvent.h"
 #include "RamVisitor.h"
 #include "SignalHandler.h"
 #include "TypeSystem.h"
@@ -81,9 +82,9 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                 case UnaryOp::ORD:
                     return arg;
                 case UnaryOp::STRLEN:
-                    return strlen(interpreter.getSymbolTable().resolve(arg));
+                    return interpreter.getSymbolTable().resolve(arg).size();
                 default:
-                    assert(0 && "unsupported operator");
+                    assert(false && "unsupported operator");
                     return 0;
             }
         }
@@ -133,13 +134,11 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                     return std::min(lhs, rhs);
                 }
                 case BinaryOp::CAT: {
-                    return interpreter.getSymbolTable().lookup((
-                            std::string(interpreter.getSymbolTable().resolve(lhs)) +
-                            std::string(interpreter.getSymbolTable().resolve(
-                                    rhs))).c_str());
+                    return interpreter.getSymbolTable().lookup(interpreter.getSymbolTable().resolve(lhs) +
+                                                               interpreter.getSymbolTable().resolve(rhs));
                 }
                 default:
-                    assert(0 && "unsupported operator");
+                    assert(false && "unsupported operator");
                     return 0;
             }
         }
@@ -149,7 +148,7 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
             switch (op.getOperator()) {
                 case TernaryOp::SUBSTR: {
                     auto symbol = visit(op.getArg(0));
-                    std::string str = interpreter.getSymbolTable().resolve(symbol);
+                    const std::string& str = interpreter.getSymbolTable().resolve(symbol);
                     auto idx = visit(op.getArg(1));
                     auto len = visit(op.getArg(2));
                     std::string sub_str;
@@ -159,10 +158,10 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                         std::cerr << "warning: wrong index position provided by substr(\"";
                         std::cerr << str << "\"," << (int32_t)idx << "," << (int32_t)len << ") functor.\n";
                     }
-                    return interpreter.getSymbolTable().lookup(sub_str.c_str());
+                    return interpreter.getSymbolTable().lookup(sub_str);
                 }
                 default:
-                    assert(0 && "unsupported operator");
+                    assert(false && "unsupported operator");
                     return 0;
             }
         }
@@ -310,14 +309,14 @@ bool Interpreter::evalCond(const RamCondition& cond, const InterpreterContext& c
                     return text.find(pattern) == std::string::npos;
                 }
                 default:
-                    assert(0 && "unsupported operator");
-                    return 0;
+                    assert(false && "unsupported operator");
+                    return false;
             }
         }
         bool visitNode(const RamNode& node) override {
             std::cerr << "Unsupported node type: " << typeid(node).name() << "\n";
             assert(false && "Unsupported Node Type!");
-            return 0;
+            return false;
         }
     };
 
@@ -577,14 +576,12 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
 }
 
 /** Evaluate RAM statement */
-void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
+void Interpreter::evalStmt(const RamStatement& stmt) {
     class StatementEvaluator : public RamVisitor<bool> {
         Interpreter& interpreter;
-        std::ostream* profile;
 
     public:
-        StatementEvaluator(Interpreter& interp, std::ostream* profile)
-                : interpreter(interp), profile(profile) {}
+        StatementEvaluator(Interpreter& interp) : interpreter(interp) {}
 
         // -- Statements -----------------------------
 
@@ -634,8 +631,7 @@ void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
         }
 
         bool visitLogTimer(const RamLogTimer& timer) override {
-            Logger logger(
-                    timer.getMessage().c_str(), *profile, fileExtension(Global::config().get("profile")));
+            Logger logger(timer.getMessage().c_str());
             return visit(timer.getStatement());
         }
 
@@ -669,15 +665,8 @@ void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
         }
 
         bool visitLogSize(const RamLogSize& print) override {
-            auto lease = getOutputLock().acquire();
-            (void)lease;
             const InterpreterRelation& rel = interpreter.getRelation(print.getRelation());
-            *profile << print.getMessage() << rel.size();
-            const std::string ext = fileExtension(Global::config().get("profile"));
-            if (ext == "json") {
-                *profile << "},";
-            }
-            *profile << "\n";
+            ProfileEventSingleton::instance().makeQuantityEvent(print.getMessage(), rel.size());
             return true;
         }
 
@@ -762,7 +751,7 @@ void Interpreter::evalStmt(const RamStatement& stmt, std::ostream* profile) {
     };
 
     // create and run interpreter for statements
-    StatementEvaluator(*this, profile).visit(stmt);
+    StatementEvaluator(*this).visit(stmt);
 }
 
 /** Execute main program of a translation unit */
@@ -770,17 +759,21 @@ void Interpreter::executeMain() {
     SignalHandler::instance()->set();
     const RamStatement& main = *translationUnit.getP().getMain();
 
-    if (Global::config().has("profile")) {
-        std::string fname = Global::config().get("profile");
+    if (!Global::config().has("profile")) {
+        evalStmt(main);
+    } else {
         // open output stream
+        std::string fname = Global::config().get("profile");
         std::ofstream os(fname);
         if (!os.is_open()) {
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
+        // Enable profiling for execution of main
         os << AstLogStatement::startDebug() << std::endl;
-        evalStmt(main, &os);
-    } else {
+        ProfileEventSingleton::instance().setLog(&os);
+        ProfileEventSingleton::instance().startTimer();
         evalStmt(main);
+        ProfileEventSingleton::instance().stopTimer();
     }
     SignalHandler::instance()->reset();
 }

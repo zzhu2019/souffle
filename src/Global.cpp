@@ -2,7 +2,7 @@
 
 namespace souffle {
 
-void MainConfig::processArgs(int argc, char** argv, const std::string header, const std::string footer,
+void MainConfig::processArgs(int argc, char** argv, const std::string& header, const std::string& footer,
         const std::vector<MainOption> mainOptions) {
     // construct the help text using the main options
     {
@@ -16,7 +16,7 @@ void MainConfig::processArgs(int argc, char** argv, const std::string header, co
         int maxLongNameLength = 0, maxArgumentIdLength = 0;
         for (const MainOption& opt : mainOptions) {
             // if it is the main option, do nothing
-            if (opt.longName == "") {
+            if (opt.longName.empty()) {
                 continue;
             }
             // otherwise, proceed with the calculation
@@ -31,7 +31,7 @@ void MainConfig::processArgs(int argc, char** argv, const std::string header, co
         int length;
         for (const MainOption& opt : mainOptions) {
             // if it is the main option, do nothing
-            if (opt.longName == "") {
+            if (opt.longName.empty()) {
                 continue;
             }
 
@@ -99,7 +99,7 @@ void MainConfig::processArgs(int argc, char** argv, const std::string header, co
                 set(opt.longName, opt.byDefault);
             }
             // skip the next bit if it is the option for the datalog file
-            if (opt.longName == "") {
+            if (opt.longName.empty()) {
                 continue;
             }
             // convert the main option to a plain old getopt option and put it in the array
@@ -157,7 +157,7 @@ void MainConfig::processArgs(int argc, char** argv, const std::string header, co
             ERROR("unexpected command line argument", []() { std::cerr << Global::config().help(); });
         }
         // if only one datalog program is allowed
-        if (mainOptions[0].longName == "" && mainOptions[0].takesMany) {
+        if (mainOptions[0].longName.empty() && mainOptions[0].takesMany) {
             // set the option in the global config for the main datalog file to that specified by the command
             // line arguments
             set("", std::string(argv[optind]));
@@ -167,7 +167,7 @@ void MainConfig::processArgs(int argc, char** argv, const std::string header, co
             // for each of the command line arguments not associated with an option
             for (; optind < argc; optind++) {
                 // append this filename to the concatenated string of filenames
-                if (filenames == "") {
+                if (filenames.empty()) {
                     filenames = argv[optind];
                 } else {
                     filenames = filenames + " " + std::string(argv[optind]);

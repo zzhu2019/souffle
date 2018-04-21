@@ -230,17 +230,16 @@ public:
 
     /** Iterator for relation */
     class iterator : public std::iterator<std::forward_iterator_tag, RamDomain*> {
-        const InterpreterRelation* const relation;
-        size_t index;
-        RamDomain* tuple;
+        const InterpreterRelation* const relation = nullptr;
+        size_t index = 0;
+        RamDomain* tuple = nullptr;
 
     public:
-        iterator() : relation(nullptr), index(0), tuple(nullptr) {}
+        iterator() = default;
 
         iterator(const InterpreterRelation* const relation)
-                : relation(relation), index(0),
-                  tuple(relation->arity == 0 ? reinterpret_cast<RamDomain*>(this)
-                                             : &relation->blockList[0][0]) {}
+                : relation(relation), tuple(relation->arity == 0 ? reinterpret_cast<RamDomain*>(this)
+                                                                 : &relation->blockList[0][0]) {}
 
         const RamDomain* operator*() {
             return tuple;
