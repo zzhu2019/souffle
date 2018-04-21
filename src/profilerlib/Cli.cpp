@@ -7,7 +7,12 @@
  */
 
 #include "Cli.h"
-#include "../FileFormatConverter.h"
+#include "FileFormatConverter.h"
+#include "profilerlib/StringUtils.h"
+#include "profilerlib/Tui.h"
+#include <cstdlib>
+#include <iostream>
+#include <map>
 
 // TODO: should move everything in the profiler library to namespace souffle
 using namespace souffle;

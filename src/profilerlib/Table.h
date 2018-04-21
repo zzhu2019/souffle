@@ -8,12 +8,8 @@
 
 #pragma once
 
-#include <algorithm>
-#include <string>
-#include <vector>
-
-#include "DataComparator.h"
 #include "Row.h"
+#include <vector>
 
 /*
  * Table class for holding a vector of rows

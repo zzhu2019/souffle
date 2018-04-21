@@ -8,32 +8,14 @@
 
 #pragma once
 
+#include "profilerlib/Table.h"
+#include <fstream>
+#include <ios>
 #include <string>
 #include <vector>
-
-#include <cmath>
-#include <fstream>
-#include <iomanip>
-#include <ios>
-#include <iostream>
-#include <sstream>
-
-#include <sys/stat.h>
-#include <sys/types.h>  // required for stat.h
-
-#include <cstdio> /* defines FILENAME_MAX */
-
-#if defined(_WIN32) || defined(_WIN64) || defined(WINDOWS)
-#include <direct.h>
-#define GetCurrentDir _getcwd
-#else
-
 #include <unistd.h>
 
 #define GetCurrentDir getcwd
-#endif
-
-#include "Table.h"
 
 /*
  * A series of functions necessary throughout the code

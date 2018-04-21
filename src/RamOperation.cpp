@@ -17,11 +17,11 @@
  ***********************************************************************/
 
 #include "RamOperation.h"
+#include "BinaryConstraintOps.h"
 #include "RamCondition.h"
 #include "RamRelation.h"
-
+#include <cstddef>
 #include <iostream>
-#include <list>
 #include <memory>
 #include <string>
 

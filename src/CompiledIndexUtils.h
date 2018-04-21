@@ -21,17 +21,15 @@
 #include "BinaryRelation.h"
 #include "CompiledTuple.h"
 #include "IterUtils.h"
-#include "ParallelUtils.h"
-#include "SymbolTable.h"
-#include "Table.h"
+#include "RamTypes.h"
 #include "Trie.h"
 #include "Util.h"
-
+#include <cassert>
 #include <iterator>
-#include <mutex>
+#include <ostream>
+#include <string>
 #include <type_traits>
-
-#include <libgen.h>
+#include <vector>
 
 namespace souffle {
 

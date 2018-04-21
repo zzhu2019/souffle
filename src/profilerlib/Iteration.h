@@ -8,14 +8,12 @@
 
 #pragma once
 
-#include <cassert>
-#include <iomanip>
+#include "profilerlib/Rule.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "Rule.h"
 /*
  * Represents recursive profile data
  */

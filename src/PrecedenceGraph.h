@@ -19,19 +19,20 @@
 #pragma once
 
 #include "AstAnalysis.h"
-#include "AstProgram.h"
-#include "AstTranslationUnit.h"
+#include "AstRelation.h"
 #include "GraphUtils.h"
-
+#include <cstddef>
 #include <iostream>
-#include <list>
 #include <map>
+#include <set>
 #include <stack>
-#include <string>
 #include <utility>
 #include <vector>
 
 namespace souffle {
+
+class AstClause;
+class AstTranslationUnit;
 
 /**
  * Analysis pass computing the precedence graph of the relations of the datalog progam.

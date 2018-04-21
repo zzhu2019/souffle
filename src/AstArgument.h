@@ -19,24 +19,24 @@
 #pragma once
 
 #include "AstNode.h"
-#include "AstType.h"
+#include "AstTypes.h"
 #include "BinaryFunctorOps.h"
 #include "SymbolTable.h"
 #include "TernaryFunctorOps.h"
-#include "TypeSystem.h"
 #include "UnaryFunctorOps.h"
-
+#include "Util.h"
 #include <array>
-#include <list>
+#include <cassert>
+#include <cstddef>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace souffle {
 
 /* Forward declarations */
-class AstClause;
-class AstVariable;
 class AstLiteral;
 
 /**

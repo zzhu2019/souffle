@@ -15,11 +15,19 @@
  ***********************************************************************/
 
 #include "ParserDriver.h"
-
+#include "AstClause.h"
+#include "AstComponent.h"
+#include "AstIODirective.h"
+#include "AstPragma.h"
 #include "AstProgram.h"
+#include "AstRelation.h"
+#include "AstRelationIdentifier.h"
 #include "AstTranslationUnit.h"
+#include "AstType.h"
 #include "ErrorReport.h"
+#include "Util.h"
 #include <memory>
+#include <utility>
 
 using YY_BUFFER_STATE = struct yy_buffer_state*;
 extern YY_BUFFER_STATE yy_scan_string(const char*, yyscan_t scanner);

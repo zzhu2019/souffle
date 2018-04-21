@@ -17,14 +17,21 @@
 #include "AstComponentChecker.h"
 #include "AstComponent.h"
 #include "AstProgram.h"
+#include "AstRelation.h"
+#include "AstRelationIdentifier.h"
 #include "AstTranslationUnit.h"
+#include "AstType.h"
 #include "ComponentModel.h"
-
+#include "ErrorReport.h"
+#include "SrcLocation.h"
+#include "Util.h"
 #include <functional>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
 
 namespace souffle {
-
-class AstTranslationUnit;
 
 bool AstComponentChecker::transform(AstTranslationUnit& translationUnit) {
     AstProgram& program = *translationUnit.getProgram();

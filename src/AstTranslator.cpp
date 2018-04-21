@@ -15,28 +15,54 @@
  ***********************************************************************/
 
 #include "AstTranslator.h"
+#include "AstArgument.h"
+#include "AstAttribute.h"
 #include "AstClause.h"
 #include "AstIODirective.h"
+#include "AstLiteral.h"
+#include "AstNode.h"
 #include "AstProgram.h"
 #include "AstRelation.h"
+#include "AstTranslationUnit.h"
 #include "AstTypeAnalysis.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
+#include "DebugReport.h"
 #include "Global.h"
+#include "IODirectives.h"
 #include "LogStatement.h"
+#include "Macro.h"
 #include "PrecedenceGraph.h"
+#include "RamCondition.h"
+#include "RamNode.h"
+#include "RamOperation.h"
+#include "RamProgram.h"
 #include "RamRelation.h"
 #include "RamStatement.h"
-#include "RamVisitor.h"
+#include "RamTranslationUnit.h"
+#include "RamValue.h"
+#include "SrcLocation.h"
+#include "SymbolMask.h"
+#include "TypeSystem.h"
 #include "Util.h"
-
+#include <algorithm>
+#include <cassert>
+#include <chrono>
+#include <cstddef>
 #include <fstream>
+#include <functional>
 #include <iostream>
+#include <map>
 #include <memory>
+#include <typeinfo>
 #include <utility>
+#include <vector>
 
 namespace souffle {
+
+class ErrorReport;
+class SymbolTable;
 
 namespace {
 

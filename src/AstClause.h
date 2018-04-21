@@ -17,19 +17,18 @@
 
 #pragma once
 
-#include "AstArgument.h"
 #include "AstLiteral.h"
-#include "AstRelationIdentifier.h"
+#include "AstNode.h"
 #include "Util.h"
-
+#include <cassert>
+#include <cstddef>
+#include <map>
 #include <memory>
-#include <set>
-#include <string>
+#include <ostream>
+#include <utility>
 #include <vector>
 
 namespace souffle {
-
-class AstProgram;
 
 /**
  * An execution order for atoms within a clause.

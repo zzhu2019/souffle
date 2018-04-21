@@ -15,12 +15,28 @@
  ***********************************************************************/
 
 #include "AstTransforms.h"
-
+#include "AstAttribute.h"
+#include "AstClause.h"
+#include "AstLiteral.h"
+#include "AstNode.h"
+#include "AstProgram.h"
+#include "AstRelation.h"
+#include "AstRelationIdentifier.h"
 #include "AstTypeAnalysis.h"
+#include "AstTypes.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
+#include "BinaryConstraintOps.h"
+#include "GraphUtils.h"
 #include "PrecedenceGraph.h"
+#include "TypeSystem.h"
+#include <cassert>
+#include <cstddef>
+#include <functional>
+#include <map>
 #include <memory>
+#include <ostream>
+#include <set>
 
 namespace souffle {
 

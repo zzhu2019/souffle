@@ -18,17 +18,23 @@
 
 #include "InterpreterContext.h"
 #include "InterpreterRelation.h"
+#include "RamCondition.h"
+#include "RamRelation.h"
+#include "RamStatement.h"
 #include "RamTranslationUnit.h"
-#include "SymbolTable.h"
+#include "RamTypes.h"
 
+#include <cassert>
 #include <map>
-#include <memory>
-#include <ostream>
+#include <string>
 #include <vector>
 
 namespace souffle {
 
 class InterpreterProgInterface;
+class RamOperation;
+class RamValue;
+class SymbolTable;
 
 /**
  * Interpreter executing a RAM translation unit

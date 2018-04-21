@@ -8,12 +8,13 @@
 
 #pragma once
 
-#include "Relation.h"
-#include "StringUtils.h"
-
+#include "profilerlib/Relation.h"
+#include "profilerlib/StringUtils.h"
+#include "profilerlib/Table.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 /*
  * Stores the relations of the program

@@ -16,12 +16,20 @@
 
 #pragma once
 
+#include "Macro.h"
 #include "RamCondition.h"
 #include "RamNode.h"
 #include "RamRelation.h"
-
+#include "RamTypes.h"
+#include "RamValue.h"
+#include "Util.h"
+#include <cassert>
+#include <cstddef>
+#include <iosfwd>
 #include <memory>
-#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace souffle {
 

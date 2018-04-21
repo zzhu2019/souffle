@@ -16,17 +16,20 @@
 #pragma once
 
 #include "AstAnalysis.h"
-#include "AstTranslationUnit.h"
 #include "TypeSystem.h"
+#include <cassert>
+#include <iosfwd>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
 namespace souffle {
 
-class AstNode;
-class AstProgram;
 class AstArgument;
 class AstClause;
-class AstVariable;
-class AstRelation;
+class AstProgram;
+class AstTranslationUnit;
 
 /**
  * Analyse the given clause and computes for each contained argument

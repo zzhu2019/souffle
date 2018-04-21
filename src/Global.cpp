@@ -1,4 +1,12 @@
 #include "Global.h"
+#include "Macro.h"
+#include <cassert>
+#include <cctype>
+#include <cstdio>
+#include <memory>
+#include <sstream>
+#include <utility>
+#include <getopt.h>
 
 namespace souffle {
 

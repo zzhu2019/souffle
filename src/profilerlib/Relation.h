@@ -8,14 +8,13 @@
 
 #pragma once
 
+#include "profilerlib/Iteration.h"
+#include "profilerlib/Rule.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
-#include "Iteration.h"
-#include "Rule.h"
 
 /*
  * Stores the iterations and rules of a given relation

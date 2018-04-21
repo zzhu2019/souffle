@@ -19,8 +19,7 @@
 #include "AstType.h"
 #include "IterUtils.h"
 #include "Util.h"
-
-#include <initializer_list>
+#include <cassert>
 #include <iostream>
 #include <map>
 #include <set>

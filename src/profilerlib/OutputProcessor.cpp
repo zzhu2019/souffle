@@ -6,7 +6,17 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "OutputProcessor.h"
+#include "profilerlib/OutputProcessor.h"
+#include "profilerlib/Cell.h"
+#include "profilerlib/CellInterface.h"
+#include "profilerlib/Iteration.h"
+#include "profilerlib/ProgramRun.h"
+#include "profilerlib/Relation.h"
+#include "profilerlib/Row.h"
+#include "profilerlib/Rule.h"
+#include "profilerlib/Table.h"
+#include <memory>
+#include <unordered_map>
 
 /*
  * rel table :

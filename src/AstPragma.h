@@ -18,11 +18,15 @@
 
 #include "AstNode.h"
 #include "AstTransformer.h"
-
+#include <ostream>
 #include <string>
 #include <utility>
+#include <vector>
+#include <assert.h>
 
 namespace souffle {
+
+class AstTranslationUnit;
 
 /**
  * @class AstPragma

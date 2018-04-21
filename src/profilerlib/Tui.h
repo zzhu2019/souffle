@@ -8,17 +8,12 @@
 
 #pragma once
 
-#include <iostream>
+#include "profilerlib/OutputProcessor.h"
+#include "profilerlib/Reader.h"
+#include "profilerlib/Table.h"
+#include "profilerlib/UserInputReader.h"
 #include <string>
 #include <vector>
-#include <dirent.h>
-
-#include "DataComparator.h"
-#include "OutputProcessor.h"
-#include "Reader.h"
-#include "StringUtils.h"
-#include "UserInputReader.h"
-#include "html_string.h"
 
 /*
  * Text User interface for SouffleProf

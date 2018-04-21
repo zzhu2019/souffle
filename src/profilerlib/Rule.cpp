@@ -6,7 +6,8 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Rule.h"
+#include "profilerlib/Rule.h"
+#include <sstream>
 
 std::string Rule::toString() {
     std::ostringstream output;

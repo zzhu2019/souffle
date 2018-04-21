@@ -6,7 +6,15 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "StringUtils.h"
+#include "profilerlib/StringUtils.h"
+#include "profilerlib/CellInterface.h"
+#include "profilerlib/Row.h"
+#include "profilerlib/Table.h"
+#include <cmath>
+#include <cstdio>
+#include <iomanip>
+#include <memory>
+#include <sstream>
 
 /*
  * Convert a number into a shorthand notation

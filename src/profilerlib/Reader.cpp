@@ -6,7 +6,21 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Reader.h"
+#include "profilerlib/Reader.h"
+#include "profilerlib/Iteration.h"
+#include "profilerlib/ProgramRun.h"
+#include "profilerlib/Relation.h"
+#include "profilerlib/Rule.h"
+#include "profilerlib/StringUtils.h"
+#include <cassert>
+#include <chrono>
+#include <cstdlib>
+#include <ctime>
+#include <iostream>
+#include <memory>
+#include <thread>
+#include <dirent.h>
+#include <sys/stat.h>
 
 void Reader::readFile() {
     if (isLive()) {

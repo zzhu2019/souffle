@@ -8,12 +8,8 @@
 
 #pragma once
 
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
-
-#include "Tui.h"
 
 /*
  * CLI to parse command line arguments and start up the TUI to either run a single command,

@@ -18,29 +18,37 @@
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
+#include "IODirectives.h"
 #include "IOSystem.h"
+#include "InterpreterIndex.h"
 #include "InterpreterRecords.h"
 #include "LogStatement.h"
 #include "Logger.h"
 #include "Macro.h"
+#include "ParallelUtils.h"
 #include "ProfileEvent.h"
+#include "RamNode.h"
+#include "RamOperation.h"
+#include "RamValue.h"
 #include "RamVisitor.h"
+#include "ReadStream.h"
 #include "SignalHandler.h"
-#include "TypeSystem.h"
+#include "SymbolTable.h"
+#include "TernaryFunctorOps.h"
 #include "UnaryFunctorOps.h"
-
+#include "WriteStream.h"
 #include <algorithm>
-#include <chrono>
 #include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <exception>
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <regex>
+#include <stdexcept>
+#include <typeinfo>
 #include <utility>
-
-#include <unistd.h>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 namespace souffle {
 

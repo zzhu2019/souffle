@@ -1,15 +1,9 @@
 #pragma once
 
-#include "Util.h"
-
 #include <iostream>
 #include <map>
-#include <sstream>
 #include <string>
 #include <vector>
-
-#include <cctype>
-#include <getopt.h>
 
 namespace souffle {
 
@@ -53,11 +47,11 @@ public:
         return (has(key)) ? _data.at(key) : value;
     }
     /* Check the table has the specified key. */
-    const bool has(const K& key) const {
+    bool has(const K& key) const {
         return _data.find(key) != _data.end();
     }
     /* Check the table has the specified key and the specified value for that key. */
-    const bool has(const K& key, const V& value) const {
+    bool has(const K& key, const V& value) const {
         return has(key) && _data.at(key) == value;
     }
     /* Set the entry in the table for the specified key to an object of the value class called with an empty

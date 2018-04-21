@@ -13,12 +13,24 @@
  ***********************************************************************/
 
 #include "ComponentModel.h"
+#include "AstAttribute.h"
+#include "AstClause.h"
 #include "AstComponent.h"
+#include "AstIODirective.h"
+#include "AstLiteral.h"
 #include "AstProgram.h"
+#include "AstRelation.h"
+#include "AstRelationIdentifier.h"
+#include "AstTranslationUnit.h"
 #include "AstVisitor.h"
 #include "ErrorReport.h"
+#include "Util.h"
+#include <algorithm>
+#include <memory>
 
 namespace souffle {
+
+class AstNode;
 
 void ComponentLookup::run(const AstTranslationUnit& translationUnit) {
     const AstProgram* program = translationUnit.getProgram();

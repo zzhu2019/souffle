@@ -15,35 +15,34 @@
  ***********************************************************************/
 
 #include "Synthesiser.h"
-#include "AstRelation.h"
-#include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
 #include "BinaryFunctorOps.h"
 #include "Global.h"
-#include "IOSystem.h"
+#include "IODirectives.h"
 #include "IndexSetAnalysis.h"
 #include "LogStatement.h"
-#include "Logger.h"
-#include "Macro.h"
-#include "ProfileEvent.h"
+#include "RamCondition.h"
+#include "RamNode.h"
+#include "RamOperation.h"
+#include "RamProgram.h"
 #include "RamRelation.h"
+#include "RamTranslationUnit.h"
+#include "RamValue.h"
 #include "RamVisitor.h"
-#include "SignalHandler.h"
-#include "TypeSystem.h"
+#include "SymbolMask.h"
+#include "SymbolTable.h"
+#include "TernaryFunctorOps.h"
 #include "UnaryFunctorOps.h"
-
+#include "Util.h"
 #include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <memory>
-#include <regex>
+#include <cassert>
+#include <cctype>
+#include <cstdlib>
+#include <functional>
+#include <iostream>
+#include <typeinfo>
 #include <utility>
-
-#include <unistd.h>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include <vector>
 
 namespace souffle {
 

@@ -8,15 +8,12 @@
 
 #pragma once
 
+#include "profilerlib/ProgramRun.h"
+#include "profilerlib/StringUtils.h"
+#include "profilerlib/Table.h"
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "Cell.h"
-#include "ProgramRun.h"
-#include "Row.h"
-#include "StringUtils.h"
-#include "Table.h"
 
 /*
  * Class to format profiler data structures into tables

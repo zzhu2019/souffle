@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <string>
+
 class CellInterface {
 public:
     virtual std::string toString(int precision) = 0;
@@ -17,4 +19,6 @@ public:
     virtual long getLongVal() = 0;
 
     virtual std::string getStringVal() = 0;
+
+    virtual ~CellInterface() {}
 };

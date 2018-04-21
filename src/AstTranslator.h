@@ -16,25 +16,24 @@
 
 #pragma once
 
-#include "AstTranslationUnit.h"
-#include "RamProgram.h"
-#include "RamRelation.h"
-#include "RamTranslationUnit.h"
-
+#include "AstRelationIdentifier.h"
 #include <map>
-#include <vector>
+#include <memory>
+#include <set>
+#include <string>
 
 namespace souffle {
 
 // forward declarations
-class AstRelation;
-class AstAtom;
 class AstClause;
 class AstProgram;
-
+class AstRelation;
+class AstTranslationUnit;
+class RamProgram;
 class RamStatement;
-
+class RamTranslationUnit;
 class RecursiveClauses;
+class TypeEnvironment;
 
 /**
  * A utility class capable of conducting the conversion between AST
