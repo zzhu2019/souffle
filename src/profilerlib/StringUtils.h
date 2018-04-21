@@ -33,7 +33,7 @@
 #define GetCurrentDir getcwd
 #endif
 
-#include "Table.hpp"
+#include "Table.h"
 
 /*
  * A series of functions necessary throughout the code

@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "CellInterface.hpp"
-#include "StringUtils.hpp"
+#include "CellInterface.h"
+#include "StringUtils.h"
 
 #include <iostream>
 #include <string>

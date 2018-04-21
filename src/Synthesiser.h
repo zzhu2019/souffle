@@ -38,6 +38,9 @@ private:
     /** RAM identifier to C++ identifier map */
     std::map<const std::string, const std::string> identifiers;
 
+    /** Frequency profiling of searches */
+    std::map<std::string, unsigned> idxMap;
+
 protected:
     /** Convert RAM identifier */
     const std::string convertRamIdent(const std::string& name);
@@ -62,6 +65,9 @@ protected:
 
     /** Generate code */
     void emitCode(std::ostream& out, const RamStatement& stmt);
+
+    /** Lookup frequency counter */
+    unsigned lookupFreqIdx(const std::string& txt);
 
 public:
     Synthesiser() = default;

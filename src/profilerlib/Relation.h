@@ -14,8 +14,8 @@
 #include <utility>
 #include <vector>
 
-#include "Iteration.hpp"
-#include "Rule.hpp"
+#include "Iteration.h"
+#include "Rule.h"
 
 /*
  * Stores the iterations and rules of a given relation

@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "CellInterface.hpp"
-#include "Row.hpp"
+#include "CellInterface.h"
+#include "Row.h"
 
 #include <cmath>
 #include <memory>

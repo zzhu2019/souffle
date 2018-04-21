@@ -10,7 +10,7 @@
 // Created by Dominic Romanowski on 13/2/17.
 //
 
-#include "UserInputReader.hpp"
+#include "UserInputReader.h"
 
 void InputReader::getch() {
     char buf = 0;

@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "DataComparator.hpp"
-#include "Row.hpp"
+#include "DataComparator.h"
+#include "Row.h"
 
 /*
  * Table class for holding a vector of rows

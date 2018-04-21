@@ -14,6 +14,8 @@
  *
  ***********************************************************************/
 
+#pragma once
+
 #include <atomic>
 #include <cassert>
 #include <chrono>
@@ -30,8 +32,6 @@
 #include <vector>
 #include <sys/resource.h>
 #include <sys/time.h>
-
-#pragma once
 
 namespace souffle {
 
@@ -199,33 +199,25 @@ public:
 
     /** Print event */
     void print(std::ostream& os) override {
-        os << ProfileKeySingleton::instance().getText(getKey());
+        os << "@" << ProfileKeySingleton::instance().getText(getKey()) << ";";
         /* system CPU time used */
         double t = (double)ru.ru_stime.tv_sec * 1000000.0 + (double)ru.ru_stime.tv_usec;
-        os << getStartString() << ",";
-        os << std::to_string(t);
-        os << std::endl;
-    }
-};
-
-/**
- * Profile Memory Event
- */
-class ProfileMemoryEvent : public ProfileEvent {
-private:
-    /** resource statistics */
-    struct rusage ru;
-
-public:
-    ProfileMemoryEvent(const std::string& txt) : ProfileEvent(txt) {
-        getrusage(RUSAGE_SELF, &ru);
-    }
-
-    /** Print event */
-    void print(std::ostream& os) override {
-        os << ProfileKeySingleton::instance().getText(getKey());
-        os << getStartString() << ",";
-        os << std::to_string(ru.ru_maxrss); /* maximum resident set size */
+        os << getStartString() << ";";
+        os << std::to_string(t) << ";";
+        os << ru.ru_maxrss << ";";
+        os << ru.ru_ixrss << ";";
+        os << ru.ru_idrss << ";";
+        os << ru.ru_isrss << ";";
+        os << ru.ru_minflt << ";";
+        os << ru.ru_majflt << ";";
+        os << ru.ru_nswap << ";";
+        os << ru.ru_inblock << ";";
+        os << ru.ru_oublock << ";";
+        os << ru.ru_msgsnd << ";";
+        os << ru.ru_msgrcv << ";";
+        os << ru.ru_nsignals << ";";
+        os << ru.ru_nvcsw << ";";
+        os << ru.ru_nivcsw;
         os << std::endl;
     }
 };
@@ -234,6 +226,76 @@ public:
  * Profile Event Singleton
  */
 class ProfileEventSingleton {
+public:
+    ~ProfileEventSingleton() {
+        for (auto const& cur : events) {
+            delete cur;
+        }
+    }
+    static ProfileEventSingleton& instance() {
+        static ProfileEventSingleton singleton;
+        return singleton;
+    }
+
+    /** Make new time event */
+    ProfileTimingEvent* makeTimingEvent(const std::string& txt) {
+        auto e = new ProfileTimingEvent(txt);
+        std::lock_guard<std::mutex> guard(eventMutex);
+        events.push_back(e);
+        return e;
+    }
+
+    /** Make new quantity event */
+    ProfileQuantityEvent* makeQuantityEvent(const std::string& txt, size_t n) {
+        auto e = new ProfileQuantityEvent(txt, n);
+        std::lock_guard<std::mutex> guard(eventMutex);
+        events.push_back(e);
+        if (out != nullptr) {
+            print(e);
+        }
+        return e;
+    }
+
+    /** Make new utilisation event */
+    ProfileUtilisationEvent* makeUtilisationEvent(const std::string& txt) {
+        auto e = new ProfileUtilisationEvent(txt);
+        std::lock_guard<std::mutex> guard(eventMutex);
+        events.push_back(e);
+        return e;
+    }
+
+    /** Dump all events */
+    void dump(std::ostream& os) {
+        std::lock_guard<std::mutex> guard(eventMutex);
+        for (auto const& cur : events) {
+            if (ProfileKeySingleton::instance().getText(cur->getKey()) == "utilisation") {
+                continue;
+            }
+            cur->print(os);
+        }
+    }
+
+    /** Print a single event to the profile log. */
+    void print(ProfileEvent* event) {
+        static std::mutex logMutex;
+        std::lock_guard<std::mutex> guard(logMutex);
+        event->print(*out);
+    }
+
+    /** Start timer */
+    void startTimer() {
+        timer.start();
+    }
+
+    /** Stop timer */
+    void stopTimer() {
+        timer.stop();
+    }
+
+    void setLog(std::ostream* out) {
+        this->out = out;
+    }
+
 private:
     /**  Profile Timer */
     class ProfileTimer {
@@ -250,7 +312,6 @@ private:
         /** run method for thread th */
         void run() {
             ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
-            ProfileEventSingleton::instance().makeMemoryEvent("memory");
         }
 
         Interval getInterval() {
@@ -285,74 +346,11 @@ private:
         }
     };
 
-private:
     ProfileEventSingleton() = default;
+
     std::list<ProfileEvent*> events;
     std::mutex eventMutex;
     ProfileTimer timer;
-
-public:
-    ~ProfileEventSingleton() {
-        for (auto const& cur : events) {
-            delete cur;
-        }
-    }
-    static ProfileEventSingleton& instance() {
-        static ProfileEventSingleton singleton;
-        return singleton;
-    }
-
-    /** Make new time event */
-    ProfileTimingEvent* makeTimingEvent(const std::string& txt) {
-        auto e = new ProfileTimingEvent(txt);
-        std::lock_guard<std::mutex> guard(eventMutex);
-        events.push_back(e);
-        return e;
-    }
-
-    /** Make new quantity event */
-    ProfileQuantityEvent* makeQuantityEvent(const std::string& txt, size_t n) {
-        auto e = new ProfileQuantityEvent(txt, n);
-        std::lock_guard<std::mutex> guard(eventMutex);
-        events.push_back(e);
-        return e;
-    }
-
-    /** Make new utilisation event */
-    ProfileUtilisationEvent* makeUtilisationEvent(const std::string& txt) {
-        auto e = new ProfileUtilisationEvent(txt);
-        std::lock_guard<std::mutex> guard(eventMutex);
-        events.push_back(e);
-        return e;
-    }
-
-    /** Make new memory event */
-    ProfileMemoryEvent* makeMemoryEvent(const std::string& txt) {
-        auto e = new ProfileMemoryEvent(txt);
-        std::lock_guard<std::mutex> guard(eventMutex);
-        events.push_back(e);
-        return e;
-    }
-
-    /** Dump all events */
-    void dump(std::ostream& os) {
-        for (auto const& cur : events) {
-            if (ProfileKeySingleton::instance().getText(cur->getKey()).compare("memory") == 0 ||
-                    ProfileKeySingleton::instance().getText(cur->getKey()).compare("utilisation") == 0) {
-                continue;
-            }
-            cur->print(os);
-        }
-    }
-
-    /** Start timer */
-    void startTimer() {
-        timer.start();
-    }
-
-    /** Stop timer */
-    void stopTimer() {
-        timer.stop();
-    }
+    std::ostream* out = nullptr;
 };
 }
