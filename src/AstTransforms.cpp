@@ -44,6 +44,14 @@ bool WhileTransformer::transform(AstTranslationUnit& translationUnit) {
     return changed;
 }
 
+bool FixpointTransformer::transform(AstTranslationUnit& translationUnit) {
+    bool changed = false;
+    while (applySubtransformer(translationUnit, transformer.get())) {
+        changed = true;
+    }
+    return changed;
+}
+
 void ResolveAliasesTransformer::resolveAliases(AstProgram& program) {
     // get all clauses
     std::vector<const AstClause*> clauses;
