@@ -36,6 +36,22 @@ bool ConditionalTransformer::transform(AstTranslationUnit& translationUnit) {
     return condition() ? applySubtransformer(translationUnit, transformer.get()) : false;
 }
 
+bool WhileTransformer::transform(AstTranslationUnit& translationUnit) {
+    bool changed = false;
+    while (condition()) {
+        changed |= applySubtransformer(translationUnit, transformer.get());
+    }
+    return changed;
+}
+
+bool FixpointTransformer::transform(AstTranslationUnit& translationUnit) {
+    bool changed = false;
+    while (applySubtransformer(translationUnit, transformer.get())) {
+        changed = true;
+    }
+    return changed;
+}
+
 void ResolveAliasesTransformer::resolveAliases(AstProgram& program) {
     // get all clauses
     std::vector<const AstClause*> clauses;
