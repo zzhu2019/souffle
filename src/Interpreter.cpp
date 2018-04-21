@@ -276,7 +276,7 @@ bool Interpreter::evalCond(const RamCondition& cond, const InterpreterContext& c
                         result = std::regex_match(text, std::regex(pattern));
                     } catch (...) {
                         std::cerr << "warning: wrong pattern provided for match(\"" << pattern << "\",\""
-                                  << text << "\")\n";
+                                  << text << "\").\n";
                     }
                     return result;
                 }
@@ -290,7 +290,7 @@ bool Interpreter::evalCond(const RamCondition& cond, const InterpreterContext& c
                         result = !std::regex_match(text, std::regex(pattern));
                     } catch (...) {
                         std::cerr << "warning: wrong pattern provided for !match(\"" << pattern << "\",\""
-                                  << text << "\")\n";
+                                  << text << "\").\n";
                     }
                     return result;
                 }
@@ -638,6 +638,11 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
         bool visitDebugInfo(const RamDebugInfo& dbg) override {
             SignalHandler::instance()->setMsg(dbg.getMessage().c_str());
             return visit(dbg.getStatement());
+        }
+
+        bool visitStratum(const RamStratum& stratum) override {
+            // TODO (lyndonhenry): should enable strata as subprograms for interpreter here
+            return visit(stratum.getBody());
         }
 
         bool visitCreate(const RamCreate& create) override {

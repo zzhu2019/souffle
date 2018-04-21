@@ -247,10 +247,10 @@ public:
     }
 
     /** Run program instance: not implemented */
-    void run() override {}
+    void run(size_t) override {}
 
     /** Load data, run program instance, store data: not implemented */
-    void runAll(std::string, std::string) override {}
+    void runAll(std::string, std::string, size_t) override {}
 
     /** Load input data: not implemented */
     void loadAll(std::string) override {}

@@ -185,7 +185,8 @@ dnl using SOUFFLE_CONFS environment variable.
 m4_define([DEFAULT_CONFS], [[],      dnl run interpreter
   [-c],                              dnl compile, then execute
   [-j8],                             dnl run interpreter in parallel
-  [-c -j8]                           dnl compile, then execute in parallel
+  [-c -j8],                          dnl compile, then execute in parallel
+  [-c -j8 -efile]                    dnl compile, then execute in parallel with file communication engine
 ])
 
 dnl Store user-defined souffle flag configuration given by the SOUFFLE_CONFS env (if any)
