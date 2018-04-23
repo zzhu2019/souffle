@@ -8,10 +8,9 @@
 
 #include "Tui.h"
 
-Tui::Tui(std::string filename, bool live, bool gui) : out() {
+Tui::Tui(std::string filename, bool live, bool gui) {
     this->f_name = filename;
 
-    // out = OutputProcessor();
     std::shared_ptr<ProgramRun>& run = out.getProgramRun();
 
     this->reader = std::make_shared<Reader>(filename, run, false, live);
@@ -43,7 +42,7 @@ void Tui::runCommand(std::vector<std::string> c) {
         if (c.size() == 2) {
             relRul(c[1]);
         } else if (c.size() == 1) {
-            rel(c[0]);
+            rel();
         } else {
             std::cout << "Invalid parameters to rel command.\n";
         }
@@ -60,7 +59,7 @@ void Tui::runCommand(std::vector<std::string> c) {
                 std::cout << "Invalid parameters to rul command.\n";
             }
         } else {
-            rul(c[0]);
+            rul();
         }
     } else if (c[0].compare("graph") == 0) {
         if (c.size() == 3 && c[1].find(".") == std::string::npos) {
@@ -461,7 +460,7 @@ void Tui::top() {
               << std::endl;
 }
 
-void Tui::rel(std::string c) {
+void Tui::rel() {
     rel_table_state.sort(sort_col);
     std::cout << " ----- Relation Table -----\n";
     std::printf("%8s%8s%8s%8s%15s%6s%1s%-25s\n\n", "TOT_T", "NREC_T", "REC_T", "COPY_T", "TUPLES", "ID", "",
@@ -472,7 +471,7 @@ void Tui::rel(std::string c) {
     }
 }
 
-void Tui::rul(std::string c) {
+void Tui::rul() {
     rul_table_state.sort(sort_col);
     std::cout << "  ----- Rule Table -----\n";
     std::printf(
@@ -566,44 +565,85 @@ void Tui::verRul(std::string str) {
 
     std::vector<std::vector<std::string>> rul_table = out.formatTable(rul_table_state, precision);
 
-    std::cout << "  ----- Rule Versions Table -----\n";
-    std::printf("%8s%8s%8s%8s%10s%6s   %-5s\n\n", "TOT_T", "NREC_T", "REC_T", "COPY_T", "TUPLES", "VER",
-            "ID RELATION");
     bool found = false;
+    std::string ruleName;
+    std::string srcLocator;
+    // Check that the rule exists, and print it out if so.
     for (auto& row : rul_table) {
         if (row[6].compare(str) == 0) {
-            std::printf("%8s%8s%8s%8s%10s%6s%7s %-25s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
-                    row[3].c_str(), row[4].c_str(), "", row[6].c_str(), row[7].c_str());
+            std::cout << row[5] << std::endl;
             found = true;
+            ruleName = row[5];
+            srcLocator = row[10];
         }
     }
-    std::cout << " ---------------------------------------------------------\n";
-    for (auto& _row : ver_table.rows) {
-        Row row = *_row;
 
-        std::printf("%8s%8s%8s%8s%10s%6s%7s %-25s\n", row[0]->toString(precision).c_str(),
-                row[1]->toString(precision).c_str(), row[2]->toString(precision).c_str(),
-                row[3]->toString(precision).c_str(), row[4]->toString(precision).c_str(),
-                row[8]->toString(precision).c_str(), row[6]->toString(precision).c_str(),
-                row[7]->toString(precision).c_str());
-    }
+    // If the rule exists, print out the source locator.
     if (found) {
         if (ver_table.rows.size() > 0) {
             if (ver_table.rows[0]->cells[9] != nullptr) {
-                std::cout << "\nSrc locator: " << (*ver_table.rows[0])[9]->getStringVal() << "\n\n";
+                std::cout << "Src locator-: " << (*ver_table.rows[0])[9]->getStringVal() << "\n\n";
             } else {
-                std::cout << "\nSrc locator: -\n\n";
+                std::cout << "Src locator-: -\n\n";
             }
         } else if (rul_table.size() > 0) {
-            std::cout << "\nSrc locator-: " << rul_table[0][10] << "\n\n";
+            std::cout << "Src locator-: " << rul_table[0][10] << "\n\n";
         }
     }
 
+    // Print out the versions of this rule.
+    std::cout << "  ----- Rule Versions Table -----\n";
+    std::printf("%8s%8s%8s%8s%10s%6s\n\n", "TOT_T", "NREC_T", "REC_T", "COPY_T", "TUPLES", "VER");
     for (auto& row : rul_table) {
         if (row[6].compare(str) == 0) {
-            std::printf("%7s%2s%-25s\n", row[6].c_str(), "", row[5].c_str());
+            std::printf("%8s%8s%8s%8s%10s%6s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
+                    row[3].c_str(), row[4].c_str(), "");
         }
     }
+    std::cout << "   ---------------------------------------------\n";
+    for (auto& _row : ver_table.rows) {
+        Row row = *_row;
+
+        std::printf("%8s%8s%8s%8s%10s%6s\n", row[0]->toString(precision).c_str(),
+                row[1]->toString(precision).c_str(), row[2]->toString(precision).c_str(),
+                row[3]->toString(precision).c_str(), row[4]->toString(precision).c_str(),
+                row[8]->toString(precision).c_str());
+        Table atom_table = out.getVersionAtoms(strRel, srcLocator, row[8]->getLongVal());
+        verAtoms(atom_table);
+    }
+
+    if (!ver_table.rows.empty()) {
+        return;
+    }
+
+    Table atom_table = out.getAtomTable(strRel, str);
+    verAtoms(atom_table, ruleName);
+}
+
+void Tui::verAtoms(Table& atom_table, const std::string& ruleName) {
+    // If there are no subrules then just print out any atoms found
+    // If we do find subrules, then label atoms with their subrules.
+    if (atom_table.rows.empty()) {
+        return;
+    }
+    bool firstRun = true;
+    std::string lastRule = ruleName;
+    for (auto& _row : atom_table.rows) {
+        Row& row = *_row;
+        std::string rule = row[0]->toString(precision);
+        if (rule != lastRule) {
+            lastRule = rule;
+            std::cout << "     " << row[0]->toString(precision) << std::endl;
+            std::printf("      %-16s%-64s\n", "FREQ", "ATOM");
+            firstRun = false;
+        }
+        if (firstRun) {
+            std::printf("      %-16s%-64s\n", "FREQ", "ATOM");
+        }
+        std::printf(
+                "      %-16s%-64s\n", row[3]->toString(precision).c_str(), row[1]->getStringVal().c_str());
+    }
+    std::cout << '\n';
 }
 
 void Tui::iterRel(std::string c, std::string col) {

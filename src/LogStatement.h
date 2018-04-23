@@ -8,7 +8,7 @@
 
 /************************************************************************
  *
- * @file AstLogStatement.h
+ * @file LogStatement.h
  *
  * Generate log statements for multiple file types.
  *
@@ -19,7 +19,7 @@
 
 namespace souffle {
 
-class AstLogStatement {
+class LogStatement {
 private:
     static const std::string& getLogFileType() {
         static const std::string logFileType = fileExtension(Global::config().get("profile"));
@@ -31,7 +31,7 @@ public:
             const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@t-nonrecursive-relation";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -47,7 +47,7 @@ public:
             const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@n-nonrecursive-relation";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -63,7 +63,7 @@ public:
             const std::string& relationName, const SrcLocation& srcLocation, const std::string& datalogText) {
         const char* messageType = "@t-nonrecursive-rule";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -80,7 +80,7 @@ public:
             const std::string& relationName, const SrcLocation& srcLocation, const std::string& datalogText) {
         const char* messageType = "@n-nonrecursive-rule";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -97,7 +97,7 @@ public:
             const SrcLocation& srcLocation, const std::string& datalogText) {
         const char* messageType = "@t-recursive-rule";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -116,7 +116,7 @@ public:
             const SrcLocation& srcLocation, const std::string& datalogText) {
         const char* messageType = "@n-recursive-rule";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -135,7 +135,7 @@ public:
             const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@t-recursive-relation";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -151,7 +151,7 @@ public:
             const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@n-recursive-relation";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -167,7 +167,7 @@ public:
             const std::string& relationName, const SrcLocation& srcLocation) {
         const char* messageType = "@c-recursive-relation";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -185,7 +185,7 @@ public:
         // messages are ignored
         const char* messageType = "#p-proof-counter";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << R"("relation": ")" << relationName << "\", ";
@@ -204,7 +204,7 @@ public:
     static const std::string runtime() {
         const char* messageType = "@runtime";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "{";
             line << R"("msg-type": ")" << messageType << "\", ";
             line << "\"time\": ";
@@ -217,7 +217,7 @@ public:
     static const std::string startDebug() {
         const char* messageType = "@start-debug";
         std::stringstream line;
-        if (AstLogStatement::getLogFileType() == "json") {
+        if (LogStatement::getLogFileType() == "json") {
             line << "[";
         } else {
             line << messageType;
