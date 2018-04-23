@@ -342,6 +342,7 @@ int main(int argc, char** argv) {
             std::make_unique<ComponentInstantiationTransformer>(),
             std::make_unique<UniqueAggregationVariablesTransformer>(), std::make_unique<AstSemanticChecker>(),
             std::make_unique<RemoveBooleanConstraintsTransformer>(),
+            std::make_unique<ReplaceSingletonVariablesTransformer>(),
             std::make_unique<InlineRelationsTransformer>(), std::make_unique<ReduceExistentialsTransformer>(),
             std::make_unique<ExtractDisconnectedLiteralsTransformer>(),
             std::make_unique<ResolveAliasesTransformer>(),
