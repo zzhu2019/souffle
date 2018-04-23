@@ -70,6 +70,8 @@ public:
 
     void addIteration(std::shared_ptr<Relation> rel, std::vector<std::string> data);
 
+    void addFrequency(std::shared_ptr<Relation> rel, std::vector<std::string> data);
+
     void addRule(std::shared_ptr<Relation> rel, std::vector<std::string> data);
 
     inline bool isLoaded() {

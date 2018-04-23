@@ -10,8 +10,10 @@
 
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <utility>
 
 /*
@@ -24,6 +26,7 @@ protected:
     long num_tuples = 0;
     std::string identifier;
     std::string locator = "";
+    std::map<std::string, std::tuple<std::string, long, long>> atoms{};
 
 private:
     bool recursive = false;
@@ -39,7 +42,7 @@ public:
         return identifier;
     }
 
-    inline double const getRuntime() {
+    inline double getRuntime() {
         return runtime;
     }
 
@@ -55,6 +58,14 @@ public:
         this->num_tuples = num_tuples;
     }
 
+    inline void addAtomFrequency(
+            const std::string& subruleName, std::string atom, long version, long frequency) {
+        atoms[subruleName] = std::make_tuple(std::move(atom), version, frequency);
+    }
+
+    const std::map<std::string, std::tuple<std::string, long, long>>& getAtoms() {
+        return atoms;
+    }
     inline std::string getName() {
         return name;
     }
@@ -67,7 +78,9 @@ public:
         return locator;
     }
 
-    void setLocator(std::string locator);
+    void setLocator(std::string locator) {
+        this->locator = locator;
+    }
 
     inline bool isRecursive() {
         return recursive;

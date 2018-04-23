@@ -23,7 +23,7 @@ void Iteration::addRule(std::vector<std::string> data, std::string rec_id) {
     }
 
     if (data[0].at(0) == 't') {
-        rul_rec->setRuntime(std::stod(data[5]) + rul_rec->getRuntime());
+        rul_rec->setRuntime(std::stod(data[7]) + rul_rec->getRuntime());
         rul_rec->setLocator(data[3]);
     } else if (data[0].at(0) == 'n') {
         rul_rec->setNum_tuples(std::stol(data[5]) - prev_num_tuples);
