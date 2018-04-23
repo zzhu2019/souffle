@@ -18,11 +18,3 @@ std::string Rule::toString() {
     output << "[" << runtime << "," << num_tuples << "]}";
     return output.str();
 }
-
-void Rule::setLocator(std::string locator) {
-    if (this->locator.empty()) {
-        this->locator = locator;
-    } else {
-        this->locator += " " + locator;
-    }
-}

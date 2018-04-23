@@ -155,8 +155,8 @@ public:
     void print(std::ostream& os) override {
         auto duration = end - getStart();
         os << ProfileKeySingleton::instance().getText(getKey());
-        os << getStartString() << ",";
-        os << getEndString() << ",";
+        os << getStartString() << ";";
+        os << getEndString() << ";";
         os << std::chrono::duration_cast<std::chrono::duration<double>>(duration).count();
         os << std::endl;
     }
@@ -179,7 +179,6 @@ public:
     /** Print event */
     void print(std::ostream& os) override {
         os << ProfileKeySingleton::instance().getText(getKey());
-        os << getStartString() << ",";
         os << number;
         os << std::endl;
     }

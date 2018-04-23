@@ -80,7 +80,6 @@ Table OutputProcessor::getRulTable() {
             row[7] = std::shared_ptr<CellInterface>(new Cell<std::string>(rel.second->getName()));
             row[8] = std::shared_ptr<CellInterface>(new Cell<long>(0));
             row[10] = std::shared_ptr<CellInterface>(new Cell<std::string>(rul->getLocator()));
-
             rule_map.emplace(rul->getName(), std::make_shared<Row>(row));
         }
         for (auto& iter : rel.second->getIterations()) {
@@ -106,6 +105,7 @@ Table OutputProcessor::getRulTable() {
                     row[7] = std::shared_ptr<CellInterface>(new Cell<std::string>(rel.second->getName()));
                     row[8] = std::shared_ptr<CellInterface>(new Cell<long>(rul->getVersion()));
                     row[0] = std::shared_ptr<CellInterface>(new Cell<double>(rul->getRuntime()));
+                    row[10] = std::shared_ptr<CellInterface>(new Cell<std::string>(rul->getLocator()));
                     rule_map[rul->getName()] = std::make_shared<Row>(row);
                 }
             }
@@ -135,6 +135,73 @@ Table OutputProcessor::getRulTable() {
     Table table;
     for (auto& _row : rule_map) {
         table.addRow(_row.second);
+    }
+    return table;
+}
+
+/*
+ * atom table :
+ * ROW[0] = atom
+ * ROW[1] = version
+ * ROW[2] = frequency
+ */
+Table OutputProcessor::getAtomTable(std::string strRel, std::string strRul) {
+    std::unordered_map<std::string, std::shared_ptr<Relation>>& relation_map = programRun->getRelation_map();
+
+    Table table;
+    for (auto& _rel : relation_map) {
+        std::shared_ptr<Relation> rel = _rel.second;
+
+        if (rel->getId() != strRel) {
+            continue;
+        }
+
+        for (auto& _rul : rel->getRuleMap()) {
+            std::shared_ptr<Rule> rul = _rul.second;
+            if (rul->getId() != strRul) {
+                continue;
+            }
+            for (auto& atom : rul->getAtoms()) {
+                Row row(4);
+                row[0] = std::shared_ptr<CellInterface>(new Cell<std::string>(atom.first));
+                row[1] = std::shared_ptr<CellInterface>(new Cell<std::string>(std::get<0>(atom.second)));
+                row[2] = std::shared_ptr<CellInterface>(new Cell<long>(std::get<1>(atom.second)));
+                row[3] = std::shared_ptr<CellInterface>(new Cell<long>(std::get<2>(atom.second)));
+
+                table.addRow(std::make_shared<Row>(row));
+            }
+        }
+    }
+    return table;
+}
+
+/*
+ * subrule table :
+ * ROW[0] = subrule
+ */
+Table OutputProcessor::getSubrulTable(std::string strRel, std::string strRul) {
+    std::unordered_map<std::string, std::shared_ptr<Relation>>& relation_map = programRun->getRelation_map();
+
+    Table table;
+    for (auto& _rel : relation_map) {
+        std::shared_ptr<Relation> rel = _rel.second;
+
+        if (rel->getId() != strRel) {
+            continue;
+        }
+
+        for (auto& _rul : rel->getRuleMap()) {
+            std::shared_ptr<Rule> rul = _rul.second;
+            if (rul->getId() != strRul) {
+                continue;
+            }
+            for (auto& atom : rul->getAtoms()) {
+                Row row(1);
+                row[0] = std::shared_ptr<CellInterface>(new Cell<std::string>(atom.first));
+
+                table.addRow(std::make_shared<Row>(row));
+            }
+        }
     }
     return table;
 }
@@ -212,5 +279,42 @@ Table OutputProcessor::getVersions(std::string strRel, std::string strRul) {
     for (auto& _row : rule_map) {
         table.addRow(_row.second);
     }
+    return table;
+}
+
+/*
+ * atom table :
+ * ROW[0] = rule
+ * ROW[1] = atom
+ * ROW[2] = version
+ * ROW[3] = frequency
+ */
+Table OutputProcessor::getVersionAtoms(std::string strRel, std::string srcLocator, int version) {
+    std::unordered_map<std::string, std::shared_ptr<Relation>>& relation_map = programRun->getRelation_map();
+    Table table;
+
+    for (auto& _rel : relation_map) {
+        std::shared_ptr<Relation> rel = _rel.second;
+        if (rel->getId().compare(strRel) == 0) {
+            for (auto& iter : rel->getIterations()) {
+                for (auto& _rul : iter->getRul_rec()) {
+                    std::shared_ptr<Rule> rul = _rul.second;
+                    if (rul->getLocator().compare(srcLocator) == 0 && rul->getVersion() == version) {
+                        for (auto& atom : rul->getAtoms()) {
+                            Row row(4);
+                            row[0] = std::shared_ptr<CellInterface>(new Cell<std::string>(atom.first));
+                            row[1] = std::shared_ptr<CellInterface>(
+                                    new Cell<std::string>(std::get<0>(atom.second)));
+                            row[2] = std::shared_ptr<CellInterface>(new Cell<long>(std::get<1>(atom.second)));
+                            row[3] = std::shared_ptr<CellInterface>(new Cell<long>(std::get<2>(atom.second)));
+                            table.addRow(std::make_shared<Row>(row));
+                        }
+                    }
+                }
+            }
+            break;
+        }
+    }
+
     return table;
 }

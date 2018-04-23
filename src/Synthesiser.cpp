@@ -15,7 +15,6 @@
  ***********************************************************************/
 
 #include "Synthesiser.h"
-#include "AstLogStatement.h"
 #include "AstRelation.h"
 #include "AstVisitor.h"
 #include "BinaryConstraintOps.h"
@@ -23,6 +22,7 @@
 #include "Global.h"
 #include "IOSystem.h"
 #include "IndexSetAnalysis.h"
+#include "LogStatement.h"
 #include "Logger.h"
 #include "Macro.h"
 #include "ProfileEvent.h"
@@ -500,13 +500,13 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 visit(condition, out);
                 out << ") {\n";
                 visit(search.getNestedOperation(), out);
-                if (Global::config().has("profile")) {
+                if (Global::config().has("profile") && Global::config().has("verbose")) {
                     out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
                 }
                 out << "}\n";
             } else {
                 visit(search.getNestedOperation(), out);
-                if (Global::config().has("profile")) {
+                if (Global::config().has("profile") && Global::config().has("verbose")) {
                     out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
                 }
             }
@@ -1234,7 +1234,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "}";
     }
     os << ";";
-    if (Global::config().has("profile")) {
+    if (Global::config().has("profile") && Global::config().has("verbose")) {
         os << "private:\n";
         size_t numFreq = 0;
         visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) { numFreq++; });
@@ -1351,12 +1351,14 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "// -- query evaluation --\n";
     if (Global::config().has("profile")) {
         os << "std::ofstream profile(profiling_fname);\n";
-        os << "profile << \"" << AstLogStatement::startDebug() << "\" << std::endl;\n";
+        os << "profile << \"" << LogStatement::startDebug() << "\" << std::endl;\n";
         os << "ProfileEventSingleton::instance().startTimer();\n";
         os << "ProfileEventSingleton::instance().setLog(&profile);\n";
         emitCode(os, *(prog.getMain()));
         os << "ProfileEventSingleton::instance().stopTimer();\n";
-        os << "dumpFreqs();\n";
+        if (Global::config().has("verbose")) {
+            os << "dumpFreqs();\n";
+        }
     } else {
         emitCode(os, *(prog.getMain()));
     }
@@ -1414,7 +1416,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "}\n";  // end of printAll() method
 
     // dumpFreqs method
-    if (Global::config().has("profile")) {
+    if (Global::config().has("profile") && Global::config().has("verbose")) {
         os << "private:\n";
         os << "void dumpFreqs() {\n";
         for (auto const& cur : idxMap) {

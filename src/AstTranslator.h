@@ -41,15 +41,7 @@ class RecursiveClauses;
  * and RAM structures.
  */
 class AstTranslator {
-    /** If true, created constructs will be annotated with logging information */
-
 public:
-    /**
-     * A constructor for this translators.
-     *
-     * @param logging if generated clauses should be annotated with logging operations
-     */
-
     /**
      * Converts the given relation identifier into a relation name.
      */
@@ -82,6 +74,10 @@ public:
 
     /** translates AST to translation unit  */
     std::unique_ptr<RamTranslationUnit> translateUnit(AstTranslationUnit& tu);
+
+private:
+    /** Map modified relation identifiers to original relation identifiers */
+    std::map<std::string, std::string> modifiedIdMap;
 };
 
 }  // end of namespace souffle

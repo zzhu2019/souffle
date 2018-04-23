@@ -64,9 +64,9 @@ public:
 
     void top();
 
-    void rel(std::string c);
+    void rel();
 
-    void rul(std::string c);
+    void rul();
 
     void id(std::string col);
 
@@ -85,4 +85,7 @@ public:
     void graphL(std::vector<long> list);
 
     static bool string_sort(std::vector<std::string> a, std::vector<std::string> b);
+
+protected:
+    void verAtoms(Table& atomTable, const std::string& ruleName = "");
 };

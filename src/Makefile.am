@@ -129,7 +129,7 @@ souffle_sources = \
               IndexSetAnalysis.cpp   IndexSetAnalysis.h \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h            \
-              AstLogStatement.h                         \
+              LogStatement.h                         \
               ProfileEvent.h
 
 # -- build souffle as a library so it can be reused in testing
