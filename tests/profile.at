@@ -26,13 +26,13 @@
 
 dnl Define all possible souffle-profile commands for testing
 m4_define([PROFILE_COMMANDS],[["rel"],
-  ["rel R1"],
+  ["rel R2"],
   ["rul"],
-  ["rul C1.1"],
-  ["rul id N1.1"],
-  ["graph R1 copy_t"],
-  ["graph C1.1 tot_t"],
-  ["graph ver C1.1 tuples"],
+  ["rul C2.1"],
+  ["rul id N2.1"],
+  ["graph R2 copy_t"],
+  ["graph C2.1 tot_t"],
+  ["graph ver C2.1 tuples"],
   ["top"],
   ["help"]])
 
@@ -72,3 +72,4 @@ m4_define([PROFILE_TEST],[
 ##########################################################################
 
 PROFILE_TEST([lrg_attr_id],[profile])
+PROFILE_TEST([recursive],[profile])
