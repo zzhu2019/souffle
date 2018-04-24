@@ -16,14 +16,26 @@
 
 #pragma once
 
-#include "AstTransforms.h"
+#include "AstAnalysis.h"
+#include "AstArgument.h"
+#include "AstClause.h"
+#include "AstLiteral.h"
+#include "AstRelationIdentifier.h"
 #include "AstVisitor.h"
-
+#include "Util.h"
+#include <cstddef>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace souffle {
+
+class AstTranslationUnit;
+
 class AdornedPredicate {
 private:
     AstRelationIdentifier predicateName;

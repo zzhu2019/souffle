@@ -17,18 +17,13 @@
 
 #include "AstClause.h"
 #include "AstLiteral.h"
-#include "AstProgram.h"
-#include "AstRelation.h"
 #include "AstVisitor.h"
-
-#include <set>
-#include <sstream>
-#include <string>
-
-#include <cstdlib>
-#include <cstring>
+#include "Macro.h"
+#include <algorithm>
 
 namespace souffle {
+
+class AstAggregator;
 
 /*
  * Clause

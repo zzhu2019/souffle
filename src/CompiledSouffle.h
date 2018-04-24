@@ -16,23 +16,38 @@
 
 #pragma once
 
-#include "AstTypes.h"
-#include "CompiledOptions.h"
-#include "CompiledRecord.h"
-#include "CompiledRelation.h"
-#include "Logger.h"
-#include "ParallelUtils.h"
-#include "ProfileEvent.h"
-#include "SignalHandler.h"
-#include "SouffleInterface.h"
-#include "SymbolTable.h"
-
+#include "souffle/AstTypes.h"
+#include "souffle/CompiledIndexUtils.h"
+#include "souffle/CompiledOptions.h"
+#include "souffle/CompiledRecord.h"
+#include "souffle/CompiledRelation.h"
+#include "souffle/CompiledTuple.h"
+#include "souffle/IODirectives.h"
+#include "souffle/IOSystem.h"
+#include "souffle/Logger.h"
+#include "souffle/ParallelUtils.h"
+#include "souffle/ProfileEvent.h"
+#include "souffle/RamTypes.h"
+#include "souffle/SignalHandler.h"
+#include "souffle/SouffleInterface.h"
+#include "souffle/SymbolMask.h"
+#include "souffle/SymbolTable.h"
+#include "souffle/Trie.h"
+#include "souffle/Util.h"
+#include "souffle/WriteStream.h"
 #include <array>
+#include <atomic>
+#include <cassert>
 #include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <exception>
 #include <iostream>
-#include <map>
+#include <memory>
 #include <regex>
+#include <string>
 #include <utility>
+#include <vector>
 
 #if defined(_OPENMP)
 #include <omp.h>

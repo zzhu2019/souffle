@@ -263,7 +263,7 @@ public:
         }
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstRelation* clone() const override {
         auto res = new AstRelation();
         res->name = name;

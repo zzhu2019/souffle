@@ -7,6 +7,10 @@
  */
 
 #include "Relation.h"
+#include "profilerlib/Iteration.h"
+#include "profilerlib/Rule.h"
+#include <memory>
+#include <sstream>
 
 std::vector<std::shared_ptr<Rule>> Relation::getRuleRecList() {
     std::vector<std::shared_ptr<Rule>> temp = std::vector<std::shared_ptr<Rule>>();

@@ -27,6 +27,7 @@
 #pragma once
 
 #include "CompiledTuple.h"
+#include "RamTypes.h"
 #include "Util.h"
 
 #include <atomic>

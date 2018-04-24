@@ -17,12 +17,14 @@
 #include "IndexSetAnalysis.h"
 #include "Global.h"
 #include "RamCondition.h"
+#include "RamNode.h"
 #include "RamOperation.h"
 #include "RamTranslationUnit.h"
-#include "RamValue.h"
 #include "RamVisitor.h"
-
-#include <algorithm>
+#include <cstdint>
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
 #include <queue>
 
 #ifdef _OPENMP

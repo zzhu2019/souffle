@@ -11,10 +11,14 @@
 //
 
 #include "UserInputReader.h"
+#include <iostream>   // for operator<<, flush, basic_ostream, cout, ostream
+#include <iterator>   // for end, begin
+#include <termios.h>  // for termios, tcsetattr, tcgetattr, ECHO, ICANON, cc_t
+#include <unistd.h>   // for read
 
 void InputReader::getch() {
     char buf = 0;
-    struct termios old = {0};
+    struct termios old = {};
     if (tcgetattr(0, &old) < 0) perror("tcsetattr()");
     old.c_lflag &= ~ICANON;
     old.c_lflag &= ~ECHO;

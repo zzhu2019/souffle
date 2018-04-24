@@ -18,19 +18,12 @@
 #include "AstProgram.h"
 #include "AstClause.h"
 #include "AstComponent.h"
+#include "AstLiteral.h"
 #include "AstRelation.h"
-#include "AstTypeAnalysis.h"
-#include "AstUtils.h"
-#include "AstVisitor.h"
 #include "ErrorReport.h"
-#include "GraphUtils.h"
+#include "Macro.h"
 #include "Util.h"
-
-#include <list>
 #include <sstream>
-
-#include <cstdarg>
-#include <cstdlib>
 
 namespace souffle {
 

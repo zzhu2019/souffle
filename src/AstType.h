@@ -138,7 +138,7 @@ public:
         return {};
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstType* clone() const override = 0;
 
     /** Mutates this node */
@@ -175,7 +175,7 @@ public:
         os << ".type " << getName() << (num ? "= number" : "");
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstPrimitiveType* clone() const override {
         return new AstPrimitiveType(getName(), num);
     }
@@ -217,7 +217,7 @@ public:
         os << ".type " << getName() << " = " << join(types, " | ");
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstUnionType* clone() const override {
         auto res = new AstUnionType();
         res->setName(getName());
@@ -285,7 +285,7 @@ public:
         os << "]";
     }
 
-    /** Creates a clone if this AST sub-structure */
+    /** Creates a clone of this AST sub-structure */
     AstRecordType* clone() const override {
         auto res = new AstRecordType();
         res->setName(getName());

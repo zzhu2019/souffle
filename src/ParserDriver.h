@@ -15,19 +15,22 @@
  ***********************************************************************/
 #pragma once
 
+#include "SrcLocation.h"
 #include "parser.hh"
-
 #include <memory>
-
-#define YY_DECL yy::parser::symbol_type yylex(ParserDriver& driver, yyscan_t yyscanner)
-YY_DECL;
+#include <string>
+#include <stdio.h>
 
 namespace souffle {
 
-class AstTranslationUnit;
+class AstClause;
+class AstComponent;
+class AstComponentInit;
+class AstIODirective;
+class AstPragma;
 class AstRelation;
+class AstTranslationUnit;
 class AstType;
-class AstProgram;
 class DebugReport;
 class ErrorReport;
 class SymbolTable;
@@ -77,3 +80,6 @@ public:
 };
 
 }  // end of namespace souffle
+
+#define YY_DECL yy::parser::symbol_type yylex(souffle::ParserDriver& driver, yyscan_t yyscanner)
+YY_DECL;

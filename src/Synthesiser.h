@@ -17,18 +17,18 @@
 #pragma once
 
 #include "IndexSetAnalysis.h"
-#include "RamProgram.h"
-#include "RamRelation.h"
-#include "RamTranslationUnit.h"
-#include "SymbolTable.h"
-
 #include "RamStatement.h"
-
+#include "RamTypes.h"
+#include <map>
 #include <ostream>
+#include <set>
 #include <string>
-#include <vector>
 
 namespace souffle {
+
+class RamOperation;
+class RamRelation;
+class RamTranslationUnit;
 
 /**
  * A RAM synthesiser: synthesises a C++ program from a RAM program.

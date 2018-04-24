@@ -15,8 +15,8 @@
  ***********************************************************************/
 
 #include "TypeSystem.h"
+#include "Macro.h"
 #include "Util.h"
-
 #include <cassert>
 
 namespace souffle {

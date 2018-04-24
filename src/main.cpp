@@ -14,52 +14,45 @@
  *
  ***********************************************************************/
 
-#include "AstAnalysis.h"
 #include "AstComponentChecker.h"
 #include "AstPragma.h"
-#include "AstProgram.h"
 #include "AstSemanticChecker.h"
-#include "AstTransformer.h"
 #include "AstTransforms.h"
 #include "AstTranslationUnit.h"
 #include "AstTranslator.h"
-#include "AstUtils.h"
 #include "ComponentModel.h"
+#include "DebugReport.h"
+#include "ErrorReport.h"
 #include "Global.h"
 #include "Interpreter.h"
 #include "InterpreterInterface.h"
+#include "Macro.h"
 #include "ParserDriver.h"
-#include "PrecedenceGraph.h"
+#include "RamProgram.h"
 #include "RamSemanticChecker.h"
-#include "RamStatement.h"
 #include "RamTransformer.h"
 #include "RamTranslationUnit.h"
 #include "SymbolTable.h"
 #include "Synthesiser.h"
 #include "Util.h"
+#include "config.h"
 
 #ifdef USE_PROVENANCE
 #include "Explain.h"
 #endif
 
+#include <cassert>
 #include <chrono>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <list>
+#include <iterator>
 #include <memory>
+#include <stdexcept>
 #include <string>
-
-#include "config.h"
-#include <cctype>
-#include <cerrno>
-#include <climits>
-#include <cstdarg>
-#include <cstdlib>
-#include <cstring>
-#include <getopt.h>
-#include <libgen.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <utility>
+#include <vector>
+#include <stdio.h>
 
 namespace souffle {
 

@@ -6,7 +6,9 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Table.h"
+#include "profilerlib/Table.h"
+#include "profilerlib/DataComparator.h"
+#include <algorithm>
 
 void Table::sort(int col_num) {
     switch (col_num) {

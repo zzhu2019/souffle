@@ -8,22 +8,13 @@
 
 #pragma once
 
-#include <cassert>
-#include <exception>
+#include "profilerlib/ProgramRun.h"
+#include "profilerlib/Relation.h"
 #include <fstream>
-#include <iostream>
 #include <memory>
-#include <regex>
-#include <thread>
+#include <string>
 #include <unordered_map>
-
-#include <dirent.h>
-
-#include "Iteration.h"
-#include "ProgramRun.h"
-#include "Relation.h"
-#include "Rule.h"
-#include "StringUtils.h"
+#include <vector>
 
 /*
  * Input reader and processor for log files

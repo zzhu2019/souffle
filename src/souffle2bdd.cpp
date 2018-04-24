@@ -18,8 +18,11 @@
  ***********************************************************************/
 
 #include "AstArgument.h"
+#include "AstAttribute.h"
+#include "AstClause.h"
 #include "AstComponentChecker.h"
 #include "AstLiteral.h"
+#include "AstNode.h"
 #include "AstPragma.h"
 #include "AstProgram.h"
 #include "AstRelation.h"
@@ -27,23 +30,34 @@
 #include "AstSemanticChecker.h"
 #include "AstTransforms.h"
 #include "AstTranslationUnit.h"
-#include "AstType.h"
 #include "AstVisitor.h"
+#include "BinaryConstraintOps.h"
+#include "BinaryFunctorOps.h"
 #include "ComponentModel.h"
 #include "DebugReport.h"
 #include "ErrorReport.h"
 #include "Global.h"
 #include "Macro.h"
 #include "ParserDriver.h"
+#include "RamTypes.h"
 #include "SymbolTable.h"
 #include "Util.h"
+#include "config.h"
+#include <algorithm>
+#include <cassert>
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <iterator>
+#include <limits>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <utility>
 #include <vector>
-#include <assert.h>
 
 namespace souffle {
 

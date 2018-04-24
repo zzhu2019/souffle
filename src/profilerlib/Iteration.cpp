@@ -6,9 +6,10 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "Iteration.h"
-
-#include <iostream>
+#include "profilerlib/Iteration.h"
+#include "profilerlib/Rule.h"
+#include <memory>
+#include <sstream>
 
 void Iteration::addRule(std::vector<std::string> data, std::string rec_id) {
     std::string strTemp = data[4] + data[3] + data[2];

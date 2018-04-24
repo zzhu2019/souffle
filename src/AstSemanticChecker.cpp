@@ -15,24 +15,41 @@
  ***********************************************************************/
 
 #include "AstSemanticChecker.h"
+#include "AstArgument.h"
+#include "AstAttribute.h"
 #include "AstClause.h"
+#include "AstIODirective.h"
+#include "AstLiteral.h"
+#include "AstNode.h"
 #include "AstProgram.h"
 #include "AstRelation.h"
+#include "AstRelationIdentifier.h"
 #include "AstTranslationUnit.h"
+#include "AstType.h"
 #include "AstTypeAnalysis.h"
+#include "AstTypes.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
+#include "BinaryConstraintOps.h"
+#include "ErrorReport.h"
 #include "Global.h"
 #include "GraphUtils.h"
+#include "Macro.h"
 #include "PrecedenceGraph.h"
+#include "SrcLocation.h"
+#include "TypeSystem.h"
 #include "Util.h"
-
+#include <cassert>
+#include <cstddef>
+#include <iostream>
+#include <map>
+#include <memory>
 #include <set>
+#include <typeinfo>
+#include <utility>
 #include <vector>
 
 namespace souffle {
-
-class AstTranslationUnit;
 
 bool AstSemanticChecker::transform(AstTranslationUnit& translationUnit) {
     const TypeEnvironment& typeEnv =

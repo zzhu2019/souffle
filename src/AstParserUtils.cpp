@@ -16,8 +16,11 @@
 
 #include "AstParserUtils.h"
 #include "AstClause.h"
-
+#include "AstNode.h"
+#include "Util.h"
 #include <memory>
+#include <ostream>
+#include <utility>
 #include <vector>
 
 namespace souffle {

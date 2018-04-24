@@ -15,12 +15,24 @@
  ***********************************************************************/
 
 #include "MagicSet.h"
-
+#include "AstAttribute.h"
+#include "AstIODirective.h"
+#include "AstNode.h"
+#include "AstProgram.h"
+#include "AstRelation.h"
+#include "AstTransforms.h"
+#include "AstTranslationUnit.h"
+#include "BinaryConstraintOps.h"
 #include "Global.h"
 #include "IODirectives.h"
+#include "SrcLocation.h"
+#include <cassert>
 #include <utility>
 
 namespace souffle {
+
+class SymbolTable;
+
 /* general functions */
 
 // checks whether the adorned version of two predicates is equal

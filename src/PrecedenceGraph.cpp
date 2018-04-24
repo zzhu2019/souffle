@@ -18,13 +18,20 @@
 
 #include "PrecedenceGraph.h"
 #include "AstClause.h"
+#include "AstLiteral.h"
+#include "AstProgram.h"
 #include "AstRelation.h"
+#include "AstRelationIdentifier.h"
+#include "AstTranslationUnit.h"
 #include "AstUtils.h"
 #include "AstVisitor.h"
 #include "Global.h"
-
+#include "Macro.h"
+#include "Util.h"
 #include <algorithm>
+#include <iterator>
 #include <set>
+#include <string>
 
 namespace souffle {
 

@@ -17,22 +17,21 @@
 
 #pragma once
 
-#include "BTree.h"
 #include "CompiledIndexUtils.h"
 #include "CompiledTuple.h"
-#include "IOSystem.h"
-#include "IterUtils.h"
 #include "ParallelUtils.h"
+#include "RamTypes.h"
 #include "Table.h"
-#include "Trie.h"
 #include "Util.h"
-
+#include <iostream>
 #include <iterator>
 #include <mutex>
+#include <set>
+#include <string>
 #include <type_traits>
 #include <unordered_set>
-
-#include <libgen.h>
+#include <vector>
+#include <assert.h>
 
 namespace souffle {
 

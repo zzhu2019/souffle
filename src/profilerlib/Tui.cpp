@@ -7,6 +7,27 @@
  */
 
 #include "Tui.h"
+#include "profilerlib/CellInterface.h"
+#include "profilerlib/Iteration.h"
+#include "profilerlib/OutputProcessor.h"
+#include "profilerlib/ProgramRun.h"
+#include "profilerlib/Reader.h"
+#include "profilerlib/Relation.h"
+#include "profilerlib/Row.h"
+#include "profilerlib/Rule.h"
+#include "profilerlib/StringUtils.h"
+#include "profilerlib/UserInputReader.h"
+#include "profilerlib/html_string.h"
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <unordered_map>
+#include <utility>
+#include <dirent.h>
+#include <sys/stat.h>
 
 Tui::Tui(std::string filename, bool live, bool gui) {
     this->f_name = filename;
@@ -343,8 +364,6 @@ void Tui::loadMenu() {
     std::cout << "Please 'load' a file or 'open' from Previous Runs.\n";
     std::cout << "Previous Runs:\n";
 
-    // http://stackoverflow.com/a/612176
-    // TODO: check cross-platform capability
     DIR* dir;
     struct dirent* ent;
     if ((dir = opendir("./old_runs")) != NULL) {

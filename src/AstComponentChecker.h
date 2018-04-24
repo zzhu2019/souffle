@@ -17,11 +17,11 @@
 #pragma once
 
 #include "AstTransformer.h"
+#include <string>
 
 namespace souffle {
 
 class AstComponent;
-class AstComponentScope;
 class AstComponentType;
 class AstComponentInit;
 class AstProgram;

@@ -6,7 +6,8 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "ProgramRun.h"
+#include "profilerlib/ProgramRun.h"
+#include <sstream>
 
 std::string ProgramRun::toString() {
     std::ostringstream output;

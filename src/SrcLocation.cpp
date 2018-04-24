@@ -16,15 +16,11 @@
 
 #include "SrcLocation.h"
 #include "Util.h"
-
-#include <cstring>
+#include <cctype>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <sstream>
-
-#include <libgen.h>
-#include <unistd.h>
+#include <stdio.h>
 
 namespace souffle {
 

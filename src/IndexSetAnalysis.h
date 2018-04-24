@@ -16,14 +16,20 @@
 
 #pragma once
 
+#include "Macro.h"
 #include "RamAnalysis.h"
 #include "RamRelation.h"
 #include "RamTypes.h"
-#include "Util.h"
-
-#include <cstring>
+#include <cassert>
+#include <cstdlib>
+#include <functional>
+#include <iosfwd>
+#include <limits>
+#include <map>
+#include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define NIL 0
@@ -33,6 +39,8 @@
 #define M_UNIT_TEST
 
 namespace souffle {
+
+class RamTranslationUnit;
 
 /**
  * Computes a maximum matching with Hopcroft-Karp algorithm

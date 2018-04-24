@@ -14,9 +14,25 @@
  *
  ***********************************************************************/
 
-#include <memory>
-
+#include "AstArgument.h"
+#include "AstAttribute.h"
+#include "AstClause.h"
+#include "AstLiteral.h"
+#include "AstNode.h"
+#include "AstProgram.h"
+#include "AstRelation.h"
+#include "AstRelationIdentifier.h"
 #include "AstTransforms.h"
+#include "AstTranslationUnit.h"
+#include "AstType.h"
+#include "BinaryFunctorOps.h"
+#include "Util.h"
+#include <cassert>
+#include <cstddef>
+#include <iosfwd>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace souffle {
 

@@ -15,13 +15,22 @@
  ***********************************************************************/
 #pragma once
 
+#include "AstArgument.h"
 #include "AstTransformer.h"
 #include "AstTranslationUnit.h"
-
+#include "DebugReport.h"
+#include "Util.h"
 #include <functional>
+#include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 namespace souffle {
+
+class AstClause;
+class AstProgram;
+class AstRelation;
 
 /**
  * Transformation pass to eliminate grounded aliases.
