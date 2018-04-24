@@ -853,6 +853,66 @@ protected:
 };
 
 /**
+ * Stratum statement
+ *
+ * Wrap strata of program
+ */
+class RamStratum : public RamStatement {
+protected:
+    /** Body of stratum */
+    std::unique_ptr<RamStatement> body;
+    const size_t index;
+
+public:
+    RamStratum(std::unique_ptr<RamStatement> b, const size_t i)
+            : RamStatement(RN_Stratum), body(std::move(b)), index(i) {}
+
+    /** Get stratum body */
+    const RamStatement& getBody() const {
+        return *body;
+    }
+
+    /** Get stratum index */
+    const size_t getIndex() const {
+        return index;
+    }
+
+    /** Pretty print */
+    void print(std::ostream& os, int tabpos) const override {
+        os << std::string(tabpos, '\t');
+        os << "BEGIN_STRATUM_" << index << "\n";
+        body->print(os, tabpos + 1);
+        os << "\n";
+        os << std::string(tabpos, '\t');
+        os << "END_STRATUM_" << index;
+    }
+
+    /** Obtain list of child nodes */
+    std::vector<const RamNode*> getChildNodes() const override {
+        return toVector<const RamNode*>(body.get());
+    }
+
+    /** Create clone */
+    RamStratum* clone() const override {
+        RamStratum* res = new RamStratum(std::unique_ptr<RamStatement>(body->clone()), index);
+        return res;
+    }
+
+    /** Apply mapper */
+    void apply(const RamNodeMapper& map) override {
+        body = map(std::move(body));
+    }
+
+protected:
+    /** Check equality */
+    bool equal(const RamNode& node) const override {
+        assert(nullptr != dynamic_cast<const RamStratum*>(&node));
+        const auto& other = static_cast<const RamStratum&>(node);
+        return *body == *other.body;
+    }
+};
+
+/**
  *  Log relation size and a logging message.
  */
 class RamLogSize : public RamRelationStatement {

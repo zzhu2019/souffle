@@ -79,15 +79,18 @@ void executeBinary(const std::string& binaryFilename) {
         throw std::invalid_argument("Generated executable <" + binaryFilename + "> could not be found");
     }
 
-    // run executable
-    int result = system(binaryFilename.c_str());
-    // Remove temp files
+    // run the executable
+    int exitCode = system(binaryFilename.c_str());
+
+    // remove temp files
     if (Global::config().get("dl-program").empty()) {
         remove(binaryFilename.c_str());
         remove((binaryFilename + ".cpp").c_str());
     }
-    if (result != 0) {
-        exit(result);
+
+    // exit with same code as executable
+    if (exitCode != 0) {
+        exit(exitCode);
     }
 }
 
@@ -183,6 +186,8 @@ int main(int argc, char** argv) {
 #endif
                             {"data-structure", 'd', "type", "", false,
                                     "Specify data structure (brie/btree/eqrel/rbtset/hashset)."},
+                            {"engine", 'e', "[ file ]", "", false,
+                                    "Specify communication engine for distributed execution."},
                             {"verbose", 'v', "", "", false, "Verbose output."},
                             {"help", 'h', "", "", false, "Display this help message."}};
                     return std::vector<MainOption>(std::begin(opts), std::end(opts));
@@ -257,6 +262,18 @@ int main(int argc, char** argv) {
                 if (Global::config().get("jobs") != "1") {
                     ERROR("provenance cannot be enabled with multiple jobs.");
                 }
+            }
+        }
+
+        /* ensure that souffle has been compiled with support for the execution engine, if specified */
+        if (Global::config().has("engine")) {
+            if (!(Global::config().has("compile") || Global::config().has("dl-program") ||
+                        Global::config().has("generate"))) {
+                throw std::invalid_argument("Error: Use of engine option not yet available for interpreter.");
+            }
+            const auto& engine = Global::config().get("engine");
+            if (engine != "file") {
+                throw std::invalid_argument("Error: Use of engine '" + engine + "' is not supported.");
             }
         }
     }

@@ -260,10 +260,11 @@ public:
     virtual ~SouffleProgram() = default;
 
     // execute program, without any loads or stores
-    virtual void run() {}
+    virtual void run(size_t stratumIndex = (size_t)-1) {}
 
     // execute program, loading inputs and storing outputs as requires
-    virtual void runAll(std::string inputDirectory = ".", std::string outputDirectory = ".") = 0;
+    virtual void runAll(std::string inputDirectory = ".", std::string outputDirectory = ".",
+            size_t stratumIndex = (size_t)-1) = 0;
 
     // load all input relations
     virtual void loadAll(std::string inputDirectory = ".") = 0;

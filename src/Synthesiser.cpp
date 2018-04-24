@@ -490,6 +490,11 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             PRINT_END_COMMENT(out);
         }
 
+        void visitStratum(const RamStratum& stratum, std::ostream& out) override {
+            PRINT_BEGIN_COMMENT(out);
+            PRINT_END_COMMENT(out);
+        }
+
         // -- operations --
 
         void visitSearch(const RamSearch& search, std::ostream& out) override {
@@ -1205,7 +1210,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "   bool result = false; \n";
     os << "   try { result = std::regex_match(text, std::regex(pattern)); } catch(...) { \n";
     os << "     std::cerr << \"warning: wrong pattern provided for match(\\\"\" << pattern << \"\\\",\\\"\" "
-          "<< text << \"\\\")\\n\";\n}\n";
+          "<< text << \"\\\").\\n\";\n}\n";
     os << "   return result;\n";
     os << "}\n";
     os << "static inline std::string substr_wrapper(const std::string& str, size_t idx, size_t len) {\n";
@@ -1330,9 +1335,8 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "}\n";
 
     // -- run function --
-
     os << "private:\ntemplate <bool performIO> void runFunction(std::string inputDirectory = \".\", "
-          "std::string outputDirectory = \".\") {\n";
+          "std::string outputDirectory = \".\", size_t stratumIndex = (size_t) -1) {\n";
 
     os << "SignalHandler::instance()->set();\n";
 
@@ -1354,13 +1358,48 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "profile << \"" << LogStatement::startDebug() << "\" << std::endl;\n";
         os << "ProfileEventSingleton::instance().startTimer();\n";
         os << "ProfileEventSingleton::instance().setLog(&profile);\n";
-        emitCode(os, *(prog.getMain()));
+    }
+
+    // TODO (lyndonhenry): an array of addresses of the gotos may be more efficient than a switch statement
+    // here
+    if (Global::config().has("engine")) {
+        std::stringstream ss;
+        bool hasAtLeastOneStrata = false;
+        visitDepthFirst(*(prog.getMain()), [&](const RamStratum& stratum) {
+            hasAtLeastOneStrata = true;
+            ss << "case " << stratum.getIndex() << ":\ngoto STRATUM_" << stratum.getIndex() << ";\nbreak;\n";
+        });
+        if (hasAtLeastOneStrata) {
+            os << "switch (stratumIndex) {\n";
+            os << "case ((size_t) -1):\ngoto STRATUM_0;\nbreak;\n";
+            os << ss.str();
+            os << "}\n";
+        }
+    }
+
+    visitDepthFirst(*(prog.getMain()), [&](const RamStratum& stratum) {
+        os << "/* BEGIN STRATUM " << stratum.getIndex() << " */\n";
+        if (Global::config().has("engine")) {
+            os << "STRATUM_" << stratum.getIndex() << ":\n";
+        }
+        os << "{\n";
+        emitCode(os, stratum.getBody());
+        os << "}\n";
+        if (Global::config().has("engine")) {
+            os << "if (stratumIndex != (size_t) -1) goto EXIT;\n";
+        }
+        os << "/* END STRATUM " << stratum.getIndex() << " */\n";
+    });
+
+    if (Global::config().has("engine")) {
+        os << "EXIT:";
+    }
+
+    if (Global::config().has("profile")) {
         os << "ProfileEventSingleton::instance().stopTimer();\n";
         if (Global::config().has("verbose")) {
             os << "dumpFreqs();\n";
         }
-    } else {
-        emitCode(os, *(prog.getMain()));
     }
     // add code printing hint statistics
     os << "\n// -- relation hint statistics --\n";
@@ -1379,8 +1418,10 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "}\n";  // end of runFunction() method
 
     // add methods to run with and without performing IO (mainly for the interface)
-    os << "public:\nvoid run() override { runFunction<false>(); }\n";
-    os << "public:\nvoid runAll(std::string inputDirectory = \".\", std::string outputDirectory = \".\") "
+    os << "public:\nvoid run(size_t stratumIndex = (size_t) -1) override { runFunction<false>(\".\", \".\", "
+          "stratumIndex); }\n";
+    os << "public:\nvoid runAll(std::string inputDirectory = \".\", std::string outputDirectory = \".\", "
+          "size_t stratumIndex = (size_t) -1) "
           "override { "
           "runFunction<true>(inputDirectory, outputDirectory); }\n";
 
@@ -1559,7 +1600,8 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "false,\n";
         os << "R\"()\",\n";
     }
-    os << std::stoi(Global::config().get("jobs")) << "\n";
+    os << std::stoi(Global::config().get("jobs")) << ",\n";
+    os << "-1";
     os << ");\n";
 
     os << "if (!opt.parse(argc,argv)) return 1;\n";
@@ -1575,7 +1617,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << classname + " obj;\n";
     }
 
-    os << "obj.runAll(opt.getInputFileDir(), opt.getOutputFileDir());\n";
+    os << "obj.runAll(opt.getInputFileDir(), opt.getOutputFileDir(), opt.getStratumIndex());\n";
     if (Global::config().get("provenance") == "1") {
         os << "explain(obj, true, false);\n";
     } else if (Global::config().get("provenance") == "2") {

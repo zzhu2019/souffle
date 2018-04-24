@@ -75,7 +75,9 @@ enum RamNodeType {
     RN_Parallel,
     RN_Exit,
     RN_LogTimer,
-    RN_DebugInfo
+    RN_DebugInfo,
+    RN_Stratum
+
 };
 
 /**
