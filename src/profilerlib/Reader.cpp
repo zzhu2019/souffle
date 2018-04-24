@@ -99,7 +99,7 @@ void Reader::save(std::string f_name) {
 
 void Reader::process(const std::vector<std::string>& data) {
     if (data[0].compare("runtime") == 0) {
-        runtime = std::stod(data[1]);
+        runtime = std::stod(data[3]);
     } else {
         // find non-recursive first, since they both share text recursive
         if (data[0].find("nonrecursive") != std::string::npos) {
@@ -109,7 +109,7 @@ void Reader::process(const std::vector<std::string>& data) {
             }
             std::shared_ptr<Relation> _rel = relation_map[data[1]];
             if (data[0] == "t-nonrecursive-relation") {
-                _rel->setRuntime(std::stod(data[3]));
+                _rel->setRuntime(std::stod(data[5]));
                 _rel->setLocator(data[2]);
             } else if (data[0] == "n-nonrecursive-relation") {
                 _rel->setNum_tuples(std::stol(data[3]));
@@ -153,13 +153,13 @@ void Reader::addIteration(std::shared_ptr<Relation> rel, std::vector<std::string
         std::string temp = rel->createRecID(data[4]);
         iter->addRule(data, temp);
     } else if (data[0].at(0) == 't' && data[0].find("relation") != std::string::npos) {
-        iter->setRuntime(std::stod(data[3]));
+        iter->setRuntime(std::stod(data[5]));
         iter->setLocator(data[2]);
         rel->setLocator(data[2]);
     } else if (data[0].at(0) == 'n' && data[0].find("relation") != std::string::npos) {
         iter->setNum_tuples(std::stol(data[3]));
     } else if (data[0].at(0) == 'c' && data[0].find("relation") != std::string::npos) {
-        iter->setCopy_time(std::stod(data[3]));
+        iter->setCopy_time(std::stod(data[5]));
         rel->setReady(true);
     }
 }

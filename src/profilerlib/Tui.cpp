@@ -49,7 +49,7 @@ void Tui::runCommand(std::vector<std::string> c) {
     } else if (c[0].compare("rul") == 0) {
         if (c.size() > 1) {
             if (c.size() == 3 && c[1].compare("id") == 0) {
-                std::printf("%7s%2s%-25s\n\n", "ID", "", "NAME");
+                std::printf("%7s%2s%s\n\n", "ID", "", "NAME");
                 id(c[2]);
             } else if (c.size() == 2 && c[1].compare("id") == 0) {
                 id("0");
@@ -423,31 +423,30 @@ void Tui::setupTabCompletion() {
 
 void Tui::help() {
     std::cout << "\nAvailable profiling commands:" << std::endl;
-    std::printf("  %-30s%-5s %-10s\n", "rel", "-", "display relation table.");
-    std::printf("  %-30s%-5s %-10s\n", "rel <relation id>", "-", "display all rules of a given relation.");
-    std::printf("  %-30s%-5s %-10s\n", "rul", "-", "display rule table");
-    std::printf("  %-30s%-5s %-10s\n", "rul <rule id>", "-", "display all version of given rule.");
-    std::printf("  %-30s%-5s %-10s\n", "rul id", "-", "display all rules names and ids.");
-    std::printf(
-            "  %-30s%-5s %-10s\n", "rul id <rule id>", "-", "display the rule name for the given rule id.");
-    std::printf("  %-30s%-5s %-10s\n", "graph <relation id> <type>", "-",
+    std::printf("  %-30s%-5s %s\n", "rel", "-", "display relation table.");
+    std::printf("  %-30s%-5s %s\n", "rel <relation id>", "-", "display all rules of a given relation.");
+    std::printf("  %-30s%-5s %s\n", "rul", "-", "display rule table");
+    std::printf("  %-30s%-5s %s\n", "rul <rule id>", "-", "display all version of given rule.");
+    std::printf("  %-30s%-5s %s\n", "rul id", "-", "display all rules names and ids.");
+    std::printf("  %-30s%-5s %s\n", "rul id <rule id>", "-", "display the rule name for the given rule id.");
+    std::printf("  %-30s%-5s %s\n", "graph <relation id> <type>", "-",
             "graph a relation by type: (tot_t/copy_t/tuples).");
-    std::printf("  %-30s%-5s %-10s\n", "graph <rule id> <type>", "-",
+    std::printf("  %-30s%-5s %s\n", "graph <rule id> <type>", "-",
             "graph recursive(C) rule by type(tot_t/tuples).");
-    std::printf("  %-30s%-5s %-10s\n", "graph ver <rule id> <type>", "-",
+    std::printf("  %-30s%-5s %s\n", "graph ver <rule id> <type>", "-",
             "graph recursive(C) rule versions by type(tot_t/copy_t/tuples).");
-    std::printf("  %-30s%-5s %-10s\n", "top", "-", "display top-level summary of program run.");
-    std::printf("  %-30s%-5s %-10s\n", "help", "-", "print this.");
+    std::printf("  %-30s%-5s %s\n", "top", "-", "display top-level summary of program run.");
+    std::printf("  %-30s%-5s %s\n", "help", "-", "print this.");
 
     std::cout << "\nInteractive mode only commands:" << std::endl;
-    std::printf("  %-30s%-5s %-10s\n", "load <filename>", "-", "load the given profiler log file.");
-    std::printf("  %-30s%-5s %-10s\n", "open", "-", "list stored souffle log files.");
-    std::printf("  %-30s%-5s %-10s\n", "open <filename>", "-", "open the given stored log file.");
-    std::printf("  %-30s%-5s %-10s\n", "save <filename>", "-", "store a copy of the souffle log file.");
-    //    if (alive) std::printf("  %-30s%-5s %-10s\n", "stop", "-",
+    std::printf("  %-30s%-5s %s\n", "load <filename>", "-", "load the given profiler log file.");
+    std::printf("  %-30s%-5s %s\n", "open", "-", "list stored souffle log files.");
+    std::printf("  %-30s%-5s %s\n", "open <filename>", "-", "open the given stored log file.");
+    std::printf("  %-30s%-5s %s\n", "save <filename>", "-", "store a copy of the souffle log file.");
+    //    if (alive) std::printf("  %-30s%-5s %s\n", "stop", "-",
     //                "stop the current live run.");
-    std::printf("  %-30s%-5s %-10s\n", "sort <col number>", "-", "sort tables by given column number.");
-    std::printf("  %-30s%-5s %-10s\n", "q", "-", "exit program.");
+    std::printf("  %-30s%-5s %s\n", "sort <col number>", "-", "sort tables by given column number.");
+    std::printf("  %-30s%-5s %s\n", "q", "-", "exit program.");
 }
 
 void Tui::top() {
@@ -463,10 +462,10 @@ void Tui::top() {
 void Tui::rel() {
     rel_table_state.sort(sort_col);
     std::cout << " ----- Relation Table -----\n";
-    std::printf("%8s%8s%8s%8s%15s%6s%1s%-25s\n\n", "TOT_T", "NREC_T", "REC_T", "COPY_T", "TUPLES", "ID", "",
-            "NAME");
+    std::printf(
+            "%8s%8s%8s%8s%15s%6s%1s%s\n\n", "TOT_T", "NREC_T", "REC_T", "COPY_T", "TUPLES", "ID", "", "NAME");
     for (auto& row : out.formatTable(rel_table_state, precision)) {
-        std::printf("%8s%8s%8s%8s%15s%6s%1s%-5s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
+        std::printf("%8s%8s%8s%8s%15s%6s%1s%s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
                 row[3].c_str(), row[4].c_str(), row[6].c_str(), "", row[5].c_str());
     }
 }
@@ -474,10 +473,9 @@ void Tui::rel() {
 void Tui::rul() {
     rul_table_state.sort(sort_col);
     std::cout << "  ----- Rule Table -----\n";
-    std::printf(
-            "%8s%8s%8s%8s%15s    %-5s\n\n", "TOT_T", "NREC_T", "REC_T", "COPY_T", "TUPLES", "ID RELATION");
+    std::printf("%8s%8s%8s%8s%15s    %s\n\n", "TOT_T", "NREC_T", "REC_T", "COPY_T", "TUPLES", "ID RELATION");
     for (auto& row : out.formatTable(rul_table_state, precision)) {
-        std::printf("%8s%8s%8s%8s%15s%8s %-25s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
+        std::printf("%8s%8s%8s%8s%15s%8s %s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
                 row[3].c_str(), row[4].c_str(), row[6].c_str(), row[7].c_str());
     }
 }
@@ -487,14 +485,14 @@ void Tui::id(std::string col) {
     std::vector<std::vector<std::string>> table = out.formatTable(rul_table_state, precision);
 
     if (col.compare("0") == 0) {
-        std::printf("%7s%2s%-25s\n\n", "ID", "", "NAME");
+        std::printf("%7s%2s%s\n\n", "ID", "", "NAME");
         for (auto& row : table) {
-            std::printf("%7s%2s%-25s\n", row[6].c_str(), "", row[5].c_str());
+            std::printf("%7s%2s%s\n", row[6].c_str(), "", row[5].c_str());
         }
     } else {
         for (auto& row : table) {
             if (row[6].compare(col) == 0) {
-                std::printf("%7s%2s%-25s\n", row[6].c_str(), "", row[5].c_str());
+                std::printf("%7s%2s%s\n", row[6].c_str(), "", row[5].c_str());
             }
         }
     }
@@ -507,13 +505,12 @@ void Tui::relRul(std::string str) {
     std::vector<std::vector<std::string>> rel_table = out.formatTable(rel_table_state, precision);
 
     std::cout << "  ----- Rules of a Relation -----\n";
-    std::printf(
-            "%8s%8s%8s%8s%10s%8s %-25s\n\n", "TOT_T", "NREC_T", "REC_T", "COPY_T", "TUPLES", "ID", "NAME");
+    std::printf("%8s%8s%8s%8s%10s%8s %s\n\n", "TOT_T", "NREC_T", "REC_T", "COPY_T", "TUPLES", "ID", "NAME");
     std::string name = "";
     bool found = false;  // workaround to make it the same as java (row[5] seems to have priority)
     for (auto& row : rel_table) {
         if (row[5].compare(str) == 0) {
-            std::printf("%8s%8s%8s%8s%10s%8s %-25s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
+            std::printf("%8s%8s%8s%8s%10s%8s %s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
                     row[3].c_str(), row[4].c_str(), row[6].c_str(), row[5].c_str());
             name = row[5];
             found = true;
@@ -523,7 +520,7 @@ void Tui::relRul(std::string str) {
     if (!found) {
         for (auto& row : rel_table) {
             if (row[6].compare(str) == 0) {
-                std::printf("%8s%8s%8s%8s%10s%8s %-25s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
+                std::printf("%8s%8s%8s%8s%10s%8s %s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
                         row[3].c_str(), row[4].c_str(), row[6].c_str(), row[5].c_str());
                 name = row[5];
                 break;
@@ -533,7 +530,7 @@ void Tui::relRul(std::string str) {
     std::cout << " ---------------------------------------------------------\n";
     for (auto& row : rul_table) {
         if (row[7].compare(name) == 0) {
-            std::printf("%8s%8s%8s%8s%10s%8s %-25s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
+            std::printf("%8s%8s%8s%8s%10s%8s %s\n", row[0].c_str(), row[1].c_str(), row[2].c_str(),
                     row[3].c_str(), row[4].c_str(), row[6].c_str(), row[7].c_str());
         }
     }
@@ -545,7 +542,7 @@ void Tui::relRul(std::string str) {
     std::cout << "\nSrc locator: " << src << "\n\n";
     for (auto& row : rul_table) {
         if (row[7].compare(name) == 0) {
-            std::printf("%7s%2s%-25s\n", row[6].c_str(), "", row[5].c_str());
+            std::printf("%7s%2s%s\n", row[6].c_str(), "", row[5].c_str());
         }
     }
 }
@@ -634,14 +631,13 @@ void Tui::verAtoms(Table& atom_table, const std::string& ruleName) {
         if (rule != lastRule) {
             lastRule = rule;
             std::cout << "     " << row[0]->toString(precision) << std::endl;
-            std::printf("      %-16s%-64s\n", "FREQ", "ATOM");
+            std::printf("      %-16s%s\n", "FREQ", "ATOM");
             firstRun = false;
         }
         if (firstRun) {
-            std::printf("      %-16s%-64s\n", "FREQ", "ATOM");
+            std::printf("      %-16s%s\n", "FREQ", "ATOM");
         }
-        std::printf(
-                "      %-16s%-64s\n", row[3]->toString(precision).c_str(), row[1]->getStringVal().c_str());
+        std::printf("      %-16s%s\n", row[3]->toString(precision).c_str(), row[1]->getStringVal().c_str());
     }
     std::cout << '\n';
 }
@@ -651,7 +647,7 @@ void Tui::iterRel(std::string c, std::string col) {
     std::vector<std::shared_ptr<Iteration>> iter;
     for (auto& row : table) {
         if (row[6].compare(c) == 0) {
-            std::printf("%4s%2s%-25s\n\n", row[6].c_str(), "", row[5].c_str());
+            std::printf("%4s%2s%s\n\n", row[6].c_str(), "", row[5].c_str());
             std::shared_ptr<ProgramRun>& run = out.getProgramRun();
             iter = run->getRelation_map()[row[5]]->getIterations();
             if (col.compare("tot_t") == 0) {
@@ -659,21 +655,21 @@ void Tui::iterRel(std::string c, std::string col) {
                 for (auto& i : iter) {
                     list.emplace_back(i->getRuntime());
                 }
-                std::printf("%4s   %-6s\n\n", "NO", "RUNTIME");
+                std::printf("%4s   %s\n\n", "NO", "RUNTIME");
                 graphD(list);
             } else if (col.compare("copy_t") == 0) {
                 std::vector<double> list;
                 for (auto& i : iter) {
                     list.emplace_back(i->getCopy_time());
                 }
-                std::printf("%4s   %-6s\n\n", "NO", "COPYTIME");
+                std::printf("%4s   %s\n\n", "NO", "COPYTIME");
                 graphD(list);
             } else if (col.compare("tuples") == 0) {
                 std::vector<long> list;
                 for (auto& i : iter) {
                     list.emplace_back(i->getNum_tuples());
                 }
-                std::printf("%4s   %-6s\n\n", "NO", "TUPLES");
+                std::printf("%4s   %s\n\n", "NO", "TUPLES");
                 graphL(list);
             }
             return;
@@ -681,7 +677,7 @@ void Tui::iterRel(std::string c, std::string col) {
     }
     for (auto& row : table) {
         if (row[5].compare(c) == 0) {
-            std::printf("%4s%2s%-25s\n\n", row[6].c_str(), "", row[5].c_str());
+            std::printf("%4s%2s%s\n\n", row[6].c_str(), "", row[5].c_str());
             std::shared_ptr<ProgramRun>& run = out.getProgramRun();
             iter = run->getRelation_map()[row[5]]->getIterations();
             if (col.compare("tot_t") == 0) {
@@ -689,21 +685,21 @@ void Tui::iterRel(std::string c, std::string col) {
                 for (auto& i : iter) {
                     list.emplace_back(i->getRuntime());
                 }
-                std::printf("%4s   %-6s\n\n", "NO", "RUNTIME");
+                std::printf("%4s   %s\n\n", "NO", "RUNTIME");
                 graphD(list);
             } else if (col.compare("copy_t") == 0) {
                 std::vector<double> list;
                 for (auto& i : iter) {
                     list.emplace_back(i->getCopy_time());
                 }
-                std::printf("%4s   %-6s\n\n", "NO", "COPYTIME");
+                std::printf("%4s   %s\n\n", "NO", "COPYTIME");
                 graphD(list);
             } else if (col.compare("tuples") == 0) {
                 std::vector<long> list;
                 for (auto& i : iter) {
                     list.emplace_back(i->getNum_tuples());
                 }
-                std::printf("%4s   %-6s\n\n", "NO", "TUPLES");
+                std::printf("%4s   %s\n\n", "NO", "TUPLES");
                 graphL(list);
             }
             return;
@@ -716,7 +712,7 @@ void Tui::iterRul(std::string c, std::string col) {
     std::vector<std::shared_ptr<Iteration>> iter;
     for (auto& row : table) {
         if (row[6].compare(c) == 0) {
-            std::printf("%6s%2s%-25s\n\n", row[6].c_str(), "", row[5].c_str());
+            std::printf("%6s%2s%s\n\n", row[6].c_str(), "", row[5].c_str());
             std::shared_ptr<ProgramRun>& run = out.getProgramRun();
             iter = run->getRelation_map()[row[7]]->getIterations();
             if (col.compare("tot_t") == 0) {
@@ -734,7 +730,7 @@ void Tui::iterRul(std::string c, std::string col) {
                         list.emplace_back(tot_time);
                     }
                 }
-                std::printf("%4s   %-6s\n\n", "NO", "RUNTIME");
+                std::printf("%4s   %s\n\n", "NO", "RUNTIME");
                 graphD(list);
             } else if (col.compare("tuples") == 0) {
                 std::vector<long> list;
@@ -751,7 +747,7 @@ void Tui::iterRul(std::string c, std::string col) {
                         list.emplace_back(tot_num);
                     }
                 }
-                std::printf("%4s   %-6s\n\n", "NO", "TUPLES");
+                std::printf("%4s   %s\n\n", "NO", "TUPLES");
                 graphL(list);
             }
             break;
@@ -769,28 +765,28 @@ void Tui::verGraph(std::string c, std::string col) {
     std::string strRel = "R" + part[0].substr(1);
 
     Table ver_table = out.getVersions(strRel, c);
-    std::printf("%6s%2s%-25s\n\n", (*ver_table.rows[0])[6]->getStringVal().c_str(), "",
+    std::printf("%6s%2s%s\n\n", (*ver_table.rows[0])[6]->getStringVal().c_str(), "",
             (*ver_table.rows[0])[5]->getStringVal().c_str());
     if (col.compare("tot_t") == 0) {
         std::vector<double> list;
         for (auto& row : ver_table.rows) {
             list.emplace_back((*row)[0]->getDoubVal());
         }
-        std::printf("%4s   %-6s\n\n", "NO", "RUNTIME");
+        std::printf("%4s   %s\n\n", "NO", "RUNTIME");
         graphD(list);
     } else if (col.compare("copy_t") == 0) {
         std::vector<double> list;
         for (auto& row : ver_table.rows) {
             list.emplace_back((*row)[3]->getDoubVal());
         }
-        std::printf("%4s   %-6s\n\n", "NO", "COPYTIME");
+        std::printf("%4s   %s\n\n", "NO", "COPYTIME");
         graphD(list);
     } else if (col.compare("tuples") == 0) {
         std::vector<long> list;
         for (auto& row : ver_table.rows) {
             list.emplace_back((*row)[4]->getLongVal());
         }
-        std::printf("%4s   %-6s\n\n", "NO", "TUPLES");
+        std::printf("%4s   %s\n\n", "NO", "TUPLES");
         graphL(list);
     }
 }

@@ -253,6 +253,21 @@ public:
 };
 
 /**
+ * Transformation pass to replace singleton variables
+ * with unnamed variables.
+ * E.g.: a() :- b(x). -> a() :- b(_).
+ */
+class ReplaceSingletonVariablesTransformer : public AstTransformer {
+private:
+    bool transform(AstTranslationUnit& translationUnit) override;
+
+public:
+    std::string getName() const override {
+        return "ReplaceSingletonVariablesTransformer";
+    }
+};
+
+/**
  * Transformation pass to normalise constraints.
  * E.g.: a(x) :- b(x, 1). -> a(x) :- b(x, tmp0), tmp0=1.
  */

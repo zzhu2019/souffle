@@ -1249,6 +1249,68 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
     return changed;
 }
 
+bool ReplaceSingletonVariablesTransformer::transform(AstTranslationUnit& translationUnit) {
+    bool changed = false;
+
+    AstProgram& program = *translationUnit.getProgram();
+
+    // Node-mapper to replace a set of singletons with unnamed variables
+    struct M : public AstNodeMapper {
+        std::set<std::string>& singletons;
+
+        M(std::set<std::string>& singletons) : singletons(singletons) {}
+
+        std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
+            if (AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+                if (singletons.find(var->getName()) != singletons.end()) {
+                    return std::make_unique<AstUnnamedVariable>();
+                }
+            }
+            node->apply(*this);
+            return node;
+        }
+    };
+
+    for (AstRelation* rel : program.getRelations()) {
+        for (AstClause* clause : rel->getClauses()) {
+            std::set<std::string> nonsingletons;
+            std::set<std::string> vars;
+
+            visitDepthFirst(*clause, [&](const AstVariable& var) {
+                const std::string& name = var.getName();
+                if (vars.find(name) != vars.end()) {
+                    // Variable seen before, so not a singleton variable
+                    nonsingletons.insert(name);
+                } else {
+                    vars.insert(name);
+                }
+            });
+
+            // Don't unname singleton variables occurring in records.
+            // TODO (azreika): remove this check once issue #420 is fixed
+            std::set<std::string> recordVars;
+            visitDepthFirst(*clause, [&](const AstRecordInit& rec) {
+                visitDepthFirst(rec, [&](const AstVariable& var) { recordVars.insert(var.getName()); });
+            });
+
+            std::set<std::string> singletons;
+            for (auto& var : vars) {
+                if ((nonsingletons.find(var) == nonsingletons.end()) &&
+                        (recordVars.find(var) == recordVars.end())) {
+                    changed = true;
+                    singletons.insert(var);
+                }
+            }
+
+            // Replace the singletons found with underscores
+            M update(singletons);
+            clause->apply(update);
+        }
+    }
+
+    return changed;
+}
+
 bool NormaliseConstraintsTransformer::transform(AstTranslationUnit& translationUnit) {
     bool changed = false;
 
