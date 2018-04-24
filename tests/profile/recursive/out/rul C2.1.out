@@ -1,0 +1,10 @@
+C(x) :-     A(x),    B(x).
+Src locator-: /home/martin/souffle/tests/profile/recursive/recursive.dl [9:1-9:20]
+
+  ----- Rule Versions Table -----
+   TOT_T  NREC_T   REC_T  COPY_T    TUPLES   VER
+
+    .003    .000    .003    .000         0      
+   ---------------------------------------------
+    .003    .000    .003    .000         0     0
+
