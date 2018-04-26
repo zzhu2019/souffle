@@ -1,10 +1,14 @@
 C(x) :-     A(x),    B(x).
-Src locator-: /home/martin/souffle/tests/profile/recursive/recursive.dl [9:1-9:20]
+Src locator-:recursive.dl [9:1-9:20]
 
   ----- Rule Versions Table -----
    TOT_T  NREC_T   REC_T  COPY_T    TUPLES   VER
 
-    .003    .000    .003    .000         0      
+    .016    .000    .016    .000         0
    ---------------------------------------------
-    .003    .000    .003    .000         0     0
+    .016    .000    .016    .000         0     0
+     @new_C(x) :-     A(x),    @delta_B(x),    !C(x).
+      FREQ            ATOM
+      998             A(x)
+
 
