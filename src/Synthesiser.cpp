@@ -504,13 +504,13 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 visit(condition, out);
                 out << ") {\n";
                 visit(search.getNestedOperation(), out);
-                if (Global::config().has("profile") && Global::config().has("verbose")) {
+                if (Global::config().has("profile")) {
                     out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
                 }
                 out << "}\n";
             } else {
                 visit(search.getNestedOperation(), out);
-                if (Global::config().has("profile") && Global::config().has("verbose")) {
+                if (Global::config().has("profile")) {
                     out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
                 }
             }
@@ -1238,7 +1238,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "}";
     }
     os << ";";
-    if (Global::config().has("profile") && Global::config().has("verbose")) {
+    if (Global::config().has("profile")) {
         os << "private:\n";
         size_t numFreq = 0;
         visitDepthFirst(*(prog.getMain()), [&](const RamStatement& node) { numFreq++; });
@@ -1396,9 +1396,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
 
     if (Global::config().has("profile")) {
         os << "ProfileEventSingleton::instance().stopTimer();\n";
-        if (Global::config().has("verbose")) {
-            os << "dumpFreqs();\n";
-        }
+        os << "dumpFreqs();\n";
     }
     // add code printing hint statistics
     os << "\n// -- relation hint statistics --\n";
@@ -1456,7 +1454,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "}\n";  // end of printAll() method
 
     // dumpFreqs method
-    if (Global::config().has("profile") && Global::config().has("verbose")) {
+    if (Global::config().has("profile")) {
         os << "private:\n";
         os << "void dumpFreqs() {\n";
         for (auto const& cur : idxMap) {

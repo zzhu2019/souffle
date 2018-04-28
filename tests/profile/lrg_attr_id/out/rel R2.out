@@ -9,7 +9,7 @@
     .000    .000    .000    .000         0    N2.2 rel
        -    .000    .000       -         0    C2.1 rel
 
-Src locator: /home/martin/souffle/tests/profile/lrg_attr_id/lrg_attr_id.dl [28:13-0:0]
+Src locator: lrg_attr_id.dl [28:13-0:0]
 
    N2.1  rel(x,y) :-     first(x,y).
    N2.3  rel(0,2).

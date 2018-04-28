@@ -349,6 +349,9 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
 
             // process nested
             visit(*search.getNestedOperation());
+            if (Global::config().has("profile")) {
+                interpreter.frequencies[search.getProfileText()]++;
+            }
         }
 
         void visitScan(const RamScan& scan) override {
@@ -784,6 +787,11 @@ void Interpreter::executeMain() {
         ProfileEventSingleton::instance().startTimer();
         evalStmt(main);
         ProfileEventSingleton::instance().stopTimer();
+        if (Global::config().has("profile")) {
+            for (auto const& cur : frequencies) {
+                ProfileEventSingleton::instance().makeQuantityEvent(cur.first, cur.second);
+            }
+        }
     }
     SignalHandler::instance()->reset();
 }
