@@ -352,4 +352,4 @@ private:
     ProfileTimer timer;
     std::ostream* out = nullptr;
 };
-}
+}  // namespace souffle

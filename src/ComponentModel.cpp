@@ -359,7 +359,6 @@ ComponentContent getInstantiatedContent(const AstComponentInit& componentInit,
 
     // create a helper function fixing type and relation references
     auto fixNames = [&](const AstNode& node) {
-
         // rename attribute types in headers
         visitDepthFirst(node, [&](const AstAttribute& attr) {
             auto pos = typeNameMapping.find(attr.getTypeName());
