@@ -16,6 +16,8 @@
 
 #include "Global.h"
 #include "SrcLocation.h"
+#include "Util.h"
+#include <sstream>
 
 namespace souffle {
 
