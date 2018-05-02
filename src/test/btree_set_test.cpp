@@ -49,9 +49,6 @@ namespace souffle {
 
 namespace test {
 
-using namespace std;
-using namespace std::chrono;
-
 TEST(BTreeSet, Basic) {
     const bool DEBUG = false;
 
@@ -234,7 +231,7 @@ TEST(BTreeSet, Shuffled) {
 
     int N = 10000;
 
-    vector<int> data;
+    std::vector<int> data;
     for (int i = 0; i < N; i++) {
         data.push_back(i);
     }
@@ -258,7 +255,7 @@ TEST(BTreeSet, Copy) {
 
     int N = 100000;
 
-    vector<int> data;
+    std::vector<int> data;
     for (int i = 0; i < N; i++) {
         data.push_back(i);
     }
@@ -372,7 +369,7 @@ TEST(BTreeSet, IteratorStress) {
 
     int N = 1000;
 
-    vector<int> data;
+    std::vector<int> data;
     for (int i = 0; i < N; i++) {
         data.push_back(i);
     }
@@ -458,7 +455,7 @@ TEST(BTreeSet, Load) {
 
     for (int N = 0; N < 100; N++) {
         // generate some ordered data
-        vector<int> data;
+        std::vector<int> data;
 
         for (int i = 0; i < N; i++) {
             data.push_back(i);
@@ -533,7 +530,7 @@ TEST(BTreeSet, ChunkSplitStress) {
 
     for (int i = 0; i < 1000; i++) {
         // generate random sequence
-        vector<int> data;
+        std::vector<int> data;
         for (int j = 0; j < i; j++) {
             data.push_back(j);
         }
@@ -566,10 +563,10 @@ TEST(BTreeSet, ChunkSplitStress) {
     }
 }
 
-using Entry = tuple<int, int>;
+using Entry = std::tuple<int, int>;
 
-vector<Entry> getData(unsigned numEntries) {
-    vector<Entry> res(numEntries);
+std::vector<Entry> getData(unsigned numEntries) {
+    std::vector<Entry> res(numEntries);
     int k = 0;
     for (unsigned i = 0; i < numEntries; i++) {
         res[k++] = Entry(i / 100, i % 100);
@@ -578,25 +575,25 @@ vector<Entry> getData(unsigned numEntries) {
     return res;
 }
 
-using time_point = high_resolution_clock::time_point;
+using time_point = std::chrono::high_resolution_clock::time_point;
 
 time_point now() {
-    return high_resolution_clock::now();
+    return std::chrono::high_resolution_clock::now();
 }
 
 long duration(const time_point& start, const time_point& end) {
-    return std::chrono::duration_cast<chrono::milliseconds>(end - start).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 }
 
 template <typename Op>
-long time(const string& name, const Op& operation) {
-    std::cout << "\t" << setw(30) << setiosflags(ios::left) << name << resetiosflags(ios::left) << " ... "
-              << std::flush;
+long time(const std::string& name, const Op& operation) {
+    std::cout << "\t" << std::setw(30) << std::setiosflags(std::ios::left) << name
+              << std::resetiosflags(std::ios::left) << " ... " << std::flush;
     auto a = now();
     operation();
     auto b = now();
-    auto time = duration(a, b);
-    std::cout << " done [" << setw(5) << time << "ms]\n";
+    long time = duration(a, b);
+    std::cout << " done [" << std::setw(5) << time << "ms]\n";
     return time;
 }
 
@@ -679,8 +676,8 @@ TEST(Performance, Basic) {
 
     // get list of tuples to be inserted
     std::cout << "Generating Test-Data ...\n";
-    vector<Entry> in;
-    vector<Entry> out;
+    std::vector<Entry> in;
+    std::vector<Entry> out;
     time("generating data", [&]() {
         auto data = getData(2 * N);
         for (std::size_t i = 0; i < data.size(); i += 2) {
@@ -703,7 +700,7 @@ TEST(Performance, Load) {
     //        int N = 1<<24;
     int N = 1 << 20;
 
-    vector<int> data;
+    std::vector<int> data;
     for (int i = 0; i < N; i++) {
         data.push_back(i);
     }
@@ -800,11 +797,11 @@ TEST(BTreeSet, ParallelScaling) {
     const int N = 1000;  // to not run to long for unit testing
 
     // create some random data
-    vector<int> data;
+    std::vector<int> data;
     for (int i = 0; i < N; i++) {
         data.push_back(i);
     }
-    vector<int> data2 = data;
+    std::vector<int> data2 = data;
     random_shuffle(data.begin(), data.end());
     random_shuffle(data2.begin(), data2.end());
 
