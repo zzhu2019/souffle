@@ -260,6 +260,9 @@ public:
         auto e = new ProfileUtilisationEvent(txt);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
+        if (out != nullptr) {
+            print(e);
+        }
         return e;
     }
 
@@ -267,9 +270,6 @@ public:
     void dump(std::ostream& os) {
         std::lock_guard<std::mutex> guard(eventMutex);
         for (auto const& cur : events) {
-            if (ProfileKeySingleton::instance().getText(cur->getKey()) == "utilisation") {
-                continue;
-            }
             cur->print(os);
         }
     }
@@ -308,9 +308,14 @@ private:
         /** thread timer runs on */
         std::thread th;
 
+        /** number of utilisation events */
+        uint32_t runCount = 0;
+
         /** run method for thread th */
         void run() {
             ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
+            this->incRunCount();
+            if (this->getRunCount() % 128 == 0) this->increaseInterval();
         }
 
         Interval getInterval() {
@@ -319,6 +324,22 @@ private:
 
         bool getRunning() {
             return running;
+        }
+
+        /** Increase value of time interval by factor of 2 */
+        void increaseInterval() {
+            // Don't increase time interval past 60 seconds
+            if (t < 60000) {
+                t = t * 2;
+            }
+        }
+
+        uint32_t getRunCount() {
+            return runCount;
+        }
+
+        void incRunCount() {
+            runCount++;
         }
 
     public:
@@ -331,9 +352,7 @@ private:
             th = std::thread([this]() {
                 while (this->getRunning()) {
                     this->run();
-                    auto x =
-                            std::chrono::steady_clock::now() + std::chrono::milliseconds(this->getInterval());
-                    std::this_thread::sleep_until(x);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(this->getInterval()));
                 }
             });
         }
