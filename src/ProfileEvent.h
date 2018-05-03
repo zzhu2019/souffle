@@ -260,6 +260,9 @@ public:
         auto e = new ProfileUtilisationEvent(txt);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
+        if (out != nullptr) {
+            print(e);
+        }
         return e;
     }
 
@@ -267,9 +270,6 @@ public:
     void dump(std::ostream& os) {
         std::lock_guard<std::mutex> guard(eventMutex);
         for (auto const& cur : events) {
-            if (ProfileKeySingleton::instance().getText(cur->getKey()) == "utilisation") {
-                continue;
-            }
             cur->print(os);
         }
     }
@@ -308,6 +308,9 @@ private:
         /** thread timer runs on */
         std::thread th;
 
+        /** number of utilistation events */
+        uint32_t count;
+
         /** run method for thread th */
         void run() {
             ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
@@ -321,8 +324,22 @@ private:
             return running;
         }
 
+        void increaseInterval() {
+            if (t < 60000) {
+                t = t * 2;
+            }
+        }
+
+        uint32_t getCount() {
+            return count;
+        }
+
+        void incCount() {
+            count++;
+        }
+
     public:
-        ProfileTimer(Interval in = 1) : t(in) {}
+        ProfileTimer(Interval in = 1) : t(in), count(0) {}
 
         /** start timer on the thread th */
         void start() {
@@ -331,9 +348,9 @@ private:
             th = std::thread([this]() {
                 while (this->getRunning()) {
                     this->run();
-                    auto x =
-                            std::chrono::steady_clock::now() + std::chrono::milliseconds(this->getInterval());
-                    std::this_thread::sleep_until(x);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(this->getInterval()));
+                    this->incCount();
+                    if (this->getCount() % 128 == 0) this->increaseInterval();
                 }
             });
         }
