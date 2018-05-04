@@ -565,7 +565,6 @@ bool UniqueAggregationVariablesTransformer::transform(AstTranslationUnit& transl
     // make variables in aggregates unique
     int aggNumber = 0;
     visitDepthFirstPostOrder(*translationUnit.getProgram(), [&](const AstAggregator& agg) {
-
         // only applicable for aggregates with target expression
         if (!agg.getTargetExpression()) {
             return;
