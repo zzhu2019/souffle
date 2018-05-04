@@ -72,7 +72,7 @@ souffle_sources = \
               AstProgram.cpp        AstProgram.h        \
               AstRelation.h                             \
               AstRelationIdentifier.h                   \
-              SrcLocation.cpp    SrcLocation.h    \
+              SrcLocation.cpp    SrcLocation.h          \
               AstTypeAnalysis.cpp   AstTypeAnalysis.h   \
               AstType.h                                 \
               AstUtils.cpp          AstUtils.h          \
@@ -129,7 +129,8 @@ souffle_sources = \
               IndexSetAnalysis.cpp   IndexSetAnalysis.h \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h            \
-              LogStatement.h                         \
+              LogStatement.h                            \
+              ProfileDatabase.h                         \
               ProfileEvent.h
 
 # -- build souffle as a library so it can be reused in testing
@@ -190,6 +191,7 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         ExplainTree.h           \
                         ExplainProvenance.h     \
                         ExplainProvenanceSLD.h  \
+                        ProfileDatabase.h       \
                         ProfileEvent.h
 
 # files to clean
