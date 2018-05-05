@@ -192,8 +192,6 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         ExplainProvenanceSLD.h  \
                         ProfileEvent.h
 
-souffle_CPPFLAGS = -DPACKAGE_VERSION="\"${PACKAGE_VERSION}\""
-
 # files to clean
 CLEANFILES = $(BUILT_SOURCES)  parser.cc scanner.cc parser.hh stack.hh
 

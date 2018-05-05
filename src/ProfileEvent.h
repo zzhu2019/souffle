@@ -343,7 +343,7 @@ private:
         }
 
     public:
-        ProfileTimer(Interval in = 1) : t(in) {}
+        ProfileTimer(Interval in = 1) : t(in), count(0) {}
 
         /** start timer on the thread th */
         void start() {
@@ -371,4 +371,4 @@ private:
     ProfileTimer timer;
     std::ostream* out = nullptr;
 };
-}
+}  // namespace souffle

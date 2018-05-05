@@ -55,7 +55,7 @@ class Relation : public Setup::template relation<arity, Indices...> {};
 namespace detail {
 struct std_set_config;
 struct std_unordered_config;
-}
+}  // namespace detail
 
 template <typename config>
 struct GenericSetup;

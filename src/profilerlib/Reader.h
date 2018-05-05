@@ -28,7 +28,7 @@ class Reader {
 private:
     std::string file_loc;
     std::ifstream file;
-    std::ios::streampos gpos;
+    std::streampos gpos;
 
     bool loaded = false;
     bool online;
