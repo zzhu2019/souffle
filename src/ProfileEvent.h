@@ -168,8 +168,11 @@ private:
     /** number */
     size_t number;
 
+    /** iteration */
+    size_t iteration; 
+
 public:
-    ProfileQuantityEvent(const std::string& txt, size_t n) : ProfileEvent(txt), number(n) {}
+    ProfileQuantityEvent(const std::string& txt, size_t n, size_t i) : ProfileEvent(txt), number(n), iteration(i) {}
 
     /** Get number */
     size_t getNumber() {
@@ -180,6 +183,8 @@ public:
     void print(std::ostream& os) override {
         os << ProfileKeySingleton::instance().getText(getKey());
         os << number;
+        os << ";"; 
+        os << iteration; 
         os << std::endl;
     }
 };
@@ -245,8 +250,8 @@ public:
     }
 
     /** Make new quantity event */
-    ProfileQuantityEvent* makeQuantityEvent(const std::string& txt, size_t n) {
-        auto e = new ProfileQuantityEvent(txt, n);
+    ProfileQuantityEvent* makeQuantityEvent(const std::string& txt, size_t n, int i) {
+        auto e = new ProfileQuantityEvent(txt, n, i);
         std::lock_guard<std::mutex> guard(eventMutex);
         events.push_back(e);
         if (out != nullptr) {

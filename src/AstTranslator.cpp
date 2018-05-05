@@ -908,7 +908,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
             rule = std::make_unique<RamSequence>(
                     std::make_unique<RamLogTimer>(std::move(rule), logTimerStatement),
                     std::make_unique<RamLogSize>(
-                            std::unique_ptr<RamRelation>(rrel->clone()), logSizeStatement));
+                            std::unique_ptr<RamRelation>(rrel->clone()), 
+                            std::make_unique<RamNumber>(0), logSizeStatement));
         }
 
         // add debug info
@@ -938,7 +939,8 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
 
         // add table size printer
         appendStmt(res,
-                std::make_unique<RamLogSize>(std::unique_ptr<RamRelation>(rrel->clone()), logSizeStatement));
+                std::make_unique<RamLogSize>(std::unique_ptr<RamRelation>(rrel->clone()), 
+    std::make_unique<RamNumber>(0),  logSizeStatement));
     }
 
     // done
@@ -1114,7 +1116,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                     rule = std::make_unique<RamSequence>(
                             std::make_unique<RamLogTimer>(std::move(rule), logTimerStatement),
                             std::make_unique<RamLogSize>(
-                                    std::unique_ptr<RamRelation>(relNew[rel]->clone()), logSizeStatement));
+                                    std::unique_ptr<RamRelation>(relNew[rel]->clone()), std::make_unique<RamIterationNumber>(), logSizeStatement));
                 }
 
                 // add debug info
@@ -1146,7 +1148,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
             loopRelSeq = std::make_unique<RamLogTimer>(std::move(loopRelSeq), logTimerStatement);
             appendStmt(loopRelSeq,
                     std::make_unique<RamLogSize>(
-                            std::unique_ptr<RamRelation>(relNew[rel]->clone()), logSizeStatement));
+                            std::unique_ptr<RamRelation>(relNew[rel]->clone()), std::make_unique<RamIterationNumber>(), logSizeStatement));
         }
 
         /* add rule computations of a relation to parallel statement */

@@ -469,6 +469,49 @@ protected:
 };
 
 /**
+ * IterationNumber
+ * 
+ * Reflects current iteration number 
+ */
+class RamIterationNumber : public RamValue {
+public:
+    RamIterationNumber() : RamValue(RN_IterationNumber, false) {}
+
+    /** Print */
+    void print(std::ostream& os) const override {
+        os << "iternum()";
+    }
+
+    /** Get level */
+    // TODO (#541): move to analysis
+    size_t getLevel() const override {
+        return 0;
+    }
+
+    /** Obtain list of child nodes */
+    std::vector<const RamNode*> getChildNodes() const override {
+        return std::vector<const RamNode*>();  // no child nodes
+    }
+
+    /** Create clone */
+    RamIterationNumber* clone() const override {
+        auto* res = new RamIterationNumber();
+        return res;
+    }
+
+    /** Apply mapper */
+    void apply(const RamNodeMapper& map) override {}
+
+protected:
+    /** Check equality */
+    bool equal(const RamNode& node) const override {
+        assert(nullptr != dynamic_cast<const RamIterationNumber*>(&node));
+        return true;
+    }
+};
+
+
+/**
  * Record pack operation
  */
 class RamPack : public RamValue {

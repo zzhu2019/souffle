@@ -917,28 +917,43 @@ protected:
  */
 class RamLogSize : public RamRelationStatement {
 protected:
+    /** iteration number */
+    std::unique_ptr<RamValue> m_iteration;
+
     /** logging message */
-    std::string message;
+    std::string m_message;
 
 public:
-    RamLogSize(std::unique_ptr<RamRelation> rel, std::string msg)
-            : RamRelationStatement(RN_LogSize, std::move(rel)), message(std::move(msg)) {}
+    RamLogSize(std::unique_ptr<RamRelation> relation, 
+               std::unique_ptr<RamValue> iteration,   
+               std::string message)
+            : RamRelationStatement(RN_LogSize, std::move(relation)), 
+              m_iteration(std::move(iteration)), 
+              m_message(std::move(message)) {}
+
+    /** Get iteration value */
+    const RamValue &getIterationNumber() const {
+        return *m_iteration;
+    }
 
     /** Get logging message */
     const std::string& getMessage() const {
-        return message;
+        return m_message;
     }
 
     /** Pretty print */
     void print(std::ostream& os, int tabpos) const override {
         os << std::string(tabpos, '\t');
-        os << "LOGSIZE " << getRelation().getName() << " TEXT ";
-        os << "\"" << stringify(message) << "\"";
+        os << "LOGSIZE " << getRelation().getName();
+        if (m_iteration != nullptr) {
+           os << " VALUE " << getIterationNumber();
+        }
+        os << " TEXT " << "\"" << stringify(m_message) << "\"";
     }
 
     /** Create clone */
     RamLogSize* clone() const override {
-        RamLogSize* res = new RamLogSize(std::unique_ptr<RamRelation>(relation->clone()), message);
+        RamLogSize* res = new RamLogSize(std::unique_ptr<RamRelation>(relation->clone()), std::unique_ptr<RamValue>(m_iteration->clone()), m_message);
         return res;
     }
 
@@ -948,7 +963,8 @@ protected:
         assert(nullptr != dynamic_cast<const RamLogSize*>(&node));
         const auto& other = static_cast<const RamLogSize&>(node);
         RamRelationStatement::equal(other);
-        return getMessage() == other.getMessage();
+        return getMessage() == other.getMessage() && 
+               getIterationNumber() == other.getIterationNumber();
     }
 };
 

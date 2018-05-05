@@ -74,6 +74,10 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
             return interpreter.incCounter();
         }
 
+        RamDomain visitIterationNumber(const RamIterationNumber&) override {
+            return interpreter.getIterationNumber(); 
+        } 
+
         // unary operators
         RamDomain visitUnaryOperator(const RamUnaryOperator& op) override {
             RamDomain arg = visit(op.getValue());
@@ -629,8 +633,11 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
         }
 
         bool visitLoop(const RamLoop& loop) override {
+            interpreter.resetIterationNumber(); 
             while (visit(loop.getBody())) {
+                interpreter.incIterationNumber(); 
             }
+            interpreter.resetIterationNumber(); 
             return true;
         }
 
@@ -679,7 +686,10 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
 
         bool visitLogSize(const RamLogSize& print) override {
             const InterpreterRelation& rel = interpreter.getRelation(print.getRelation());
-            ProfileEventSingleton::instance().makeQuantityEvent(print.getMessage(), rel.size());
+            RamDomain iteration = 0; 
+            iteration = interpreter.evalVal(print.getIterationNumber()); 
+            ProfileEventSingleton::instance().makeQuantityEvent(print.getMessage(), 
+                  rel.size(), iteration);
             return true;
         }
 
@@ -789,7 +799,7 @@ void Interpreter::executeMain() {
         ProfileEventSingleton::instance().stopTimer();
         if (Global::config().has("profile")) {
             for (auto const& cur : frequencies) {
-                ProfileEventSingleton::instance().makeQuantityEvent(cur.first, cur.second);
+                ProfileEventSingleton::instance().makeQuantityEvent(cur.first, cur.second, 0);
             }
         }
     }
