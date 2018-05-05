@@ -57,4 +57,4 @@ public:
         return "AstComponentChecker";
     }
 };
-}
+}  // namespace souffle
