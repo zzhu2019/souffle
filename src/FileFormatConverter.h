@@ -257,7 +257,7 @@ void writeColumn(std::ostream& outputStream, const std::string& data) {
     }
     if (QUOTE != '\0') outputStream << QUOTE;
 }
-}
+}  // namespace
 
 class FileFormatConverter {
 private:

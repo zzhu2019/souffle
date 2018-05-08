@@ -589,7 +589,6 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
     // add aggregation functions
     std::vector<const AstAggregator*> aggregators;
     visitDepthFirstPostOrder(clause, [&](const AstAggregator& cur) {
-
         // add each aggregator expression only once
         if (any_of(aggregators, [&](const AstAggregator* agg) { return *agg == cur; })) {
             return;
@@ -1312,7 +1311,6 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
                                                        relation->getArity(), false, relation->isHashset())),
                             getOutputIODirectives(relation, &typeEnv, Global::config().get(outputDirectory),
                                     fileExtension)));
-
         };
 
         // a function to drop relations

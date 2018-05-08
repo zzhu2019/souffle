@@ -99,7 +99,6 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
                 report.addError("Ungrounded variable " + cur->getName(), cur->getSrcLoc());
             }
         }
-
     });
 
     // -- type checks --
@@ -162,7 +161,6 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
 
     // - unary functors -
     visitDepthFirst(nodes, [&](const AstUnaryFunctor& fun) {
-
         // check arg
         auto arg = fun.getOperand();
 
@@ -189,7 +187,6 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
 
     // - binary functors -
     visitDepthFirst(nodes, [&](const AstBinaryFunctor& fun) {
-
         // check left and right side
         auto lhs = fun.getLHS();
         auto rhs = fun.getRHS();
@@ -215,12 +212,10 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
         if (fun.acceptsSymbols(1) && !isSymbolType(typeAnalysis.getTypes(rhs))) {
             report.addError("Non-symbolic second argument for functor", rhs->getSrcLoc());
         }
-
     });
 
     // - ternary functors -
     visitDepthFirst(nodes, [&](const AstTernaryFunctor& fun) {
-
         // check left and right side
         auto a0 = fun.getArg(0);
         auto a1 = fun.getArg(1);
@@ -253,12 +248,10 @@ void AstSemanticChecker::checkProgram(ErrorReport& report, const AstProgram& pro
         if (fun.acceptsSymbols(2) && !isSymbolType(typeAnalysis.getTypes(a2))) {
             report.addError("Non-symbolic third argument for functor", a2->getSrcLoc());
         }
-
     });
 
     // - binary relation -
     visitDepthFirst(nodes, [&](const AstBinaryConstraint& constraint) {
-
         // only interested in non-equal constraints
         auto op = constraint.getOperator();
         if (op == BinaryConstraintOp::EQ || op == BinaryConstraintOp::NE) {
