@@ -1,17 +1,38 @@
 #pragma once
 
-#include <assert.h>
+#include "Util.h"
+#include <cassert>
 #include <chrono>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
-typedef std::chrono::system_clock::time_point time_point;
+namespace souffle {
 
-class Visitor;
+class DirectoryEntry;
+class DurationEntry;
+class SizeEntry;
+class TextEntry;
+
+/**
+ * Visitor Interface
+ */
+class Visitor {
+public:
+    virtual ~Visitor() = default;
+
+    // visit entries in a directory
+    virtual void visit(DirectoryEntry& e);
+
+    // visit entries
+    virtual void visit(SizeEntry& e) {}
+    virtual void visit(TextEntry& e) {}
+    virtual void visit(DurationEntry& e) {}
+};
 
 /**
  * Entry class
@@ -20,21 +41,23 @@ class Visitor;
  */
 class Entry {
 private:
-  // entry key
-  std::string m_key;
+    // entry key
+    std::string key;
 
 public:
-  Entry(const std::string &key) : m_key(key) {}
-  virtual ~Entry(){};
+    Entry(std::string key) : key(std::move(key)) {}
+    virtual ~Entry() = default;
 
-  // get key
-  std::string &getKey() { return m_key; };
+    // get key
+    std::string& getKey() {
+        return key;
+    };
 
-  // accept visitor
-  virtual void accept(Visitor &v) = 0;
+    // accept visitor
+    virtual void accept(Visitor& v) = 0;
 
-  // print
-  virtual void print(std::ostream &os, int tabpos) = 0;
+    // print
+    virtual void print(std::ostream& os, int tabpos) = 0;
 };
 
 /**
@@ -42,28 +65,55 @@ public:
  */
 class DirectoryEntry : public Entry {
 private:
-  std::map<std::string, std::unique_ptr<Entry>> m_entries;
+    std::map<std::string, std::unique_ptr<Entry>> entries;
 
 public:
-  DirectoryEntry(const std::string &name) : Entry(name) {}
+    DirectoryEntry(const std::string& name) : Entry(name) {}
 
-  // get keys in directory
-  const std::set<std::string> getKeys() const;
+    // get keys
+    const std::set<std::string> getKeys() const {
+        std::set<std::string> result;
+        for (auto const& cur : entries) {
+            result.insert(cur.first);
+        }
+        return result;
+    }
 
-  // write entry
-  Entry *writeEntry(std::unique_ptr<Entry> entry);
+    // write entry
+    Entry* writeEntry(std::unique_ptr<Entry> entry) {
+        assert(entry != nullptr && "null entry");
+        const std::string& key = entry->getKey();
+        entries[key] = std::move(entry);
+        return readEntry(key);
+    }
 
-  // read entry
-  Entry *readEntry(const std::string &key) const;
+    // read entry
+    Entry* readEntry(const std::string& key) const {
+        auto it = entries.find(key);
+        if (it != entries.end()) {
+            return (*it).second.get();
+        } else {
+            return nullptr;
+        }
+    }
 
-  // read directory
-  DirectoryEntry *readDirectoryEntry(const std::string &key) const;
+    // read directory
+    DirectoryEntry* readDirectoryEntry(const std::string& key) const {
+        return dynamic_cast<DirectoryEntry*>(readEntry(key));
+    }
 
-  // accept visitor
-  void accept(Visitor &v) override;
+    // accept visitor
+    void accept(Visitor& v) {
+        v.visit(*this);
+    }
 
-  // print directory
-  void print(std::ostream &os, int tabpos) override;
+    // print directory
+    void print(std::ostream& os, int tabpos) {
+        os << std::string(tabpos, ' ') << getKey() << ":" << std::endl;
+        for (auto const& cur : entries) {
+            cur.second->print(os, tabpos + 1);
+        }
+    }
 };
 
 /**
@@ -71,18 +121,24 @@ public:
  */
 class SizeEntry : public Entry {
 private:
-  size_t m_size; // size
+    size_t size;  // size
 public:
-  SizeEntry(const std::string &key, size_t size) : Entry(key), m_size(size) {}
+    SizeEntry(const std::string& key, size_t size) : Entry(key), size(size) {}
 
-  // get size
-  size_t getSize() const { return m_size; }
+    // get size
+    size_t getSize() const {
+        return size;
+    }
 
-  // accept visitor
-  void accept(Visitor &v) override;
+    // accept visitor
+    void accept(Visitor& v) {
+        v.visit(*this);
+    }
 
-  // print size entry
-  void print(std::ostream &os, int tabpos) override;
+    // print entry
+    void print(std::ostream& os, int tabpos) {
+        os << std::string(tabpos, ' ') << getKey() << "->" << size << std::endl;
+    }
 };
 
 /**
@@ -90,21 +146,26 @@ public:
  */
 class TextEntry : public Entry {
 private:
-  // entry text
-  std::string m_text;
+    // entry text
+    std::string text;
 
 public:
-  TextEntry(const std::string &key, const std::string &text)
-      : Entry(key), m_text(text) {}
+    TextEntry(const std::string& key, std::string text) : Entry(key), text(std::move(text)) {}
 
-  // get text
-  const std::string &getText() const { return m_text; }
+    // get text
+    const std::string& getText() const {
+        return text;
+    }
 
-  // accept visitor
-  void accept(Visitor &v) override;
+    // accept visitor
+    void accept(Visitor& v) {
+        v.visit(*this);
+    }
 
-  // print
-  void print(std::ostream &os, int tabpos) override;
+    // write size entry
+    void print(std::ostream& os, int tabpos) {
+        os << std::string(tabpos, ' ') << getKey() << "->" << text << std::endl;
+    }
 };
 
 /**
@@ -112,27 +173,61 @@ public:
  */
 class DurationEntry : public Entry {
 private:
-  // duration start
-  time_point m_start;
+    // duration start
+    time_point start;
 
-  // duration end
-  time_point m_end;
+    // duration end
+    time_point end;
 
 public:
-  DurationEntry(const std::string &key, time_point start, time_point end)
-      : Entry(key), m_start(start), m_end(end) {}
+    DurationEntry(const std::string& key, time_point start, time_point end)
+            : Entry(key), start(start), end(end) {}
 
-  // get start
-  time_point getStart() const { return m_start; }
+    // get start
+    time_point getStart() const {
+        return start;
+    }
 
-  // get end
-  time_point getEnd() const { return m_end; }
+    // get end
+    time_point getEnd() const {
+        return end;
+    }
 
-  // accept visitor
-  void accept(Visitor &v) override;
+    // accept visitor
+    void accept(Visitor& v) {
+        v.visit(*this);
+    }
 
-  // write size entry
-  void print(std::ostream &os, int tabpos) override;
+    // write size entry
+    void print(std::ostream& os, int tabpos) {
+        os << std::string(tabpos, ' ') << getKey() << "->[]" << std::endl;
+    }
+};
+
+void Visitor::visit(DirectoryEntry& e) {
+    std::cout << "Dir " << e.getKey() << "\n";
+    for (const auto& cur : e.getKeys()) {
+        std::cout << "\t :" << cur << "\n";
+        e.readEntry(cur)->accept(*this);
+    }
+}
+
+class Counter : public Visitor {
+private:
+    size_t ctr{0};
+    std::string key;
+
+public:
+    Counter(std::string key) : key(std::move(key)) {}
+    void visit(SizeEntry& e) override {
+        std::cout << "Size entry : " << e.getKey() << " " << e.getSize() << "\n";
+        if (e.getKey() == key) {
+            ctr += e.getSize();
+        }
+    }
+    size_t getCounter() const {
+        return ctr;
+    }
 };
 
 /**
@@ -140,71 +235,77 @@ public:
  */
 class ProfileDatabase {
 private:
-  std::unique_ptr<DirectoryEntry> m_root;
+    std::unique_ptr<DirectoryEntry> root;
 
 protected:
-  /**
-   * Find path: if directories along the path do not exist, create them.
-   */
-  DirectoryEntry *lookupPath(std::vector<std::string> path);
+    /**
+     * Find path: if directories along the path do not exist, create them.
+     */
+    DirectoryEntry* lookupPath(std::vector<std::string> path) {
+        DirectoryEntry* dir = root.get();
+        for (const std::string& key : path) {
+            DirectoryEntry* newDir = dir->readDirectoryEntry(key);
+            if (newDir == nullptr) {
+                newDir = dynamic_cast<DirectoryEntry*>(
+                        dir->writeEntry(std::unique_ptr<DirectoryEntry>(new DirectoryEntry(key))));
+            }
+            dir = newDir;
+        }
+        return dir;
+    }
 
 public:
-  ProfileDatabase()
-      : m_root(std::unique_ptr<DirectoryEntry>(new DirectoryEntry("root"))) {}
+    ProfileDatabase() : root(std::unique_ptr<DirectoryEntry>(new DirectoryEntry("root"))) {}
+    // add size entry
+    void addSizeEntry(std::vector<std::string> qualifier, size_t size) {
+        assert(qualifier.size() > 0 && "no qualifier");
+        std::vector<std::string> path(qualifier.begin(), qualifier.end() - 1);
+        DirectoryEntry* dir = lookupPath(path);
 
-  // add size entry
-  void addSizeEntry(std::vector<std::string> qualifier, size_t size);
+        const std::string& key = qualifier.back();
+        std::unique_ptr<SizeEntry> entry = std::make_unique<SizeEntry>(key, size);
+        dir->writeEntry(std::move(entry));
+    }
 
-  // add text entry
-  void addTextEntry(std::vector<std::string> qualifier,
-                    const std::string &text);
+    // add text entry
+    void addTextEntry(std::vector<std::string> qualifier, const std::string& text) {
+        assert(qualifier.size() > 0 && "no qualifier");
+        std::vector<std::string> path(qualifier.begin(), qualifier.end() - 1);
+        DirectoryEntry* dir = lookupPath(path);
 
-  // add duration entry
-  void addDurationEntry(std::vector<std::string> qualifier, time_point start,
-                        time_point end);
+        const std::string& key = qualifier.back();
+        std::unique_ptr<TextEntry> entry = std::make_unique<TextEntry>(key, text);
+        dir->writeEntry(std::move(entry));
+    }
 
-  // query sum of a key
-  size_t computeSum(const std::vector<std::string> &qualifier);
+    // add duration entry
+    void addDurationEntry(std::vector<std::string> qualifier, time_point start, time_point end) {
+        assert(qualifier.size() > 0 && "no qualifier");
+        std::vector<std::string> path(qualifier.begin(), qualifier.end() - 1);
+        DirectoryEntry* dir = lookupPath(path);
 
-  // print database
-  void print(std::ostream &os);
+        const std::string& key = qualifier.back();
+        std::unique_ptr<DurationEntry> entry = std::make_unique<DurationEntry>(key, start, end);
+        dir->writeEntry(std::move(entry));
+    }
+
+    // compute sum
+    size_t computeSum(const std::vector<std::string>& qualifier) {
+        assert(qualifier.size() > 0 && "no qualifier");
+        std::vector<std::string> path(qualifier.begin(), qualifier.end() - 1);
+        DirectoryEntry* dir = lookupPath(path);
+
+        const std::string& key = qualifier.back();
+        std::cout << "Key: " << key << std::endl;
+        Counter ctr(key);
+        dir->accept(ctr);
+        return ctr.getCounter();
+    }
+
+    // print database
+    void print(std::ostream& os) {
+        root->print(os, 0);
+    };
 };
 
-/**
- * Visitor Interface
- */
-class Visitor {
-public:
-  virtual ~Visitor() { }
-
-  // visit entries in a directory
-  virtual void visit(DirectoryEntry &e) {
-      std::cout << "Dir " << e.getKey() << "\n";
-      for (const auto &cur: e.getKeys()) {
-           std::cout << "\t :" << cur << "\n"; 
-           e.readEntry(cur)->accept(*this);
-      }
-  }
-
-  // visit entries
-  virtual void visit(SizeEntry &e) {}
-  virtual void visit(TextEntry &e) {}
-  virtual void visit(DurationEntry &e) {}
-};
-
-class Counter : public Visitor { 
-private:
-   size_t m_ctr;
-   std::string m_key;
-public:
-   Counter(const std::string &key) : m_key(key), m_ctr(0) { }
-   void visit(SizeEntry &e) override {
-       std::cout << "Size entry : " << e.getKey() << " " << e.getSize() << "\n";
-       if (e.getKey() == m_key){
-          m_ctr += e.getSize(); 
-       } 
-   }
-   size_t getCounter() const { 
-       return m_ctr;
-   }
-};
+}  // namespace souffle
