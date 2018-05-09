@@ -144,7 +144,10 @@ public:
         // invoke the event processor of the event
         const std::string& keyword = eventSignature[0];
         assert(eventSignature.size() > 0 && "no keyword in event description");
-        std::cerr << keyword << "\n";
+        for (auto const &cur : eventSignature) {
+        std::cerr << cur  << " ";
+        }
+        std::cerr << "\n";
         assert(m_registry.find(keyword) != m_registry.end() && "EventProcessor not found!");
         m_registry[keyword]->process(db,eventSignature, args);
 
@@ -154,25 +157,161 @@ public:
 };
 
 /**
- * EventProcessor A
+ * Non-Recursive Rule Timing Profile Event Processor 
  */
-class NonRecursiveRuleProcessor : public EventProcessor {
+class NonRecursiveRuleTimingProcessor : public EventProcessor {
 public:
-    NonRecursiveRuleProcessor() {
+    NonRecursiveRuleTimingProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@t-nonrecursive-rule", this);
     }
     void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
         const std::string &relation = signature[1];
         const std::string &srcLocator = signature[2]; 
         const std::string &rule = signature[3]; 
-
         milliseconds start = va_arg(args, milliseconds);
         milliseconds end = va_arg(args, milliseconds);
-
         db.addTextEntry({"program", "relation", relation, "non-recursive-rule", rule, "source-locator"}, srcLocator); 
-        db.addDurationEntry({"program", "relation", relation, "non-recursive-rule", rule, "source-locator"}, start, end); 
+        db.addDurationEntry({"program", "relation", relation, "non-recursive-rule", rule, "runtime"}, start, end); 
     }
-} nonRecursiveRuleProcessor;
+} nonRecursiveRuleTimingProcessor;
+
+
+/**
+ * Non-Recursive Rule Number Profile Event Processor 
+ */
+class NonRecursiveRuleNumberProcessor : public EventProcessor {
+public:
+    NonRecursiveRuleNumberProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@n-nonrecursive-rule", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &srcLocator = signature[2]; 
+        const std::string &rule = signature[3]; 
+        size_t num = va_arg(args, size_t);
+        db.addTextEntry({"program", "relation", relation, "non-recursive-rule", rule, "source-locator"}, srcLocator); 
+        db.addSizeEntry({"program", "relation", relation, "non-recursive-rule", rule, "num-tuples"}, num); 
+    }
+} nonRecursiveRuleNumberProcessor;
+
+/**
+ * Recursive Rule Timing Profile Event Processor 
+ */
+class RecursiveRuleTimingProcessor : public EventProcessor {
+public:
+    RecursiveRuleTimingProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@t-recursive-rule", this);
+    }
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &version = signature[2];
+        const std::string &srcLocator = signature[3]; 
+        const std::string &rule = signature[4]; 
+        milliseconds start = va_arg(args, milliseconds);
+        milliseconds end = va_arg(args, milliseconds);
+        std::string iteration = std::to_string(va_arg(args, size_t));
+        db.addTextEntry({"program", "relation", relation, "recursive-rule", rule, version,  "source-locator"}, srcLocator); 
+        db.addDurationEntry({"program", "relation", relation, "recursive-rule", rule, version, "iterations", iteration, "runtime"}, start, end); 
+    }
+} RecursiveRuleTimingProcessor;
+
+/**
+ * Recursive Rule Number Profile Event Processor 
+ */
+class RecursiveRuleNumberProcessor : public EventProcessor {
+public:
+    RecursiveRuleNumberProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@n-recursive-rule", this);
+    }
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &version = signature[2];
+        const std::string &srcLocator = signature[3]; 
+        const std::string &rule = signature[4]; 
+        size_t number = va_arg(args, size_t);
+        std::string iteration = std::to_string(va_arg(args, size_t));
+        db.addTextEntry({"program", "relation", relation, "recursive-rule", rule, version, "source-locator"}, srcLocator); 
+        db.addSizeEntry({"program", "relation", relation, "recursive-rule", rule, version, "iterations", iteration, "num-tuples"}, number);
+    }
+} RecursiveRuleNumberProcessor;
+
+/**
+ * Non-Recursive Relation Number Profile Event Processor 
+ */
+class NonRecursiveRelationTimingProcessor : public EventProcessor {
+public:
+    NonRecursiveRelationTimingProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@t-nonrecursive-relation", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &srcLocator = signature[2]; 
+        milliseconds start = va_arg(args, milliseconds);
+        milliseconds end = va_arg(args, milliseconds);
+        db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator); 
+        db.addDurationEntry({"program", "relation", relation, "runtime"}, start, end); 
+    }
+} nonRecursiveRelationTimingProcessor;
+
+
+/**
+ * Non-Recursive Relation Number Profile Event Processor 
+ */
+class NonRecursiveRelationNumberProcessor : public EventProcessor {
+public:
+    NonRecursiveRelationNumberProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@n-nonrecursive-relation", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &srcLocator = signature[2]; 
+        size_t num = va_arg(args, size_t);
+        db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator); 
+        db.addSizeEntry({"program", "relation", relation, "num-tuples"}, num); 
+    }
+} nonRecursiveRelationNumberProcessor;
+
+/**
+ * Recursive Relation Timing Profile Event Processor 
+ */
+class RecursiveRelationTimingProcessor : public EventProcessor {
+public:
+    RecursiveRelationTimingProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@t-recursive-relation", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &srcLocator = signature[2]; 
+        milliseconds start = va_arg(args, milliseconds);
+        milliseconds end = va_arg(args, milliseconds);
+        std::string iteration = std::to_string(va_arg(args, size_t));
+        db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator); 
+        db.addDurationEntry({"program", "relation", relation, "iterations", iteration, "runtime"}, start, end); 
+    }
+} recursiveRelationTimingProcessor;
+
+/**
+ * Recursive Relation Timing Profile Event Processor 
+ */
+class RecursiveRelationNumberProcessor : public EventProcessor {
+public:
+    RecursiveRelationNumberProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@t-recursive-relation", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &srcLocator = signature[2]; 
+        size_t number  = va_arg(args, size_t);
+        std::string iteration = std::to_string(va_arg(args, size_t));
+        db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator); 
+        db.addSizeEntry({"program", "relation", relation, "iterations", iteration, "num-tuples"}, number); 
+    }
+} recursiveRelationNumberProcessor;
 
 /**
  * EventProcessor B
@@ -183,6 +322,7 @@ public:
         std::cout << "Register EventProcessor B\n";
         EventProcessorSingleton::instance().registerEventProcessor("B", this);
     }
+    /** process event input */
     void process(ProfileDatabase &db, const std::vector<std::string>& signature, va_list& args) override {
         std::cout << "Process B ";
         std::cout << va_arg(args, int) << " ";
