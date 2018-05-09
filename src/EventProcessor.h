@@ -300,7 +300,7 @@ public:
 class RecursiveRelationNumberProcessor : public EventProcessor {
 public:
     RecursiveRelationNumberProcessor() {
-        EventProcessorSingleton::instance().registerEventProcessor("@t-recursive-relation", this);
+        EventProcessorSingleton::instance().registerEventProcessor("@n-recursive-relation", this);
     }
     /** process event input */
     void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
@@ -312,6 +312,42 @@ public:
         db.addSizeEntry({"program", "relation", relation, "iterations", iteration, "num-tuples"}, number); 
     }
 } recursiveRelationNumberProcessor;
+
+/**
+ * Recursive Relation Copy Timing Profile Event Processor 
+ */
+class RecursiveRelationCopyTimingProcessor : public EventProcessor {
+public:
+    RecursiveRelationCopyTimingProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@c-recursive-relation", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &srcLocator = signature[2]; 
+        milliseconds start = va_arg(args, milliseconds);
+        milliseconds end = va_arg(args, milliseconds);
+        std::string iteration = std::to_string(va_arg(args, size_t));
+        db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator); 
+        db.addDurationEntry({"program", "relation", relation, "iterations", iteration, "copytime"}, start, end); 
+    }
+} recursiveRelationCopyTimingProcessor;
+
+/**
+ * Program Run Event Processor 
+ */
+class ProgramRuntimeProcessor : public EventProcessor {
+public:
+    ProgramRuntimeProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@runtime", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        milliseconds start = va_arg(args, milliseconds);
+        milliseconds end = va_arg(args, milliseconds);
+        db.addDurationEntry({"program", "runtime"}, start, end); 
+    }
+} programRuntimeProcessor;
 
 /**
  * EventProcessor B
