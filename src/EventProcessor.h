@@ -211,8 +211,8 @@ public:
         milliseconds start = va_arg(args, milliseconds);
         milliseconds end = va_arg(args, milliseconds);
         std::string iteration = std::to_string(va_arg(args, size_t));
-        db.addTextEntry({"program", "relation", relation, "recursive-rule", rule, version,  "source-locator"}, srcLocator); 
-        db.addDurationEntry({"program", "relation", relation, "recursive-rule", rule, version, "iterations", iteration, "runtime"}, start, end); 
+        db.addTextEntry({"program", "relation", relation, "recursive-rule", rule, "version", version,  "source-locator"}, srcLocator); 
+        db.addDurationEntry({"program", "relation", relation, "recursive-rule", rule, "version", version, "iteration", iteration, "runtime"}, start, end); 
     }
 } RecursiveRuleTimingProcessor;
 
@@ -232,7 +232,7 @@ public:
         size_t number = va_arg(args, size_t);
         std::string iteration = std::to_string(va_arg(args, size_t));
         db.addTextEntry({"program", "relation", relation, "recursive-rule", rule, version, "source-locator"}, srcLocator); 
-        db.addSizeEntry({"program", "relation", relation, "recursive-rule", rule, version, "iterations", iteration, "num-tuples"}, number);
+        db.addSizeEntry({"program", "relation", relation, "recursive-rule", rule, version, "iteration", iteration, "num-tuples"}, number);
     }
 } RecursiveRuleNumberProcessor;
 
@@ -290,7 +290,7 @@ public:
         milliseconds end = va_arg(args, milliseconds);
         std::string iteration = std::to_string(va_arg(args, size_t));
         db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator); 
-        db.addDurationEntry({"program", "relation", relation, "iterations", iteration, "runtime"}, start, end); 
+        db.addDurationEntry({"program", "relation", relation, "iteration", iteration, "runtime"}, start, end); 
     }
 } recursiveRelationTimingProcessor;
 
@@ -309,7 +309,7 @@ public:
         size_t number  = va_arg(args, size_t);
         std::string iteration = std::to_string(va_arg(args, size_t));
         db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator); 
-        db.addSizeEntry({"program", "relation", relation, "iterations", iteration, "num-tuples"}, number); 
+        db.addSizeEntry({"program", "relation", relation, "iteration", iteration, "num-tuples"}, number); 
     }
 } recursiveRelationNumberProcessor;
 
@@ -329,7 +329,7 @@ public:
         milliseconds end = va_arg(args, milliseconds);
         std::string iteration = std::to_string(va_arg(args, size_t));
         db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator); 
-        db.addDurationEntry({"program", "relation", relation, "iterations", iteration, "copytime"}, start, end); 
+        db.addDurationEntry({"program", "relation", relation, "iteration", iteration, "copytime"}, start, end); 
     }
 } recursiveRelationCopyTimingProcessor;
 
@@ -350,24 +350,24 @@ public:
 } programRuntimeProcessor;
 
 /**
- * EventProcessor B
+ * Frequency Atom Processor
  */
-class EventProcessorB : public EventProcessor {
+class FrequencyAtomProcessor : public EventProcessor {
 public:
-    EventProcessorB() {
-        std::cout << "Register EventProcessor B\n";
-        EventProcessorSingleton::instance().registerEventProcessor("B", this);
+    FrequencyAtomProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@frequency-atom", this);
     }
     /** process event input */
-    void process(ProfileDatabase &db, const std::vector<std::string>& signature, va_list& args) override {
-        std::cout << "Process B ";
-        std::cout << va_arg(args, int) << " ";
-        std::cout << va_arg(args, int) << "\n";
-        for (const auto& cur : signature) {
-            std::cout << cur << " ";
-        }
-        std::cout << std::endl;
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &version = signature[2];
+        const std::string &srcLocator = signature[3]; 
+        const std::string &rule = signature[4]; 
+        const std::string &level = signature[5];
+        size_t number = va_arg(args, size_t); 
+        db.addTextEntry({"program", "relation", relation, "atom-frequency", rule, "source-locator"}, srcLocator); 
+        db.addSizeEntry({"program", "relation", relation, "atom-frequency", rule, "version", version, "level", level, "num-tuples"}, number);
     }
-} pB;
+} frequencyAtomProcessor;
 
 }
