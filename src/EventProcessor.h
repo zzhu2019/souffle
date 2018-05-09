@@ -214,7 +214,7 @@ public:
         db.addTextEntry({"program", "relation", relation, "recursive-rule", rule, "version", version,  "source-locator"}, srcLocator); 
         db.addDurationEntry({"program", "relation", relation, "recursive-rule", rule, "version", version, "iteration", iteration, "runtime"}, start, end); 
     }
-} RecursiveRuleTimingProcessor;
+} recursiveRuleTimingProcessor;
 
 /**
  * Recursive Rule Number Profile Event Processor 
@@ -234,7 +234,7 @@ public:
         db.addTextEntry({"program", "relation", relation, "recursive-rule", rule, version, "source-locator"}, srcLocator); 
         db.addSizeEntry({"program", "relation", relation, "recursive-rule", rule, version, "iteration", iteration, "num-tuples"}, number);
     }
-} RecursiveRuleNumberProcessor;
+} recursiveRuleNumberProcessor;
 
 /**
  * Non-Recursive Relation Number Profile Event Processor 
