@@ -38,7 +38,6 @@ enum RamNodeType {
     RN_BinaryOperator,
     RN_TernaryOperator,
     RN_AutoIncrement,
-    RN_IterationNumber,
     RN_Pack,
     RN_Argument,
 

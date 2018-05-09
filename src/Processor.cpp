@@ -1,72 +1,93 @@
 #include <iostream>
 #include <map>
 #include <cassert>
+#include <cstdarg>
+#include <string>
+#include <vector>
 
 /**
- * Abstract Class for Processor
+ * Abstract Class for EventProcessor
  */ 
-class Processor {
+class EventProcessor {
 public:
- virtual ~Processor() { }
- virtual void process() = 0;
+ virtual ~EventProcessor() { }
+ virtual void process(const std::vector<std::string> &, va_list &) = 0;
 };
 
 /**
- * Processor Singleton
+ * EventProcessor Singleton
  */ 
-class ProcessorSingleton {
+class EventProcessorSingleton {
  /** store various processors */ 
- std::map<std::string, Processor *> m_registry;
- ProcessorSingleton() : m_registry() {
+ std::map<std::string, EventProcessor *> m_registry;
+ EventProcessorSingleton() : m_registry() {
      std::cout << "Singleton is happening\n";
  }
 public:
- static ProcessorSingleton &instance() {
-  static ProcessorSingleton singleton;
+ static EventProcessorSingleton &instance() {
+  static EventProcessorSingleton singleton;
   return singleton;
  }
- void registerProcessor(const std::string &name, Processor *processor) {
+ void registerEventProcessor(const std::string &name, EventProcessor *processor) {
   m_registry[name]=processor;
  }
- void process(const std::string &name) {  
-  assert(m_registry.find(name) != m_registry.end() && "Processor not found!");
-  m_registry[name]->process();
+
+ /** process a profile event */ 
+ void process(const char *txt, ...) {   
+  va_list args;
+  va_start(args, txt);
+  std::vector<std::string> eventSignature;
+
+  // do parsing here 
+  eventSignature.push_back(txt);
+
+  // invoke the event processor of the event
+  const std::string &name = eventSignature[0];
+  assert(eventSignature.size()>0 && "no keyword in event description");
+  assert(m_registry.find(name) != m_registry.end() && "EventProcessor not found!");
+  m_registry[name]->process(eventSignature, args);
+
+  // terminate access to variadiac arguments 
+  va_end(args);
  }
 };
 
 /**
- * Processor A
+ * EventProcessor A
  */ 
-class ProcessorA : public Processor {
+class EventProcessorA : public EventProcessor {
 public:
- ProcessorA() { 
-  std::cout << "Register Processor A\n";
-  ProcessorSingleton::instance().registerProcessor("A",this); 
+ EventProcessorA() { 
+  std::cout << "Register EventProcessor A\n";
+  EventProcessorSingleton::instance().registerEventProcessor("A",this); 
  }
- void process() override {
+ void process(const std::vector<std::string> &, va_list &args) override {
   std::cout << "Process A\n";
+  std::cout <<  va_arg(args,int) << "\n";
  }
 } pA;
 
 
 /**
- * Processor B
+ * EventProcessor B
  */ 
-class ProcessorB : public Processor {
+class EventProcessorB : public EventProcessor {
 public:
- ProcessorB() {
-  std::cout << "Register Processor B\n";
-  ProcessorSingleton::instance().registerProcessor("B",this); 
+ EventProcessorB() {
+  std::cout << "Register EventProcessor B\n";
+  EventProcessorSingleton::instance().registerEventProcessor("B",this); 
  }
- void process() override {
-  std::cout << "Process B\n";
+ void process(const std::vector<std::string> &, va_list &args) override {
+  std::cout << "Process B ";
+  std::cout <<  va_arg(args,int) << " ";
+  std::cout <<  va_arg(args,int) << "\n";
  }
 } pB;
 
 int main() 
 {
- ProcessorSingleton::instance().process("A");
- ProcessorSingleton::instance().process("B");
- ProcessorSingleton::instance().process("C");
+ EventProcessorSingleton::instance().process("A",10);
+ EventProcessorSingleton::instance().process("B",20,30);
+ EventProcessorSingleton::instance().process("C");
 }
 

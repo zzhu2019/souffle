@@ -382,9 +382,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             PRINT_BEGIN_COMMENT(out);
             out << "ProfileEventSingleton::instance().makeQuantityEvent( R\"(";
             out << print.getMessage() << ")\",";
-            out << synthesiser.getRelationName(print.getRelation()) << "->size(),";
-            visit(print.getIterationNumber(),out); 
-            out << ");";
+            out << synthesiser.getRelationName(print.getRelation()) << "->size(),iter);";
             PRINT_END_COMMENT(out);
         }
 
@@ -473,7 +471,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             const std::string ext = fileExtension(Global::config().get("profile"));
 
             // create local timer
-            out << "\tLogger logger(R\"_(" << timer.getMessage() << ")_\");\n";
+            out << "\tLogger logger(R\"_(" << timer.getMessage() << ",iter)_\");\n";
 
             // insert statement to be measured
             visit(timer.getStatement(), out);
@@ -962,12 +960,6 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             PRINT_END_COMMENT(out);
         }
 
-        void visitIterationNumber(const RamIterationNumber& /*inc*/, std::ostream& out) override {
-            PRINT_BEGIN_COMMENT(out);
-            out << "(iter)";
-            PRINT_END_COMMENT(out);
-        }
-
         void visitUnaryOperator(const RamUnaryOperator& op, std::ostream& out) override {
             PRINT_BEGIN_COMMENT(out);
             switch (op.getOperator()) {
@@ -1353,7 +1345,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     // initialize counter
     os << "// -- initialize counter --\n";
     os << "std::atomic<RamDomain> ctr(0);\n\n";
-    os << "std::atomic<RamDomain> iter(0);\n\n";
+    os << "std::atomic<size_t> iter(0);\n\n";
 
     // set default threads (in embedded mode)
     if (std::stoi(Global::config().get("jobs")) > 0) {

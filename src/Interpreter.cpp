@@ -74,10 +74,6 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
             return interpreter.incCounter();
         }
 
-        RamDomain visitIterationNumber(const RamIterationNumber&) override {
-            return interpreter.getIterationNumber(); 
-        } 
-
         // unary operators
         RamDomain visitUnaryOperator(const RamUnaryOperator& op) override {
             RamDomain arg = visit(op.getValue());
@@ -646,7 +642,7 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
         }
 
         bool visitLogTimer(const RamLogTimer& timer) override {
-            Logger logger(timer.getMessage().c_str());
+            Logger logger(timer.getMessage().c_str(), interpreter.getIterationNumber());
             return visit(timer.getStatement());
         }
 
@@ -686,10 +682,8 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
 
         bool visitLogSize(const RamLogSize& print) override {
             const InterpreterRelation& rel = interpreter.getRelation(print.getRelation());
-            RamDomain iteration = 0; 
-            iteration = interpreter.evalVal(print.getIterationNumber()); 
             ProfileEventSingleton::instance().makeQuantityEvent(print.getMessage(), 
-                  rel.size(), iteration);
+                  rel.size(),interpreter.getIterationNumber());
             return true;
         }
 

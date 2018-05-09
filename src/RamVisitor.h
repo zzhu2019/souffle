@@ -84,7 +84,6 @@ struct RamVisitor : public ram_visitor_tag {
             FORWARD(BinaryOperator);
             FORWARD(TernaryOperator);
             FORWARD(AutoIncrement);
-            FORWARD(IterationNumber);
             FORWARD(Pack);
             FORWARD(Argument);
 
@@ -196,7 +195,6 @@ protected:
     LINK(BinaryOperator, Value)
     LINK(TernaryOperator, Value)
     LINK(AutoIncrement, Value)
-    LINK(IterationNumber, Value)
     LINK(Pack, Value)
     LINK(Argument, Value)
 
