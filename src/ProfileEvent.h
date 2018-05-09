@@ -79,16 +79,10 @@ public:
     }
 
     /** Start timer */
-    void startTimer() {
-    }
+    void startTimer() { }
 
     /** Stop timer */
-    void stopTimer() {
-    }
-
-    /** Set profile log file */
-    void setLog(std::ostream *os) {
-    }
+    void stopTimer() { }
 };
 
 

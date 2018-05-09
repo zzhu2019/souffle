@@ -779,23 +779,20 @@ void Interpreter::executeMain() {
     if (!Global::config().has("profile")) {
         evalStmt(main);
     } else {
+        // Enable profiling for execution of main
+        ProfileEventSingleton::instance().startTimer();
+        evalStmt(main);
+        ProfileEventSingleton::instance().stopTimer();
+        for (auto const& cur : frequencies) {
+          ProfileEventSingleton::instance().makeQuantityEvent(cur.first, cur.second, 0);
+        }
         // open output stream
         std::string fname = Global::config().get("profile");
         std::ofstream os(fname);
         if (!os.is_open()) {
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
-        // Enable profiling for execution of main
-        os << LogStatement::startDebug() << std::endl;
-        ProfileEventSingleton::instance().setLog(&os);
-        ProfileEventSingleton::instance().startTimer();
-        evalStmt(main);
-        ProfileEventSingleton::instance().stopTimer();
-        if (Global::config().has("profile")) {
-            for (auto const& cur : frequencies) {
-                ProfileEventSingleton::instance().makeQuantityEvent(cur.first, cur.second, 0);
-            }
-        }
+        ProfileEventSingleton::instance().dump(os); 
     }
     SignalHandler::instance()->reset();
 }
