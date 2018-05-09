@@ -33,34 +33,49 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
+#include "ProfileDatabase.h"
+#include "EventProcessor.h"
+
 namespace souffle {
 
 /**
  * Profile Event Singleton
  */
 class ProfileEventSingleton {
+    /** profile database */
+    ProfileDatabase m_database;
+
+    ProfileEventSingleton() : m_database() { }
 public:
     ~ProfileEventSingleton() {
     }
+
+    /** get instance */ 
     static ProfileEventSingleton& instance() {
         static ProfileEventSingleton singleton;
         return singleton;
     }
 
-    /** Make new time event */
+    /** create timing event */ 
     void makeTimingEvent(const std::string& txt, time_point start, time_point end, size_t iteration) {
+        milliseconds start_ms = std::chrono::duration_cast<milliseconds>(start.time_since_epoch());
+        milliseconds end_ms = std::chrono::duration_cast<milliseconds>(end.time_since_epoch());
+        EventProcessorSingleton::instance().process(m_database,txt.c_str(), start_ms, end_ms, iteration); 
     }
 
-    /** Make new quantity event */
+    /** create quantity event */
     void makeQuantityEvent(const std::string& txt, size_t number, int iteration) {
+        EventProcessorSingleton::instance().process(m_database,txt.c_str(), number, iteration); 
     }
 
-    /** Make new utilisation event */
+    /** create utilisation event */
     void makeUtilisationEvent(const std::string& txt) {
+        EventProcessorSingleton::instance().process(m_database,txt.c_str()); 
     }
 
     /** Dump all events */
     void dump(std::ostream& os) {
+        m_database.print(os);
     }
 
     /** Start timer */

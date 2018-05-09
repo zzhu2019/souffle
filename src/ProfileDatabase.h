@@ -174,22 +174,22 @@ public:
 class DurationEntry : public Entry {
 private:
     // duration start
-    time_point start;
+    milliseconds start;
 
     // duration end
-    time_point end;
+    milliseconds end;
 
 public:
-    DurationEntry(const std::string& key, time_point start, time_point end)
+    DurationEntry(const std::string& key, milliseconds start, milliseconds end)
             : Entry(key), start(start), end(end) {}
 
     // get start
-    time_point getStart() const {
+    milliseconds getStart() const {
         return start;
     }
 
     // get end
-    time_point getEnd() const {
+    milliseconds getEnd() const {
         return end;
     }
 
@@ -279,7 +279,7 @@ public:
     }
 
     // add duration entry
-    void addDurationEntry(std::vector<std::string> qualifier, time_point start, time_point end) {
+    void addDurationEntry(std::vector<std::string> qualifier, milliseconds start, milliseconds end) {
         assert(qualifier.size() > 0 && "no qualifier");
         std::vector<std::string> path(qualifier.begin(), qualifier.end() - 1);
         DirectoryEntry* dir = lookupPath(path);

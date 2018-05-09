@@ -907,6 +907,7 @@ bool none_of(const Container& c, UnaryPredicate p) {
 
 // a type def for a time point
 using time_point = std::chrono::high_resolution_clock::time_point;
+using milliseconds = std::chrono::milliseconds; 
 
 // a shortcut for taking the current time
 inline time_point now() {

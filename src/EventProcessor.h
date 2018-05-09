@@ -24,14 +24,25 @@
 #include <string>
 #include <vector>
 
+#include "ProfileDatabase.h"
+
+namespace souffle {
+
 /**
  * Abstract Class for EventProcessor
  */
 class EventProcessor {
 public:
     virtual ~EventProcessor() {}
+
     /** abstract interface for processing an profile event */
-    virtual void process(const std::vector<std::string>& /* signature */, va_list& /* args */) = 0;
+    virtual void process(ProfileDatabase &db, const std::vector<std::string>& signature, va_list& /* args */) {
+        std::cerr << "Unknown profiling processing event: "; 
+        for (const auto& cur : signature) {
+            std::cerr << cur << " ";
+        }
+        abort();
+    }
 };
 
 /**
@@ -123,7 +134,7 @@ public:
     }
 
     /** process a profile event */
-    void process(const char* txt, ...) {
+    void process(ProfileDatabase &db, const char* txt, ...) {
         va_list args;
         va_start(args, txt);
 
@@ -133,8 +144,9 @@ public:
         // invoke the event processor of the event
         const std::string& keyword = eventSignature[0];
         assert(eventSignature.size() > 0 && "no keyword in event description");
+        std::cerr << keyword << "\n";
         assert(m_registry.find(keyword) != m_registry.end() && "EventProcessor not found!");
-        m_registry[keyword]->process(eventSignature, args);
+        m_registry[keyword]->process(db,eventSignature, args);
 
         // terminate access to variadic arguments
         va_end(args);
@@ -144,17 +156,23 @@ public:
 /**
  * EventProcessor A
  */
-class EventProcessorA : public EventProcessor {
+class NonRecursiveRuleProcessor : public EventProcessor {
 public:
-    EventProcessorA() {
-        std::cout << "Register EventProcessor A\n";
-        EventProcessorSingleton::instance().registerEventProcessor("A", this);
+    NonRecursiveRuleProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@t-nonrecursive-rule", this);
     }
-    void process(const std::vector<std::string>&, va_list& args) override {
-        std::cout << "Process A\n";
-        std::cout << va_arg(args, int) << "\n";
+    void process(ProfileDatabase &db, const std::vector<std::string> &signature, va_list& args) override {
+        const std::string &relation = signature[1];
+        const std::string &srcLocator = signature[2]; 
+        const std::string &rule = signature[3]; 
+
+        milliseconds start = va_arg(args, milliseconds);
+        milliseconds end = va_arg(args, milliseconds);
+
+        db.addTextEntry({"program", "relation", relation, "non-recursive-rule", rule, "source-locator"}, srcLocator); 
+        db.addDurationEntry({"program", "relation", relation, "non-recursive-rule", rule, "source-locator"}, start, end); 
     }
-} pA;
+} nonRecursiveRuleProcessor;
 
 /**
  * EventProcessor B
@@ -165,7 +183,7 @@ public:
         std::cout << "Register EventProcessor B\n";
         EventProcessorSingleton::instance().registerEventProcessor("B", this);
     }
-    void process(const std::vector<std::string>& signature, va_list& args) override {
+    void process(ProfileDatabase &db, const std::vector<std::string>& signature, va_list& args) override {
         std::cout << "Process B ";
         std::cout << va_arg(args, int) << " ";
         std::cout << va_arg(args, int) << "\n";
@@ -175,3 +193,5 @@ public:
         std::cout << std::endl;
     }
 } pB;
+
+}
