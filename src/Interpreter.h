@@ -60,7 +60,7 @@ private:
     int counter;
 
     /** iteration number (in a fix-point calculation) */
-    size_t iteration; 
+    size_t iteration;
 
 protected:
     /** Evaluate value */
@@ -87,23 +87,23 @@ protected:
 
     /** Get Iteration Number */
     size_t getIterationNumber() const {
-        return iteration; 
-    } 
+        return iteration;
+    }
 
     /** Increment counter */
     int incCounter() {
         return counter++;
     }
 
-    /** Increment iteration number */ 
-    void incIterationNumber() { 
+    /** Increment iteration number */
+    void incIterationNumber() {
         iteration++;
-    } 
+    }
 
     /** Reset iteration number */
     void resetIterationNumber() {
         iteration = 0;
-    } 
+    }
 
     /** Create relation */
     void createRelation(const RamRelation& id) {

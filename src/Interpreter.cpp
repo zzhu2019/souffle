@@ -629,11 +629,11 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
         }
 
         bool visitLoop(const RamLoop& loop) override {
-            interpreter.resetIterationNumber(); 
+            interpreter.resetIterationNumber();
             while (visit(loop.getBody())) {
-                interpreter.incIterationNumber(); 
+                interpreter.incIterationNumber();
             }
-            interpreter.resetIterationNumber(); 
+            interpreter.resetIterationNumber();
             return true;
         }
 
@@ -682,8 +682,8 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
 
         bool visitLogSize(const RamLogSize& print) override {
             const InterpreterRelation& rel = interpreter.getRelation(print.getRelation());
-            ProfileEventSingleton::instance().makeQuantityEvent(print.getMessage(), 
-                  rel.size(),interpreter.getIterationNumber());
+            ProfileEventSingleton::instance().makeQuantityEvent(
+                    print.getMessage(), rel.size(), interpreter.getIterationNumber());
             return true;
         }
 
@@ -784,7 +784,7 @@ void Interpreter::executeMain() {
         evalStmt(main);
         ProfileEventSingleton::instance().stopTimer();
         for (auto const& cur : frequencies) {
-          ProfileEventSingleton::instance().makeQuantityEvent(cur.first, cur.second, 0);
+            ProfileEventSingleton::instance().makeQuantityEvent(cur.first, cur.second, 0);
         }
         // open output stream
         std::string fname = Global::config().get("profile");
@@ -792,7 +792,7 @@ void Interpreter::executeMain() {
         if (!os.is_open()) {
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
-        ProfileEventSingleton::instance().dump(os); 
+        ProfileEventSingleton::instance().dump(os);
     }
     SignalHandler::instance()->reset();
 }

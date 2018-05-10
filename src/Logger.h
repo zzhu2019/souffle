@@ -43,14 +43,15 @@ inline Lock& getOutputLock() {
  */
 class Logger {
 private:
-    std::string m_label; 
-    time_point m_start; 
+    std::string m_label;
+    time_point m_start;
     size_t m_iteration;
+
 public:
     Logger(std::string label, size_t iteration)
             : m_label(std::move(label)), m_start(now()), m_iteration(iteration) {}
     ~Logger() {
-          ProfileEventSingleton::instance().makeTimingEvent(m_label, m_start, now(), m_iteration); 
+        ProfileEventSingleton::instance().makeTimingEvent(m_label, m_start, now(), m_iteration);
     }
 };
 }  // end of namespace souffle

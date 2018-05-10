@@ -33,8 +33,8 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
-#include "ProfileDatabase.h"
 #include "EventProcessor.h"
+#include "ProfileDatabase.h"
 
 namespace souffle {
 
@@ -45,31 +45,32 @@ class ProfileEventSingleton {
     /** profile database */
     ProfileDatabase m_database;
 
-    ProfileEventSingleton() : m_database() { }
+    ProfileEventSingleton() : m_database() {}
+
 public:
     ~ProfileEventSingleton() = default;
 
-    /** get instance */ 
+    /** get instance */
     static ProfileEventSingleton& instance() {
         static ProfileEventSingleton singleton;
         return singleton;
     }
 
-    /** create timing event */ 
+    /** create timing event */
     void makeTimingEvent(const std::string& txt, time_point start, time_point end, size_t iteration) {
         milliseconds start_ms = std::chrono::duration_cast<milliseconds>(start.time_since_epoch());
         milliseconds end_ms = std::chrono::duration_cast<milliseconds>(end.time_since_epoch());
-        EventProcessorSingleton::instance().process(m_database,txt.c_str(), start_ms, end_ms, iteration); 
+        EventProcessorSingleton::instance().process(m_database, txt.c_str(), start_ms, end_ms, iteration);
     }
 
     /** create quantity event */
     void makeQuantityEvent(const std::string& txt, size_t number, int iteration) {
-        EventProcessorSingleton::instance().process(m_database,txt.c_str(), number, iteration); 
+        EventProcessorSingleton::instance().process(m_database, txt.c_str(), number, iteration);
     }
 
     /** create utilisation event */
     void makeUtilisationEvent(const std::string& txt) {
-        EventProcessorSingleton::instance().process(m_database,txt.c_str()); 
+        EventProcessorSingleton::instance().process(m_database, txt.c_str());
     }
 
     /** Dump all events */
@@ -78,12 +79,10 @@ public:
     }
 
     /** Start timer */
-    void startTimer() { }
+    void startTimer() {}
 
     /** Stop timer */
-    void stopTimer() { }
+    void stopTimer() {}
 };
 
-
 }  // namespace souffle
-

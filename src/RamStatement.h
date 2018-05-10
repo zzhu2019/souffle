@@ -933,7 +933,8 @@ public:
     void print(std::ostream& os, int tabpos) const override {
         os << std::string(tabpos, '\t');
         os << "LOGSIZE " << getRelation().getName();
-        os << " TEXT " << "\"" << stringify(m_message) << "\"";
+        os << " TEXT "
+           << "\"" << stringify(m_message) << "\"";
     }
 
     /** Create clone */
