@@ -130,7 +130,8 @@ souffle_sources = \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h            \
               LogStatement.h                            \
-              ProfileDatabase.h                         \
+              profile/ProfileDatabase.h                 \
+              profile/EventProcessor.h                  \
               ProfileEvent.h
 
 # -- build souffle as a library so it can be reused in testing

@@ -33,8 +33,8 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
-#include "EventProcessor.h"
-#include "ProfileDatabase.h"
+#include "profile/EventProcessor.h"
+#include "profile/ProfileDatabase.h"
 
 namespace souffle {
 
@@ -43,7 +43,7 @@ namespace souffle {
  */
 class ProfileEventSingleton {
     /** profile database */
-    ProfileDatabase m_database;
+    profile::ProfileDatabase m_database;
 
     ProfileEventSingleton() : m_database() {}
 
@@ -60,17 +60,17 @@ public:
     void makeTimingEvent(const std::string& txt, time_point start, time_point end, size_t iteration) {
         milliseconds start_ms = std::chrono::duration_cast<milliseconds>(start.time_since_epoch());
         milliseconds end_ms = std::chrono::duration_cast<milliseconds>(end.time_since_epoch());
-        EventProcessorSingleton::instance().process(m_database, txt.c_str(), start_ms, end_ms, iteration);
+        profile::EventProcessorSingleton::instance().process(m_database, txt.c_str(), start_ms, end_ms, iteration);
     }
 
     /** create quantity event */
     void makeQuantityEvent(const std::string& txt, size_t number, int iteration) {
-        EventProcessorSingleton::instance().process(m_database, txt.c_str(), number, iteration);
+        profile::EventProcessorSingleton::instance().process(m_database, txt.c_str(), number, iteration);
     }
 
     /** create utilisation event */
     void makeUtilisationEvent(const std::string& txt) {
-        EventProcessorSingleton::instance().process(m_database, txt.c_str());
+        profile::EventProcessorSingleton::instance().process(m_database, txt.c_str());
     }
 
     /** Dump all events */
