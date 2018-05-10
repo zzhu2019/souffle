@@ -12,6 +12,7 @@
 #include <vector>
 
 namespace souffle {
+namespace profile {
 
 class DirectoryEntry;
 class DurationEntry;
@@ -322,4 +323,5 @@ public:
     };
 };
 
+}  // namespace profile
 }  // namespace souffle
