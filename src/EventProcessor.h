@@ -33,7 +33,7 @@ namespace souffle {
  */
 class EventProcessor {
 public:
-    virtual ~EventProcessor() {}
+    virtual ~EventProcessor() = default;
 
     /** abstract interface for processing an profile event */
     virtual void process(ProfileDatabase &db, const std::vector<std::string>& signature, va_list& /* args */) {

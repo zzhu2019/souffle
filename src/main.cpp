@@ -43,6 +43,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -52,7 +53,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <stdio.h>
 
 namespace souffle {
 

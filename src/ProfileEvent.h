@@ -47,8 +47,7 @@ class ProfileEventSingleton {
 
     ProfileEventSingleton() : m_database() { }
 public:
-    ~ProfileEventSingleton() {
-    }
+    ~ProfileEventSingleton() = default;
 
     /** get instance */ 
     static ProfileEventSingleton& instance() {

@@ -103,12 +103,12 @@ public:
     }
 
     // accept visitor
-    void accept(Visitor& v) {
+    void accept(Visitor& v) override {
         v.visit(*this);
     }
 
     // print directory
-    void print(std::ostream& os, int tabpos) {
+    void print(std::ostream& os, int tabpos) override {
         os << std::string(tabpos, ' ') << getKey() << ":" << std::endl;
         for (auto const& cur : entries) {
             cur.second->print(os, tabpos + 1);
@@ -131,12 +131,12 @@ public:
     }
 
     // accept visitor
-    void accept(Visitor& v) {
+    void accept(Visitor& v) override {
         v.visit(*this);
     }
 
     // print entry
-    void print(std::ostream& os, int tabpos) {
+    void print(std::ostream& os, int tabpos) override {
         os << std::string(tabpos, ' ') << getKey() << "->" << size << std::endl;
     }
 };
@@ -158,12 +158,12 @@ public:
     }
 
     // accept visitor
-    void accept(Visitor& v) {
+    void accept(Visitor& v) override {
         v.visit(*this);
     }
 
     // write size entry
-    void print(std::ostream& os, int tabpos) {
+    void print(std::ostream& os, int tabpos) override {
         os << std::string(tabpos, ' ') << getKey() << "->" << text << std::endl;
     }
 };
@@ -194,12 +194,12 @@ public:
     }
 
     // accept visitor
-    void accept(Visitor& v) {
+    void accept(Visitor& v) override {
         v.visit(*this);
     }
 
     // write size entry
-    void print(std::ostream& os, int tabpos) {
+    void print(std::ostream& os, int tabpos) override {
         os << std::string(tabpos, ' ') << getKey() << "->[]" << std::endl;
     }
 };
