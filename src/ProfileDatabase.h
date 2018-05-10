@@ -109,10 +109,17 @@ public:
 
     // print directory
     void print(std::ostream& os, int tabpos) override {
-        os << std::string(tabpos, ' ') << getKey() << ":" << std::endl;
+        os << std::string(tabpos, ' ') << '"' << getKey() << "\": {" << std::endl;
+        bool first{true};
         for (auto const& cur : entries) {
+            if (!first) {
+                os << ',' << std::endl;
+            } else {
+                first = false;
+            }
             cur.second->print(os, tabpos + 1);
         }
+        os << std::endl << std::string(tabpos, ' ') << '}';
     }
 };
 
@@ -137,7 +144,7 @@ public:
 
     // print entry
     void print(std::ostream& os, int tabpos) override {
-        os << std::string(tabpos, ' ') << getKey() << "->" << size << std::endl;
+        os << std::string(tabpos, ' ') << "\"" << getKey() << "\": " << size;
     }
 };
 
@@ -164,7 +171,7 @@ public:
 
     // write size entry
     void print(std::ostream& os, int tabpos) override {
-        os << std::string(tabpos, ' ') << getKey() << "->" << text << std::endl;
+        os << std::string(tabpos, ' ') << "\"" << getKey() << "\": \"" << text << "\"";
     }
 };
 
@@ -200,7 +207,12 @@ public:
 
     // write size entry
     void print(std::ostream& os, int tabpos) override {
-        os << std::string(tabpos, ' ') << getKey() << "->[]" << std::endl;
+        os << std::string(tabpos, ' ') << '"' << getKey();
+        os  << "\": { \"start\": ";
+        os << start.count();
+        os << ", \"end\": ";
+        os << end.count();
+        os << '}';
     }
 };
 
@@ -304,7 +316,9 @@ public:
 
     // print database
     void print(std::ostream& os) {
-        root->print(os, 0);
+        os << '{' << std::endl;
+        root->print(os, 1);
+        os << std::endl << '}' << std::endl;
     };
 };
 

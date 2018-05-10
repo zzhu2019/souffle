@@ -7,7 +7,8 @@ int main() {
     x.addSizeEntry({"a", "c", "bkey"}, 3);
     x.addTextEntry({"a", "x", "akey"}, "blabla");
     x.print(std::cout);
-    std::cout << "Sum of bkey:" << x.computeSum({"a", "bkey"});
+
+    std::cout << "\n\nSum of bkey:" << x.computeSum({"a", "bkey"}) << std::endl;
 
     return 0;
 }
