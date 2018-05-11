@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Util.h"
+#include "profile/json11.h"
 #include <cassert>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -209,7 +211,7 @@ public:
     // write size entry
     void print(std::ostream& os, int tabpos) override {
         os << std::string(tabpos, ' ') << '"' << getKey();
-        os  << "\": { \"start\": ";
+        os << "\": { \"start\": ";
         os << start.count();
         os << ", \"end\": ";
         os << end.count();
@@ -267,8 +269,46 @@ protected:
         return dir;
     }
 
+    void parseJson(const json11::Json& json, std::unique_ptr<DirectoryEntry>& node) {
+        for (auto& cur : json.object_items()) {
+            if (cur.second.is_object()) {
+                std::string err;
+                // Duration entries are also maps
+                if (cur.second.has_shape(
+                            {{"start", json11::Json::NUMBER}, {"end", json11::Json::NUMBER}}, err)) {
+                    node->writeEntry(std::make_unique<DurationEntry>(cur.first, cur.second.string_value()));
+                } else {
+                    auto dir = std::make_unique<DirectoryEntry>(node->getKey() + cur.first);
+                    parseJson(cur.second, dir);
+                    node->writeEntry(std::move(dir));
+                }
+            } else if (cur.second.is_string()) {
+                node->writeEntry(std::make_unique<TextEntry>(cur.first, cur.second.string_value()));
+            } else if (cur.second.is_number()) {
+                node->writeEntry(std::make_unique<SizeEntry>(cur.first, cur.second.int_value()));
+            } else {
+                std::string err;
+                cur.second.dump(err);
+                std::cerr << "Unknown types in profile log: " << cur.first << ": " << err << std::endl;
+            }
+        }
+    }
+
 public:
     ProfileDatabase() : root(std::unique_ptr<DirectoryEntry>(new DirectoryEntry("root"))) {}
+    ProfileDatabase(const std::string& filename) : root(std::make_unique<DirectoryEntry>("root")) {
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            std::cerr << "Log file could not be opened." << std::endl;
+            exit(1);
+        }
+        std::string jsonString((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
+        std::string error;
+        json11::Json json = json11::Json::parse(jsonString, error);
+
+        parseJson(json["root"], root);
+    }
+
     // add size entry
     void addSizeEntry(std::vector<std::string> qualifier, size_t size) {
         assert(qualifier.size() > 0 && "no qualifier");

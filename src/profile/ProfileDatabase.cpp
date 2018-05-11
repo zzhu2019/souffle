@@ -2,7 +2,7 @@
 #include <chrono>
 
 int main() {
-    souffle::ProfileDatabase x;
+    souffle::profile::ProfileDatabase x;
     x.addSizeEntry({"akey"}, 1);
     x.addSizeEntry({"a", "b", "bkey"}, 2);
     x.addSizeEntry({"a", "c", "bkey"}, 3);

@@ -145,10 +145,6 @@ public:
         // invoke the event processor of the event
         const std::string& keyword = eventSignature[0];
         assert(eventSignature.size() > 0 && "no keyword in event description");
-//        for (auto const& cur : eventSignature) {
-//            std::cerr << cur << " ";
-//        }
-//        std::cerr << "\n";
         assert(m_registry.find(keyword) != m_registry.end() && "EventProcessor not found!");
         m_registry[keyword]->process(db, eventSignature, args);
 
@@ -383,5 +379,5 @@ public:
     }
 } frequencyAtomProcessor;
 
-}  //namespace profile
+}  // namespace profile
 }  // namespace souffle
