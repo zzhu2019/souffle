@@ -16,6 +16,9 @@
 
 #pragma once
 
+#include "EventProcessor.h"
+#include "Util.h"
+#include "profilerlib/ProfileDatabase.h"
 #include <atomic>
 #include <cassert>
 #include <chrono>
@@ -32,9 +35,6 @@
 #include <vector>
 #include <sys/resource.h>
 #include <sys/time.h>
-
-#include "profile/EventProcessor.h"
-#include "profile/ProfileDatabase.h"
 
 namespace souffle {
 
@@ -60,7 +60,8 @@ public:
     void makeTimingEvent(const std::string& txt, time_point start, time_point end, size_t iteration) {
         milliseconds start_ms = std::chrono::duration_cast<milliseconds>(start.time_since_epoch());
         milliseconds end_ms = std::chrono::duration_cast<milliseconds>(end.time_since_epoch());
-        profile::EventProcessorSingleton::instance().process(m_database, txt.c_str(), start_ms, end_ms, iteration);
+        profile::EventProcessorSingleton::instance().process(
+                m_database, txt.c_str(), start_ms, end_ms, iteration);
     }
 
     /** create quantity event */

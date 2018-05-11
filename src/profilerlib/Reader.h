@@ -8,13 +8,15 @@
 
 #pragma once
 
+#include "profilerlib/ProfileDatabase.h"
 #include "profilerlib/ProgramRun.h"
-#include "profilerlib/Relation.h"
 #include <fstream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+class Relation;
 
 /*
  * Input reader and processor for log files
@@ -27,29 +29,25 @@
 class Reader {
 private:
     std::string file_loc;
-    std::ifstream file;
     std::streampos gpos;
-
+    souffle::profile::ProfileDatabase db;
     bool loaded = false;
     bool online;
 
-    double runtime;
-    std::unordered_map<std::string, std::shared_ptr<Relation>> relation_map;
-    int rel_id = 0;
+    double runtime{-1};
+    std::unordered_map<std::string, std::shared_ptr<Relation>> relation_map{};
+    int rel_id{0};
 
 public:
     std::shared_ptr<ProgramRun> run;
 
     Reader(std::string arg, std::shared_ptr<ProgramRun> run, bool vFlag, bool online)
-            : file_loc(arg), file(arg), online(online), runtime(-1.0),
-              relation_map(std::unordered_map<std::string, std::shared_ptr<Relation>>()) {
-        this->run = run;
-    }
+            : file_loc(arg), db(file_loc), online(online), run(run) {}
 
     /**
      * Read the contents from file into the class
      */
-    void readFile();
+    void processFile();
 
     void save(std::string f_name);
 
@@ -58,6 +56,8 @@ public:
     inline bool isLive() {
         return online;
     }
+
+    void addRelation(const souffle::profile::DirectoryEntry& rel);
 
     void addIteration(std::shared_ptr<Relation> rel, std::vector<std::string> data);
 

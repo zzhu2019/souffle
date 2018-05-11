@@ -35,10 +35,10 @@ Tui::Tui(std::string filename, bool live, bool gui) {
     std::shared_ptr<ProgramRun>& run = out.getProgramRun();
 
     this->reader = std::make_shared<Reader>(filename, run, false, live);
-    reader->readFile();
-
+    reader->processFile();
     this->loaded = reader->isLoaded();
-    this->alive = live;
+
+    this->alive = false;
     rul_table_state = out.getRulTable();
     rel_table_state = out.getRelTable();
 }
@@ -101,7 +101,7 @@ void Tui::runCommand(std::vector<std::string> c) {
 
 void Tui::runProf() {
     if (!loaded && !f_name.empty()) {
-        std::cout << "Error: File cannot be loaded\n";
+        std::cout << "Error: File cannot be floaded\n";
         return;
     }
     if (loaded) {
@@ -142,12 +142,12 @@ void Tui::runProf() {
             } else {
                 loadMenu();
             }
-        } else if (c[0] == "save") {
-            if (c.size() == 1) {
-                std::cout << "Enter file name to save.\n";
-            } else if (c.size() == 2) {
-                save(c[1]);
-            }
+            //        } else if (c[0] == "save") {
+            //            if (c.size() == 1) {
+            //                std::cout << "Enter file name to save.\n";
+            //            } else if (c.size() == 2) {
+            //                save(c[1]);
+            //            }
         } else if (c[0] == "sort") {
             if (c.size() == 2 && std::stoi(c[1]) < 7) {
                 sort_col = std::stoi(c[1]);
@@ -391,7 +391,7 @@ void Tui::save(std::string save_name) {
     if (loaded) {
         std::shared_ptr<ProgramRun>& run = out.getProgramRun();
         Reader saver(this->f_name, run, false, false);
-        saver.save(save_name);
+        // saver.save(save_name);
         std::cout << "Save success.\n";
     } else {
         std::cout << "Save failed.\n";
@@ -406,7 +406,7 @@ void Tui::load(std::string method, std::string load_file) {
         f_name = Tools::getworkingdir() + "/old_runs/" + load_file;
     }
     Reader loader(f_name, new_run, false, false);
-    loader.readFile();
+    loader.processFile();
     if (loader.isLoaded()) {
         std::cout << "Load success\n";
         this->loaded = true;

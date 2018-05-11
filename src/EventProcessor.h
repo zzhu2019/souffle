@@ -18,13 +18,14 @@
 #pragma once
 
 #include <cassert>
+#include <chrono>
 #include <cstdarg>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 
-#include "ProfileDatabase.h"
+#include "profilerlib/ProfileDatabase.h"
 
 namespace souffle {
 namespace profile {

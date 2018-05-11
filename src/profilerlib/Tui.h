@@ -9,12 +9,12 @@
 #pragma once
 
 #include "profilerlib/OutputProcessor.h"
-#include "profilerlib/Reader.h"
 #include "profilerlib/Table.h"
 #include "profilerlib/UserInputReader.h"
 #include <string>
 #include <vector>
 
+class Reader;
 /*
  * Text User interface for SouffleProf
  * OutputProcessor creates a ProgramRun object

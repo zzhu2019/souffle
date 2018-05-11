@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Util.h"
-#include "profile/json11.h"
+#include "profilerlib/json11.h"
 #include <cassert>
 #include <chrono>
 #include <fstream>
@@ -52,7 +52,7 @@ public:
     virtual ~Entry() = default;
 
     // get key
-    std::string& getKey() {
+    const std::string& getKey() const {
         return key;
     };
 
@@ -219,7 +219,7 @@ public:
     }
 };
 
-void Visitor::visit(DirectoryEntry& e) {
+inline void Visitor::visit(DirectoryEntry& e) {
     std::cout << "Dir " << e.getKey() << "\n";
     for (const auto& cur : e.getKeys()) {
         std::cout << "\t :" << cur << "\n";
@@ -276,9 +276,11 @@ protected:
                 // Duration entries are also maps
                 if (cur.second.has_shape(
                             {{"start", json11::Json::NUMBER}, {"end", json11::Json::NUMBER}}, err)) {
-                    node->writeEntry(std::make_unique<DurationEntry>(cur.first, cur.second.string_value()));
+                    auto start = std::chrono::milliseconds(cur.second["start"].long_value());
+                    auto end = std::chrono::milliseconds(cur.second["end"].long_value());
+                    node->writeEntry(std::make_unique<DurationEntry>(cur.first, start, end));
                 } else {
-                    auto dir = std::make_unique<DirectoryEntry>(node->getKey() + cur.first);
+                    auto dir = std::make_unique<DirectoryEntry>(cur.first);
                     parseJson(cur.second, dir);
                     node->writeEntry(std::move(dir));
                 }
@@ -353,6 +355,20 @@ public:
         Counter ctr(key);
         dir->accept(ctr);
         return ctr.getCounter();
+    }
+    /**
+     * Find path: if directories along the path do not exist, create them.
+     */
+    Entry* lookupEntry(std::vector<std::string> path) {
+        DirectoryEntry* dir = root.get();
+        auto last = --path.end();
+        for (auto it = path.begin(); it != last; ++it) {
+            dir = dir->readDirectoryEntry(*it);
+            if (dir == nullptr) {
+                return nullptr;
+            }
+        }
+        return dir->readEntry(*last);
     }
 
     // print database

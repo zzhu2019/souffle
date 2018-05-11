@@ -11,7 +11,10 @@ bin_PROGRAMS = souffle souffle-profile souffle2bdd souffle2lb
 
 nodist_souffle_profile_SOURCES = $(BUILT_SOURCES)
 
-souffle_profile_SOURCES = souffle_prof.cpp profilerlib/Cell.h   \
+souffle_profile_SOURCES = souffle_prof.cpp                      \
+                          profilerlib/json11.cpp                \
+                          profilerlib/json11.h                  \
+                          profilerlib/Cell.h                    \
                           profilerlib/CellInterface.h           \
                           profilerlib/Cli.cpp                   \
                           profilerlib/Cli.h                     \
@@ -20,6 +23,7 @@ souffle_profile_SOURCES = souffle_prof.cpp profilerlib/Cell.h   \
                           profilerlib/Iteration.h               \
                           profilerlib/OutputProcessor.cpp       \
                           profilerlib/OutputProcessor.h         \
+                          profilerlib/ProfileDatabase.h         \
                           profilerlib/ProgramRun.cpp            \
                           profilerlib/ProgramRun.h              \
                           profilerlib/Reader.cpp                \
@@ -130,8 +134,8 @@ souffle_sources = \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h            \
               LogStatement.h                            \
-              profile/ProfileDatabase.h                 \
-              profile/EventProcessor.h                  \
+              profilerlib/ProfileDatabase.h             \
+              EventProcessor.h                          \
               ProfileEvent.h
 
 # -- build souffle as a library so it can be reused in testing
@@ -192,7 +196,7 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         ExplainTree.h           \
                         ExplainProvenance.h     \
                         ExplainProvenanceSLD.h  \
-                        ProfileDatabase.h       \
+                        profilerlib/ProfileDatabase.h \
                         ProfileEvent.h
 
 # files to clean
