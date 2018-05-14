@@ -81,7 +81,7 @@ class RecursiveRulesVisitor : public souffle::profile::Visitor {
 public:
     RecursiveRulesVisitor(Relation& relation) : relation(relation) {}
     void visit(souffle::profile::DirectoryEntry& ruleEntry) override {
-        auto rule = std::make_shared<Rule>(ruleEntry.getKey(), relation.createID());
+        auto rule = std::make_shared<Rule>(ruleEntry.getKey(), relation.createRecID(ruleEntry.getKey()));
         RecursiveRuleVisitor visitor(*rule);
         for (const auto& key : ruleEntry.getKeys()) {
             ruleEntry.readEntry(key)->accept(visitor);
@@ -147,8 +147,10 @@ public:
                 directory.readEntry(key)->accept(rulesVisitor);
             }
         } else if (directory.getKey() == "recursive-rule") {
-            // std::vector<std::shared_ptr<Iteration>>& iterations = rel->getIterations();
-            // get appropriate iteration (version or iteration? do we have this in old style?)
+            RecursiveRulesVisitor rulesVisitor(base);
+            for (const auto& key : directory.getKeys()) {
+                directory.readEntry(key)->accept(rulesVisitor);
+            }
         }
     }
 };
