@@ -343,7 +343,7 @@ private:
         }
 
     public:
-        ProfileTimer(Interval in = 1) : t(in), count(0) {}
+        ProfileTimer(Interval in = 1) : t(in) {}
 
         /** start timer on the thread th */
         void start() {
