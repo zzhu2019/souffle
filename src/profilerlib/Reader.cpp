@@ -125,13 +125,22 @@ public:
     }
     void visit(souffle::profile::DirectoryEntry& directory) override {
         if (directory.getKey() == "iteration") {
-            // Set up iterations
-            //       "0": {
-            //       "copytime": { "start": 1525930163084, "end": 1525930163084},
-            //       "num-tuples": 2,
-            //       "runtime": { "start": 1525930163084, "end": 1525930163084}
-            //      },
-
+            base.getIterations().push_back(std::make_unique<Iteration>());
+            for (const auto& key : directory.getKeys()) {
+                auto& iteration = *directory.readDirectoryEntry(key);
+                auto runtime = dynamic_cast<souffle::profile::DurationEntry*>(iteration.readEntry("runtime"));
+                base.getIterations().back()->setRuntime(
+                        (runtime->getEnd() - runtime->getStart()).count() / 1000.0);
+                auto copytime =
+                        dynamic_cast<souffle::profile::DurationEntry*>(iteration.readEntry("copytime"));
+                if (copytime != nullptr) {
+                    base.getIterations().back()->setCopy_time(
+                            (copytime->getEnd() - copytime->getStart()).count() / 1000.0);
+                }
+                auto numTuples =
+                        dynamic_cast<souffle::profile::SizeEntry*>(iteration.readEntry("num-tuples"));
+                base.getIterations().back()->setNum_tuples(numTuples->getSize());
+            }
         } else if (directory.getKey() == "non-recursive-rule") {
             NonRecursiveRulesVisitor rulesVisitor(base);
             for (const auto& key : directory.getKeys()) {
