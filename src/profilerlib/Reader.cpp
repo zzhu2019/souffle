@@ -22,9 +22,11 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+namespace souffle {
+namespace profile {
+
 void Reader::processFile() {
-    auto programDuration =
-            dynamic_cast<souffle::profile::DurationEntry*>(db.lookupEntry({"program", "runtime"}));
+    auto programDuration = dynamic_cast<DurationEntry*>(db.lookupEntry({"program", "runtime"}));
     if (programDuration == nullptr) {
         std::cout << "db is empty!" << std::endl;
         db.print(std::cout);
@@ -33,10 +35,8 @@ void Reader::processFile() {
     runtime = (programDuration->getEnd() - programDuration->getStart()).count() / 1000.0;
 
     for (const auto& cur :
-            dynamic_cast<souffle::profile::DirectoryEntry*>(db.lookupEntry({"program", "relation"}))
-                    ->getKeys()) {
-        addRelation(*dynamic_cast<souffle::profile::DirectoryEntry*>(
-                db.lookupEntry({"program", "relation", cur})));
+            dynamic_cast<DirectoryEntry*>(db.lookupEntry({"program", "relation"}))->getKeys()) {
+        addRelation(*dynamic_cast<DirectoryEntry*>(db.lookupEntry({"program", "relation", cur})));
     }
     run->SetRuntime(this->runtime);
     run->setRelation_map(this->relation_map);
@@ -45,26 +45,26 @@ void Reader::processFile() {
 
 namespace {
 template <typename T>
-class DSNVisitor : public souffle::profile::Visitor {
+class DSNVisitor : public Visitor {
 public:
     DSNVisitor(T& base) : base(base) {}
-    void visit(souffle::profile::TextEntry& text) override {
+    void visit(TextEntry& text) override {
         if (text.getKey() == "source-locator") {
             base.setLocator(text.getText());
         }
     }
-    void visit(souffle::profile::DurationEntry& duration) override {
+    void visit(DurationEntry& duration) override {
         if (duration.getKey() == "runtime") {
             auto runtime = (duration.getEnd() - duration.getStart()).count() / 1000.0;
             base.setRuntime(runtime);
         }
     }
-    void visit(souffle::profile::SizeEntry& size) override {
+    void visit(SizeEntry& size) override {
         if (size.getKey() == "num-tuples") {
             base.setNum_tuples(size.getSize());
         }
     }
-    void visit(souffle::profile::DirectoryEntry& ruleEntry) override {}
+    void visit(DirectoryEntry& ruleEntry) override {}
 
 protected:
     T& base;
@@ -83,11 +83,11 @@ public:
  * Visit ProfileDB non-recursive rules.
  * rule: {versionNum : {DSN}, versionNum+1: {DSN}}
  */
-class RecursiveRulesVisitor : public souffle::profile::Visitor {
+class RecursiveRulesVisitor : public Visitor {
 public:
     RecursiveRulesVisitor(Iteration& iteration, Relation& relation)
             : iteration(iteration), relation(relation) {}
-    void visit(souffle::profile::DirectoryEntry& ruleEntry) override {
+    void visit(DirectoryEntry& ruleEntry) override {
         for (const auto& key : ruleEntry.getKeys()) {
             auto& versions = *ruleEntry.readDirectoryEntry(key);
             auto rule = std::make_shared<Rule>(
@@ -120,10 +120,10 @@ public:
  * Visit ProfileDB non-recursive rules.
  * non-recursive-rule: {rule1: {DSN}, ...}
  */
-class NonRecursiveRulesVisitor : public souffle::profile::Visitor {
+class NonRecursiveRulesVisitor : public Visitor {
 public:
     NonRecursiveRulesVisitor(Relation& relation) : relation(relation) {}
-    void visit(souffle::profile::DirectoryEntry& ruleEntry) override {
+    void visit(DirectoryEntry& ruleEntry) override {
         auto rule = std::make_shared<Rule>(ruleEntry.getKey(), relation.createID());
         NonRecursiveRuleVisitor visitor(*rule);
         for (const auto& key : ruleEntry.getKeys()) {
@@ -143,7 +143,7 @@ protected:
 class IterationVisitor : public DSNVisitor<Iteration> {
 public:
     IterationVisitor(Iteration& iteration, Relation& relation) : DSNVisitor(iteration), relation(relation) {}
-    void visit(souffle::profile::DurationEntry& duration) override {
+    void visit(DurationEntry& duration) override {
         if (duration.getKey() == "runtime") {
             auto runtime = (duration.getEnd() - duration.getStart()).count() / 1000.0;
             base.setRuntime(runtime);
@@ -152,7 +152,7 @@ public:
             base.setCopy_time(copytime);
         }
     }
-    void visit(souffle::profile::DirectoryEntry& directory) override {
+    void visit(DirectoryEntry& directory) override {
         if (directory.getKey() == "recursive-rule") {
             RecursiveRulesVisitor rulesVisitor(base, relation);
             for (const auto& key : directory.getKeys()) {
@@ -172,10 +172,10 @@ protected:
  * Visit ProfileDB iterations.
  * iteration: {num: {}, num2: {}, ...}
  */
-class IterationsVisitor : public souffle::profile::Visitor {
+class IterationsVisitor : public Visitor {
 public:
     IterationsVisitor(Relation& relation) : relation(relation) {}
-    void visit(souffle::profile::DirectoryEntry& ruleEntry) override {
+    void visit(DirectoryEntry& ruleEntry) override {
         auto iteration = std::make_shared<Iteration>();
         IterationVisitor visitor(*iteration, relation);
         for (const auto& key : ruleEntry.getKeys()) {
@@ -195,13 +195,13 @@ protected:
 class RelationVisitor : public DSNVisitor<Relation> {
 public:
     RelationVisitor(Relation& relation) : DSNVisitor(relation) {}
-    void visit(souffle::profile::DurationEntry& duration) override {
+    void visit(DurationEntry& duration) override {
         if (duration.getKey() == "runtime") {
             auto runtime = (duration.getEnd() - duration.getStart()).count() / 1000.0;
             base.setRuntime(runtime);
         }
     }
-    void visit(souffle::profile::DirectoryEntry& directory) override {
+    void visit(DirectoryEntry& directory) override {
         if (directory.getKey() == "iteration") {
             IterationsVisitor iterationsVisitor(base);
             for (const auto& key : directory.getKeys()) {
@@ -217,7 +217,7 @@ public:
 };
 }  // namespace
 
-void Reader::addRelation(const souffle::profile::DirectoryEntry& relation) {
+void Reader::addRelation(const DirectoryEntry& relation) {
     const std::string& name = relation.getKey();
 
     relation_map.emplace(name, std::make_shared<Relation>(name, createId()));
@@ -302,3 +302,6 @@ void Reader::addFrequency(std::shared_ptr<Relation> rel, std::vector<std::string
 std::string Reader::createId() {
     return "R" + std::to_string(++rel_id);
 }
+
+}  // namespace profile
+}  // namespace souffle

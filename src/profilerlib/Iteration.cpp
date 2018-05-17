@@ -11,6 +11,9 @@
 #include <memory>
 #include <sstream>
 
+namespace souffle {
+namespace profile {
+
 void Iteration::addRule(std::vector<std::string> data, std::string rec_id) {
     std::string strTemp = data[4] + data[3] + data[2];
 
@@ -41,3 +44,6 @@ std::string Iteration::toString() {
     output << "\n";
     return output.str();
 }
+
+}  // namespace profile
+}  // namespace souffle

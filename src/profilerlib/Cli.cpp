@@ -14,8 +14,8 @@
 #include <iostream>
 #include <map>
 
-// TODO: should move everything in the profiler library to namespace souffle
-using namespace souffle;
+namespace souffle {
+namespace profile {
 
 void Cli::error() {
     std::cout << "Unknown error.\nTry souffle-profile -h for help.\n";
@@ -157,3 +157,6 @@ void Cli::parse() {
             break;
     }
 }
+
+}  // namespace profile
+}  // namespace souffle

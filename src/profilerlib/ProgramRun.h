@@ -16,6 +16,9 @@
 #include <unordered_map>
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 /*
  * Stores the relations of the program
  * ProgramRun -> Relations -> Iterations/Rules
@@ -82,3 +85,6 @@ public:
         return Tools::formatTable(table, precision);
     }
 };
+
+}  // namespace profile
+}  // namespace souffle

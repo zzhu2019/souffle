@@ -9,6 +9,9 @@
 #include "profilerlib/Rule.h"
 #include <sstream>
 
+namespace souffle {
+namespace profile {
+
 std::string Rule::toString() {
     std::ostringstream output;
     if (recursive) {
@@ -19,3 +22,6 @@ std::string Rule::toString() {
     output << "[" << runtime << "," << num_tuples << "]}";
     return output.str();
 }
+
+}  // namespace profile
+}  // namespace souffle

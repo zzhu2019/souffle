@@ -18,6 +18,9 @@
 #include <memory>
 #include <unordered_map>
 
+namespace souffle {
+namespace profile {
+
 /*
  * rel table :
  * ROW[0] = TOT_T
@@ -328,3 +331,6 @@ Table OutputProcessor::getVersionAtoms(std::string strRel, std::string srcLocato
 
     return table;
 }
+
+}  // namespace profile
+}  // namespace souffle

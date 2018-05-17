@@ -16,6 +16,9 @@
 #include <unordered_map>
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 class Relation;
 
 /*
@@ -30,7 +33,7 @@ class Reader {
 private:
     std::string file_loc;
     std::streampos gpos;
-    souffle::profile::ProfileDatabase db;
+    ProfileDatabase db;
     bool loaded = false;
     bool online;
 
@@ -57,7 +60,7 @@ public:
         return online;
     }
 
-    void addRelation(const souffle::profile::DirectoryEntry& rel);
+    void addRelation(const DirectoryEntry& rel);
 
     void addIteration(std::shared_ptr<Relation> rel, std::vector<std::string> data);
 
@@ -78,3 +81,6 @@ public:
     void livereadinit();
     void liveread();
 };
+
+}  // namespace profile
+}  // namespace souffle

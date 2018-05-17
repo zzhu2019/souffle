@@ -12,6 +12,9 @@
 #include <memory>
 #include <sstream>
 
+namespace souffle {
+namespace profile {
+
 std::vector<std::shared_ptr<Rule>> Relation::getRuleRecList() {
     std::vector<std::shared_ptr<Rule>> temp = std::vector<std::shared_ptr<Rule>>();
     for (auto& iter : iterations) {
@@ -100,3 +103,6 @@ std::string Relation::toString() {
     // substring to remove the last comma
     return retStr.substr(0, retStr.size() - 2) + "]\n}";
 }
+
+}  // namespace profile
+}  // namespace souffle

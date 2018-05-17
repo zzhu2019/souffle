@@ -15,6 +15,9 @@
 #include <string>
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 /*
  * Class to format profiler data structures into tables
  */
@@ -55,3 +58,6 @@ public:
         return Tools::formatTable(table, precision);
     }
 };
+
+}  // namespace profile
+}  // namespace souffle

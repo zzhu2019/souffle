@@ -11,6 +11,9 @@
 #include <string>
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 /*
  * CLI to parse command line arguments and start up the TUI to either run a single command,
  * generate the GUI file or run the TUI
@@ -29,3 +32,6 @@ public:
 
     void parse();
 };
+
+}  // namespace profile
+}  // namespace souffle

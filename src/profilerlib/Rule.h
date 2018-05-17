@@ -13,6 +13,9 @@
 #include <tuple>
 #include <utility>
 
+namespace souffle {
+namespace profile {
+
 /*
  * Class to hold information about souffle Rule profile information
  */
@@ -97,3 +100,6 @@ public:
 
     std::string toString();
 };
+
+}  // namespace profile
+}  // namespace souffle

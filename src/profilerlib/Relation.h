@@ -16,6 +16,9 @@
 #include <utility>
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 /*
  * Stores the iterations and rules of a given relation
  */
@@ -121,3 +124,6 @@ public:
         this->prev_num_tuples = prev_num_tuples;
     }
 };
+
+}  // namespace profile
+}  // namespace souffle

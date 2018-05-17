@@ -29,6 +29,9 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+namespace souffle {
+namespace profile {
+
 Tui::Tui(std::string filename, bool live, bool gui) {
     this->f_name = filename;
 
@@ -862,3 +865,6 @@ bool Tui::string_sort(std::vector<std::string> a, std::vector<std::string> b) {
     // std::cerr << a->getCells()[0]->getDoubVal() << "\n";
     return a[0] > b[0];
 }
+
+}  // namespace profile
+}  // namespace souffle

@@ -13,6 +13,9 @@
 #include <termios.h>
 #include <unistd.h>
 
+namespace souffle {
+namespace profile {
+
 /*
  * A class that reads user input a char at a time allowing for tab completion and history to be implemented
  * TODO: link live reader and this class for the warning message that the live reader has finished to be
@@ -64,3 +67,6 @@ public:
     void clearPrompt(size_t text_len);
     void showFullText(const std::string& text);
 };
+
+}  // namespace profile
+}  // namespace souffle

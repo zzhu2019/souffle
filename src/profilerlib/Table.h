@@ -11,6 +11,9 @@
 #include "Row.h"
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 /*
  * Table class for holding a vector of rows
  * And sorting the rows based on a datacomparator function
@@ -31,3 +34,6 @@ public:
 
     void sort(int col_num);
 };
+
+}  // namespace profile
+}  // namespace souffle

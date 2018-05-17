@@ -16,6 +16,9 @@
 #include <termios.h>  // for termios, tcsetattr, tcgetattr, ECHO, ICANON, cc_t
 #include <unistd.h>   // for read
 
+namespace souffle {
+namespace profile {
+
 void InputReader::getch() {
     char buf = 0;
     struct termios old = {};
@@ -289,3 +292,6 @@ void InputReader::clearPrompt(size_t text_len) {
         std::cout << "\b \b" << std::flush;
     }
 }
+
+}  // namespace profile
+}  // namespace souffle

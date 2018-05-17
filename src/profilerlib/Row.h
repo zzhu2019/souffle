@@ -15,6 +15,9 @@
 #include <string>
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 /*
  * Row class for Tables, holds a vector of cells.
  */
@@ -40,3 +43,6 @@ public:
         return cells;
     }
 };
+
+}  // namespace profile
+}  // namespace souffle

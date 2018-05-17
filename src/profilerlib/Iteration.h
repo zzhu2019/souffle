@@ -14,6 +14,9 @@
 #include <unordered_map>
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 /*
  * Represents recursive profile data
  */
@@ -74,3 +77,6 @@ public:
         this->locator = locator;
     }
 };
+
+}  // namespace profile
+}  // namespace souffle

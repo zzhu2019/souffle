@@ -17,6 +17,9 @@
 
 #define GetCurrentDir getcwd
 
+namespace souffle {
+namespace profile {
+
 /*
  * A series of functions necessary throughout the code
  * Mostly string manipulation
@@ -55,3 +58,6 @@ std::string cleanJsonOut(double val);
 
 std::string stripWhitespace(std::string val);
 }  // namespace Tools
+
+}  // namespace profile
+}  // namespace souffle

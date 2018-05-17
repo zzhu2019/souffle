@@ -15,6 +15,9 @@
 #include <string>
 #include <utility>
 
+namespace souffle {
+namespace profile {
+
 template <typename T>
 class Cell : public CellInterface {
 public:
@@ -106,3 +109,6 @@ public:
         return "-";
     }
 };
+
+}  // namespace profile
+}  // namespace souffle

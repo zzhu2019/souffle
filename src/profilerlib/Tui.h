@@ -14,6 +14,9 @@
 #include <string>
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 class Reader;
 /*
  * Text User interface for SouffleProf
@@ -84,3 +87,6 @@ public:
 protected:
     void verAtoms(Table& atomTable, const std::string& ruleName = "");
 };
+
+}  // namespace profile
+}  // namespace souffle

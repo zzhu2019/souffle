@@ -16,6 +16,9 @@
 #include <memory>
 #include <sstream>
 
+namespace souffle {
+namespace profile {
+
 /*
  * Convert a number into a shorthand notation
  * eg. 1230000 -> 1.23M
@@ -327,3 +330,6 @@ std::string Tools::stripWhitespace(std::string val) {
     size_t last = val.find_last_not_of(' ');
     return val.substr(first, (last - first + 1));
 }
+
+}  // namespace profile
+}  // namespace souffle

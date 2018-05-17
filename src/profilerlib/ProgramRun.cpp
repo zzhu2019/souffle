@@ -9,6 +9,9 @@
 #include "profilerlib/ProgramRun.h"
 #include <sstream>
 
+namespace souffle {
+namespace profile {
+
 std::string ProgramRun::toString() {
     std::ostringstream output;
     output << "ProgramRun:" << runtime << "\nRelations:\n";
@@ -56,3 +59,6 @@ Relation* ProgramRun::getRelation(std::string name) {
     }
     return nullptr;
 }
+
+}  // namespace profile
+}  // namespace souffle

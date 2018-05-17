@@ -10,6 +10,9 @@
 
 #include <string>
 
+namespace souffle {
+namespace profile {
+
 class CellInterface {
 public:
     virtual std::string toString(int precision) = 0;
@@ -22,3 +25,6 @@ public:
 
     virtual ~CellInterface() {}
 };
+
+}  // namespace profile
+}  // namespace souffle

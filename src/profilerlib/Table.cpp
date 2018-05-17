@@ -10,6 +10,9 @@
 #include "profilerlib/DataComparator.h"
 #include <algorithm>
 
+namespace souffle {
+namespace profile {
+
 void Table::sort(int col_num) {
     switch (col_num) {
         case 1:
@@ -36,3 +39,6 @@ void Table::sort(int col_num) {
             break;
     }
 }
+
+}  // namespace profile
+}  // namespace souffle
