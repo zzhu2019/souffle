@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Util.h"
-#include "profilerlib/json11.h"
+#include "json11.h"
 #include <cassert>
 #include <chrono>
 #include <fstream>

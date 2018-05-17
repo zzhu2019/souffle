@@ -17,8 +17,8 @@
 #pragma once
 
 #include "EventProcessor.h"
+#include "ProfileDatabase.h"
 #include "Util.h"
-#include "profilerlib/ProfileDatabase.h"
 #include <atomic>
 #include <cassert>
 #include <chrono>

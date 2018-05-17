@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-#include "profilerlib/ProfileDatabase.h"
+#include "ProfileDatabase.h"
 
 namespace souffle {
 namespace profile {

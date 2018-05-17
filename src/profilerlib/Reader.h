@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "profilerlib/ProfileDatabase.h"
+#include "ProfileDatabase.h"
 #include "profilerlib/ProgramRun.h"
 #include <fstream>
 #include <memory>

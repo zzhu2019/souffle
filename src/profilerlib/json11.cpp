@@ -19,7 +19,7 @@
  * THE SOFTWARE.
  */
 
-#include "profilerlib/json11.h"
+#include "json11.h"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
