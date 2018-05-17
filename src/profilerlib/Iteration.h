@@ -32,7 +32,11 @@ public:
 
     void addRule(std::vector<std::string> data, std::string rec_id);
 
-    inline std::unordered_map<std::string, std::shared_ptr<Rule>> getRul_rec() {
+    void addRule(const std::string& ruleKey, std::shared_ptr<Rule>& rule) {
+        rul_rec_map[ruleKey] = rule;
+    }
+
+    inline const std::unordered_map<std::string, std::shared_ptr<Rule>>& getRul_rec() {
         return this->rul_rec_map;
     }
 
