@@ -10,6 +10,7 @@
 #include "profilerlib/CellInterface.h"
 #include "profilerlib/Row.h"
 #include "profilerlib/Table.h"
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <iomanip>
@@ -267,15 +268,16 @@ std::string Tools::cleanString(std::string val) {
         if (start_pos < val.size()) {
             if (val[start_pos] == 'n' || val[start_pos] == 't') {
                 val.replace(start_pos, 1, " ");
-            }  // else if (str[start_pos] == '"') {
-
-            //}
+            }
         }
     }
 
     if (val.at(0) == '"' && val.at(val.size() - 1) == '"') {
         val = val.substr(1, val.size() - 2);
     }
+
+    std::replace(val.begin(), val.end(), '\n', ' ');
+    std::replace(val.begin(), val.end(), '\t', ' ');
 
     return val;
 }
