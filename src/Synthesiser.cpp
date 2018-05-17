@@ -1358,6 +1358,8 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "// -- query evaluation --\n";
     if (Global::config().has("profile")) {
         os << "ProfileEventSingleton::instance().startTimer();\n";
+        os << "{\n"
+           << R"_(Logger logger("@runtime;", 0);)_" << '\n';
     }
 
     // TODO (lyndonhenry): an array of addresses of the gotos may be more efficient than a switch statement
@@ -1396,6 +1398,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     }
 
     if (Global::config().has("profile")) {
+        os << "}\n";
         os << "dumpFreqs();\n";
         os << "ProfileEventSingleton::instance().stopTimer();\n";
         os << "std::ofstream profile(profiling_fname);\n";
