@@ -211,10 +211,11 @@ public:
         milliseconds start = va_arg(args, milliseconds);
         milliseconds end = va_arg(args, milliseconds);
         std::string iteration = std::to_string(va_arg(args, size_t));
-        db.addTextEntry({"program", "relation", relation, "recursive-rule", rule, version, "source-locator"},
+        db.addTextEntry({"program", "relation", relation, "iteration", iteration, "recursive-rule", rule,
+                                version, "source-locator"},
                 srcLocator);
-        db.addDurationEntry({"program", "relation", relation, "recursive-rule", rule, version, "iteration",
-                                    iteration, "runtime"},
+        db.addDurationEntry({"program", "relation", relation, "iteration", iteration, "recursive-rule", rule,
+                                    version, "runtime"},
                 start, end);
     }
 } recursiveRuleTimingProcessor;
@@ -234,10 +235,11 @@ public:
         const std::string& rule = signature[4];
         size_t number = va_arg(args, size_t);
         std::string iteration = std::to_string(va_arg(args, size_t));
-        db.addTextEntry({"program", "relation", relation, "recursive-rule", rule, version, "source-locator"},
+        db.addTextEntry({"program", "relation", relation, "iteration", iteration, "recursive-rule", rule,
+                                version, "source-locator"},
                 srcLocator);
-        db.addSizeEntry({"program", "relation", relation, "recursive-rule", rule, version, "iteration",
-                                iteration, "num-tuples"},
+        db.addSizeEntry({"program", "relation", relation, "iteration", iteration, "recursive-rule", rule,
+                                version, "num-tuples"},
                 number);
     }
 } recursiveRuleNumberProcessor;

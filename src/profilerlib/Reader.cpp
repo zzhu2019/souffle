@@ -32,9 +32,6 @@ void Reader::processFile() {
     }
     runtime = (programDuration->getEnd() - programDuration->getStart()).count() / 1000.0;
 
-    std::cout << "runtime = " << runtime << std::endl;
-    std::cout << "db:" << std::endl;
-
     for (const auto& cur :
             dynamic_cast<souffle::profile::DirectoryEntry*>(db.lookupEntry({"program", "relation"}))
                     ->getKeys()) {
@@ -72,32 +69,57 @@ public:
 protected:
     T& base;
 };
+
+/**
+ * Visit ProfileDB recursive rule.
+ * ruleversion: {DSN}
+ */
 class RecursiveRuleVisitor : public DSNVisitor<Rule> {
 public:
     RecursiveRuleVisitor(Rule& rule) : DSNVisitor(rule) {}
 };
 
+/**
+ * Visit ProfileDB non-recursive rules.
+ * rule: {versionNum : {DSN}, versionNum+1: {DSN}}
+ */
 class RecursiveRulesVisitor : public souffle::profile::Visitor {
 public:
-    RecursiveRulesVisitor(Relation& relation) : relation(relation) {}
+    RecursiveRulesVisitor(Iteration& iteration, Relation& relation)
+            : iteration(iteration), relation(relation) {}
     void visit(souffle::profile::DirectoryEntry& ruleEntry) override {
-        auto rule = std::make_shared<Rule>(ruleEntry.getKey(), relation.createRecID(ruleEntry.getKey()));
-        RecursiveRuleVisitor visitor(*rule);
         for (const auto& key : ruleEntry.getKeys()) {
-            ruleEntry.readEntry(key)->accept(visitor);
+            auto& versions = *ruleEntry.readDirectoryEntry(key);
+            auto rule = std::make_shared<Rule>(
+                    ruleEntry.getKey(), std::stoi(key), relation.createRecID(ruleEntry.getKey()));
+            RecursiveRuleVisitor visitor(*rule);
+            for (const auto& versionKey : versions.getKeys()) {
+                versions.readEntry(versionKey)->accept(visitor);
+            }
+            // To match map keys defined in Iteration::addRule()
+            std::string ruleKey = key + rule->getLocator() + key;
+            iteration.addRule(ruleKey, rule);
         }
-        relation.getRuleMap()[rule->getLocator()] = rule;
     }
 
-private:
+protected:
+    Iteration& iteration;
     Relation& relation;
 };
 
+/**
+ * Visit ProfileDB non-recursive rule.
+ * rule: {DSN}
+ */
 class NonRecursiveRuleVisitor : public DSNVisitor<Rule> {
 public:
     NonRecursiveRuleVisitor(Rule& rule) : DSNVisitor(rule) {}
 };
 
+/**
+ * Visit ProfileDB non-recursive rules.
+ * non-recursive-rule: {rule1: {DSN}, ...}
+ */
 class NonRecursiveRulesVisitor : public souffle::profile::Visitor {
 public:
     NonRecursiveRulesVisitor(Relation& relation) : relation(relation) {}
@@ -110,10 +132,66 @@ public:
         relation.getRuleMap()[rule->getLocator()] = rule;
     }
 
-private:
+protected:
     Relation& relation;
 };
 
+/**
+ * Visit a ProfileDB relation iteration.
+ * iterationNumber: {DSN, recursive-rule: {}}
+ */
+class IterationVisitor : public DSNVisitor<Iteration> {
+public:
+    IterationVisitor(Iteration& iteration, Relation& relation) : DSNVisitor(iteration), relation(relation) {}
+    void visit(souffle::profile::DurationEntry& duration) override {
+        if (duration.getKey() == "runtime") {
+            auto runtime = (duration.getEnd() - duration.getStart()).count() / 1000.0;
+            base.setRuntime(runtime);
+        } else if (duration.getKey() == "copytime") {
+            auto copytime = (duration.getEnd() - duration.getStart()).count() / 1000.0;
+            base.setCopy_time(copytime);
+        }
+    }
+    void visit(souffle::profile::DirectoryEntry& directory) override {
+        if (directory.getKey() == "recursive-rule") {
+            RecursiveRulesVisitor rulesVisitor(base, relation);
+            for (const auto& key : directory.getKeys()) {
+                directory.readEntry(key)->accept(rulesVisitor);
+            }
+        } else {
+            std::cerr << "Unexpected entry: " << std::endl;
+            directory.print(std::cerr, 0);
+        }
+    }
+
+protected:
+    Relation& relation;
+};
+
+/**
+ * Visit ProfileDB iterations.
+ * iteration: {num: {}, num2: {}, ...}
+ */
+class IterationsVisitor : public souffle::profile::Visitor {
+public:
+    IterationsVisitor(Relation& relation) : relation(relation) {}
+    void visit(souffle::profile::DirectoryEntry& ruleEntry) override {
+        auto iteration = std::make_shared<Iteration>();
+        IterationVisitor visitor(*iteration, relation);
+        for (const auto& key : ruleEntry.getKeys()) {
+            ruleEntry.readEntry(key)->accept(visitor);
+        }
+        relation.getIterations().push_back(iteration);
+    }
+
+protected:
+    Relation& relation;
+};
+
+/**
+ * Visit ProfileDB relations.
+ * relname: {DSN, non-recursive-rule: {}, iteration: {...}}
+ */
 class RelationVisitor : public DSNVisitor<Relation> {
 public:
     RelationVisitor(Relation& relation) : DSNVisitor(relation) {}
@@ -125,29 +203,12 @@ public:
     }
     void visit(souffle::profile::DirectoryEntry& directory) override {
         if (directory.getKey() == "iteration") {
-            base.getIterations().push_back(std::make_unique<Iteration>());
+            IterationsVisitor iterationsVisitor(base);
             for (const auto& key : directory.getKeys()) {
-                auto& iteration = *directory.readDirectoryEntry(key);
-                auto runtime = dynamic_cast<souffle::profile::DurationEntry*>(iteration.readEntry("runtime"));
-                base.getIterations().back()->setRuntime(
-                        (runtime->getEnd() - runtime->getStart()).count() / 1000.0);
-                auto copytime =
-                        dynamic_cast<souffle::profile::DurationEntry*>(iteration.readEntry("copytime"));
-                if (copytime != nullptr) {
-                    base.getIterations().back()->setCopy_time(
-                            (copytime->getEnd() - copytime->getStart()).count() / 1000.0);
-                }
-                auto numTuples =
-                        dynamic_cast<souffle::profile::SizeEntry*>(iteration.readEntry("num-tuples"));
-                base.getIterations().back()->setNum_tuples(numTuples->getSize());
+                directory.readEntry(key)->accept(iterationsVisitor);
             }
         } else if (directory.getKey() == "non-recursive-rule") {
             NonRecursiveRulesVisitor rulesVisitor(base);
-            for (const auto& key : directory.getKeys()) {
-                directory.readEntry(key)->accept(rulesVisitor);
-            }
-        } else if (directory.getKey() == "recursive-rule") {
-            RecursiveRulesVisitor rulesVisitor(base);
             for (const auto& key : directory.getKeys()) {
                 directory.readEntry(key)->accept(rulesVisitor);
             }
