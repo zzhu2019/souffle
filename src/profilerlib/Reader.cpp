@@ -232,14 +232,7 @@ void Reader::addRelation(const DirectoryEntry& relation) {
 
 void Reader::process(const std::vector<std::string>& data) {
     {
-        if (data[0].find("recursive") != std::string::npos) {
-            // insert into the map if it does not exist already
-            if (relation_map.find(data[1]) == relation_map.end()) {
-                relation_map.emplace(data[1], std::make_shared<Relation>(Relation(data[1], createId())));
-            }
-            std::shared_ptr<Relation> _rel = relation_map[data[1]];
-            addIteration(_rel, data);
-        } else if (data[0].find("frequency") != std::string::npos) {
+        if (data[0].find("frequency") != std::string::npos) {
             if (relation_map.find(data[1]) == relation_map.end()) {
                 relation_map.emplace(data[1], std::make_shared<Relation>(Relation(data[1], createId())));
             }
@@ -250,33 +243,6 @@ void Reader::process(const std::vector<std::string>& data) {
 
     run->SetRuntime(this->runtime);
     run->setRelation_map(this->relation_map);
-}
-
-void Reader::addIteration(std::shared_ptr<Relation> rel, std::vector<std::string> data) {
-    bool ready = rel->isReady();
-    std::vector<std::shared_ptr<Iteration>>& iterations = rel->getIterations();
-
-    // add an iteration if we require one
-    if (ready || iterations.empty()) {
-        iterations.push_back(std::make_shared<Iteration>(Iteration()));
-        rel->setReady(false);
-    }
-
-    std::shared_ptr<Iteration>& iter = iterations.back();
-
-    if (data[0].find("rule") != std::string::npos) {
-        std::string temp = rel->createRecID(data[4]);
-        iter->addRule(data, temp);
-    } else if (data[0].at(0) == 't' && data[0].find("relation") != std::string::npos) {
-        iter->setRuntime(std::stod(data[5]));
-        iter->setLocator(data[2]);
-        rel->setLocator(data[2]);
-    } else if (data[0].at(0) == 'n' && data[0].find("relation") != std::string::npos) {
-        iter->setNum_tuples(std::stol(data[3]));
-    } else if (data[0].at(0) == 'c' && data[0].find("relation") != std::string::npos) {
-        iter->setCopy_time(std::stod(data[5]));
-        rel->setReady(true);
-    }
 }
 
 void Reader::addFrequency(std::shared_ptr<Relation> rel, std::vector<std::string> data) {
