@@ -787,8 +787,8 @@ void Tui::verGraph(std::string c, std::string col) {
     std::string strRel = "R" + part[0].substr(1);
 
     Table ver_table = out.getVersions(strRel, c);
-    std::printf("%6s%2s%s\n\n", (*ver_table.rows[0])[6]->getStringVal().c_str(), "",
-            (*ver_table.rows[0])[5]->getStringVal().c_str());
+    std::printf("%6s%2s%s\n\n", (*ver_table.rows[0])[6]->toString(0).c_str(), "",
+            (*ver_table.rows[0])[5]->toString(0).c_str());
     if (col.compare("tot_t") == 0) {
         std::vector<double> list;
         for (auto& row : ver_table.rows) {
