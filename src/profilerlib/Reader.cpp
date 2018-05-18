@@ -176,12 +176,13 @@ class IterationsVisitor : public Visitor {
 public:
     IterationsVisitor(Relation& relation) : relation(relation) {}
     void visit(DirectoryEntry& ruleEntry) override {
-        auto iteration = std::make_shared<Iteration>();
-        IterationVisitor visitor(*iteration, relation);
         for (const auto& key : ruleEntry.getKeys()) {
+            auto iteration = std::make_shared<Iteration>();
+            relation.getIterations().push_back(iteration);
+            IterationVisitor visitor(*iteration, relation);
+
             ruleEntry.readEntry(key)->accept(visitor);
         }
-        relation.getIterations().push_back(iteration);
     }
 
 protected:
