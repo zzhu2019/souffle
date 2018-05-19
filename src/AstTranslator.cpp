@@ -1285,12 +1285,17 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
         // a function to load relations
         const auto& makeRamLoad = [&](const AstRelation* relation, const std::string& inputDirectory,
                 const std::string& fileExtension) {
-            appendStmt(current,
-                    std::make_unique<RamLoad>(std::unique_ptr<RamRelation>(getRamRelation(relation, &typeEnv,
-                                                      getRelationName(relation->getName()),
-                                                      relation->getArity(), false, relation->isHashset())),
-                            getInputIODirectives(
-                                    relation, Global::config().get(inputDirectory), fileExtension)));
+            std::unique_ptr<RamStatement> statement = std::make_unique<RamLoad>(
+                    std::unique_ptr<RamRelation>(
+                            getRamRelation(relation, &typeEnv, getRelationName(relation->getName()),
+                                    relation->getArity(), false, relation->isHashset())),
+                    getInputIODirectives(relation, Global::config().get(inputDirectory), fileExtension));
+            if (Global::config().has("profile")) {
+                const std::string logTimerStatement = LogStatement::tRelationLoadTime(
+                        getRelationName(relation->getName()), relation->getSrcLoc());
+                statement = std::make_unique<RamLogTimer>(std::move(statement), logTimerStatement);
+            }
+            appendStmt(current, std::move(statement));
         };
 
         // a function to print the size of relations
@@ -1303,12 +1308,18 @@ std::unique_ptr<RamProgram> AstTranslator::translateProgram(const AstTranslation
         // a function to store relations
         const auto& makeRamStore = [&](const AstRelation* relation, const std::string& outputDirectory,
                 const std::string& fileExtension) {
-            appendStmt(current,
+            std::unique_ptr<RamStatement> statement =
                     std::make_unique<RamStore>(std::unique_ptr<RamRelation>(getRamRelation(relation, &typeEnv,
                                                        getRelationName(relation->getName()),
                                                        relation->getArity(), false, relation->isHashset())),
                             getOutputIODirectives(relation, &typeEnv, Global::config().get(outputDirectory),
-                                    fileExtension)));
+                                    fileExtension));
+            if (Global::config().has("profile")) {
+                const std::string logTimerStatement = LogStatement::tRelationSaveTime(
+                        getRelationName(relation->getName()), relation->getSrcLoc());
+                statement = std::make_unique<RamLogTimer>(std::move(statement), logTimerStatement);
+            }
+            appendStmt(current, std::move(statement));
         };
 
         // a function to drop relations

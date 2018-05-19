@@ -342,6 +342,28 @@ public:
 } recursiveRelationCopyTimingProcessor;
 
 /**
+ * Recursive Relation Copy Timing Profile Event Processor
+ */
+class RelationIOTimingProcessor : public EventProcessor {
+public:
+    RelationIOTimingProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@t-relation-savetime", this);
+        EventProcessorSingleton::instance().registerEventProcessor("@t-relation-loadtime", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase& db, const std::vector<std::string>& signature, va_list& args) override {
+        const std::string& relation = signature[1];
+        const std::string& srcLocator = signature[2];
+        const std::string ioType = signature[3];
+        milliseconds start = va_arg(args, milliseconds);
+        milliseconds end = va_arg(args, milliseconds);
+        db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator);
+        db.addDurationEntry({"program", "relation", relation, ioType}, start, end);
+    }
+} relationIOTimingProcessor;
+
+
+/**
  * Program Run Event Processor
  */
 class ProgramRuntimeProcessor : public EventProcessor {
