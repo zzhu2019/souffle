@@ -350,7 +350,7 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
             // process nested
             visit(*search.getNestedOperation());
             if (Global::config().has("profile")) {
-                interpreter.frequencies[search.getProfileText()]++;
+                interpreter.frequencies[search.getProfileText()][interpreter.getIterationNumber()]++;
             }
         }
 
@@ -784,7 +784,9 @@ void Interpreter::executeMain() {
         evalStmt(main);
         ProfileEventSingleton::instance().stopTimer();
         for (auto const& cur : frequencies) {
-            ProfileEventSingleton::instance().makeQuantityEvent(cur.first, cur.second, 0);
+            for (auto const& iter : cur.second) {
+                ProfileEventSingleton::instance().makeQuantityEvent(cur.first, iter.second, iter.first);
+            }
         }
         // open output stream
         std::string fname = Global::config().get("profile");

@@ -26,7 +26,7 @@ protected:
     long num_tuples = 0;
     std::string identifier;
     std::string locator = "";
-    std::map<std::string, std::tuple<std::string, long, long>> atoms{};
+    std::map<std::tuple<std::string, std::string>, size_t> atoms{};
 
 private:
     bool recursive = false;
@@ -58,12 +58,11 @@ public:
         this->num_tuples = num_tuples;
     }
 
-    inline void addAtomFrequency(
-            const std::string& subruleName, std::string atom, long version, long frequency) {
-        atoms[subruleName] = std::make_tuple(std::move(atom), version, frequency);
+    inline void addAtomFrequency(const std::string& subruleName, std::string atom, long frequency) {
+        atoms[std::make_tuple(subruleName, atom)] = frequency;
     }
 
-    const std::map<std::string, std::tuple<std::string, long, long>>& getAtoms() {
+    const std::map<std::tuple<std::string, std::string>, size_t>& getAtoms() {
         return atoms;
     }
     inline std::string getName() {

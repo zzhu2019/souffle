@@ -460,7 +460,8 @@ std::unique_ptr<RamValue> translateValue(const AstArgument& arg, const ValueInde
 
 /** generate RAM code for a clause */
 std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& clause,
-        const AstProgram* program, const TypeEnvironment* typeEnv, int version, bool ret, bool hashset) {
+        const AstProgram* program, const TypeEnvironment* typeEnv, const AstClause& originalClause,
+        int version, bool ret, bool hashset) {
     // check whether there is an imposed order constraint
     if (clause.getExecutionPlan() && clause.getExecutionPlan()->hasOrderFor(version)) {
         // get the imposed order
@@ -482,7 +483,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
         copy->setFixedExecutionPlan();
 
         // translate reordered clause
-        return translateClause(*copy, program, typeEnv, version, false, hashset);
+        return translateClause(*copy, program, typeEnv, originalClause, version, false, hashset);
     }
 
     // get extract some details
@@ -748,9 +749,9 @@ std::unique_ptr<RamStatement> AstTranslator::translateClause(const AstClause& cl
                 ss << "@frequency-atom" << ';';
                 ss << relName << ';';
                 ss << version << ';';
-                ss << clause.getSrcLoc() << ';';
                 ss << stringify(toString(clause)) << ';';
                 ss << stringify(toString(*atom)) << ';';
+                ss << stringify(toString(originalClause)) << ';';
                 ss << level << ';';
                 op = std::make_unique<RamScan>(getRelation(atom), std::move(op), isExistCheck, ss.str());
             } else {
@@ -893,7 +894,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateNonRecursiveRelation(const
         }
 
         // translate clause
-        std::unique_ptr<RamStatement> rule = translateClause(*clause, program, &typeEnv);
+        std::unique_ptr<RamStatement> rule = translateClause(*clause, program, &typeEnv, *clause);
 
         // add logging
         if (Global::config().has("profile")) {
@@ -1099,7 +1100,7 @@ std::unique_ptr<RamStatement> AstTranslator::translateRecursiveRelation(
                 }
 
                 std::unique_ptr<RamStatement> rule =
-                        translateClause(*r1, program, &typeEnv, version, false, rel->isHashset());
+                        translateClause(*r1, program, &typeEnv, *cl, version, false, rel->isHashset());
 
                 /* add logging */
                 if (Global::config().has("profile")) {
@@ -1221,7 +1222,7 @@ std::unique_ptr<RamStatement> AstTranslator::makeSubproofSubroutine(
         }
     }
 
-    return translateClause(*intermediateClause, program, &typeEnv, 0, true);
+    return translateClause(*intermediateClause, program, &typeEnv, clause, 0, true);
 }
 
 /** translates the given datalog program into an equivalent RAM program  */

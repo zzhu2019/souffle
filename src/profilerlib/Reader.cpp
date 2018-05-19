@@ -71,12 +71,44 @@ protected:
 };
 
 /**
+ * Visit ProfileDB atom frequencies.
+ * atomrule : {atom: {num-tuples: num}}
+ */
+class AtomFrequenciesVisitor : public Visitor {
+public:
+    AtomFrequenciesVisitor(Rule& rule) : rule(rule) {}
+    void visit(DirectoryEntry& directory) {
+        const std::string& clause = directory.getKey();
+
+        for (auto& key : directory.getKeys()) {
+            auto* numTuples =
+                    dynamic_cast<SizeEntry*>(directory.readDirectoryEntry(key)->readEntry("num-tuples"));
+            if (numTuples == nullptr) {
+                return;
+            }
+            rule.addAtomFrequency(clause, key, numTuples->getSize());
+        }
+    }
+
+private:
+    Rule& rule;
+};
+
+/**
  * Visit ProfileDB recursive rule.
  * ruleversion: {DSN}
  */
 class RecursiveRuleVisitor : public DSNVisitor<Rule> {
 public:
     RecursiveRuleVisitor(Rule& rule) : DSNVisitor(rule) {}
+    void visit(DirectoryEntry& directory) override {
+        if (directory.getKey() == "atom-frequency") {
+            AtomFrequenciesVisitor atomFrequenciesVisitor(base);
+            for (auto& key : directory.getKeys()) {
+                directory.readDirectoryEntry(key)->accept(atomFrequenciesVisitor);
+            }
+        }
+    }
 };
 
 /**
@@ -114,6 +146,14 @@ protected:
 class NonRecursiveRuleVisitor : public DSNVisitor<Rule> {
 public:
     NonRecursiveRuleVisitor(Rule& rule) : DSNVisitor(rule) {}
+    void visit(DirectoryEntry& directory) override {
+        if (directory.getKey() == "atom-frequency") {
+            AtomFrequenciesVisitor atomFrequenciesVisitor(base);
+            for (auto& key : directory.getKeys()) {
+                directory.readDirectoryEntry(key)->accept(atomFrequenciesVisitor);
+            }
+        }
+    }
 };
 
 /**
@@ -253,16 +293,23 @@ void Reader::addFrequency(std::shared_ptr<Relation> rel, std::vector<std::string
         for (auto& iter : rel->getIterations()) {
             for (auto& rule : iter->getRul_rec()) {
                 if (rule.second->getVersion() == std::stoi(data[2])) {
-                    rule.second->addAtomFrequency(data[4], data[5], std::stoi(data[2]), std::stoi(data[7]));
+                    rule.second->addAtomFrequency(data[4], data[5], std::stoi(data[7]));
                     return;
                 }
             }
         }
     } else {
         std::shared_ptr<Rule> _rul = ruleMap[data[3]];
-        // @frequency-rule;relationName;version;srcloc;stringify(clause);stringify(atom);level;count
+        // 0: @frequency-rule;
+        // 1: relationName;
+        // 2: version;
+        // 3: srcloc;
+        // 4: stringify(clause);
+        // 5: stringify(atom);
+        // 6: level;
+        // 7: count
         // Generate name from atom + version
-        _rul->addAtomFrequency(data[4], data[5], std::stoi(data[2]), std::stoi(data[7]));
+        _rul->addAtomFrequency(data[4], data[5], std::stoi(data[7]));
     }
 }
 

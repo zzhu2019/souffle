@@ -362,7 +362,6 @@ public:
     }
 } relationIOTimingProcessor;
 
-
 /**
  * Program Run Event Processor
  */
@@ -391,15 +390,27 @@ public:
     void process(ProfileDatabase& db, const std::vector<std::string>& signature, va_list& args) override {
         const std::string& relation = signature[1];
         const std::string& version = signature[2];
-        const std::string& srcLocator = signature[3];
-        const std::string& rule = signature[4];
-        const std::string& level = signature[5];
+        const std::string& rule = signature[3];
+        const std::string& atom = signature[4];
+        const std::string& originalRule = signature[5];
+        size_t level = std::stoi(signature[6]);
         size_t number = va_arg(args, size_t);
-        db.addTextEntry(
-                {"program", "relation", relation, "atom-frequency", rule, "source-locator"}, srcLocator);
-        db.addSizeEntry({"program", "relation", relation, "atom-frequency", rule, "version", version, "level",
-                                level, "num-tuples"},
-                number);
+        size_t iteration = va_arg(args, size_t);
+        // non-recursive rule
+        if (rule == originalRule) {
+            db.addSizeEntry({"program", "relation", relation, "non-recursive-rule", rule, "atom-frequency",
+                                    rule, atom, "num-tuples"},
+                    number);
+        } else {
+            db.addSizeEntry(
+                    {"program", "relation", relation, "iteration", std::to_string(iteration),
+                            "recursive-rule", originalRule, version, "atom-frequency", rule, atom, "level"},
+                    level);
+            db.addSizeEntry({"program", "relation", relation, "iteration", std::to_string(iteration),
+                                    "recursive-rule", originalRule, version, "atom-frequency", rule, atom,
+                                    "num-tuples"},
+                    number);
+        }
     }
 } frequencyAtomProcessor;
 

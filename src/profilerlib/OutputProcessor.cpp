@@ -154,8 +154,8 @@ Table OutputProcessor::getRulTable() {
 
 /*
  * atom table :
- * ROW[0] = atom
- * ROW[1] = version
+ * ROW[0] = clause
+ * ROW[1] = atom
  * ROW[2] = frequency
  */
 Table OutputProcessor::getAtomTable(std::string strRel, std::string strRul) {
@@ -175,11 +175,10 @@ Table OutputProcessor::getAtomTable(std::string strRel, std::string strRul) {
                 continue;
             }
             for (auto& atom : rul->getAtoms()) {
-                Row row(4);
-                row[0] = std::shared_ptr<CellInterface>(new Cell<std::string>(atom.first));
-                row[1] = std::shared_ptr<CellInterface>(new Cell<std::string>(std::get<0>(atom.second)));
-                row[2] = std::shared_ptr<CellInterface>(new Cell<long>(std::get<1>(atom.second)));
-                row[3] = std::shared_ptr<CellInterface>(new Cell<long>(std::get<2>(atom.second)));
+                Row row(3);
+                row[0] = std::shared_ptr<CellInterface>(new Cell<std::string>(std::get<0>(atom.first)));
+                row[1] = std::shared_ptr<CellInterface>(new Cell<std::string>(std::get<1>(atom.first)));
+                row[2] = std::shared_ptr<CellInterface>(new Cell<long>(atom.second));
 
                 table.addRow(std::make_shared<Row>(row));
             }
@@ -210,7 +209,7 @@ Table OutputProcessor::getSubrulTable(std::string strRel, std::string strRul) {
             }
             for (auto& atom : rul->getAtoms()) {
                 Row row(1);
-                row[0] = std::shared_ptr<CellInterface>(new Cell<std::string>(atom.first));
+                row[0] = std::shared_ptr<CellInterface>(new Cell<std::string>(std::get<0>(atom.first)));
 
                 table.addRow(std::make_shared<Row>(row));
             }
@@ -299,7 +298,6 @@ Table OutputProcessor::getVersions(std::string strRel, std::string strRul) {
  * atom table :
  * ROW[0] = rule
  * ROW[1] = atom
- * ROW[2] = version
  * ROW[3] = frequency
  */
 Table OutputProcessor::getVersionAtoms(std::string strRel, std::string srcLocator, int version) {
@@ -315,11 +313,11 @@ Table OutputProcessor::getVersionAtoms(std::string strRel, std::string srcLocato
                     if (rul->getLocator().compare(srcLocator) == 0 && rul->getVersion() == version) {
                         for (auto& atom : rul->getAtoms()) {
                             Row row(4);
-                            row[0] = std::shared_ptr<CellInterface>(new Cell<std::string>(atom.first));
+                            row[0] = std::shared_ptr<CellInterface>(
+                                    new Cell<std::string>(std::get<0>(atom.first)));
                             row[1] = std::shared_ptr<CellInterface>(
-                                    new Cell<std::string>(std::get<0>(atom.second)));
-                            row[2] = std::shared_ptr<CellInterface>(new Cell<long>(std::get<1>(atom.second)));
-                            row[3] = std::shared_ptr<CellInterface>(new Cell<long>(std::get<2>(atom.second)));
+                                    new Cell<std::string>(std::get<1>(atom.first)));
+                            row[2] = std::shared_ptr<CellInterface>(new Cell<long>(atom.second));
                             table.addRow(std::make_shared<Row>(row));
                         }
                     }

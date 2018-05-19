@@ -653,13 +653,13 @@ void Tui::verAtoms(Table& atom_table, const std::string& ruleName) {
         if (rule != lastRule) {
             lastRule = rule;
             std::cout << "     " << row[0]->toString(precision) << std::endl;
-            std::printf("      %-16s%s\n", "FREQ", "ATOM");
-            firstRun = false;
+            firstRun = true;
         }
         if (firstRun) {
             std::printf("      %-16s%s\n", "FREQ", "ATOM");
+            firstRun = false;
         }
-        std::printf("      %-16s%s\n", row[3]->toString(precision).c_str(), row[1]->getStringVal().c_str());
+        std::printf("      %-16s%s\n", row[2]->toString(precision).c_str(), row[1]->getStringVal().c_str());
     }
     std::cout << '\n';
 }

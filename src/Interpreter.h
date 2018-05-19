@@ -54,7 +54,7 @@ private:
     relation_map environment;
 
     /** counters for atom profiling */
-    std::map<std::string, size_t> frequencies;
+    std::map<std::string, std::map<size_t, size_t>> frequencies;
 
     /** counter for $ operator */
     int counter;
