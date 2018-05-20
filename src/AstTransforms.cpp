@@ -1301,17 +1301,25 @@ bool ReplaceSingletonVariablesTransformer::transform(AstTranslationUnit& transla
                 }
             });
 
+            std::set<std::string> ignoredVars;
+
             // Don't unname singleton variables occurring in records.
             // TODO (azreika): remove this check once issue #420 is fixed
             std::set<std::string> recordVars;
             visitDepthFirst(*clause, [&](const AstRecordInit& rec) {
-                visitDepthFirst(rec, [&](const AstVariable& var) { recordVars.insert(var.getName()); });
+                visitDepthFirst(rec, [&](const AstVariable& var) { ignoredVars.insert(var.getName()); });
+            });
+
+            // Don't unname singleton variables occuring in constraints.
+            std::set<std::string> constraintVars;
+            visitDepthFirst(*clause, [&](const AstConstraint& cons) {
+                visitDepthFirst(cons, [&](const AstVariable& var) { ignoredVars.insert(var.getName()); });
             });
 
             std::set<std::string> singletons;
             for (auto& var : vars) {
                 if ((nonsingletons.find(var) == nonsingletons.end()) &&
-                        (recordVars.find(var) == recordVars.end())) {
+                        (ignoredVars.find(var) == ignoredVars.end())) {
                     changed = true;
                     singletons.insert(var);
                 }
