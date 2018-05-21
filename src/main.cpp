@@ -468,7 +468,14 @@ int main(int argc, char** argv) {
             os.close();
 
             if (Global::config().has("compile")) {
+                auto start = std::chrono::high_resolution_clock::now();
                 compileToBinary(compileCmd, sourceFilename);
+                /* Report overall run-time in verbose mode */
+                if (Global::config().has("verbose")) {
+                    auto end = std::chrono::high_resolution_clock::now();
+                    std::cout << "Compilation Time: " << std::chrono::duration<double>(end - start).count()
+                              << "sec\n";
+                }
                 // run compiled C++ program if requested.
                 if (!Global::config().has("dl-program")) {
                     executeBinary(baseFilename);
