@@ -781,6 +781,8 @@ void Interpreter::executeMain() {
         if (!os.is_open()) {
             throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
         }
+        // Prepare the frequency table for threaded use
+        visitDepthFirst(main, [&](const RamSearch& node) { frequencies[node.getProfileText()] = 0; });
         // Enable profiling for execution of main
         os << LogStatement::startDebug() << std::endl;
         ProfileEventSingleton::instance().setLog(&os);
