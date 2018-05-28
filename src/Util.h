@@ -46,7 +46,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-
 /**
  * Converts a string to a number
  */
@@ -57,7 +56,7 @@
 #define stord(a) std::stoi(a)
 #else
 #error RAM Domain is neither 32bit nor 64bit
-#endif 
+#endif
 
 #if __cplusplus == 201103L
 // make_unique implementation for C++11
@@ -96,7 +95,6 @@ typename _Unique_if<T>::_Known_bound make_unique(Args&&...) = delete;
 #endif
 
 namespace souffle {
-
 
 /**
  * Check whether a string is a sequence of numbers
