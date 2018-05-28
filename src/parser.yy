@@ -125,6 +125,8 @@
 %token INSTANTIATE               "component instantiation"
 %token NUMBER_TYPE               "numeric type declaration"
 %token SYMBOL_TYPE               "symbolic type declaration"
+%token TONUMBER                  "convert string to number"
+%token TOSTRING                  "convert number to string"
 %token AS                        "type cast"
 %token NIL                       "nil reference"
 %token PIPE                      "|"
@@ -581,6 +583,14 @@ arg
     }
   | STRLEN LPAREN arg RPAREN {
         $$ = new AstUnaryFunctor(UnaryOp::STRLEN, std::unique_ptr<AstArgument>($3));
+        $$->setSrcLoc(@$);
+    }
+  | TONUMBER LPAREN arg RPAREN {
+        $$ = new AstUnaryFunctor(UnaryOp::TONUMBER, std::unique_ptr<AstArgument>($3));
+        $$->setSrcLoc(@$);
+    }
+  | TOSTRING LPAREN arg RPAREN {
+        $$ = new AstUnaryFunctor(UnaryOp::TOSTRING, std::unique_ptr<AstArgument>($3));
         $$->setSrcLoc(@$);
     }
   | SUBSTR LPAREN arg COMMA arg COMMA arg RPAREN {
