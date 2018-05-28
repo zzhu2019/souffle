@@ -24,13 +24,13 @@ namespace souffle {
  */
 enum class UnaryOp {
     __UNDEFINED__,
-    ORD,     // ordinal number of a string
-    STRLEN,  // length of a string
-    NEG,     // numeric negation
-    BNOT,    // bitwise negation
-    LNOT,    // logical negation
-    TONUMBER,// convert string to number
-    TOSTRING // convert number to string
+    ORD,       // ordinal number of a string
+    STRLEN,    // length of a string
+    NEG,       // numeric negation
+    BNOT,      // bitwise negation
+    LNOT,      // logical negation
+    TONUMBER,  // convert string to number
+    TOSTRING   // convert number to string
 };
 
 /**

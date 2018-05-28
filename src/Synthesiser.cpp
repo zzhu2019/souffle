@@ -983,17 +983,17 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     visit(op.getValue(), out);
                     out << "))";
                     break;
-                 case UnaryOp::TOSTRING:
+                case UnaryOp::TOSTRING:
                     out << "symTable.lookup(std::to_string(";
                     visit(op.getValue(), out);
                     out << "))";
                     break;
-                 case UnaryOp::TONUMBER:
+                case UnaryOp::TONUMBER:
                     out << "(wrapper_tonumber(symTable.resolve((size_t)";
                     visit(op.getValue(), out);
                     out << ")))";
                     break;
-                    
+
                 default:
                     assert(false && "Unsupported Operation!");
                     break;
@@ -1237,7 +1237,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "     std::cerr << \"error: wrong string provided by to_number(\\\"\";\n";
     os << "     std::cerr << str << \"\\\") ";
     os << "functor.\\n\";\n";
-    os << "     raise(SIGFPE);\n"; 
+    os << "     raise(SIGFPE);\n";
     os << "   } return result;\n";
     os << "}\n";
 
