@@ -91,7 +91,7 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                 case UnaryOp::TONUMBER: {
                     RamDomain result = 0;
                     try {
-                        result = std::stoi(interpreter.getSymbolTable().resolve(arg));
+                        result = stord(interpreter.getSymbolTable().resolve(arg));
                     } catch (...) {
                         std::cerr << "error: wrong string provided by to_number(\"";
                         std::cerr << interpreter.getSymbolTable().resolve(arg);

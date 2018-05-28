@@ -1233,7 +1233,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "}\n";
     os << "static inline RamDomain wrapper_tonumber(const std::string& str) {\n";
     os << "   RamDomain result=0; \n";
-    os << "   try { result = std::stoi(str); } catch(...) { \n";
+    os << "   try { result = stord(str); } catch(...) { \n";
     os << "     std::cerr << \"error: wrong string provided by to_number(\\\"\";\n";
     os << "     std::cerr << str << \"\\\") ";
     os << "functor.\\n\";\n";
