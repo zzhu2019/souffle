@@ -17,6 +17,7 @@
 #pragma once
 
 #include "Macro.h"
+#include "RamTypes.h"
 
 #include <algorithm>
 #include <atomic>
@@ -44,6 +45,18 @@
 #include <libgen.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+/**
+ * Converts a string to a number
+ */
+
+#if RAM_DOMAIN_SIZE == 64
+#define stord(a) std::stoll(a)
+#elif RAM_DOMAIN_SIZE == 32
+#define stord(a) std::stoi(a)
+#else
+#error RAM Domain is neither 32bit nor 64bit
+#endif
 
 #if __cplusplus == 201103L
 // make_unique implementation for C++11

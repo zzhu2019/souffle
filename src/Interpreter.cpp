@@ -88,6 +88,20 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                     return arg;
                 case UnaryOp::STRLEN:
                     return interpreter.getSymbolTable().resolve(arg).size();
+                case UnaryOp::TONUMBER: {
+                    RamDomain result = 0;
+                    try {
+                        result = stord(interpreter.getSymbolTable().resolve(arg));
+                    } catch (...) {
+                        std::cerr << "error: wrong string provided by to_number(\"";
+                        std::cerr << interpreter.getSymbolTable().resolve(arg);
+                        std::cerr << "\") functor.\n";
+                        raise(SIGFPE);
+                    }
+                    return result;
+                }
+                case UnaryOp::TOSTRING:
+                    return interpreter.getSymbolTable().lookup(std::to_string(arg));
                 default:
                     assert(false && "unsupported operator");
                     return 0;

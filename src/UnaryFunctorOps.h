@@ -16,6 +16,8 @@
 #pragma once
 
 #include <cassert>
+#include <iostream>
+#include <string>
 
 namespace souffle {
 
@@ -24,11 +26,13 @@ namespace souffle {
  */
 enum class UnaryOp {
     __UNDEFINED__,
-    ORD,     // ordinal number of a string
-    STRLEN,  // length of a string
-    NEG,     // numeric negation
-    BNOT,    // bitwise negation
-    LNOT     // logical negation
+    ORD,       // ordinal number of a string
+    STRLEN,    // length of a string
+    NEG,       // numeric negation
+    BNOT,      // bitwise negation
+    LNOT,      // logical negation
+    TONUMBER,  // convert string to number
+    TOSTRING   // convert number to string
 };
 
 /**
@@ -46,6 +50,10 @@ inline std::string getSymbolForUnaryOp(UnaryOp op) {
             return "bnot";
         case UnaryOp::LNOT:
             return "lnot";
+        case UnaryOp::TONUMBER:
+            return "to_number";
+        case UnaryOp::TOSTRING:
+            return "to_string";
         default:
             break;
     }
@@ -62,6 +70,8 @@ inline UnaryOp getUnaryOpForSymbol(const std::string& symbol) {
     if (symbol == "-") return UnaryOp::NEG;
     if (symbol == "bnot") return UnaryOp::BNOT;
     if (symbol == "lnot") return UnaryOp::LNOT;
+    if (symbol == "to_number") return UnaryOp::TONUMBER;
+    if (symbol == "to_string") return UnaryOp::TOSTRING;
     std::cout << "Unrecognised operator: " << symbol << "\n";
     assert(false && "Unsupported Operator!");
     return UnaryOp::__UNDEFINED__;
@@ -77,7 +87,10 @@ inline bool isNumericUnaryOp(const UnaryOp op) {
         case UnaryOp::NEG:
         case UnaryOp::BNOT:
         case UnaryOp::LNOT:
+        case UnaryOp::TONUMBER:
             return true;
+        case UnaryOp::TOSTRING:
+            return false;
         default:
             break;
     }
@@ -100,9 +113,11 @@ inline bool unaryOpAcceptsNumbers(const UnaryOp op) {
         case UnaryOp::NEG:
         case UnaryOp::BNOT:
         case UnaryOp::LNOT:
+        case UnaryOp::TOSTRING:
             return true;
         case UnaryOp::ORD:
         case UnaryOp::STRLEN:
+        case UnaryOp::TONUMBER:
             return false;
         default:
             break;

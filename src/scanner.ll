@@ -111,6 +111,8 @@
 "sum"                                 { return yy::parser::make_SUM(yylloc); }
 "true"                                { return yy::parser::make_TRUE(yylloc); }
 "false"                               { return yy::parser::make_FALSE(yylloc); }
+"to_string"                           { return yy::parser::make_TOSTRING(yylloc); }
+"to_number"                           { return yy::parser::make_TONUMBER(yylloc); }
 ".strict"                             { return yy::parser::make_STRICT(yylloc); }
 ".plan"                               { return yy::parser::make_PLAN(yylloc); }
 "|"                                   { return yy::parser::make_PIPE(yylloc); }
