@@ -218,23 +218,23 @@ void Tui::outputJson() {
             outfile, "data={'top':[%f,%lu],\n'rel':{\n", run->getDoubleRuntime(), run->getTotNumTuples());
     for (auto& _row : rel_table_state.getRows()) {
         Row row = *_row;
-        std::fprintf(outfile, "'%s':['%s','%s',%s,%s,%s,%s,%lu,'%s',[", row[6]->getStringVal().c_str(),
-                Tools::cleanJsonOut(row[5]->getStringVal()).c_str(), row[6]->getStringVal().c_str(),
+        std::fprintf(outfile, "'%s':['%s','%s',%s,%s,%s,%s,%lu,'%s',[", row[6]->toString(0).c_str(),
+                Tools::cleanJsonOut(row[5]->toString(0)).c_str(), row[6]->toString(0).c_str(),
                 Tools::cleanJsonOut(row[0]->getDoubVal()).c_str(),
                 Tools::cleanJsonOut(row[1]->getDoubVal()).c_str(),
                 Tools::cleanJsonOut(row[2]->getDoubVal()).c_str(),
                 Tools::cleanJsonOut(row[3]->getDoubVal()).c_str(), row[4]->getLongVal(),
-                row[7]->getStringVal().c_str());
-        source_loc = row[7]->getStringVal();  // if (source_loc.empty()) {...} faster?
+                row[7]->toString(0).c_str());
+        source_loc = row[7]->toString(0);  // if (source_loc.empty()) {...} faster?
         for (auto& _rel_row : rul_table_state.getRows()) {
             Row rel_row = *_rel_row;
-            if (rel_row[7]->getStringVal().compare(row[5]->getStringVal()) == 0) {
-                std::fprintf(outfile, "'%s',", rel_row[6]->getStringVal().c_str());
+            if (rel_row[7]->toString(0) == row[5]->toString(0)) {
+                std::fprintf(outfile, "'%s',", rel_row[6]->toString(0).c_str());
             }
         }
         std::fprintf(outfile, "],{\"tot_t\":[");
         std::vector<std::shared_ptr<Iteration>> iter =
-                run->getRelation_map()[row[5]->getStringVal()]->getIterations();
+                run->getRelation_map()[row[5]->toString(0)]->getIterations();
         for (auto& i : iter) {
             std::fprintf(outfile, "%s,", Tools::cleanJsonOut(i->getRuntime()).c_str());
         }
@@ -253,14 +253,14 @@ void Tui::outputJson() {
     for (auto& _row : rul_table_state.getRows()) {
         Row row = *_row;
 
-        std::vector<std::string> part = Tools::split(row[6]->getStringVal(), ".");
+        std::vector<std::string> part = Tools::split(row[6]->toString(0), ".");
         std::string strRel = "R" + part[0].substr(1);
-        Table ver_table = out.getVersions(strRel, row[6]->getStringVal());
+        Table ver_table = out.getVersions(strRel, row[6]->toString(0));
 
         std::string src;
         if (ver_table.rows.size() > 0) {
             if (ver_table.rows[0]->cells[9] != nullptr) {
-                src = (*ver_table.rows[0])[9]->getStringVal();
+                src = (*ver_table.rows[0])[9]->toString(0);
             } else {
                 src = "-";
             }
@@ -268,9 +268,9 @@ void Tui::outputJson() {
             src = row[10]->toString(-1);
         }
 
-        std::fprintf(outfile, "\"%s\":[\"%s\",\"%s\",%s,%s,%s,%s,%lu,\"%s\",[",
-                row[6]->getStringVal().c_str(), Tools::cleanJsonOut(row[5]->getStringVal()).c_str(),
-                row[6]->getStringVal().c_str(), Tools::cleanJsonOut(row[0]->getDoubVal()).c_str(),
+        std::fprintf(outfile, "\"%s\":[\"%s\",\"%s\",%s,%s,%s,%s,%lu,\"%s\",[", row[6]->toString(0).c_str(),
+                Tools::cleanJsonOut(row[5]->toString(0)).c_str(), row[6]->toString(0).c_str(),
+                Tools::cleanJsonOut(row[0]->getDoubVal()).c_str(),
                 Tools::cleanJsonOut(row[1]->getDoubVal()).c_str(),
                 Tools::cleanJsonOut(row[2]->getDoubVal()).c_str(),
                 Tools::cleanJsonOut(row[3]->getDoubVal()).c_str(), row[4]->getLongVal(), src.c_str());
@@ -281,23 +281,23 @@ void Tui::outputJson() {
             Row ver_row = *_ver_row;
             std::fprintf(outfile, "[\"%s\",\"%s\",%s,%s,%s,%s,%lu,\"%s\",%lu],",
 
-                    Tools::cleanJsonOut(ver_row[5]->getStringVal()).c_str(),
-                    ver_row[6]->getStringVal().c_str(), Tools::cleanJsonOut(ver_row[0]->getDoubVal()).c_str(),
+                    Tools::cleanJsonOut(ver_row[5]->toString(0)).c_str(), ver_row[6]->toString(0).c_str(),
+                    Tools::cleanJsonOut(ver_row[0]->getDoubVal()).c_str(),
                     Tools::cleanJsonOut(ver_row[1]->getDoubVal()).c_str(),
                     Tools::cleanJsonOut(ver_row[2]->getDoubVal()).c_str(),
                     Tools::cleanJsonOut(ver_row[3]->getDoubVal()).c_str(), ver_row[4]->getLongVal(),
                     src.c_str(), ver_row[8]->getLongVal());
         }
-        if (row[6]->getStringVal().at(0) == 'C') {
+        if (row[6]->toString(0).at(0) == 'C') {
             std::fprintf(outfile, "],{\"tot_t\":[");
 
             std::vector<long> iteration_tuples;
-            for (auto& i : run->getRelation_map()[row[7]->getStringVal()]->getIterations()) {
+            for (auto& i : run->getRelation_map()[row[7]->toString(0)]->getIterations()) {
                 bool add = false;
                 double tot_time = 0.0;
                 long tot_num = 0.0;
                 for (auto& rul : i->getRul_rec()) {
-                    if (rul.second->getId().compare(row[6]->getStringVal()) == 0) {
+                    if (rul.second->getId() == row[6]->toString(0)) {
                         tot_time += rul.second->getRuntime();
 
                         tot_num += rul.second->getNum_tuples();
