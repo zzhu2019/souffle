@@ -56,7 +56,7 @@ class EventProcessorSingleton {
     /** keyword / event processor mapping */
     std::map<std::string, EventProcessor*> registry;
 
-    EventProcessorSingleton() : registry() {}
+    EventProcessorSingleton() = default;
 
     /** split string */
     static std::vector<std::string> split(std::string str, std::string split_str) {

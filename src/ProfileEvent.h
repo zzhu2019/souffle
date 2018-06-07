@@ -45,7 +45,7 @@ class ProfileEventSingleton {
     /** profile database */
     profile::ProfileDatabase database;
 
-    ProfileEventSingleton() : database() {}
+    ProfileEventSingleton() = default;
 
 public:
     ~ProfileEventSingleton() = default;
