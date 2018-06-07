@@ -42,6 +42,8 @@ private:
 public:
     Tui(std::string filename, bool live, bool gui);
 
+    Tui();
+
     void runCommand(std::vector<std::string> c);
 
     void runProf();
@@ -86,6 +88,7 @@ public:
 
 protected:
     void verAtoms(Table& atomTable, const std::string& ruleName = "");
+    void updateDB();
 };
 
 }  // namespace profile

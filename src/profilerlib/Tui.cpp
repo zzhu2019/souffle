@@ -38,10 +38,21 @@ Tui::Tui(std::string filename, bool live, bool gui) {
     std::shared_ptr<ProgramRun>& run = out.getProgramRun();
 
     this->reader = std::make_shared<Reader>(filename, run, false, live);
-    reader->processFile();
-    this->loaded = reader->isLoaded();
 
     this->alive = false;
+    updateDB();
+    this->loaded = reader->isLoaded();
+}
+
+Tui::Tui() {
+    std::shared_ptr<ProgramRun>& run = out.getProgramRun();
+    this->reader = std::make_shared<Reader>(run);
+    this->loaded = true;
+    updateDB();
+}
+
+void Tui::updateDB() {
+    reader->processFile();
     rul_table_state = out.getRulTable();
     rel_table_state = out.getRelTable();
 }
