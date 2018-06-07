@@ -88,6 +88,10 @@ public:
     const profile::ProfileDatabase& getDB() const {
         return database;
     }
+
+    void setDBFromFile(const std::string& filename) {
+        database = profile::ProfileDatabase(filename);
+    }
 };
 
 }  // namespace souffle
