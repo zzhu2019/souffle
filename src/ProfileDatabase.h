@@ -60,7 +60,7 @@ public:
     virtual void accept(Visitor& v) = 0;
 
     // print
-    virtual void print(std::ostream& os, int tabpos) = 0;
+    virtual void print(std::ostream& os, int tabpos) const = 0;
 };
 
 /**
@@ -111,7 +111,7 @@ public:
     }
 
     // print directory
-    void print(std::ostream& os, int tabpos) override {
+    void print(std::ostream& os, int tabpos) const override {
         os << std::string(tabpos, ' ') << '"' << getKey() << "\": {" << std::endl;
         bool first{true};
         for (auto const& cur : entries) {
@@ -146,7 +146,7 @@ public:
     }
 
     // print entry
-    void print(std::ostream& os, int tabpos) override {
+    void print(std::ostream& os, int tabpos) const override {
         os << std::string(tabpos, ' ') << "\"" << getKey() << "\": " << size;
     }
 };
@@ -173,7 +173,7 @@ public:
     }
 
     // write size entry
-    void print(std::ostream& os, int tabpos) override {
+    void print(std::ostream& os, int tabpos) const override {
         os << std::string(tabpos, ' ') << "\"" << getKey() << "\": \"" << text << "\"";
     }
 };
@@ -209,7 +209,7 @@ public:
     }
 
     // write size entry
-    void print(std::ostream& os, int tabpos) override {
+    void print(std::ostream& os, int tabpos) const override {
         os << std::string(tabpos, ' ') << '"' << getKey();
         os << "\": { \"start\": ";
         os << start.count();
@@ -298,6 +298,7 @@ protected:
 
 public:
     ProfileDatabase() : root(std::unique_ptr<DirectoryEntry>(new DirectoryEntry("root"))) {}
+
     ProfileDatabase(const std::string& filename) : root(std::make_unique<DirectoryEntry>("root")) {
         std::ifstream file(filename);
         if (!file.is_open()) {
@@ -356,10 +357,11 @@ public:
         dir->accept(ctr);
         return ctr.getCounter();
     }
+
     /**
-     * Find path: if directories along the path do not exist, create them.
+     * Return the entry at the given path.
      */
-    Entry* lookupEntry(std::vector<std::string> path) {
+    Entry* const lookupEntry(const std::vector<std::string>& path) const {
         DirectoryEntry* dir = root.get();
         auto last = --path.end();
         for (auto it = path.begin(); it != last; ++it) {
@@ -372,7 +374,7 @@ public:
     }
 
     // print database
-    void print(std::ostream& os) {
+    void print(std::ostream& os) const {
         os << '{' << std::endl;
         root->print(os, 1);
         os << std::endl << '}' << std::endl;
