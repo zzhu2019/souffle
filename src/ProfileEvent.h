@@ -84,6 +84,10 @@ public:
 
     /** Stop timer */
     void stopTimer() {}
+
+    const profile::ProfileDatabase& getDB() const {
+        return m_database;
+    }
 };
 
 }  // namespace souffle
