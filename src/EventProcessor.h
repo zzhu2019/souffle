@@ -379,6 +379,28 @@ public:
 } programRuntimeProcessor;
 
 /**
+ * Program Resource Utilisation Event Processor
+ */
+const class ProgramResourceUtilisationProcessor : public EventProcessor {
+public:
+    ProgramResourceUtilisationProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@utilisation", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase& db, const std::vector<std::string>& signature, va_list& args) override {
+        milliseconds time = va_arg(args, milliseconds);
+        double systemTime = va_arg(args, double);
+        double userTime = va_arg(args, double);
+        double maxRSS = va_arg(args, double);
+        std::string timeString = std::to_string(time.count());
+        db.addTimeEntry({"program", "usage", timeString}, time);
+        db.addSizeEntry({"program", "usage", timeString, "systemtime"}, systemTime);
+        db.addSizeEntry({"program", "usage", timeString, "usertime"}, userTime);
+        db.addSizeEntry({"program", "usage", timeString, "maxRSS"}, maxRSS);
+    }
+} programResourceUtilisationProcessor;
+
+/**
  * Frequency Atom Processor
  */
 const class FrequencyAtomProcessor : public EventProcessor {

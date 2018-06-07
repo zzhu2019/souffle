@@ -71,7 +71,18 @@ public:
 
     /** create utilisation event */
     void makeUtilisationEvent(const std::string& txt) {
-        profile::EventProcessorSingleton::instance().process(database, txt.c_str());
+        /* system CPU time used */
+        struct rusage ru;
+        getrusage(RUSAGE_SELF, &ru);
+        /* system CPU time used */
+        double systemTime = (double)ru.ru_stime.tv_sec * 1000000.0 + (double)ru.ru_stime.tv_usec;
+        /* user CPU time used */
+        double userTime = (double)ru.ru_utime.tv_sec * 1000000.0 + (double)ru.ru_utime.tv_usec;
+        /* Maximum resident set size (kb) */
+        double maxRSS = ru.ru_maxrss;
+
+        profile::EventProcessorSingleton::instance().process(
+                database, txt.c_str(), systemTime, userTime, maxRSS);
     }
 
     /** Dump all events */
@@ -115,7 +126,7 @@ private:
 
         /** run method for thread th */
         void run() {
-            ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
+            ProfileEventSingleton::instance().makeUtilisationEvent("@utilisation");
             this->incRunCount();
             if (this->getRunCount() % 128 == 0) this->increaseInterval();
         }

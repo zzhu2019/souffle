@@ -20,6 +20,7 @@ class DirectoryEntry;
 class DurationEntry;
 class SizeEntry;
 class TextEntry;
+class TimeEntry;
 
 /**
  * Visitor Interface
@@ -32,9 +33,10 @@ public:
     virtual void visit(DirectoryEntry& e);
 
     // visit entries
+    virtual void visit(DurationEntry& e) {}
     virtual void visit(SizeEntry& e) {}
     virtual void visit(TextEntry& e) {}
-    virtual void visit(DurationEntry& e) {}
+    virtual void visit(TimeEntry& e) {}
 };
 
 /**
@@ -219,6 +221,36 @@ public:
     }
 };
 
+/**
+ * Time Entry
+ */
+class TimeEntry : public Entry {
+private:
+    // time since start
+    milliseconds time;
+
+public:
+    TimeEntry(const std::string& key, milliseconds time) : Entry(key), time(time) {}
+
+    // get start
+    milliseconds getTime() const {
+        return time;
+    }
+
+    // accept visitor
+    void accept(Visitor& v) override {
+        v.visit(*this);
+    }
+
+    // write size entry
+    void print(std::ostream& os, int tabpos) const override {
+        os << std::string(tabpos, ' ') << '"' << getKey();
+        os << "\": { \"time\": ";
+        os << time.count();
+        os << '}';
+    }
+};
+
 inline void Visitor::visit(DirectoryEntry& e) {
     std::cout << "Dir " << e.getKey() << "\n";
     for (const auto& cur : e.getKeys()) {
@@ -342,6 +374,17 @@ public:
 
         const std::string& key = qualifier.back();
         std::unique_ptr<DurationEntry> entry = std::make_unique<DurationEntry>(key, start, end);
+        dir->writeEntry(std::move(entry));
+    }
+
+    // add duration entry
+    void addTimeEntry(std::vector<std::string> qualifier, milliseconds time) {
+        assert(qualifier.size() > 0 && "no qualifier");
+        std::vector<std::string> path(qualifier.begin(), qualifier.end() - 1);
+        DirectoryEntry* dir = lookupPath(path);
+
+        const std::string& key = qualifier.back();
+        std::unique_ptr<TimeEntry> entry = std::make_unique<TimeEntry>(key, time);
         dir->writeEntry(std::move(entry));
     }
 
