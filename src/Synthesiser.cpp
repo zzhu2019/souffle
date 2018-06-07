@@ -986,6 +986,17 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                     visit(op.getValue(), out);
                     out << "))";
                     break;
+                case UnaryOp::TOSTRING:
+                    out << "symTable.lookup(std::to_string(";
+                    visit(op.getValue(), out);
+                    out << "))";
+                    break;
+                case UnaryOp::TONUMBER:
+                    out << "(wrapper_tonumber(symTable.resolve((size_t)";
+                    visit(op.getValue(), out);
+                    out << ")))";
+                    break;
+
                 default:
                     assert(false && "Unsupported Operation!");
                     break;
@@ -1221,6 +1232,15 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     os << "     std::cerr << \"warning: wrong index position provided by substr(\\\"\";\n";
     os << "     std::cerr << str << \"\\\",\" << (int32_t)idx << \",\" << (int32_t)len << \") "
           "functor.\\n\";\n";
+    os << "   } return result;\n";
+    os << "}\n";
+    os << "static inline RamDomain wrapper_tonumber(const std::string& str) {\n";
+    os << "   RamDomain result=0; \n";
+    os << "   try { result = stord(str); } catch(...) { \n";
+    os << "     std::cerr << \"error: wrong string provided by to_number(\\\"\";\n";
+    os << "     std::cerr << str << \"\\\") ";
+    os << "functor.\\n\";\n";
+    os << "     raise(SIGFPE);\n";
     os << "   } return result;\n";
     os << "}\n";
 

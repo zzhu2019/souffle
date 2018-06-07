@@ -88,6 +88,20 @@ RamDomain Interpreter::evalVal(const RamValue& value, const InterpreterContext& 
                     return arg;
                 case UnaryOp::STRLEN:
                     return interpreter.getSymbolTable().resolve(arg).size();
+                case UnaryOp::TONUMBER: {
+                    RamDomain result = 0;
+                    try {
+                        result = stord(interpreter.getSymbolTable().resolve(arg));
+                    } catch (...) {
+                        std::cerr << "error: wrong string provided by to_number(\"";
+                        std::cerr << interpreter.getSymbolTable().resolve(arg);
+                        std::cerr << "\") functor.\n";
+                        raise(SIGFPE);
+                    }
+                    return result;
+                }
+                case UnaryOp::TOSTRING:
+                    return interpreter.getSymbolTable().lookup(std::to_string(arg));
                 default:
                     assert(false && "unsupported operator");
                     return 0;
@@ -779,6 +793,10 @@ void Interpreter::executeMain() {
     if (!Global::config().has("profile")) {
         evalStmt(main);
     } else {
+        // Prepare the frequency table for threaded use
+        visitDepthFirst(main, [&](const RamSearch& node) {
+            frequencies.emplace(node.getProfileText(), std::map<size_t, size_t>());
+        });
         // Enable profiling for execution of main
         ProfileEventSingleton::instance().startTimer();
         evalStmt(main);

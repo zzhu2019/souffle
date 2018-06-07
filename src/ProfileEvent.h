@@ -80,10 +80,14 @@ public:
     }
 
     /** Start timer */
-    void startTimer() {}
+    void startTimer() {
+        timer.start();
+    }
 
     /** Stop timer */
-    void stopTimer() {}
+    void stopTimer() {
+        timer.stop();
+    }
 
     const profile::ProfileDatabase& getDB() const {
         return database;
@@ -92,6 +96,77 @@ public:
     void setDBFromFile(const std::string& filename) {
         database = profile::ProfileDatabase(filename);
     }
+
+private:
+    /**  Profile Timer */
+    class ProfileTimer {
+    private:
+        /** time interval between per utilisation read */
+        uint32_t t;
+
+        /** timer is running */
+        bool running = false;
+
+        /** thread timer runs on */
+        std::thread th;
+
+        /** number of utilisation events */
+        uint32_t runCount = 0;
+
+        /** run method for thread th */
+        void run() {
+            ProfileEventSingleton::instance().makeUtilisationEvent("utilisation");
+            this->incRunCount();
+            if (this->getRunCount() % 128 == 0) this->increaseInterval();
+        }
+
+        uint32_t getInterval() {
+            return t;
+        }
+
+        bool getRunning() {
+            return running;
+        }
+
+        /** Increase value of time interval by factor of 2 */
+        void increaseInterval() {
+            // Don't increase time interval past 60 seconds
+            if (t < 60000) {
+                t = t * 2;
+            }
+        }
+
+        uint32_t getRunCount() {
+            return runCount;
+        }
+
+        void incRunCount() {
+            runCount++;
+        }
+
+    public:
+        ProfileTimer(uint32_t in = 1) : t(in) {}
+
+        /** start timer on the thread th */
+        void start() {
+            running = true;
+
+            th = std::thread([this]() {
+                while (this->getRunning()) {
+                    this->run();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(this->getInterval()));
+                }
+            });
+        }
+
+        /** stop timer on the thread th */
+        void stop() {
+            running = false;
+            th.join();
+        }
+    };
+
+    ProfileTimer timer;
 };
 
 }  // namespace souffle
