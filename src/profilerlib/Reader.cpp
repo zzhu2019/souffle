@@ -26,6 +26,8 @@ namespace souffle {
 namespace profile {
 
 void Reader::processFile() {
+    rel_id = 0;
+    relation_map.clear();
     auto programDuration = dynamic_cast<DurationEntry*>(db.lookupEntry({"program", "runtime"}));
     if (programDuration == nullptr) {
         std::cout << "db is empty!" << std::endl;

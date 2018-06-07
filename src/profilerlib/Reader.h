@@ -9,6 +9,7 @@
 #pragma once
 
 #include "ProfileDatabase.h"
+#include "ProfileEvent.h"
 #include "profilerlib/ProgramRun.h"
 #include <fstream>
 #include <memory>
@@ -33,7 +34,7 @@ class Reader {
 private:
     std::string file_loc;
     std::streampos gpos;
-    ProfileDatabase db;
+    const ProfileDatabase& db = ProfileEventSingleton::instance().getDB();
     bool loaded = false;
     bool online;
 
@@ -44,9 +45,12 @@ private:
 public:
     std::shared_ptr<ProgramRun> run;
 
-    Reader(std::string arg, std::shared_ptr<ProgramRun> run, bool vFlag, bool online)
-            : file_loc(arg), db(file_loc), online(online), run(run) {}
+    Reader(std::string filename, std::shared_ptr<ProgramRun> run, bool vFlag, bool online)
+            : file_loc(std::move(filename)), online(online), run(run) {
+        ProfileEventSingleton::instance().setDBFromFile(file_loc);
+    }
 
+    Reader(std::shared_ptr<ProgramRun> run) {}
     /**
      * Read the contents from file into the class
      */
