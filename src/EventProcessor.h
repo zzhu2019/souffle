@@ -157,7 +157,7 @@ public:
 /**
  * Non-Recursive Rule Timing Profile Event Processor
  */
-class NonRecursiveRuleTimingProcessor : public EventProcessor {
+const class NonRecursiveRuleTimingProcessor : public EventProcessor {
 public:
     NonRecursiveRuleTimingProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@t-nonrecursive-rule", this);
@@ -178,7 +178,7 @@ public:
 /**
  * Non-Recursive Rule Number Profile Event Processor
  */
-class NonRecursiveRuleNumberProcessor : public EventProcessor {
+const class NonRecursiveRuleNumberProcessor : public EventProcessor {
 public:
     NonRecursiveRuleNumberProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@n-nonrecursive-rule", this);
@@ -198,7 +198,7 @@ public:
 /**
  * Recursive Rule Timing Profile Event Processor
  */
-class RecursiveRuleTimingProcessor : public EventProcessor {
+const class RecursiveRuleTimingProcessor : public EventProcessor {
 public:
     RecursiveRuleTimingProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@t-recursive-rule", this);
@@ -223,7 +223,7 @@ public:
 /**
  * Recursive Rule Number Profile Event Processor
  */
-class RecursiveRuleNumberProcessor : public EventProcessor {
+const class RecursiveRuleNumberProcessor : public EventProcessor {
 public:
     RecursiveRuleNumberProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@n-recursive-rule", this);
@@ -247,7 +247,7 @@ public:
 /**
  * Non-Recursive Relation Number Profile Event Processor
  */
-class NonRecursiveRelationTimingProcessor : public EventProcessor {
+const class NonRecursiveRelationTimingProcessor : public EventProcessor {
 public:
     NonRecursiveRelationTimingProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@t-nonrecursive-relation", this);
@@ -266,7 +266,7 @@ public:
 /**
  * Non-Recursive Relation Number Profile Event Processor
  */
-class NonRecursiveRelationNumberProcessor : public EventProcessor {
+const class NonRecursiveRelationNumberProcessor : public EventProcessor {
 public:
     NonRecursiveRelationNumberProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@n-nonrecursive-relation", this);
@@ -284,7 +284,7 @@ public:
 /**
  * Recursive Relation Timing Profile Event Processor
  */
-class RecursiveRelationTimingProcessor : public EventProcessor {
+const class RecursiveRelationTimingProcessor : public EventProcessor {
 public:
     RecursiveRelationTimingProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@t-recursive-relation", this);
@@ -304,7 +304,7 @@ public:
 /**
  * Recursive Relation Timing Profile Event Processor
  */
-class RecursiveRelationNumberProcessor : public EventProcessor {
+const class RecursiveRelationNumberProcessor : public EventProcessor {
 public:
     RecursiveRelationNumberProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@n-recursive-relation", this);
@@ -323,7 +323,7 @@ public:
 /**
  * Recursive Relation Copy Timing Profile Event Processor
  */
-class RecursiveRelationCopyTimingProcessor : public EventProcessor {
+const class RecursiveRelationCopyTimingProcessor : public EventProcessor {
 public:
     RecursiveRelationCopyTimingProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@c-recursive-relation", this);
@@ -344,7 +344,7 @@ public:
 /**
  * Recursive Relation Copy Timing Profile Event Processor
  */
-class RelationIOTimingProcessor : public EventProcessor {
+const class RelationIOTimingProcessor : public EventProcessor {
 public:
     RelationIOTimingProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@t-relation-savetime", this);
@@ -365,7 +365,7 @@ public:
 /**
  * Program Run Event Processor
  */
-class ProgramRuntimeProcessor : public EventProcessor {
+const class ProgramRuntimeProcessor : public EventProcessor {
 public:
     ProgramRuntimeProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@runtime", this);
@@ -381,7 +381,7 @@ public:
 /**
  * Frequency Atom Processor
  */
-class FrequencyAtomProcessor : public EventProcessor {
+const class FrequencyAtomProcessor : public EventProcessor {
 public:
     FrequencyAtomProcessor() {
         EventProcessorSingleton::instance().registerEventProcessor("@frequency-atom", this);
