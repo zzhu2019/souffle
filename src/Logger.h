@@ -29,8 +29,8 @@ namespace souffle {
  * Obtains a reference to the lock synchronizing output operations.
  */
 inline Lock& getOutputLock() {
-    static Lock output_lock;
-    return output_lock;
+    static Lock outputLock;
+    return outputLock;
 }
 
 /**
@@ -43,15 +43,15 @@ inline Lock& getOutputLock() {
  */
 class Logger {
 private:
-    std::string m_label;
-    time_point m_start;
-    size_t m_iteration;
+    std::string label;
+    time_point start;
+    size_t iteration;
 
 public:
     Logger(std::string label, size_t iteration)
-            : m_label(std::move(label)), m_start(now()), m_iteration(iteration) {}
+            : label(std::move(label)), start(now()), iteration(iteration) {}
     ~Logger() {
-        ProfileEventSingleton::instance().makeTimingEvent(m_label, m_start, now(), m_iteration);
+        ProfileEventSingleton::instance().makeTimingEvent(label, start, now(), iteration);
     }
 };
 }  // end of namespace souffle

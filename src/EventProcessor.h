@@ -54,9 +54,9 @@ public:
  */
 class EventProcessorSingleton {
     /** keyword / event processor mapping */
-    std::map<std::string, EventProcessor*> m_registry;
+    std::map<std::string, EventProcessor*> registry;
 
-    EventProcessorSingleton() : m_registry() {}
+    EventProcessorSingleton() : registry() {}
 
     /** split string */
     static std::vector<std::string> split(std::string str, std::string split_str) {
@@ -132,7 +132,7 @@ public:
 
     /** register an event processor with its keyword */
     void registerEventProcessor(const std::string& keyword, EventProcessor* processor) {
-        m_registry[keyword] = processor;
+        registry[keyword] = processor;
     }
 
     /** process a profile event */
@@ -146,8 +146,8 @@ public:
         // invoke the event processor of the event
         const std::string& keyword = eventSignature[0];
         assert(eventSignature.size() > 0 && "no keyword in event description");
-        assert(m_registry.find(keyword) != m_registry.end() && "EventProcessor not found!");
-        m_registry[keyword]->process(db, eventSignature, args);
+        assert(registry.find(keyword) != registry.end() && "EventProcessor not found!");
+        registry[keyword]->process(db, eventSignature, args);
 
         // terminate access to variadic arguments
         va_end(args);

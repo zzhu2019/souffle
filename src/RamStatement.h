@@ -918,15 +918,15 @@ protected:
 class RamLogSize : public RamRelationStatement {
 protected:
     /** logging message */
-    std::string m_message;
+    std::string message;
 
 public:
     RamLogSize(std::unique_ptr<RamRelation> relation, std::string message)
-            : RamRelationStatement(RN_LogSize, std::move(relation)), m_message(std::move(message)) {}
+            : RamRelationStatement(RN_LogSize, std::move(relation)), message(std::move(message)) {}
 
     /** Get logging message */
     const std::string& getMessage() const {
-        return m_message;
+        return message;
     }
 
     /** Pretty print */
@@ -934,12 +934,12 @@ public:
         os << std::string(tabpos, '\t');
         os << "LOGSIZE " << getRelation().getName();
         os << " TEXT "
-           << "\"" << stringify(m_message) << "\"";
+           << "\"" << stringify(message) << "\"";
     }
 
     /** Create clone */
     RamLogSize* clone() const override {
-        RamLogSize* res = new RamLogSize(std::unique_ptr<RamRelation>(relation->clone()), m_message);
+        RamLogSize* res = new RamLogSize(std::unique_ptr<RamRelation>(relation->clone()), message);
         return res;
     }
 

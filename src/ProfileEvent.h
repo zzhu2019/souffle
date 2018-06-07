@@ -43,9 +43,9 @@ namespace souffle {
  */
 class ProfileEventSingleton {
     /** profile database */
-    profile::ProfileDatabase m_database;
+    profile::ProfileDatabase database;
 
-    ProfileEventSingleton() : m_database() {}
+    ProfileEventSingleton() : database() {}
 
 public:
     ~ProfileEventSingleton() = default;
@@ -61,22 +61,22 @@ public:
         milliseconds start_ms = std::chrono::duration_cast<milliseconds>(start.time_since_epoch());
         milliseconds end_ms = std::chrono::duration_cast<milliseconds>(end.time_since_epoch());
         profile::EventProcessorSingleton::instance().process(
-                m_database, txt.c_str(), start_ms, end_ms, iteration);
+                database, txt.c_str(), start_ms, end_ms, iteration);
     }
 
     /** create quantity event */
     void makeQuantityEvent(const std::string& txt, size_t number, int iteration) {
-        profile::EventProcessorSingleton::instance().process(m_database, txt.c_str(), number, iteration);
+        profile::EventProcessorSingleton::instance().process(database, txt.c_str(), number, iteration);
     }
 
     /** create utilisation event */
     void makeUtilisationEvent(const std::string& txt) {
-        profile::EventProcessorSingleton::instance().process(m_database, txt.c_str());
+        profile::EventProcessorSingleton::instance().process(database, txt.c_str());
     }
 
     /** Dump all events */
     void dump(std::ostream& os) {
-        m_database.print(os);
+        database.print(os);
     }
 
     /** Start timer */
@@ -86,7 +86,7 @@ public:
     void stopTimer() {}
 
     const profile::ProfileDatabase& getDB() const {
-        return m_database;
+        return database;
     }
 };
 
