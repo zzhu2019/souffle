@@ -20,6 +20,7 @@
 #include "RamCondition.h"
 #include "RamNode.h"
 #include "RamOperation.h"
+#include "RamProgram.h"
 #include "RamRelation.h"
 #include "RamStatement.h"
 #include "RamValue.h"
