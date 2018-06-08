@@ -1414,7 +1414,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     });
 
     if (Global::config().has("engine")) {
-        os << "EXIT:";
+        os << "EXIT:{}";
     }
 
     if (Global::config().has("profile")) {
