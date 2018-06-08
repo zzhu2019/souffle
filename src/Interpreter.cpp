@@ -357,12 +357,11 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
         void visitSearch(const RamSearch& search) override {
             // check condition
             auto condition = search.getCondition();
-            if (condition && !interpreter.evalCond(*condition, ctxt)) {
-                return;  // condition not valid => skip nested
+            if (!condition || interpreter.evalCond(*condition, ctxt)) {
+                // process nested
+                visit(*search.getNestedOperation());
             }
 
-            // process nested
-            visit(*search.getNestedOperation());
             if (Global::config().has("profile")) {
                 interpreter.frequencies[search.getProfileText()][interpreter.getIterationNumber()]++;
             }
@@ -413,6 +412,9 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
             if (scan.isPureExistenceCheck()) {
                 if (range.first != range.second) {
                     visitSearch(scan);
+                }
+                if (Global::config().has("profile")) {
+                    interpreter.frequencies[scan.getProfileText()][interpreter.getIterationNumber()]++;
                 }
                 return;
             }
