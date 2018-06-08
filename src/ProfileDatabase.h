@@ -186,22 +186,22 @@ public:
 class DurationEntry : public Entry {
 private:
     // duration start
-    milliseconds start;
+    microseconds start;
 
     // duration end
-    milliseconds end;
+    microseconds end;
 
 public:
-    DurationEntry(const std::string& key, milliseconds start, milliseconds end)
+    DurationEntry(const std::string& key, microseconds start, microseconds end)
             : Entry(key), start(start), end(end) {}
 
     // get start
-    milliseconds getStart() const {
+    microseconds getStart() const {
         return start;
     }
 
     // get end
-    milliseconds getEnd() const {
+    microseconds getEnd() const {
         return end;
     }
 
@@ -227,13 +227,13 @@ public:
 class TimeEntry : public Entry {
 private:
     // time since start
-    milliseconds time;
+    microseconds time;
 
 public:
-    TimeEntry(const std::string& key, milliseconds time) : Entry(key), time(time) {}
+    TimeEntry(const std::string& key, microseconds time) : Entry(key), time(time) {}
 
     // get start
-    milliseconds getTime() const {
+    microseconds getTime() const {
         return time;
     }
 
@@ -308,8 +308,8 @@ protected:
                 // Duration entries are also maps
                 if (cur.second.has_shape(
                             {{"start", json11::Json::NUMBER}, {"end", json11::Json::NUMBER}}, err)) {
-                    auto start = std::chrono::milliseconds(cur.second["start"].long_value());
-                    auto end = std::chrono::milliseconds(cur.second["end"].long_value());
+                    auto start = std::chrono::microseconds(cur.second["start"].long_value());
+                    auto end = std::chrono::microseconds(cur.second["end"].long_value());
                     node->writeEntry(std::make_unique<DurationEntry>(cur.first, start, end));
                 } else {
                     auto dir = std::make_unique<DirectoryEntry>(cur.first);
@@ -367,7 +367,7 @@ public:
     }
 
     // add duration entry
-    void addDurationEntry(std::vector<std::string> qualifier, milliseconds start, milliseconds end) {
+    void addDurationEntry(std::vector<std::string> qualifier, microseconds start, microseconds end) {
         assert(qualifier.size() > 0 && "no qualifier");
         std::vector<std::string> path(qualifier.begin(), qualifier.end() - 1);
         DirectoryEntry* dir = lookupPath(path);
@@ -377,8 +377,8 @@ public:
         dir->writeEntry(std::move(entry));
     }
 
-    // add duration entry
-    void addTimeEntry(std::vector<std::string> qualifier, milliseconds time) {
+    // add time entry
+    void addTimeEntry(std::vector<std::string> qualifier, microseconds time) {
         assert(qualifier.size() > 0 && "no qualifier");
         std::vector<std::string> path(qualifier.begin(), qualifier.end() - 1);
         DirectoryEntry* dir = lookupPath(path);

@@ -8,9 +8,9 @@ int main() {
     x.addSizeEntry({"a", "c", "bkey"}, 3);
     x.addTextEntry({"a", "x", "akey"}, "blabla");
     x.addDurationEntry({"a", "x", "akey"},
-            std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::high_resolution_clock().now().time_since_epoch()),
-            std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::high_resolution_clock().now().time_since_epoch()));
     std::cout << "print(std::cout" << std::endl;
     x.print(std::cout);

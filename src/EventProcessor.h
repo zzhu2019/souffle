@@ -166,8 +166,8 @@ public:
         const std::string& relation = signature[1];
         const std::string& srcLocator = signature[2];
         const std::string& rule = signature[3];
-        milliseconds start = va_arg(args, milliseconds);
-        milliseconds end = va_arg(args, milliseconds);
+        microseconds start = va_arg(args, microseconds);
+        microseconds end = va_arg(args, microseconds);
         db.addTextEntry(
                 {"program", "relation", relation, "non-recursive-rule", rule, "source-locator"}, srcLocator);
         db.addDurationEntry(
@@ -208,8 +208,8 @@ public:
         const std::string& version = signature[2];
         const std::string& srcLocator = signature[3];
         const std::string& rule = signature[4];
-        milliseconds start = va_arg(args, milliseconds);
-        milliseconds end = va_arg(args, milliseconds);
+        microseconds start = va_arg(args, microseconds);
+        microseconds end = va_arg(args, microseconds);
         std::string iteration = std::to_string(va_arg(args, size_t));
         db.addTextEntry({"program", "relation", relation, "iteration", iteration, "recursive-rule", rule,
                                 version, "source-locator"},
@@ -256,8 +256,8 @@ public:
     void process(ProfileDatabase& db, const std::vector<std::string>& signature, va_list& args) override {
         const std::string& relation = signature[1];
         const std::string& srcLocator = signature[2];
-        milliseconds start = va_arg(args, milliseconds);
-        milliseconds end = va_arg(args, milliseconds);
+        microseconds start = va_arg(args, microseconds);
+        microseconds end = va_arg(args, microseconds);
         db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator);
         db.addDurationEntry({"program", "relation", relation, "runtime"}, start, end);
     }
@@ -293,8 +293,8 @@ public:
     void process(ProfileDatabase& db, const std::vector<std::string>& signature, va_list& args) override {
         const std::string& relation = signature[1];
         const std::string& srcLocator = signature[2];
-        milliseconds start = va_arg(args, milliseconds);
-        milliseconds end = va_arg(args, milliseconds);
+        microseconds start = va_arg(args, microseconds);
+        microseconds end = va_arg(args, microseconds);
         std::string iteration = std::to_string(va_arg(args, size_t));
         db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator);
         db.addDurationEntry({"program", "relation", relation, "iteration", iteration, "runtime"}, start, end);
@@ -332,8 +332,8 @@ public:
     void process(ProfileDatabase& db, const std::vector<std::string>& signature, va_list& args) override {
         const std::string& relation = signature[1];
         const std::string& srcLocator = signature[2];
-        milliseconds start = va_arg(args, milliseconds);
-        milliseconds end = va_arg(args, milliseconds);
+        microseconds start = va_arg(args, microseconds);
+        microseconds end = va_arg(args, microseconds);
         std::string iteration = std::to_string(va_arg(args, size_t));
         db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator);
         db.addDurationEntry(
@@ -355,8 +355,8 @@ public:
         const std::string& relation = signature[1];
         const std::string& srcLocator = signature[2];
         const std::string ioType = signature[3];
-        milliseconds start = va_arg(args, milliseconds);
-        milliseconds end = va_arg(args, milliseconds);
+        microseconds start = va_arg(args, microseconds);
+        microseconds end = va_arg(args, microseconds);
         db.addTextEntry({"program", "relation", relation, "source-locator"}, srcLocator);
         db.addDurationEntry({"program", "relation", relation, ioType}, start, end);
     }
@@ -372,8 +372,8 @@ public:
     }
     /** process event input */
     void process(ProfileDatabase& db, const std::vector<std::string>& signature, va_list& args) override {
-        milliseconds start = va_arg(args, milliseconds);
-        milliseconds end = va_arg(args, milliseconds);
+        microseconds start = va_arg(args, microseconds);
+        microseconds end = va_arg(args, microseconds);
         db.addDurationEntry({"program", "runtime"}, start, end);
     }
 } programRuntimeProcessor;
@@ -388,15 +388,15 @@ public:
     }
     /** process event input */
     void process(ProfileDatabase& db, const std::vector<std::string>& signature, va_list& args) override {
-        milliseconds time = va_arg(args, milliseconds);
-        double systemTime = va_arg(args, double);
-        double userTime = va_arg(args, double);
-        double maxRSS = va_arg(args, double);
+        microseconds time = va_arg(args, microseconds);
+        uint64_t systemTime = va_arg(args, uint64_t);
+        uint64_t userTime = va_arg(args, uint64_t);
+        size_t maxRSS = va_arg(args, size_t);
         std::string timeString = std::to_string(time.count());
-        db.addTimeEntry({"program", "usage", timeString}, time);
-        db.addSizeEntry({"program", "usage", timeString, "systemtime"}, systemTime);
-        db.addSizeEntry({"program", "usage", timeString, "usertime"}, userTime);
-        db.addSizeEntry({"program", "usage", timeString, "maxRSS"}, maxRSS);
+        db.addTimeEntry({"program", "usage", "timepoint", timeString}, time);
+        db.addSizeEntry({"program", "usage", "timepoint", timeString, "systemtime"}, systemTime);
+        db.addSizeEntry({"program", "usage", "timepoint", timeString, "usertime"}, userTime);
+        db.addSizeEntry({"program", "usage", "timepoint", timeString, "maxRSS"}, maxRSS);
     }
 } programResourceUtilisationProcessor;
 

@@ -58,8 +58,8 @@ public:
 
     /** create timing event */
     void makeTimingEvent(const std::string& txt, time_point start, time_point end, size_t iteration) {
-        milliseconds start_ms = std::chrono::duration_cast<milliseconds>(start.time_since_epoch());
-        milliseconds end_ms = std::chrono::duration_cast<milliseconds>(end.time_since_epoch());
+        microseconds start_ms = std::chrono::duration_cast<microseconds>(start.time_since_epoch());
+        microseconds end_ms = std::chrono::duration_cast<microseconds>(end.time_since_epoch());
         profile::EventProcessorSingleton::instance().process(
                 database, txt.c_str(), start_ms, end_ms, iteration);
     }
@@ -71,18 +71,20 @@ public:
 
     /** create utilisation event */
     void makeUtilisationEvent(const std::string& txt) {
+        /* current time */
+        microseconds time = std::chrono::duration_cast<microseconds>(now().time_since_epoch());
         /* system CPU time used */
         struct rusage ru;
         getrusage(RUSAGE_SELF, &ru);
         /* system CPU time used */
-        double systemTime = (double)ru.ru_stime.tv_sec * 1000000.0 + (double)ru.ru_stime.tv_usec;
+        uint64_t systemTime = ru.ru_stime.tv_sec * 1000000 + ru.ru_stime.tv_usec;
         /* user CPU time used */
-        double userTime = (double)ru.ru_utime.tv_sec * 1000000.0 + (double)ru.ru_utime.tv_usec;
+        uint64_t userTime = ru.ru_utime.tv_sec * 1000000 + ru.ru_utime.tv_usec;
         /* Maximum resident set size (kb) */
-        double maxRSS = ru.ru_maxrss;
+        size_t maxRSS = ru.ru_maxrss;
 
         profile::EventProcessorSingleton::instance().process(
-                database, txt.c_str(), systemTime, userTime, maxRSS);
+                database, txt.c_str(), time, systemTime, userTime, maxRSS);
     }
 
     /** Dump all events */
