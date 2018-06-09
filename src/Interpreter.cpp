@@ -362,7 +362,7 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
                 visit(*search.getNestedOperation());
             }
 
-            if (Global::config().has("profile")) {
+            if (Global::config().has("profile") && !search.getProfileText().empty()) {
                 interpreter.frequencies[search.getProfileText()][interpreter.getIterationNumber()]++;
             }
         }
@@ -413,7 +413,7 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
                 if (range.first != range.second) {
                     visitSearch(scan);
                 }
-                if (Global::config().has("profile")) {
+                if (Global::config().has("profile") && !scan.getProfileText().empty()) {
                     interpreter.frequencies[scan.getProfileText()][interpreter.getIterationNumber()]++;
                 }
                 return;
@@ -797,7 +797,9 @@ void Interpreter::executeMain() {
     } else {
         // Prepare the frequency table for threaded use
         visitDepthFirst(main, [&](const RamSearch& node) {
-            frequencies.emplace(node.getProfileText(), std::map<size_t, size_t>());
+            if (!node.getProfileText().empty()) {
+                frequencies.emplace(node.getProfileText(), std::map<size_t, size_t>());
+            }
         });
         // Enable profiling for execution of main
         ProfileEventSingleton::instance().startTimer();

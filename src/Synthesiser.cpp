@@ -507,13 +507,13 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 visit(condition, out);
                 out << ") {\n";
                 visit(search.getNestedOperation(), out);
-                if (Global::config().has("profile")) {
+                if (Global::config().has("profile") && !search.getProfileText().empty()) {
                     out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
                 }
                 out << "}\n";
             } else {
                 visit(search.getNestedOperation(), out);
-                if (Global::config().has("profile")) {
+                if (Global::config().has("profile") && !search.getProfileText().empty()) {
                     out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
                 }
             }
