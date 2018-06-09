@@ -296,6 +296,7 @@ protected:
     DirectoryEntry* lookupPath(std::vector<std::string> path) {
         DirectoryEntry* dir = root.get();
         for (const std::string& key : path) {
+            assert(!key.empty() && "Key is empty!");
             DirectoryEntry* newDir = dir->readDirectoryEntry(key);
             if (newDir == nullptr) {
                 newDir = dynamic_cast<DirectoryEntry*>(
