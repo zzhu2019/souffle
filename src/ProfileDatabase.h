@@ -299,8 +299,8 @@ protected:
             assert(!key.empty() && "Key is empty!");
             DirectoryEntry* newDir = dir->readDirectoryEntry(key);
             if (newDir == nullptr) {
-                newDir = dynamic_cast<DirectoryEntry*>(
-                        dir->writeEntry(std::unique_ptr<DirectoryEntry>(new DirectoryEntry(key))));
+                newDir =
+                        dynamic_cast<DirectoryEntry*>(dir->writeEntry(std::make_unique<DirectoryEntry>(key)));
             }
             dir = newDir;
         }
