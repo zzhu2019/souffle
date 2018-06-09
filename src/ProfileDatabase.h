@@ -8,6 +8,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <utility>
@@ -71,6 +72,7 @@ public:
 class DirectoryEntry : public Entry {
 private:
     std::map<std::string, std::unique_ptr<Entry>> entries;
+    mutable std::mutex lock;
 
 public:
     DirectoryEntry(const std::string& name) : Entry(name) {}
@@ -78,6 +80,7 @@ public:
     // get keys
     const std::set<std::string> getKeys() const {
         std::set<std::string> result;
+        std::lock_guard<std::mutex> guard(lock);
         for (auto const& cur : entries) {
             result.insert(cur.first);
         }
@@ -87,13 +90,15 @@ public:
     // write entry
     Entry* writeEntry(std::unique_ptr<Entry> entry) {
         assert(entry != nullptr && "null entry");
+        std::lock_guard<std::mutex> guard(lock);
         const std::string& key = entry->getKey();
         entries[key] = std::move(entry);
-        return readEntry(key);
+        return entries[key].get();
     }
 
     // read entry
     Entry* readEntry(const std::string& key) const {
+        std::lock_guard<std::mutex> guard(lock);
         auto it = entries.find(key);
         if (it != entries.end()) {
             return (*it).second.get();
