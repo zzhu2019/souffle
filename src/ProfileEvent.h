@@ -48,7 +48,9 @@ class ProfileEventSingleton {
     ProfileEventSingleton() = default;
 
 public:
-    ~ProfileEventSingleton() = default;
+    ~ProfileEventSingleton() {
+        stopTimer();
+    }
 
     /** get instance */
     static ProfileEventSingleton& instance() {
@@ -175,7 +177,9 @@ private:
         /** stop timer on the thread th */
         void stop() {
             running = false;
-            th.join();
+            if (th.joinable()) {
+                th.join();
+            }
         }
     };
 
