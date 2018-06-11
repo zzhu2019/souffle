@@ -92,7 +92,10 @@ public:
         assert(entry != nullptr && "null entry");
         std::lock_guard<std::mutex> guard(lock);
         const std::string& key = entry->getKey();
-        entries[key] = std::move(entry);
+        // Don't rewrite an existing entry
+        if (entries.count(key) == 0) {
+            entries[key] = std::move(entry);
+        }
         return entries[key].get();
     }
 
@@ -302,6 +305,7 @@ protected:
                 newDir =
                         dynamic_cast<DirectoryEntry*>(dir->writeEntry(std::make_unique<DirectoryEntry>(key)));
             }
+            assert(newDir != nullptr && "Attempting to overwrite an existing entry");
             dir = newDir;
         }
         return dir;
