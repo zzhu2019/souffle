@@ -393,7 +393,6 @@ public:
         uint64_t userTime = va_arg(args, uint64_t);
         size_t maxRSS = va_arg(args, size_t);
         std::string timeString = std::to_string(time.count());
-        db.addTimeEntry({"program", "usage", "timepoint", timeString}, time);
         db.addSizeEntry({"program", "usage", "timepoint", timeString, "systemtime"}, systemTime);
         db.addSizeEntry({"program", "usage", "timepoint", timeString, "usertime"}, userTime);
         db.addSizeEntry({"program", "usage", "timepoint", timeString, "maxRSS"}, maxRSS);
