@@ -131,16 +131,14 @@ private:
         /** run method for thread th */
         void run() {
             ProfileEventSingleton::instance().makeUtilisationEvent("@utilisation");
-            this->incRunCount();
-            if (this->getRunCount() % 128 == 0) this->increaseInterval();
+            ++runCount;
+            if (runCount % 128 == 0) {
+                increaseInterval();
+            }
         }
 
         uint32_t getInterval() {
             return t;
-        }
-
-        bool getRunning() {
-            return running;
         }
 
         /** Increase value of time interval by factor of 2 */
@@ -151,14 +149,6 @@ private:
             }
         }
 
-        uint32_t getRunCount() {
-            return runCount;
-        }
-
-        void incRunCount() {
-            runCount++;
-        }
-
     public:
         ProfileTimer(uint32_t in = 1) : t(in) {}
 
@@ -167,9 +157,9 @@ private:
             running = true;
 
             th = std::thread([this]() {
-                while (this->getRunning()) {
-                    this->run();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(this->getInterval()));
+                while (running) {
+                    run();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(getInterval()));
                 }
             });
         }
