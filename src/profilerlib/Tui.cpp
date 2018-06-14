@@ -67,6 +67,7 @@ void Tui::updateDB() {
 }
 
 void Tui::runCommand(std::vector<std::string> c) {
+    static bool firstRun = true;
     if (interactive && c.empty()) {
         return;
     }
@@ -86,6 +87,12 @@ void Tui::runCommand(std::vector<std::string> c) {
 
     // If we have not received any input yet in live mode then run top.
     if (!interactive || c[0].compare("top") == 0) {
+        // Move up 4 lines and overwrite the previous top output.
+        if (!firstRun && !interactive) {
+            std::cout << "\x1b[A\x1b[A\x1b[A\x1b[A";
+        } else if (firstRun) {
+            firstRun = false;
+        }
         top();
     } else if (c[0].compare("rel") == 0) {
         if (c.size() == 2) {
