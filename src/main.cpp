@@ -64,11 +64,6 @@ namespace souffle {
 void executeBinary(const std::string& binaryFilename) {
     assert(!binaryFilename.empty() && "binary filename cannot be blank");
 
-    // separate souffle output from executable output
-    if (Global::config().has("profile")) {
-        std::cout.flush();
-    }
-
     // check whether the executable exists
     if (!isExecutable(binaryFilename)) {
         throw std::invalid_argument("Generated executable <" + binaryFilename + "> could not be found");
@@ -101,11 +96,6 @@ void compileToBinary(std::string compileCmd, const std::string& sourceFilename) 
 
     // add source code
     compileCmd += sourceFilename;
-
-    // separate souffle output from executable output
-    if (Global::config().has("profile")) {
-        std::cout.flush();
-    }
 
     // run executable
     if (system(compileCmd.c_str()) != 0) {
