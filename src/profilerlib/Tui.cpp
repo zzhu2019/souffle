@@ -48,6 +48,7 @@ Tui::Tui() {
     std::shared_ptr<ProgramRun>& run = out.getProgramRun();
     this->reader = std::make_shared<Reader>(run);
     this->loaded = true;
+    this->alive = true;
     updateDB();
 }
 
@@ -64,6 +65,7 @@ void Tui::runCommand(std::vector<std::string> c) {
     }
 
     if (alive) {
+        updateDB();
         // remake tables to get new data
         rul_table_state = out.getRulTable();
         rel_table_state = out.getRelTable();

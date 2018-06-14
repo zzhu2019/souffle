@@ -50,7 +50,7 @@ public:
         ProfileEventSingleton::instance().setDBFromFile(file_loc);
     }
 
-    Reader(std::shared_ptr<ProgramRun> run) {}
+    Reader(std::shared_ptr<ProgramRun> run) : run(run) {}
     /**
      * Read the contents from file into the class
      */
