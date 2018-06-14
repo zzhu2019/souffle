@@ -31,7 +31,11 @@ void Reader::processFile() {
     auto programDuration = dynamic_cast<DurationEntry*>(db.lookupEntry({"program", "runtime"}));
     if (programDuration == nullptr) {
         std::cout << "souffle is still executing" << std::endl;
-        runtime = 0;
+        auto startTimeEntry = dynamic_cast<TimeEntry*>(db.lookupEntry({"program", "starttime"}));
+        if (startTimeEntry != nullptr) {
+            auto time = startTimeEntry->getTime();
+            runtime = time.count() / 1000.0;
+        }
     } else {
         runtime = (programDuration->getEnd() - programDuration->getStart()).count() / 1000.0;
     }

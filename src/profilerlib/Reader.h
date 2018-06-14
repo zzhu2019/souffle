@@ -38,7 +38,7 @@ private:
     bool loaded = false;
     bool online;
 
-    double runtime{-1};
+    double runtime{0};
     std::unordered_map<std::string, std::shared_ptr<Relation>> relation_map{};
     int rel_id{0};
 

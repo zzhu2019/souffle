@@ -365,6 +365,23 @@ public:
 /**
  * Program Run Event Processor
  */
+const class ProgramTimepointProcessor : public EventProcessor {
+public:
+    ProgramTimepointProcessor() {
+        EventProcessorSingleton::instance().registerEventProcessor("@time", this);
+    }
+    /** process event input */
+    void process(ProfileDatabase& db, const std::vector<std::string>& signature, va_list& args) override {
+        microseconds time = va_arg(args, microseconds);
+        auto path = signature;
+        path.insert(path.begin(), "program");
+        db.addTimeEntry(signature, time);
+    }
+} programTimepointProcessor;
+
+/**
+ * Program Run Event Processor
+ */
 const class ProgramRuntimeProcessor : public EventProcessor {
 public:
     ProgramRuntimeProcessor() {

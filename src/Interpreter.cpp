@@ -803,6 +803,7 @@ void Interpreter::executeMain() {
         });
         // Enable profiling for execution of main
         ProfileEventSingleton::instance().startTimer();
+        ProfileEventSingleton::instance().makeTimeEvent("@time;starttime");
         evalStmt(main);
         ProfileEventSingleton::instance().stopTimer();
         for (auto const& cur : frequencies) {

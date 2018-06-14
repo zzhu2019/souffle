@@ -58,7 +58,12 @@ public:
         return singleton;
     }
 
-    /** create timing event */
+    /** create time event */
+    void makeTimeEvent(const std::string& txt) {
+        profile::EventProcessorSingleton::instance().process(database, txt.c_str(), now().time_since_epoch());
+    }
+
+    /** create an event for recording start and end times */
     void makeTimingEvent(const std::string& txt, time_point start, time_point end, size_t iteration) {
         microseconds start_ms = std::chrono::duration_cast<microseconds>(start.time_since_epoch());
         microseconds end_ms = std::chrono::duration_cast<microseconds>(end.time_since_epoch());
