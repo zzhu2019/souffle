@@ -30,11 +30,11 @@ void Reader::processFile() {
     relation_map.clear();
     auto programDuration = dynamic_cast<DurationEntry*>(db.lookupEntry({"program", "runtime"}));
     if (programDuration == nullptr) {
-        std::cout << "db is empty!" << std::endl;
-        db.print(std::cout);
-        return;
+        std::cout << "souffle is still executing" << std::endl;
+        runtime = 0;
+    } else {
+        runtime = (programDuration->getEnd() - programDuration->getStart()).count() / 1000.0;
     }
-    runtime = (programDuration->getEnd() - programDuration->getStart()).count() / 1000.0;
 
     for (const auto& cur :
             dynamic_cast<DirectoryEntry*>(db.lookupEntry({"program", "relation"}))->getKeys()) {
