@@ -136,7 +136,8 @@ souffle_sources = \
               LogStatement.h                            \
               ProfileDatabase.h                         \
               EventProcessor.h                          \
-              ProfileEvent.h
+              ProfileEvent.h                            \
+              $(souffle_profile_SOURCES)
 
 # -- build souffle as a library so it can be reused in testing
 noinst_LTLIBRARIES = libsouffle.la

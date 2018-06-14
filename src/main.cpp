@@ -36,6 +36,7 @@
 #include "Synthesiser.h"
 #include "Util.h"
 #include "config.h"
+#include "profilerlib/Tui.h"
 
 #ifdef USE_PROVENANCE
 #include "Explain.h"
@@ -51,6 +52,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -414,8 +416,18 @@ int main(int argc, char** argv) {
         // configure interpreter
         std::unique_ptr<Interpreter> interpreter = std::make_unique<Interpreter>(*ramTranslationUnit);
 
+        std::thread profiler;
+        // Start up profiler if needed
+        if (Global::config().has("profile") && !Global::config().has("compile")) {
+            profiler = std::thread([]() { profile::Tui().runProf(); });
+        }
         // execute translation unit
         interpreter->executeMain();
+
+        // If the profiler was started, join back here once it exits.
+        if (profiler.joinable()) {
+            profiler.join();
+        }
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted
