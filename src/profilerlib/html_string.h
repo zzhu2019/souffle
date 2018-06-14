@@ -14,6 +14,10 @@
 
 #include "StringUtils.h"
 
+#ifndef MAKEDIR
+#define MAKEDIR "."
+#endif
+
 namespace souffle {
 namespace profile {
 
