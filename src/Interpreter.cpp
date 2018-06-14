@@ -810,13 +810,15 @@ void Interpreter::executeMain() {
                 ProfileEventSingleton::instance().makeQuantityEvent(cur.first, iter.second, iter.first);
             }
         }
-        // open output stream
-        std::string fname = Global::config().get("profile");
-        std::ofstream os(fname);
-        if (!os.is_open()) {
-            throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
+        // open output stream if we're logging the profile data to file
+        if (!Global::config().get("profile").empty()) {
+            std::string fname = Global::config().get("profile");
+            std::ofstream os(fname);
+            if (!os.is_open()) {
+                throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
+            }
+            ProfileEventSingleton::instance().dump(os);
         }
-        ProfileEventSingleton::instance().dump(os);
     }
     SignalHandler::instance()->reset();
 }
