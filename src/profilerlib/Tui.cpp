@@ -40,6 +40,7 @@ Tui::Tui(std::string filename, bool live, bool gui) {
     this->reader = std::make_shared<Reader>(filename, run, false, live);
 
     this->alive = false;
+    interactive = true;
     updateDB();
     this->loaded = reader->isLoaded();
 }
@@ -49,7 +50,14 @@ Tui::Tui() {
     this->reader = std::make_shared<Reader>(run);
     this->loaded = true;
     this->alive = true;
+    interactive = false;
     updateDB();
+    updater = std::thread([this]() {
+        do {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            runCommand({});
+        } while (!interactive);
+    });
 }
 
 void Tui::updateDB() {
@@ -59,6 +67,9 @@ void Tui::updateDB() {
 }
 
 void Tui::runCommand(std::vector<std::string> c) {
+    if (interactive && c.empty()) {
+        return;
+    }
     if (!loaded) {
         std::cout << "Error: File cannot be loaded\n";
         return;
@@ -73,7 +84,8 @@ void Tui::runCommand(std::vector<std::string> c) {
         setupTabCompletion();
     }
 
-    if (c[0].compare("top") == 0) {
+    // If we have not received any input yet in live mode then run top.
+    if (!interactive || c[0].compare("top") == 0) {
         top();
     } else if (c[0].compare("rel") == 0) {
         if (c.size() == 2) {
@@ -125,7 +137,7 @@ void Tui::runProf() {
         top();
     }
 
-    linereader = InputReader();
+    linereader = InputReader(this);
     linereader.setPrompt("\n> ");
     setupTabCompletion();
 
@@ -139,6 +151,7 @@ void Tui::runProf() {
         std::string untrimmedInput = linereader.getInput();
         std::string input = Tools::trimWhitespace(untrimmedInput);
 
+        interactive = true;
         std::cout << std::endl;
         if (input.empty()) {
             std::cout << "Unknown command. Type help for a list of commands.\n";

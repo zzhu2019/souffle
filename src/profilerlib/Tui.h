@@ -12,6 +12,7 @@
 #include "profilerlib/Table.h"
 #include "profilerlib/UserInputReader.h"
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace souffle {
@@ -32,6 +33,8 @@ private:
     bool loaded;
     std::string f_name;
     bool alive = false;
+    bool interactive = false;
+    std::thread updater;
     int sort_col = 0;
     int precision = -1;
     Table rel_table_state;
@@ -44,9 +47,23 @@ public:
 
     Tui();
 
+    ~Tui() {
+        if (updater.joinable()) {
+            updater.join();
+        }
+    }
+
     void runCommand(std::vector<std::string> c);
 
     void runProf();
+
+    /**
+     * Set the interface as interactive. Once set, the default output will stop and only user interaction
+     * will be used.
+     */
+    void setInteractive() {
+        interactive = true;
+    }
 
     void outputJson();
 

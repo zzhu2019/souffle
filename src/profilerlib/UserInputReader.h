@@ -16,6 +16,8 @@
 namespace souffle {
 namespace profile {
 
+class Tui;
+
 /*
  * A class that reads user input a char at a time allowing for tab completion and history to be implemented
  * TODO: link live reader and this class for the warning message that the live reader has finished to be
@@ -42,12 +44,20 @@ private:
     std::string original_tab_val;
     std::vector<std::string> current_tab_completes;
     size_t original_hist_cursor_pos = 0;
+    Tui* tui = nullptr;
 
 public:
     InputReader() {
         clearTabCompletion();
         clearHistory();
     }
+
+    InputReader(Tui* tui) : tui(tui) {
+        clearTabCompletion();
+        clearHistory();
+    }
+
+    InputReader(const InputReader& other) = default;
 
     void getch();
     std::string getInput();

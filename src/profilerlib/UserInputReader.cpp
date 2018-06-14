@@ -11,6 +11,7 @@
 //
 
 #include "UserInputReader.h"
+#include "Tui.h"
 #include <iostream>   // for operator<<, flush, basic_ostream, cout, ostream
 #include <iterator>   // for end, begin
 #include <termios.h>  // for termios, tcsetattr, tcgetattr, ECHO, ICANON, cc_t
@@ -47,6 +48,9 @@ std::string InputReader::getInput() {
 
     std::cout << this->prompt << std::flush;
     getch();
+    if (tui != nullptr) {
+        tui->setInteractive();
+    }
 
     bool escaped = false;
     bool arrow_key = false;
