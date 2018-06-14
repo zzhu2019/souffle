@@ -36,9 +36,16 @@ void Reader::processFile() {
         runtime = (programDuration->getEnd() - programDuration->getStart()).count() / 1000.0;
     }
 
-    for (const auto& cur :
-            dynamic_cast<DirectoryEntry*>(db.lookupEntry({"program", "relation"}))->getKeys()) {
-        addRelation(*dynamic_cast<DirectoryEntry*>(db.lookupEntry({"program", "relation", cur})));
+    auto relations = dynamic_cast<DirectoryEntry*>(db.lookupEntry({"program", "relation"}));
+    if (relations == nullptr) {
+        // Souffle hasn't generated any profiling information yet.
+        return;
+    }
+    for (const auto& cur : relations->getKeys()) {
+        auto relation = dynamic_cast<DirectoryEntry*>(db.lookupEntry({"program", "relation", cur}));
+        if (relation != nullptr) {
+            addRelation(*relation);
+        }
     }
     run->SetRuntime(this->runtime);
     run->setRelation_map(this->relation_map);
