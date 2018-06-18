@@ -784,6 +784,9 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
 /** Execute main program of a translation unit */
 void Interpreter::executeMain() {
     SignalHandler::instance()->set();
+    if (Global::config().has("verbose")) {
+        SignalHandler::instance()->enableLogging();
+    }
     const RamStatement& main = *translationUnit.getP().getMain();
 
     if (!Global::config().has("profile")) {

@@ -15,10 +15,12 @@
  ***********************************************************************/
 
 #pragma once
+
 #include <atomic>
 #include <cassert>
 #include <csignal>
 #include <iostream>
+#include <mutex>
 #include <string>
 
 namespace souffle {
@@ -35,6 +37,8 @@ private:
 
     // state of signal handler
     bool isSet = false;
+
+    bool logMessages = false;
 
     // previous signal handler routines
     void (*prevFpeHandler)(int) = nullptr;
@@ -78,8 +82,23 @@ public:
         return &singleton;
     }
 
+    // Enable logging
+    void enableLogging() {
+        logMessages = true;
+    }
     // set signal message
     void setMsg(const char* m) {
+        if (m != nullptr && logMessages) {
+            static std::mutex logMutex;
+            std::string outputMessage(m);
+            for (char& c : outputMessage) {
+                if (c == '\n' || c == '\t') {
+                    c = ' ';
+                }
+            }
+            std::lock_guard<std::mutex> guard(logMutex);
+            std::cout << "Starting work on " << outputMessage << std::endl;
+        }
         msg = m;
     }
 
