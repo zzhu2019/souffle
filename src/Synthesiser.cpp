@@ -1212,6 +1212,11 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     if (Global::config().has("provenance")) {
         os << "#include \"souffle/Explain.h\"\n";
     }
+
+    if (Global::config().has("live-profile")) {
+        os << "#include <thread>\n";
+        os << "#include \"profilerlib/Tui.h\"\n";
+    }
     os << "\n";
     os << "namespace souffle {\n";
     os << "using namespace ram;\n";
@@ -1446,8 +1451,15 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
           "stratumIndex); }\n";
     os << "public:\nvoid runAll(std::string inputDirectory = \".\", std::string outputDirectory = \".\", "
           "size_t stratumIndex = (size_t) -1) "
-          "override { "
-          "runFunction<true>(inputDirectory, outputDirectory); }\n";
+          "override { ";
+    if (Global::config().has("live-profile")) {
+        os << "std::thread profiler([]() { profile::Tui().runProf(); });\n";
+    }
+    os << "runFunction<true>(inputDirectory, outputDirectory);\n";
+    if (Global::config().has("live-profile")) {
+        os << "if (profiler.joinable()) { profiler.join(); }\n";
+    }
+    os << "}\n";
 
     // issue printAll method
     os << "public:\n";
