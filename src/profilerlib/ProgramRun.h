@@ -12,6 +12,7 @@
 #include "profilerlib/StringUtils.h"
 #include "profilerlib/Table.h"
 #include <memory>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -46,7 +47,14 @@ public:
         tot_copy_time = getTotCopyTime();
     };
 
-    std::string toString();
+    std::string toString() {
+        std::ostringstream output;
+        output << "ProgramRun:" << runtime << "\nRelations:\n";
+        for (auto r = relation_map.begin(); r != relation_map.end(); ++r) {
+            output << r->second->toString() << "\n";
+        }
+        return output.str();
+    }
 
     inline std::unordered_map<std::string, std::shared_ptr<Relation>>& getRelation_map() {
         return relation_map;
@@ -63,15 +71,44 @@ public:
         return runtime;
     }
 
-    long getTotNumTuples();
+    long getTotNumTuples() {
+        long result = 0;
+        for (auto& item : relation_map) {
+            result += item.second->getTotNum_tuples();
+        }
+        return result;
+    }
 
-    long getTotNumRecTuples();
+    long getTotNumRecTuples() {
+        long result = 0;
+        for (auto& item : relation_map) {
+            result += item.second->getTotNumRec_tuples();
+        }
+        return result;
+    }
 
-    double getTotCopyTime();
+    double getTotCopyTime() {
+        double result = 0;
+        for (auto& item : relation_map) {
+            result += item.second->getCopyTime();
+        }
+        return result;
+    }
 
-    double getTotTime();
+    double getTotTime() {
+        double result = 0;
+        for (auto& item : relation_map) {
+            result += item.second->getRecTime();
+        }
+        return result;
+    }
 
-    Relation* getRelation(std::string name);
+    Relation* getRelation(std::string name) {
+        if (relation_map.find(name) != relation_map.end()) {
+            return &(*relation_map[name]);
+        }
+        return nullptr;
+    }
 
     inline std::string formatTime(double runtime) {
         return Tools::formatTime(runtime);

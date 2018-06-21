@@ -11,42 +11,29 @@ bin_PROGRAMS = souffle souffle-profile souffle2bdd souffle2lb
 
 nodist_souffle_profile_SOURCES = $(BUILT_SOURCES)
 
-souffle_profile_SOURCES = souffle_prof.cpp                      \
+souffle_profile_sources = \
                           ProfileDatabase.h                     \
                           json11.h                              \
-                          profilerlib/json11.cpp                \
                           profilerlib/Cell.h                    \
                           profilerlib/CellInterface.h           \
-                          profilerlib/Cli.cpp                   \
                           profilerlib/Cli.h                     \
                           profilerlib/DataComparator.h          \
-                          profilerlib/Iteration.cpp             \
                           profilerlib/Iteration.h               \
-                          profilerlib/OutputProcessor.cpp       \
                           profilerlib/OutputProcessor.h         \
-                          profilerlib/ProgramRun.cpp            \
                           profilerlib/ProgramRun.h              \
-                          profilerlib/Reader.cpp                \
                           profilerlib/Reader.h                  \
-                          profilerlib/Relation.cpp              \
                           profilerlib/Relation.h                \
                           profilerlib/Row.h                     \
-                          profilerlib/Rule.cpp                  \
                           profilerlib/Rule.h                    \
-                          profilerlib/StringUtils.cpp           \
                           profilerlib/StringUtils.h             \
-                          profilerlib/Table.cpp                 \
                           profilerlib/Table.h                   \
-                          profilerlib/Tui.cpp                   \
                           profilerlib/Tui.h                     \
                           profilerlib/html_string.h             \
-                          profilerlib/UserInputReader.cpp       \
                           profilerlib/UserInputReader.h         \
                           FileFormatConverter.h  
 
 DIR := ${CURDIR}
 
-souffle_profile_CXXFLAGS = $(souffle_CPPFLAGS) -DMAKEDIR='"$(DIR)"'
 
 
 # ... which should no go to distribution
@@ -134,10 +121,9 @@ souffle_sources = \
               ProvenanceTransformer.cpp                 \
               Global.cpp            Global.h            \
               LogStatement.h                            \
-              ProfileDatabase.h                         \
               EventProcessor.h                          \
               ProfileEvent.h                            \
-              $(souffle_profile_SOURCES)
+              $(souffle_profile_sources)
 
 # -- build souffle as a library so it can be reused in testing
 noinst_LTLIBRARIES = libsouffle.la
@@ -147,6 +133,9 @@ libsouffle_la_LDFLAGS = --static --dlopen --pic
 
 souffle_SOURCES = main.cpp
 souffle_LDADD = libsouffle.la
+
+souffle_profile_SOURCES = souffle_prof.cpp
+souffle_profile_CXXFLAGS = $(souffle_CPPFLAGS) -DMAKEDIR='"$(DIR)"'
 
 souffle2bdd_SOURCES = souffle2bdd.cpp
 souffle2bdd_LDADD = libsouffle.la
@@ -199,7 +188,8 @@ soufflepublic_HEADERS = CompiledOptions.h       \
                         ExplainProvenanceSLD.h  \
                         ProfileDatabase.h       \
                         json11.h                \
-                        ProfileEvent.h
+                        ProfileEvent.h          \
+						$(souffle_sources)
 
 # files to clean
 CLEANFILES = $(BUILT_SOURCES)  parser.cc scanner.cc parser.hh stack.hh

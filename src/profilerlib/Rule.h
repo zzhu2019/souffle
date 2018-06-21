@@ -9,6 +9,7 @@
 #pragma once
 
 #include <map>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -97,7 +98,16 @@ public:
         this->version = version;
     }
 
-    std::string toString();
+    std::string toString() {
+        std::ostringstream output;
+        if (recursive) {
+            output << "{" << name << "," << version << ":";
+        } else {
+            output << "{" << name << ":";
+        }
+        output << "[" << runtime << "," << num_tuples << "]}";
+        return output.str();
+    }
 };
 
 }  // namespace profile
