@@ -88,15 +88,19 @@ public:
     }
     // set signal message
     void setMsg(const char* m) {
-        if (m != nullptr && logMessages) {
-            static std::mutex logMutex;
+        if (logMessages && m != nullptr) {
+            static std::mutex outputMutex;
             std::string outputMessage(m);
-            for (char& c : outputMessage) {
+            for (size_t pos = 0; pos < outputMessage.size(); ++pos) {
+                char& c = outputMessage[pos];
                 if (c == '\n' || c == '\t') {
                     c = ' ';
+                } else if (c == '.') {
+                    outputMessage = outputMessage.substr(0, pos + 1);
+                    break;
                 }
             }
-            std::lock_guard<std::mutex> guard(logMutex);
+            std::lock_guard<std::mutex> guard(outputMutex);
             std::cout << "Starting work on " << outputMessage << std::endl;
         }
         msg = m;
