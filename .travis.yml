@@ -108,7 +108,7 @@ jobs:
     - *gcc_environment
     - SOUFFLE_CATEGORY=Unit,Syntactic,Semantic,Interface,Profile,Provenance SOUFFLE_CONFS="-j8,-c -j8"
 
-# Testing stage with 64bit RamDomains (-j8,-c -j8, no 32bit Semantic tests)
+# Testing stage with 64bit RamDomains (-j8,-c -j8, skipping the 32bit Semantic tests)
   - <<: *linuxgcc
     before_script: ".travis/init_test_64bit.sh"
     env:
@@ -144,7 +144,8 @@ jobs:
   - <<: *linuxpackage
     script: docker run -v `pwd`:/souffle ubuntu:xenial /bin/sh -c "cd /souffle && .travis/linux/install_debian_deps.sh && .travis/init_make_package.sh && .travis/test_make_install.sh"
     env: "debian-make-install"
-  # Make the linux deb packages.
+  # Make the linux deb packages and if successful upload to github releases and bintray
+  # All PRs go to bintray unstable, tagged releases to bintray stable
   - <<: *linuxpackage
     script: docker run -v `pwd`:/souffle ubuntu:xenial /bin/sh -c "cd /souffle && .travis/linux/install_debian_deps.sh && .travis/init_make_package.sh && .travis/linux/make_package.sh"
     env: "debian-package"
@@ -180,7 +181,9 @@ jobs:
           branch: master
           repo: souffle-lang/souffle
           tags: true
-  # Make the centos rpm packages.
+  # Make the centos rpm packages and if successful upload to bintray
+  # All PRs go to bintray unstable, tagged releases to bintray stable
+  # Try to build in a raw centos container to test that our dependencies are correct
   - <<: *linuxpackage
     script: docker run -v `pwd`:/souffle centos:7 /bin/sh -c "cd /souffle && .travis/linux/install_centos_deps.sh && .travis/linux/make_centos_package.sh"
     env: "centos-package"
@@ -207,7 +210,9 @@ jobs:
           repo: souffle-lang/souffle
           tags: true
 
-  # Make the fedora rpm packages.
+  # Make the fedora rpm packages and if successful upload to bintray
+  # All PRs go to bintray unstable, tagged releases to bintray stable
+  # Try to build in a raw fedora container to test that our dependencies are correct
   - <<: *linuxpackage
     script: docker run -v `pwd`:/souffle fedora:27 /bin/sh -c "cd /souffle && .travis/linux/install_fedora_deps.sh && .travis/linux/make_fedora_package.sh"
     env: "fedora-package"
@@ -233,7 +238,7 @@ jobs:
           branch: master
           repo: souffle-lang/souffle
           tags: true
-  # Make the OSX packages.
+  # Make the OSX packages and if successful upload to github releases.
   - <<: *osxpackage
     env: "osx-package"
   # Generate doxygen html
