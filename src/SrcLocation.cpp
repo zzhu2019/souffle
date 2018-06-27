@@ -17,10 +17,10 @@
 #include "SrcLocation.h"
 #include "Util.h"
 #include <cctype>
+#include <cstdio>
 #include <fstream>
 #include <limits>
 #include <sstream>
-#include <stdio.h>
 
 namespace souffle {
 

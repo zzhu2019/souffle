@@ -357,14 +357,13 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
         void visitSearch(const RamSearch& search) override {
             // check condition
             auto condition = search.getCondition();
-            if (condition && !interpreter.evalCond(*condition, ctxt)) {
-                return;  // condition not valid => skip nested
+            if (!condition || interpreter.evalCond(*condition, ctxt)) {
+                // process nested
+                visit(*search.getNestedOperation());
             }
 
-            // process nested
-            visit(*search.getNestedOperation());
-            if (Global::config().has("profile")) {
-                interpreter.frequencies[search.getProfileText()]++;
+            if (Global::config().has("profile") && !search.getProfileText().empty()) {
+                interpreter.frequencies[search.getProfileText()][interpreter.getIterationNumber()]++;
             }
         }
 
@@ -413,6 +412,9 @@ void Interpreter::evalOp(const RamOperation& op, const InterpreterContext& args)
             if (scan.isPureExistenceCheck()) {
                 if (range.first != range.second) {
                     visitSearch(scan);
+                }
+                if (Global::config().has("profile") && !scan.getProfileText().empty()) {
+                    interpreter.frequencies[scan.getProfileText()][interpreter.getIterationNumber()]++;
                 }
                 return;
             }
@@ -643,8 +645,11 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
         }
 
         bool visitLoop(const RamLoop& loop) override {
+            interpreter.resetIterationNumber();
             while (visit(loop.getBody())) {
+                interpreter.incIterationNumber();
             }
+            interpreter.resetIterationNumber();
             return true;
         }
 
@@ -653,7 +658,7 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
         }
 
         bool visitLogTimer(const RamLogTimer& timer) override {
-            Logger logger(timer.getMessage().c_str());
+            Logger logger(timer.getMessage().c_str(), interpreter.getIterationNumber());
             return visit(timer.getStatement());
         }
 
@@ -693,7 +698,8 @@ void Interpreter::evalStmt(const RamStatement& stmt) {
 
         bool visitLogSize(const RamLogSize& print) override {
             const InterpreterRelation& rel = interpreter.getRelation(print.getRelation());
-            ProfileEventSingleton::instance().makeQuantityEvent(print.getMessage(), rel.size());
+            ProfileEventSingleton::instance().makeQuantityEvent(
+                    print.getMessage(), rel.size(), interpreter.getIterationNumber());
             return true;
         }
 
@@ -792,24 +798,30 @@ void Interpreter::executeMain() {
     if (!Global::config().has("profile")) {
         evalStmt(main);
     } else {
-        // open output stream
-        std::string fname = Global::config().get("profile");
-        std::ofstream os(fname);
-        if (!os.is_open()) {
-            throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
-        }
         // Prepare the frequency table for threaded use
-        visitDepthFirst(main, [&](const RamSearch& node) { frequencies[node.getProfileText()] = 0; });
+        visitDepthFirst(main, [&](const RamSearch& node) {
+            if (!node.getProfileText().empty()) {
+                frequencies.emplace(node.getProfileText(), std::map<size_t, size_t>());
+            }
+        });
         // Enable profiling for execution of main
-        os << LogStatement::startDebug() << std::endl;
-        ProfileEventSingleton::instance().setLog(&os);
         ProfileEventSingleton::instance().startTimer();
+        ProfileEventSingleton::instance().makeTimeEvent("@time;starttime");
         evalStmt(main);
         ProfileEventSingleton::instance().stopTimer();
-        if (Global::config().has("profile")) {
-            for (auto const& cur : frequencies) {
-                ProfileEventSingleton::instance().makeQuantityEvent(cur.first, cur.second);
+        for (auto const& cur : frequencies) {
+            for (auto const& iter : cur.second) {
+                ProfileEventSingleton::instance().makeQuantityEvent(cur.first, iter.second, iter.first);
             }
+        }
+        // open output stream if we're logging the profile data to file
+        if (!Global::config().get("profile").empty()) {
+            std::string fname = Global::config().get("profile");
+            std::ofstream os(fname);
+            if (!os.is_open()) {
+                throw std::invalid_argument("Cannot open profile log file <" + fname + ">");
+            }
+            ProfileEventSingleton::instance().dump(os);
         }
     }
     SignalHandler::instance()->reset();

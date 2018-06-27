@@ -382,7 +382,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             PRINT_BEGIN_COMMENT(out);
             out << "ProfileEventSingleton::instance().makeQuantityEvent( R\"(";
             out << print.getMessage() << ")\",";
-            out << synthesiser.getRelationName(print.getRelation()) << "->size());";
+            out << synthesiser.getRelationName(print.getRelation()) << "->size(),iter);";
             PRINT_END_COMMENT(out);
         }
 
@@ -432,9 +432,12 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
         void visitLoop(const RamLoop& loop, std::ostream& out) override {
             PRINT_BEGIN_COMMENT(out);
+            out << "iter = 0;\n";
             out << "for(;;) {\n";
             visit(loop.getBody(), out);
+            out << "iter++;\n";
             out << "}\n";
+            out << "iter = 0;\n";
             PRINT_END_COMMENT(out);
         }
 
@@ -468,7 +471,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             const std::string ext = fileExtension(Global::config().get("profile"));
 
             // create local timer
-            out << "\tLogger logger(R\"_(" << timer.getMessage() << ")_\");\n";
+            out << "\tLogger logger(R\"_(" << timer.getMessage() << ")_\",iter);\n";
 
             // insert statement to be measured
             visit(timer.getStatement(), out);
@@ -504,13 +507,13 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 visit(condition, out);
                 out << ") {\n";
                 visit(search.getNestedOperation(), out);
-                if (Global::config().has("profile")) {
+                if (Global::config().has("profile") && !search.getProfileText().empty()) {
                     out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
                 }
                 out << "}\n";
             } else {
                 visit(search.getNestedOperation(), out);
-                if (Global::config().has("profile")) {
+                if (Global::config().has("profile") && !search.getProfileText().empty()) {
                     out << "freqs[" << synthesiser.lookupFreqIdx(search.getProfileText()) << "]++;\n";
                 }
             }
@@ -1209,6 +1212,11 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     if (Global::config().has("provenance")) {
         os << "#include \"souffle/Explain.h\"\n";
     }
+
+    if (Global::config().has("live-profile")) {
+        os << "#include <thread>\n";
+        os << "#include \"profilerlib/Tui.h\"\n";
+    }
     os << "\n";
     os << "namespace souffle {\n";
     os << "using namespace ram;\n";
@@ -1365,6 +1373,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     // initialize counter
     os << "// -- initialize counter --\n";
     os << "std::atomic<RamDomain> ctr(0);\n\n";
+    os << "std::atomic<size_t> iter(0);\n\n";
 
     // set default threads (in embedded mode)
     if (std::stoi(Global::config().get("jobs")) > 0) {
@@ -1376,10 +1385,9 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     // add actual program body
     os << "// -- query evaluation --\n";
     if (Global::config().has("profile")) {
-        os << "std::ofstream profile(profiling_fname);\n";
-        os << "profile << \"" << LogStatement::startDebug() << "\" << std::endl;\n";
         os << "ProfileEventSingleton::instance().startTimer();\n";
-        os << "ProfileEventSingleton::instance().setLog(&profile);\n";
+        os << "{\n"
+           << R"_(Logger logger("@runtime;", 0);)_" << '\n';
     }
 
     // TODO (lyndonhenry): an array of addresses of the gotos may be more efficient than a switch statement
@@ -1414,13 +1422,17 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
     });
 
     if (Global::config().has("engine")) {
-        os << "EXIT:";
+        os << "EXIT:{}";
     }
 
     if (Global::config().has("profile")) {
-        os << "ProfileEventSingleton::instance().stopTimer();\n";
+        os << "}\n";
         os << "dumpFreqs();\n";
+        os << "ProfileEventSingleton::instance().stopTimer();\n";
+        os << "std::ofstream profile(profiling_fname);\n";
+        os << "ProfileEventSingleton::instance().dump(profile);\n";
     }
+
     // add code printing hint statistics
     os << "\n// -- relation hint statistics --\n";
     os << "if(isHintsProfilingEnabled()) {\n";
@@ -1442,8 +1454,15 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
           "stratumIndex); }\n";
     os << "public:\nvoid runAll(std::string inputDirectory = \".\", std::string outputDirectory = \".\", "
           "size_t stratumIndex = (size_t) -1) "
-          "override { "
-          "runFunction<true>(inputDirectory, outputDirectory); }\n";
+          "override { ";
+    if (Global::config().has("live-profile")) {
+        os << "std::thread profiler([]() { profile::Tui().runProf(); });\n";
+    }
+    os << "runFunction<true>(inputDirectory, outputDirectory);\n";
+    if (Global::config().has("live-profile")) {
+        os << "if (profiler.joinable()) { profiler.join(); }\n";
+    }
+    os << "}\n";
 
     // issue printAll method
     os << "public:\n";
@@ -1482,7 +1501,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
         os << "void dumpFreqs() {\n";
         for (auto const& cur : idxMap) {
             os << "\tProfileEventSingleton::instance().makeQuantityEvent(R\"_(" << cur.first << ")_\", freqs["
-               << cur.second << "]);\n";
+               << cur.second << "],0);\n";
         }
         os << "}\n";  // end of dumpFreqs() method
     }

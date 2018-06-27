@@ -8,8 +8,13 @@
 
 #pragma once
 
+#include "DataComparator.h"
 #include "Row.h"
+#include <algorithm>
 #include <vector>
+
+namespace souffle {
+namespace profile {
 
 /*
  * Table class for holding a vector of rows
@@ -29,5 +34,33 @@ public:
         return rows;
     }
 
-    void sort(int col_num);
+    void sort(int col_num) {
+        switch (col_num) {
+            case 1:
+                std::sort(rows.begin(), rows.end(), DataComparator::NR_T);
+                break;
+            case 2:
+                std::sort(rows.begin(), rows.end(), DataComparator::R_T);
+                break;
+            case 3:
+                std::sort(rows.begin(), rows.end(), DataComparator::C_T);
+                break;
+            case 4:
+                std::sort(rows.begin(), rows.end(), DataComparator::TUP);
+                break;
+            case 5:
+                std::sort(rows.begin(), rows.end(), DataComparator::ID);
+                break;
+            case 6:
+                std::sort(rows.begin(), rows.end(), DataComparator::NAME);
+                break;
+            case 0:
+            default:  // if the col_num isn't defined just use TIME... TODO: consider printing warning?
+                std::sort(rows.begin(), rows.end(), DataComparator::TIME);
+                break;
+        }
+    }
 };
+
+}  // namespace profile
+}  // namespace souffle

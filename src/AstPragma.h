@@ -18,11 +18,11 @@
 
 #include "AstNode.h"
 #include "AstTransformer.h"
+#include <cassert>
 #include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
-#include <assert.h>
 
 namespace souffle {
 

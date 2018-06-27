@@ -920,6 +920,7 @@ bool none_of(const Container& c, UnaryPredicate p) {
 
 // a type def for a time point
 using time_point = std::chrono::high_resolution_clock::time_point;
+using std::chrono::microseconds;
 
 // a shortcut for taking the current time
 inline time_point now() {
@@ -927,8 +928,8 @@ inline time_point now() {
 }
 
 // a shortcut for obtaining the time difference in milliseconds
-inline long duration_in_ms(const time_point& start, const time_point& end) {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+inline long duration_in_us(const time_point& start, const time_point& end) {
+    return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 }
 
 // a shortcut for obtaining the time difference in nanoseconds

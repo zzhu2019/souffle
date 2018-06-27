@@ -9,6 +9,7 @@ Src locator-:recursive.dl [9:1-9:20]
     .016    .000    .016    .000         0     0
      @new_C(x) :-     A(x),    @delta_B(x),    !C(x).
       FREQ            ATOM
+      0               @delta_B(x)
       998             A(x)
 
 

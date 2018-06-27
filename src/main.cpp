@@ -36,6 +36,7 @@
 #include "Synthesiser.h"
 #include "Util.h"
 #include "config.h"
+#include "profilerlib/Tui.h"
 
 #ifdef USE_PROVENANCE
 #include "Explain.h"
@@ -43,6 +44,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -50,9 +52,9 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
-#include <stdio.h>
 
 namespace souffle {
 
@@ -61,11 +63,6 @@ namespace souffle {
  */
 void executeBinary(const std::string& binaryFilename) {
     assert(!binaryFilename.empty() && "binary filename cannot be blank");
-
-    // separate souffle output from executable output
-    if (Global::config().has("profile")) {
-        std::cout.flush();
-    }
 
     // check whether the executable exists
     if (!isExecutable(binaryFilename)) {
@@ -99,11 +96,6 @@ void compileToBinary(std::string compileCmd, const std::string& sourceFilename) 
 
     // add source code
     compileCmd += sourceFilename;
-
-    // separate souffle output from executable output
-    if (Global::config().has("profile")) {
-        std::cout.flush();
-    }
 
     // run executable
     if (system(compileCmd.c_str()) != 0) {
@@ -170,6 +162,7 @@ int main(int argc, char** argv) {
                             {"dl-program", 'o', "FILE", "", false,
                                     "Generate C++ source code, written to <FILE>, and compile this to a "
                                     "binary executable (without executing it)."},
+                            {"live-profile", 'l', "", "", false, "Enable live profiling."},
                             {"profile", 'p', "FILE", "", false,
                                     "Enable profiling, and write profile data to <FILE>."},
                             {"debug-report", 'r', "FILE", "", false, "Write HTML debug report to <FILE>."},
@@ -268,6 +261,10 @@ int main(int argc, char** argv) {
             if (engine != "file") {
                 throw std::invalid_argument("Error: Use of engine '" + engine + "' is not supported.");
             }
+        }
+
+        if (Global::config().has("live-profile") && !Global::config().has("profile")) {
+            Global::config().set("profile");
         }
     }
 
@@ -414,8 +411,18 @@ int main(int argc, char** argv) {
         // configure interpreter
         std::unique_ptr<Interpreter> interpreter = std::make_unique<Interpreter>(*ramTranslationUnit);
 
+        std::thread profiler;
+        // Start up profiler if needed
+        if (Global::config().has("live-profile") && !Global::config().has("compile")) {
+            profiler = std::thread([]() { profile::Tui().runProf(); });
+        }
         // execute translation unit
         interpreter->executeMain();
+
+        // If the profiler was started, join back here once it exits.
+        if (profiler.joinable()) {
+            profiler.join();
+        }
 
 #ifdef USE_PROVENANCE
         // only run explain interface if interpreted

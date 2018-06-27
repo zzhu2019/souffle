@@ -11,10 +11,14 @@
 #include "profilerlib/Iteration.h"
 #include "profilerlib/Rule.h"
 #include <memory>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+namespace souffle {
+namespace profile {
 
 /*
  * Stores the iterations and rules of a given relation
@@ -46,25 +50,71 @@ public:
         return "N" + id.substr(1) + "." + std::to_string(++rul_id);
     }
 
-    std::string createRecID(std::string name);
+    std::string createRecID(std::string name) {
+        for (auto& iter : iterations) {
+            for (auto& rul : iter->getRul_rec()) {
+                if (rul.second->getName().compare(name) == 0) {
+                    return rul.second->getId();
+                }
+            }
+        }
+        return "C" + id.substr(1) + "." + std::to_string(++rec_id);
+    }
 
     inline double getNonRecTime() {
         return runtime;
     }
 
-    double getRecTime();
+    double getRecTime() {
+        double result = 0;
+        for (auto& iter : iterations) {
+            result += iter->getRuntime();
+        }
+        return result;
+    }
 
-    double getCopyTime();
+    double getCopyTime() {
+        double result = 0;
+        for (auto& iter : iterations) {
+            result += iter->getCopy_time();
+        }
+        return result;
+    }
 
-    long getNum_tuplesRel();
+    long getNum_tuplesRel() {
+        long result = 0L;
+        for (auto& iter : iterations) {
+            result += iter->getNum_tuples();
+        }
+        return num_tuples + result;
+    }
 
-    long getNum_tuplesRul();
+    long getNum_tuplesRul() {
+        long result = 0L;
+        for (auto& rul : ruleMap) {
+            result += rul.second->getNum_tuples();
+        }
+        for (auto& iter : iterations) {
+            for (auto& rul : iter->getRul_rec()) {
+                result += rul.second->getNum_tuples();
+            }
+        }
+        return result;
+    }
 
     inline long getTotNum_tuples() {
         return getNum_tuplesRel();
     }
 
-    long getTotNumRec_tuples();
+    long getTotNumRec_tuples() {
+        long result = 0L;
+        for (auto& iter : iterations) {
+            for (auto& rul : iter->getRul_rec()) {
+                result += rul.second->getNum_tuples();
+            }
+        }
+        return result;
+    }
 
     inline void setRuntime(double runtime) {
         this->runtime = runtime;
@@ -74,7 +124,26 @@ public:
         this->num_tuples = num_tuples;
     }
 
-    std::string toString();
+    std::string toString() {
+        std::ostringstream output;
+        output << "{\n\"" << name << "\":[" << runtime << "," << num_tuples << "],\n\n\"onRecRules\":[\n";
+        for (auto& rul : ruleMap) {
+            output << rul.second->toString();
+        }
+        // TODO: ensure this is the same as java, as java just prints an array
+        output << "\n],\n\"iterations\":\n";
+        output << "[";
+        if (iterations.empty()) {
+            output << ", ";
+        }
+        for (auto& iter : iterations) {
+            output << iter->toString();
+            output << ", ";
+        }
+        std::string retStr = output.str();
+        // substring to remove the last comma
+        return retStr.substr(0, retStr.size() - 2) + "]\n}";
+    }
 
     inline std::string getName() {
         return name;
@@ -87,7 +156,15 @@ public:
         return this->ruleMap;
     }
 
-    std::vector<std::shared_ptr<Rule>> getRuleRecList();
+    std::vector<std::shared_ptr<Rule>> getRuleRecList() {
+        std::vector<std::shared_ptr<Rule>> temp = std::vector<std::shared_ptr<Rule>>();
+        for (auto& iter : iterations) {
+            for (auto& rul : iter->getRul_rec()) {
+                temp.push_back(rul.second);
+            }
+        }
+        return temp;
+    }
 
     inline std::vector<std::shared_ptr<Iteration>>& getIterations() {
         return this->iterations;
@@ -121,3 +198,6 @@ public:
         this->prev_num_tuples = prev_num_tuples;
     }
 };
+
+}  // namespace profile
+}  // namespace souffle

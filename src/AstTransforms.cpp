@@ -1276,7 +1276,7 @@ bool ReplaceSingletonVariablesTransformer::transform(AstTranslationUnit& transla
         M(std::set<std::string>& singletons) : singletons(singletons) {}
 
         std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
-            if (AstVariable* var = dynamic_cast<AstVariable*>(node.get())) {
+            if (auto* var = dynamic_cast<AstVariable*>(node.get())) {
                 if (singletons.find(var->getName()) != singletons.end()) {
                     return std::make_unique<AstUnnamedVariable>();
                 }

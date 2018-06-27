@@ -254,7 +254,7 @@ private:
         // process unary operators
         if (dynamic_cast<const AstUnaryFunctor*>(&fun)) {
             throw UnsupportedConstructException("Unsupported function: " + toString(fun));
-        } else if (const AstBinaryFunctor* binary = dynamic_cast<const AstBinaryFunctor*>(&fun)) {
+        } else if (const auto* binary = dynamic_cast<const AstBinaryFunctor*>(&fun)) {
             std::string sym = getSymbolForBinaryOp(binary->getFunction());
             out << "(";
             visit(*binary->getLHS(), out);

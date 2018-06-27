@@ -11,7 +11,7 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) {
-    Cli cli_obj = Cli(argc, argv);
+    souffle::profile::Cli cli_obj(argc, argv);
     cli_obj.parse();
     std::cout << "\n";
     return 0;

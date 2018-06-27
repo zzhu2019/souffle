@@ -14,6 +14,13 @@
 
 #include "StringUtils.h"
 
+#ifndef MAKEDIR
+#define MAKEDIR "."
+#endif
+
+namespace souffle {
+namespace profile {
+
 /*
  * Class containing a copy of the gui_src directory (apart from testtabledata) packaged into one html file
  * so that a data variable can be inserted in the middle of the two strings and written to a file.
@@ -112,3 +119,6 @@ public:
         return this->second_half;
     }
 };
+
+}  // namespace profile
+}  // namespace souffle

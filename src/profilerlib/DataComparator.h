@@ -15,6 +15,9 @@
 #include <memory>
 #include <vector>
 
+namespace souffle {
+namespace profile {
+
 /*
  * Data comparison functions for sorting tables
  *
@@ -74,3 +77,6 @@ public:
         return b < a;
     }
 };
+
+}  // namespace profile
+}  // namespace souffle

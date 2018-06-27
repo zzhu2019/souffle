@@ -921,8 +921,8 @@ protected:
     std::string message;
 
 public:
-    RamLogSize(std::unique_ptr<RamRelation> rel, std::string msg)
-            : RamRelationStatement(RN_LogSize, std::move(rel)), message(std::move(msg)) {}
+    RamLogSize(std::unique_ptr<RamRelation> relation, std::string message)
+            : RamRelationStatement(RN_LogSize, std::move(relation)), message(std::move(message)) {}
 
     /** Get logging message */
     const std::string& getMessage() const {
@@ -932,8 +932,9 @@ public:
     /** Pretty print */
     void print(std::ostream& os, int tabpos) const override {
         os << std::string(tabpos, '\t');
-        os << "LOGSIZE " << getRelation().getName() << " TEXT ";
-        os << "\"" << stringify(message) << "\"";
+        os << "LOGSIZE " << getRelation().getName();
+        os << " TEXT "
+           << "\"" << stringify(message) << "\"";
     }
 
     /** Create clone */

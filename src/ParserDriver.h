@@ -17,9 +17,9 @@
 
 #include "SrcLocation.h"
 #include "parser.hh"
+#include <cstdio>
 #include <memory>
 #include <string>
-#include <stdio.h>
 
 namespace souffle {
 

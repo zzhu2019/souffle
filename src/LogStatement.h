@@ -44,6 +44,37 @@ public:
         }
         return line.str();
     }
+    static const std::string tRelationLoadTime(
+            const std::string& relationName, const SrcLocation& srcLocation) {
+        const char* messageType = "@t-relation-loadtime";
+        std::stringstream line;
+        if (LogStatement::getLogFileType() == "json") {
+            line << "{";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << "\"loadtime\": ";
+        } else {
+            line << messageType << ";" << relationName << ";" << srcLocation << ";loadtime;";
+        }
+        return line.str();
+    }
+
+    static const std::string tRelationSaveTime(
+            const std::string& relationName, const SrcLocation& srcLocation) {
+        const char* messageType = "@t-relation-savetime";
+        std::stringstream line;
+        if (LogStatement::getLogFileType() == "json") {
+            line << "{";
+            line << R"("msg-type": ")" << messageType << "\", ";
+            line << R"("relation": ")" << relationName << "\", ";
+            line << R"("src-locator": ")" << srcLocation << "\", ";
+            line << "\"savetime\": ";
+        } else {
+            line << messageType << ";" << relationName << ";" << srcLocation << ";savetime;";
+        }
+        return line.str();
+    }
 
     static const std::string nNonrecursiveRelation(
             const std::string& relationName, const SrcLocation& srcLocation) {
