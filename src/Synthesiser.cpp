@@ -1358,6 +1358,9 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
           "std::string outputDirectory = \".\", size_t stratumIndex = (size_t) -1) {\n";
 
     os << "SignalHandler::instance()->set();\n";
+    if (Global::config().has("verbose")) {
+        os << "SignalHandler::instance()->enableLogging();\n";
+    }
 
     // initialize counter
     os << "// -- initialize counter --\n";
