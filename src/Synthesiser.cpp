@@ -1215,7 +1215,7 @@ void Synthesiser::generateCode(const RamTranslationUnit& unit, std::ostream& os,
 
     if (Global::config().has("live-profile")) {
         os << "#include <thread>\n";
-        os << "#include \"profilerlib/Tui.h\"\n";
+        os << "#include \"profile/Tui.h\"\n";
     }
     os << "\n";
     os << "namespace souffle {\n";

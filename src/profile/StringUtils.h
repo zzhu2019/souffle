@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "profilerlib/CellInterface.h"
-#include "profilerlib/Row.h"
-#include "profilerlib/Table.h"
+#include "profile/CellInterface.h"
+#include "profile/Row.h"
+#include "profile/Table.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>

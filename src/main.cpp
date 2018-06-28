@@ -36,7 +36,7 @@
 #include "Synthesiser.h"
 #include "Util.h"
 #include "config.h"
-#include "profilerlib/Tui.h"
+#include "profile/Tui.h"
 
 #ifdef USE_PROVENANCE
 #include "Explain.h"
