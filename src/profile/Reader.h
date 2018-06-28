@@ -10,11 +10,11 @@
 
 #include "ProfileDatabase.h"
 #include "ProfileEvent.h"
-#include "profilerlib/Iteration.h"
-#include "profilerlib/ProgramRun.h"
-#include "profilerlib/Relation.h"
-#include "profilerlib/Rule.h"
-#include "profilerlib/StringUtils.h"
+#include "profile/Iteration.h"
+#include "profile/ProgramRun.h"
+#include "profile/Relation.h"
+#include "profile/Rule.h"
+#include "profile/StringUtils.h"
 #include <cassert>
 #include <chrono>
 #include <cstdlib>

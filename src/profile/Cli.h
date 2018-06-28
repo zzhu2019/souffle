@@ -9,8 +9,8 @@
 #pragma once
 
 #include "FileFormatConverter.h"
-#include "profilerlib/StringUtils.h"
-#include "profilerlib/Tui.h"
+#include "profile/StringUtils.h"
+#include "profile/Tui.h"
 
 #include <iostream>
 #include <map>

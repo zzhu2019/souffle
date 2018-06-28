@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "profilerlib/OutputProcessor.h"
-#include "profilerlib/Reader.h"
-#include "profilerlib/Table.h"
-#include "profilerlib/UserInputReader.h"
-#include "profilerlib/html_string.h"
+#include "profile/OutputProcessor.h"
+#include "profile/Reader.h"
+#include "profile/Table.h"
+#include "profile/UserInputReader.h"
+#include "profile/html_string.h"
 #include <algorithm>
 #include <iostream>
 #include <memory>

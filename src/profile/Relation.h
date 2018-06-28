@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "profilerlib/Iteration.h"
-#include "profilerlib/Rule.h"
+#include "profile/Iteration.h"
+#include "profile/Rule.h"
 #include <memory>
 #include <sstream>
 #include <string>

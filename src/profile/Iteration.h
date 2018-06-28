@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "profilerlib/Rule.h"
+#include "profile/Rule.h"
 #include <memory>
 #include <sstream>
 #include <string>

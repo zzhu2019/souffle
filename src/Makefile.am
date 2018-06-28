@@ -15,22 +15,22 @@ souffle_profile_sources = \
                           FileFormatConverter.h                 \
                           ProfileDatabase.h                     \
                           json11.h                              \
-                          profilerlib/Cell.h                    \
-                          profilerlib/CellInterface.h           \
-                          profilerlib/Cli.h                     \
-                          profilerlib/DataComparator.h          \
-                          profilerlib/Iteration.h               \
-                          profilerlib/OutputProcessor.h         \
-                          profilerlib/ProgramRun.h              \
-                          profilerlib/Reader.h                  \
-                          profilerlib/Relation.h                \
-                          profilerlib/Row.h                     \
-                          profilerlib/Rule.h                    \
-                          profilerlib/StringUtils.h             \
-                          profilerlib/Table.h                   \
-                          profilerlib/Tui.h                     \
-                          profilerlib/UserInputReader.h         \
-                          profilerlib/html_string.h
+                          profile/Cell.h                    \
+                          profile/CellInterface.h           \
+                          profile/Cli.h                     \
+                          profile/DataComparator.h          \
+                          profile/Iteration.h               \
+                          profile/OutputProcessor.h         \
+                          profile/ProgramRun.h              \
+                          profile/Reader.h                  \
+                          profile/Relation.h                \
+                          profile/Row.h                     \
+                          profile/Rule.h                    \
+                          profile/StringUtils.h             \
+                          profile/Table.h                   \
+                          profile/Tui.h                     \
+                          profile/UserInputReader.h         \
+                          profile/html_string.h
 
 DIR := ${CURDIR}
 
@@ -162,6 +162,7 @@ soufflepublic_HEADERS = \
                         CompiledRelation.h      \
                         CompiledSouffle.h       \
                         CompiledTuple.h         \
+                        EventProcessor.h        \
                         Explain.h               \
                         ExplainProvenance.h     \
                         ExplainProvenanceSLD.h  \
@@ -190,8 +191,11 @@ soufflepublic_HEADERS = \
                         htmx86.h                \
                         json11.h                \
                         $(libz_sources)         \
-                        $(sqlite_sources)       \
-						$(souffle_sources)
+                        $(sqlite_sources)
+
+souffleprofiledir = $(soufflepublicdir)/profile
+
+souffleprofile_HEADERS = $(souffle_profile_sources)
 
 # files to clean
 CLEANFILES = $(BUILT_SOURCES)  parser.cc scanner.cc parser.hh stack.hh

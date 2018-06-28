@@ -6,7 +6,7 @@
  * - <souffle root>/licenses/SOUFFLE-UPL.txt
  */
 
-#include "profilerlib/Cli.h"
+#include "profile/Cli.h"
 
 #include <iostream>
 
