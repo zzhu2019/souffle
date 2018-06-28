@@ -162,6 +162,7 @@ soufflepublic_HEADERS = \
                         CompiledRelation.h      \
                         CompiledSouffle.h       \
                         CompiledTuple.h         \
+                        EventProcessor.h        \
                         Explain.h               \
                         ExplainProvenance.h     \
                         ExplainProvenanceSLD.h  \
@@ -190,8 +191,11 @@ soufflepublic_HEADERS = \
                         htmx86.h                \
                         json11.h                \
                         $(libz_sources)         \
-                        $(sqlite_sources)       \
-						$(souffle_sources)
+                        $(sqlite_sources)
+
+souffleprofiledir = $(soufflepublicdir)/profilerlib
+
+souffleprofile_HEADERS = $(souffle_profile_sources)
 
 # files to clean
 CLEANFILES = $(BUILT_SOURCES)  parser.cc scanner.cc parser.hh stack.hh
