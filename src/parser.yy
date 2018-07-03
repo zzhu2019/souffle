@@ -183,7 +183,8 @@
 %type <AstUnionType *>                   uniontype
 %type <std::vector<AstTypeIdentifier>>   type_params type_param_list
 %type <std::string>                      comp_override
-%type <AstIODirective *>                 key_value_pairs non_empty_key_value_pairs iodirective iodirective_body
+%type <AstIODirective *>                 key_value_pairs non_empty_key_value_pairs iodirective_body
+%type <std::vector<AstIODirective *>>    iodirective_head iodirective_list
 %printer { yyoutput << $$; } <*>;
 
 %precedence AS
@@ -213,8 +214,8 @@ unit
   | unit relation_head {
         for(const auto& cur : $2) driver.addRelation(std::unique_ptr<AstRelation>(cur));
     }
-  | unit iodirective {
-        driver.addIODirectiveChain(std::unique_ptr<AstIODirective>($2));
+  | unit iodirective_head {
+        for(const auto& cur : $2) driver.addIODirective(std::unique_ptr<AstIODirective>(cur));
     }
   | unit fact {
         driver.addClause(std::unique_ptr<AstClause>($2));
@@ -459,6 +460,32 @@ key_value_pairs
         $$->setSrcLoc(@$);
     }
 
+iodirective_head
+  : INPUT_DECL iodirective_list {
+      $$.swap($2);
+      for (auto& cur : $$) cur->setAsInput();
+    }
+  | OUTPUT_DECL iodirective_list {
+      $$.swap($2);
+      for (auto& cur : $$) cur->setAsOutput();
+    }
+  | PRINTSIZE_DECL iodirective_list {
+      $$.swap($2);
+      for (auto& cur : $$) cur->setAsPrintSize();
+    }
+
+iodirective_list
+  : iodirective_body {
+      $$.push_back($1);
+    }
+  | IDENT COMMA iodirective_list {
+      $$.swap($3);
+      auto tmp = $$.back()->clone();
+      tmp->setName($1);
+      tmp->setSrcLoc(@1);
+      $$.push_back(tmp);
+    }
+
 iodirective_body
   : rel_id LPAREN key_value_pairs RPAREN {
         $$ = $3;
@@ -471,29 +498,6 @@ iodirective_body
         $$->setName(*$1);
         $$->setSrcLoc(@1);
         delete $1;
-    }
-  | rel_id COMMA iodirective_body {
-        $$ = $3;
-        $3->addName(*$1);
-        $3->setSrcLoc(@1);
-        delete $1;
-    }
-
-iodirective
-  : INPUT_DECL iodirective_body {
-        $$ = $2;
-        $$->setAsInput();
-        $$->setSrcLoc(@2);
-    }
-  | OUTPUT_DECL iodirective_body {
-        $$ = $2;
-        $$->setAsOutput();
-        $$->setSrcLoc(@2);
-    }
-  | PRINTSIZE_DECL iodirective_body {
-        $$ = $2;
-        $$->setAsPrintSize();
-        $$->setSrcLoc(@2);
     }
 
 /* Atom */
@@ -994,9 +998,9 @@ component_body
         $$ = $1;
         for(const auto& cur : $2) $$->addRelation(std::unique_ptr<AstRelation>(cur));
     }
-  | component_body iodirective {
+  | component_body iodirective_head {
         $$ = $1;
-        $$->addIODirective(std::unique_ptr<AstIODirective>($2));
+        for(const auto& cur : $2) $$->addIODirective(std::unique_ptr<AstIODirective>(cur));
     }
   | component_body fact {
         $$ = $1;
